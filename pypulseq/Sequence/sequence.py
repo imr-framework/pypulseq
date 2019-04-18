@@ -1,12 +1,12 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from pulseq.core.Sequence import block
-from pulseq.core.Sequence.read_seq import read
-from pulseq.core.Sequence.write_seq import write
-from pulseq.core.calc_duration import calc_duration
-from pulseq.core.event_lib import EventLibrary
-from pulseq.core.opts import Opts
+from pypulseq.Sequence import block
+from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.write_seq import write
+from pypulseq.calc_duration import calc_duration
+from pypulseq.event_lib import EventLibrary
+from pypulseq.opts import Opts
 
 
 class Sequence:

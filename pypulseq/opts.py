@@ -1,4 +1,4 @@
-import pulseq.core.convert as convert
+import pypulseq.convert as convert
 
 
 class Opts():

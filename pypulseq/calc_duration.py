@@ -1,4 +1,4 @@
-from pulseq.core.holder import Holder
+from pypulseq.holder import Holder
 
 
 def calc_duration(*events):

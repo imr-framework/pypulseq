@@ -1,20 +1,20 @@
 """
-Python code for HASTE Sequence
+This is starter code to demonstrate a working example of HASTE on PyPulseq.
 Author: Sneha Potdar
-Date: 01 Jan 2018
+Date: January 01, 2018.
 """
 
 from math import pi
+
 import numpy as np
 
-from pulseq.core.Sequence.sequence import Sequence
-from pulseq.core.calc_duration import calc_duration
-from pulseq.core.make_adc import makeadc
-from pulseq.core.make_block import make_block_pulse
-from pulseq.core.make_delay import make_delay
-from pulseq.core.make_sinc import make_sinc_pulse
-from pulseq.core.make_trap import make_trapezoid
-from pulseq.core.opts import Opts
+from pypulseq.Sequence.sequence import Sequence
+from pypulseq.calc_duration import calc_duration
+from pypulseq.make_adc import makeadc
+from pypulseq.make_delay import make_delay
+from pypulseq.make_sinc import make_sinc_pulse
+from pypulseq.make_trap import make_trapezoid
+from pypulseq.opts import Opts
 
 kwargs_for_opts = {"max_grad": 33, "grad_unit": "mT/m", "max_slew": 100, "slew_unit": "T/m/s", "rf_dead_time": 1e-6,
                    "adc_dead_time": 10e-6}

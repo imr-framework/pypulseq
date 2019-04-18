@@ -1,16 +1,18 @@
 """
-This is starter code to demonstrate a working example of a single-shot EPI Spin Echo as a pure Python implementation.
+This is starter code to demonstrate a working example of a single-shot EPI Spin Echo on PyPulseq.
+Author: Keerthi Sravan Ravi
+Date: June 13, 2017.
 """
 from math import pi, sqrt, ceil
 
-from pulseq.core.Sequence.sequence import Sequence
-from pulseq.core.calc_duration import calc_duration
-from pulseq.core.make_adc import makeadc
-from pulseq.core.make_block import make_block_pulse
-from pulseq.core.make_delay import make_delay
-from pulseq.core.make_sinc import make_sinc_pulse
-from pulseq.core.make_trap import make_trapezoid
-from pulseq.core.opts import Opts
+from pypulseq.Sequence.sequence import Sequence
+from pypulseq.calc_duration import calc_duration
+from pypulseq.make_adc import makeadc
+from pypulseq.make_block import make_block_pulse
+from pypulseq.make_delay import make_delay
+from pypulseq.make_sinc import make_sinc_pulse
+from pypulseq.make_trap import make_trapezoid
+from pypulseq.opts import Opts
 
 kwargs_for_opts = {"max_grad": 33, "grad_unit": "mT/m", "max_slew": 110, "slew_unit": "T/m/s", "rf_dead_time": 10e-6,
                    "adc_dead_time": 10e-6}

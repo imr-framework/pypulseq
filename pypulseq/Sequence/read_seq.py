@@ -1,6 +1,6 @@
 import numpy as np
 
-from pulseq.core.event_lib import EventLibrary
+from pypulseq.event_lib import EventLibrary
 
 
 def read(self, path):

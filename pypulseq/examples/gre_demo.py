@@ -1,17 +1,19 @@
 """
-This is starter code to demonstrate a working example of the Gradient Recalled Echo as a pure Python implementation.
+This is starter code to demonstrate a working example of the Gradient Recalled Echo on PyPulseq.
+Author: Keerthi Sravan Ravi
+Date: December 15, 2017.
 """
 from math import pi
 
 import numpy as np
 
-from pulseq.core.Sequence.sequence import Sequence
-from pulseq.core.calc_duration import calc_duration
-from pulseq.core.make_adc import makeadc
-from pulseq.core.make_delay import make_delay
-from pulseq.core.make_sinc import make_sinc_pulse
-from pulseq.core.make_trap import make_trapezoid
-from pulseq.core.opts import Opts
+from pypulseq.Sequence.sequence import Sequence
+from pypulseq.calc_duration import calc_duration
+from pypulseq.make_adc import makeadc
+from pypulseq.make_delay import make_delay
+from pypulseq.make_sinc import make_sinc_pulse
+from pypulseq.make_trap import make_trapezoid
+from pypulseq.opts import Opts
 
 kwargs_for_opts = {"rf_ring_down_time": 30e-6, "rf_dead_time": 100e-6}
 system = Opts(kwargs_for_opts)

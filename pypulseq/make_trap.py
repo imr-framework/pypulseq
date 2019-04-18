@@ -1,7 +1,7 @@
 from math import ceil, sqrt, pow
 
-from pulseq.core.holder import Holder
-from pulseq.core.opts import Opts
+from pypulseq.holder import Holder
+from pypulseq.opts import Opts
 
 
 def make_trapezoid(kwargs):

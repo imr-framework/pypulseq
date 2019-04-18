@@ -1,8 +1,8 @@
 import numpy as np
 
-from pulseq.core.compress_shape import compress_shape
-from pulseq.core.decompress_shape import decompress_shape
-from pulseq.core.holder import Holder
+from pypulseq.compress_shape import compress_shape
+from pypulseq.decompress_shape import decompress_shape
+from pypulseq.holder import Holder
 
 
 def add_block(self, block_index, *args):

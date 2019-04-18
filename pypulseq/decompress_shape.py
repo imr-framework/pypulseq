@@ -1,6 +1,6 @@
 import numpy as np
 
-from pulseq.core.holder import Holder
+from pypulseq.holder import Holder
 
 
 def decompress_shape(compressed_shape):

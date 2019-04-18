@@ -1,8 +1,8 @@
 import numpy as np
 
-from pulseq.core.holder import Holder
-from pulseq.core.make_trap import make_trapezoid
-from pulseq.core.opts import Opts
+from pypulseq.holder import Holder
+from pypulseq.make_trap import make_trapezoid
+from pypulseq.opts import Opts
 
 
 def make_block_pulse(kwargs, nargout=1):

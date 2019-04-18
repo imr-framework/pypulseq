@@ -1,7 +1,7 @@
 import numpy as np
 
-from pulseq.core.holder import Holder
-from pulseq.core.opts import Opts
+from pypulseq.holder import Holder
+from pypulseq.opts import Opts
 
 
 def makearbitrary_grad(kwargs):

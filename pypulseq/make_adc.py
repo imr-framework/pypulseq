@@ -1,7 +1,7 @@
 from decimal import *
 
-from pulseq.core.holder import Holder
-from pulseq.core.opts import Opts
+from pypulseq.holder import Holder
+from pypulseq.opts import Opts
 
 
 def makeadc(kwargs):

@@ -1,7 +1,8 @@
 import math
+
 import numpy as np
-from pulseq.core.utils import k2g
-from pulseq.core.makearbitrary_grad import makearbitrary_grad
+
+from pypulseq.utils import k2g
 
 
 def vds_2d(fov, N, n_shots, alpha, system):
@@ -45,7 +46,8 @@ def vds_2d(fov, N, n_shots, alpha, system):
 
     if ts2a < tes:
         tau_trans = pow(ts2a / tes, 1 / (alpha / 2 + 1))
-        tau = lambda t: pow(t / tes, 1 / (alpha / 2 + 1)) * (0 <= t) * (t <= ts2a) + pow((((t - ts2a) / tea) + pow(tau_trans, alpha + 1)), 1 / (alpha + 1)) * (t > ts2a) * (t <= tea) * (tes >= ts2a)
+        tau = lambda t: pow(t / tes, 1 / (alpha / 2 + 1)) * (0 <= t) * (t <= ts2a) + pow(
+            (((t - ts2a) / tea) + pow(tau_trans, alpha + 1)), 1 / (alpha + 1)) * (t > ts2a) * (t <= tea) * (tes >= ts2a)
         t_end = tea
     else:
         tau = lambda t: pow((t / tes), (1 / (alpha / 2 + 1)) * (0 <= t) * (t <= tes))

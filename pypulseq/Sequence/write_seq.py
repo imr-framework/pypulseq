@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 
 def write(self, file_name):
