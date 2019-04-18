@@ -103,5 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-#output seq files
-.seq
+# Seq files
+*.seq
+
+# PyCharm config folder
+\.idea/
