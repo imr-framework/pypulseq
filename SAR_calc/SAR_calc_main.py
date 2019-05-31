@@ -46,7 +46,7 @@ def calc_SAR(Q, I):
 def loadQ():
     # Load relevant Q matrices computed from the model - this code will be integrated later - starting from E fields
     Qmat = sio.loadmat(
-        './src/server/RF/Tx/SAR_calc/QGlobal.mat')  # Hardcoded for ever, will introduce methods to compute as well but really slow at the moment ToDO
+        './src/server/rf/tx/SAR_calc/QGlobal.mat')  # Hardcoded for ever, will introduce methods to compute as well but really slow at the moment ToDO
     Q = Qmat['Q']
     val = Q[0, 0]
 
@@ -58,9 +58,9 @@ def loadQ():
 def SARfromseq(fname, Qtmf, Qhmf):
     # Read sequence from file path supplied to the method
     obj = Sequence()
-    obj.read('./src/server/RF/Tx/SAR_calc/' + fname)  # replaced by
+    obj.read('./src/server/rf/tx/SAR_calc/' + fname)  # replaced by
 
-    # Identify RF blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
+    # Identify rf blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
     blockEvents = obj.block_events
     numEvents = len(blockEvents)
     t_vec = np.zeros(numEvents)
@@ -159,7 +159,7 @@ def payload_process(fname='rad2D.seq'):
     SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak = SARlimscheck(
         SARwbg_lim, SARhg_lim, tsec)
 
-    imgpath = './src/coms/coms_ui/static/RF/Tx/SAR/'
+    imgpath = './src/coms/coms_ui/static/rf/tx/SAR/'
     timestamp = time.strftime("%Y%m%d%H%M%S")
     fname_store = timestamp + "_SAR1.png"
     payload = {
