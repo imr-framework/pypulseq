@@ -1,6 +1,6 @@
-import numpy as np
+from types import SimpleNamespace
 
-from pypulseq.holder import Holder
+import numpy as np
 
 
 def compress_shape(decompressed_shape):
@@ -18,35 +18,27 @@ def compress_shape(decompressed_shape):
         A Holder object containing the shape of the compressed shape ndarray and the compressed shape ndarray itself.
     """
 
-    if decompressed_shape.shape[0] != 1:
-        raise ValueError("input should be of shape (1,x)")
-    if not isinstance(decompressed_shape, np.ndarray):
-        raise TypeError("input should be of type numpy.ndarray")
+    quant_factor = 1e-7
+    decompressed_shape_scaled = decompressed_shape / quant_factor
+    datq = np.round(np.insert(np.diff(decompressed_shape_scaled), 0, decompressed_shape_scaled[0]))
+    qerr = decompressed_shape_scaled - np.cumsum(datq)
+    qcor = np.insert(np.diff(np.round(qerr)), 0, 0)
+    datd = datq + qcor
+    mask_changes = np.insert(np.diff(datd) != 0, 0, 1)
+    vals = np.multiply(datd[mask_changes], quant_factor).astype(np.float)
 
-    # data = np.array([decompressed_shape[0][0]])
-    # data = np.concatenate((data, np.diff(decompressed_shape[0])))
-    data = np.hstack((decompressed_shape[0][0], np.diff(decompressed_shape[0])))
+    k = np.where(np.append(mask_changes, 1) != 0)[0]
+    n = np.diff(k)
 
-    # TODO
-    mask_changes = np.hstack((1, np.abs(np.diff(data)) > 1e-8))
-    vals = data[np.nonzero(mask_changes)].astype(float)
-    k = np.array(np.nonzero(np.append(mask_changes, 1)))
-    k = k.reshape((1, k.shape[1]))
-    n = np.diff(k)[0]
-
-    n_extra = (n - 2).astype(float)
+    n_extra = (n - 2).astype(np.float16)  # Cast as float for nan assignment to work
     vals2 = np.copy(vals)
-    vals2[np.where(n_extra < 0)] = np.NAN
-    n_extra[np.where(n_extra < 0)] = np.NAN
-    v = np.array([vals, vals2, n_extra])
-    v = np.concatenate(np.hsplit(v, v.shape[1]))
-    finite_vals = np.isfinite(v)
-    v = v[finite_vals]
-    v_abs = abs(v)
-    smallest_indices = np.where(v_abs < 1e-10)
-    v[smallest_indices] = 0
+    vals2[n_extra < 0] = np.nan
+    n_extra[n_extra < 0] = np.nan
+    v = np.stack((vals, vals2, n_extra))
+    v = v.T[np.isfinite(v).T]  # Use transposes to match Matlab's Fortran indexing order
+    v[abs(v) < 1e-10] = 0
+    compressed_shape = SimpleNamespace()
+    compressed_shape.num_samples = len(decompressed_shape)
+    compressed_shape.data = v
 
-    compressed_shape = Holder()
-    compressed_shape.num_samples = decompressed_shape.shape[1]
-    compressed_shape.data = v.reshape((1, -1))
     return compressed_shape

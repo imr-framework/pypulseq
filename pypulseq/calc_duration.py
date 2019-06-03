@@ -1,4 +1,4 @@
-from pypulseq.holder import Holder
+from types import SimpleNamespace
 
 
 def calc_duration(*events):
@@ -15,24 +15,26 @@ def calc_duration(*events):
     duration : float
         The cumulative duration of the Events passed.
     """
-    if isinstance(events[0], dict):
-        events = events[0].values()
+
+    for e in events:
+        if isinstance(e, SimpleNamespace) and isinstance(getattr(e, list(e.__dict__.keys())[0]), SimpleNamespace):
+            events = list(e.__dict__.values())
+            break
 
     duration = 0
     for event in events:
-        if not isinstance(event, Holder):
-            raise TypeError("input(s) should be of type core.events.Holder")
+        if not isinstance(event, SimpleNamespace):
+            raise TypeError("input(s) should be of type SimpleNamespace")
 
         if event.type == 'delay':
             duration = max(duration, event.delay)
         elif event.type == 'rf':
-            duration = max(duration, event.t[0][-1] + event.dead_time + event.ring_down_time)
+            duration = max(duration, event.delay + event.t[-1])
         elif event.type == 'grad':
-            duration = max(duration, event.t[0][-1])
+            duration = max(duration, event.t[-1] + event.t[1] - event.t[0] + event.delay)
         elif event.type == 'adc':
-            adc_time = event.delay + event.num_samples * event.dwell + event.dead_time
-            duration = max(duration, adc_time)
+            duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
         elif event.type == 'trap':
-            duration = max(duration, event.rise_time + event.flat_time + event.fall_time)
+            duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
 
     return duration

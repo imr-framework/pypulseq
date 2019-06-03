@@ -1,33 +1,43 @@
-import pypulseq.convert as convert
+from pypulseq.convert import convert
+from types import SimpleNamespace
 
 
 class Opts():
     """This class contains the gradient limits of the MR system."""
 
-    def __init__(self, kwargs=dict()):
+    def __init__(self, grad_unit=None, slew_unit=None, max_grad=None, max_slew=None, rise_time=None, rf_dead_time=0,
+                 rf_ringdown_time=0, adc_dead_time=0, rf_raster_time=1e-6, grad_raster_time=10e-6, gamma=42.576e6):
         valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
-        self.max_grad = kwargs.get("max_grad", 40)
-        self.max_slew = kwargs.get("max_slew", 170)
-        self.grad_unit = kwargs.get("grad_unit", valid_grad_units[1])
-        self.slew_unit = kwargs.get("slew_unit", valid_slew_units[1])
 
-        # Convert input values if not provided in standard units
-        self.max_grad = convert.convert_from_to(float(self.max_grad), self.grad_unit)
-        self.max_slew = convert.convert_from_to(float(self.max_slew), self.slew_unit)
+        if grad_unit is not None and grad_unit not in valid_grad_units:
+            raise ValueError()
 
-        self.te = kwargs.get("te", 0)
-        self.tr = kwargs.get("tr", 0)
-        self.flip = kwargs.get("flip", 0)
-        self.fov = kwargs.get("fov", 0)
-        self.Nx = kwargs.get("Nx", 0)
-        self.Ny = kwargs.get("Ny", 0)
-        self.rise_time = kwargs.get("rise_time", 0)
-        self.rf_dead_time = kwargs.get("rf_dead_time", 0)
-        self.rf_raster_time = kwargs.get("rf_raster_time", 1e-6)
-        self.rf_ring_down_time = kwargs.get("rf_ring_down_time", 0)
-        self.adc_dead_time = kwargs.get("adc_dead_time", 0)
-        self.grad_raster_time = kwargs.get("grad_raster_time", 10e-6)
+        if slew_unit is not None and slew_unit not in valid_slew_units:
+            raise ValueError()
+
+        if max_grad is None:
+            max_grad = convert(from_value=40, from_unit='mT/m', gamma=gamma)
+        else:
+            max_grad = convert(from_value=max_grad, from_unit=grad_unit, to_unit='Hz/m', gamma=gamma)
+
+        if max_slew is None:
+            max_slew = convert(from_value=170, from_unit='T/m/s', gamma=gamma)
+        else:
+            max_slew = convert(from_value=max_slew, from_unit=slew_unit, to_unit='Hz/m', gamma=gamma)
+
+        if rise_time is not None:
+            max_slew = None
+
+        self.max_grad = max_grad
+        self.max_slew = max_slew
+        self.rise_time = rise_time
+        self.rf_dead_time = rf_dead_time
+        self.rf_ringdown_time = rf_ringdown_time
+        self.adc_dead_time = adc_dead_time
+        self.rf_raster_time = rf_raster_time
+        self.grad_raster_time = grad_raster_time
+        self.gamma = gamma
 
     def __str__(self):
         s = "System limits:"
