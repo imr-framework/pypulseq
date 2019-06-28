@@ -20,7 +20,7 @@
 from virtualscanner.utils import constants
 import virtualscanner.server.rf.tx.SAR_calc.SAR_calc_main as SAR
 
-SAR_PATH = constants.SAR_PATH
+SAR_PATH = constants.RF_SAR_PATH
 
 fname = 'rad2D.seq'
 payload = SAR.payload_process()

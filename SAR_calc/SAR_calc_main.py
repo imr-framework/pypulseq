@@ -13,8 +13,8 @@ from virtualscanner.utils import constants
 # Copyright of the Board of Trustees of Columbia University in the City of New York
 # Unit test Script to check for registration functions independently
 
-SAR_PATH = constants.SAR_PATH
-IMG_SAR_PATH = constants.IMG_SAR_PATH
+SAR_PATH = constants.RF_SAR_PATH
+IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
 
 """
     1. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
