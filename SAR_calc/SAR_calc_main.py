@@ -17,9 +17,9 @@ SAR_PATH = constants.RF_SAR_PATH
 IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
 
 """
-    1. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
-    |2.This assumes an eight channel multi-transmit system with a scaled B1+
-    |3.IEC checks on SAR resulting from a given sequence file
+    #. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
+    #. This assumes an eight channel multi-transmit system with a scaled B1+
+    #. IEC checks on SAR resulting from a given sequence file
     
     Parameters
     ----------
@@ -47,7 +47,7 @@ def calc_SAR(Q, I):
 
 def loadQ():
     """
-        1. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
+        #. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
 
 
         Returns
@@ -74,7 +74,7 @@ def SARfromseq(fname, Qtmf, Qhmf):
     # Read sequence from file path supplied to the method
 
     """
-        1. This definition computes the global whole body and head only SAR values
+        #. This definition computes the global whole body and head only SAR values
 
 
         Parameters
@@ -89,13 +89,13 @@ def SARfromseq(fname, Qtmf, Qhmf):
         SARwbg_vec : numpy.ndarray
         SARhg_vec : numpy.ndarray
         t_vec : numpy.ndarray
-        contains the Q-matrix, GSAR head and body for now
+            contains the Q-matrix, GSAR head and body for now
 
 
     """
 
     obj = Sequence()
-    obj.read(str(SAR_PATH/ 'assets' / fname))  # replaced by
+    obj.read(str(SAR_PATH / 'assets' / fname))  # replaced by
 
     # Identify rf blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
     blockEvents = obj.block_events
@@ -123,7 +123,7 @@ def SARfromseq(fname, Qtmf, Qhmf):
 
 def SARinterp(SAR, t):
     """
-        1. This definition interpolates the SAR values for one second resolution
+        #. This definition interpolates the SAR values for one second resolution
 
 
         Parameters
@@ -136,7 +136,7 @@ def SARinterp(SAR, t):
         -------
         SARinterp : numpy.ndarray
         tsec : numpy.ndarray
-        Interpolated values of SAR for a temporal resolution of 1 second
+            Interpolated values of SAR for a temporal resolution of 1 second
 
 
         """
@@ -150,7 +150,7 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     # Declare constants for checks - IEC 60601-2 - W/kg for six minute and ten seconds for whole body and head
 
     """
-        1. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
+        #. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
 
 
         Parameters
@@ -219,7 +219,7 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
 def do_sw_sar(SAR, tsec, t):
     """
-        1. This definition computes a sliding window average of SAR values
+        #. This definition computes a sliding window average of SAR values
 
 
         Parameters
@@ -245,7 +245,7 @@ def do_sw_sar(SAR, tsec, t):
 
 def payload_process(fname='rad2D.seq'):
     """
-                1. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
+                #. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
 
 
                 Parameters
