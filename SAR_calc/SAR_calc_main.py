@@ -1,36 +1,38 @@
-"""
-This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
-This assumes an eight channel multi-transmit system with a scaled B1+
-Parameters
-----------
-    .seq --> the sequence file object for which the SAR has to be computed
-    Requires coms_server_flask to be running before the unit test is run (i.e.: run coms_server_flask.py first)
+import time
 
-Returns
--------
-    payload
-     - contains the Q-matrix, GSAR head and body for now
-     - will include local SAR based on disucssions related to ongoing project
-
-Performs
---------
-    IEC checks on SAR resulting from a given sequence file
-
-
-Author: Sairam Geethanath
-Date: 05/07/2019
-Version 0.0
-Copyright of the Board of Trustees of  Columbia University in the City of New York
-"""
-
-from pypulseq.Sequence.sequence import Sequence
-from pypulseq.calc_duration import calc_duration
-import scipy.io as sio
-from scipy import interpolate
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.matlib
-import matplotlib.pyplot as plt
-import time
+import scipy.io as sio
+from pypulseq.Sequence.sequence import Sequence
+from pypulseq.calc_duration import calc_duration
+from scipy import interpolate
+
+from virtualscanner.utils import constants
+
+# Copyright of the Board of Trustees of Columbia University in the City of New York
+# Unit test Script to check for registration functions independently
+
+SAR_PATH = constants.SAR_PATH
+IMG_SAR_PATH = constants.IMG_SAR_PATH
+
+"""
+    1. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
+    |2.This assumes an eight channel multi-transmit system with a scaled B1+
+    |3.IEC checks on SAR resulting from a given sequence file
+    
+    Parameters
+    ----------
+        fname :  str
+        Requires coms_server_flask to be running before the unit test is run (i.e.: run coms_server_flask.py first)
+    
+    Returns
+    -------
+        payload
+         - contains the Q-matrix, GSAR head and body for now
+         - will include local SAR based on disucssions related to ongoing project
+
+"""
 
 
 def calc_SAR(Q, I):
@@ -44,9 +46,22 @@ def calc_SAR(Q, I):
 
 
 def loadQ():
+    """
+        1. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
+
+
+        Returns
+        -------
+            Qtmf, Qhmf : numpy.ndarray
+            contains the Q-matrix, GSAR head and body for now
+
+
+    """
+
     # Load relevant Q matrices computed from the model - this code will be integrated later - starting from E fields
+    Qpath = str(SAR_PATH) + '/assets/QGlobal.mat'
     Qmat = sio.loadmat(
-        './src/server/rf/tx/SAR_calc/QGlobal.mat')  # Hardcoded for ever, will introduce methods to compute as well but really slow at the moment ToDO
+        Qpath)
     Q = Qmat['Q']
     val = Q[0, 0]
 
@@ -57,8 +72,30 @@ def loadQ():
 
 def SARfromseq(fname, Qtmf, Qhmf):
     # Read sequence from file path supplied to the method
+
+    """
+        1. This definition computes the global whole body and head only SAR values
+
+
+        Parameters
+        ----------
+        fname : str
+        Qtmf : numpy.ndarray
+        Qhmf : numpy.ndarray
+
+
+        Returns
+        -------
+        SARwbg_vec : numpy.ndarray
+        SARhg_vec : numpy.ndarray
+        t_vec : numpy.ndarray
+        contains the Q-matrix, GSAR head and body for now
+
+
+    """
+
     obj = Sequence()
-    obj.read('./src/server/rf/tx/SAR_calc/' + fname)  # replaced by
+    obj.read(str(SAR_PATH) + '/assets/' + fname)  # replaced by
 
     # Identify rf blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
     blockEvents = obj.block_events
@@ -85,6 +122,24 @@ def SARfromseq(fname, Qtmf, Qhmf):
 
 
 def SARinterp(SAR, t):
+    """
+        1. This definition interpolates the SAR values for one second resolution
+
+
+        Parameters
+        ----------
+        SAR : numpy.ndarray
+        t : numpy.ndarray
+
+
+        Returns
+        -------
+        SARinterp : numpy.ndarray
+        tsec : numpy.ndarray
+        Interpolated values of SAR for a temporal resolution of 1 second
+
+
+        """
     tsec = np.arange(1, np.floor(t[-1]) + 1, 1)
     f = interpolate.interp1d(t, SAR)
     SARinterp = f(tsec)
@@ -94,6 +149,25 @@ def SARinterp(SAR, t):
 def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     # Declare constants for checks - IEC 60601-2 - W/kg for six minute and ten seconds for whole body and head
 
+    """
+        1. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
+
+
+        Parameters
+        ----------
+        SARwbg_lim_s : numpy.ndarray
+        SARhg_lim_s : numpy.ndarray
+        tsec : numpy.ndarray
+
+
+        Returns
+        -------
+        SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak : numpy.ndarray
+        SAR values that are interpolated for the fixed IEC time intervals
+
+
+    """
+
     if (tsec[-1] > 10):
 
         SixMinThresh_wbg = 4
@@ -102,13 +176,13 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
         SixMinThresh_hg = 3.2
         TenSecThresh_hg = 6.4
 
-        SARwbg_lim_app = np.concatenate((np.zeros(5), SARwbg_lim_s, np.zeros(5)),axis=0)
-        SARhg_lim_app = np.concatenate((np.zeros(5), SARhg_lim_s, np.zeros(5)),axis=0)
+        SARwbg_lim_app = np.concatenate((np.zeros(5), SARwbg_lim_s, np.zeros(5)), axis=0)
+        SARhg_lim_app = np.concatenate((np.zeros(5), SARhg_lim_s, np.zeros(5)), axis=0)
 
         SAR_wbg_tensec = do_sw_sar(SARwbg_lim_app, tsec, 10)  # < 2  SARmax
         SAR_hg_tensec = do_sw_sar(SARhg_lim_app, tsec, 10)  # < 2 SARmax
-        SAR_wbg_tensec_peak = np.round(np.max(SAR_wbg_tensec),2)
-        SAR_hg_tensec_peak = np.round(np.max(SAR_hg_tensec),2)
+        SAR_wbg_tensec_peak = np.round(np.max(SAR_wbg_tensec), 2)
+        SAR_hg_tensec_peak = np.round(np.max(SAR_hg_tensec), 2)
 
         if ((np.max(SAR_wbg_tensec) > TenSecThresh_wbg) or (np.max(SAR_hg_tensec) > TenSecThresh_hg)):
             print('Pulse exceeding 10 second Global SAR limits, increase TR')
@@ -119,13 +193,13 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
         if (tsec[-1] > 600):
 
-            SARwbg_lim_app = np.concatenate((np.zeros(300), SARwbg_lim_s, np.zeros(300)),axis=0)
-            SARhg_lim_app = np.concatenate((np.zeros(300), SARhg_lim_s, np.zeros(300)),axis=0)
+            SARwbg_lim_app = np.concatenate((np.zeros(300), SARwbg_lim_s, np.zeros(300)), axis=0)
+            SARhg_lim_app = np.concatenate((np.zeros(300), SARhg_lim_s, np.zeros(300)), axis=0)
 
             SAR_hg_sixmin = do_sw_sar(SARhg_lim_app, tsec, 600)
             SAR_wbg_sixmin = do_sw_sar(SARwbg_lim_app, tsec, 600)
-            SAR_wbg_sixmin_peak = np.round(np.max(SAR_wbg_sixmin),2)
-            SAR_hg_sixmin_peak = np.round(np.max(SAR_hg_sixmin),2)
+            SAR_wbg_sixmin_peak = np.round(np.max(SAR_wbg_sixmin), 2)
+            SAR_hg_sixmin_peak = np.round(np.max(SAR_hg_sixmin), 2)
 
             if ((np.max(SAR_hg_sixmin) > SixMinThresh_wbg) or (np.max(SAR_hg_sixmin) > SixMinThresh_hg)):
                 print('Pulse exceeding 10 second Global SAR limits, increase TR')
@@ -144,14 +218,48 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
 
 def do_sw_sar(SAR, tsec, t):
-    SAR_timeavg = np.zeros(len(tsec)+int(t))
-    for instant in range(int(t/2),int(t/2)+ (int(tsec[-1]))):  # better to go from  -sw / 2: sw / 2
-        SAR_timeavg[instant] = sum(SAR[range(instant - int(t/2), instant + int(t/2) - 1)]) / t
-    SAR_timeavg = SAR_timeavg[int(t/2):int(t/2)+ (int(tsec[-1]))]
+    """
+        1. This definition computes a sliding window average of SAR values
+
+
+        Parameters
+        ----------
+        SAR : numpy.ndarray
+        tsec : numpy.ndarray
+        t : numpy.ndarray
+
+
+        Returns
+        -------
+        SAR_timeavag : numpy.ndarray
+        Sliding window time average of SAR values
+
+
+    """
+    SAR_timeavg = np.zeros(len(tsec) + int(t))
+    for instant in range(int(t / 2), int(t / 2) + (int(tsec[-1]))):  # better to go from  -sw / 2: sw / 2
+        SAR_timeavg[instant] = sum(SAR[range(instant - int(t / 2), instant + int(t / 2) - 1)]) / t
+    SAR_timeavg = SAR_timeavg[int(t / 2):int(t / 2) + (int(tsec[-1]))]
     return SAR_timeavg
 
 
 def payload_process(fname='rad2D.seq'):
+    """
+                1. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
+
+
+                Parameters
+                ----------
+                fname : str, optional
+                Default is rad2.seq
+
+
+                Returns
+                -------
+                payload : dict
+                SAR graph figure filename, peak SAR values
+
+    """
     Qtmf, Qhmf = loadQ()
     SARwbg, SARhg, t_vec = SARfromseq(fname, Qtmf, Qhmf)
     SARwbg_lim, tsec = SARinterp(SARwbg, t_vec)
@@ -159,7 +267,7 @@ def payload_process(fname='rad2D.seq'):
     SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak = SARlimscheck(
         SARwbg_lim, SARhg_lim, tsec)
 
-    imgpath = './src/coms/coms_ui/static/rf/tx/SAR/'
+    imgpath = str(IMG_SAR_PATH)
     timestamp = time.strftime("%Y%m%d%H%M%S")
     fname_store = timestamp + "_SAR1.png"
     payload = {
@@ -190,9 +298,7 @@ def payload_process(fname='rad2D.seq'):
 
         ax.legend()
         plt.grid(True)
-        plt.savefig(imgpath + fname_store, bbox_inches='tight', pad_inches=0)
-        #plt.show()  # Uncomment for local display - will hinder return function is persistent
+        plt.savefig(str(IMG_SAR_PATH / fname_store), bbox_inches='tight', pad_inches=0)
+        # plt.show()  # Uncomment for local display - will hinder return function is persistent
     print('SAR computation performed')
     return payload
-
-# payload_process('rad2D.seq')  # uncomment if you want to run this script directly
