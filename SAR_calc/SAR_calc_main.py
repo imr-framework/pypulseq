@@ -95,7 +95,7 @@ def SARfromseq(fname, Qtmf, Qhmf):
     """
 
     obj = Sequence()
-    obj.read(str(SAR_PATH) + '/assets/' + fname)  # replaced by
+    obj.read(str(SAR_PATH/ 'assets' / fname))  # replaced by
 
     # Identify rf blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
     blockEvents = obj.block_events
