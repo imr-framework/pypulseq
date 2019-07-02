@@ -1,3 +1,5 @@
+# Copyright of the Board of Trustees of Columbia University in the City of New York
+
 import time
 
 import matplotlib.pyplot as plt
@@ -10,12 +12,6 @@ from scipy import interpolate
 
 from virtualscanner.utils import constants
 
-# Copyright of the Board of Trustees of Columbia University in the City of New York
-# Unit test Script to check for registration functions independently
-
-SAR_PATH = constants.RF_SAR_PATH
-IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
-
 """
     #. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
     #. This assumes an eight channel multi-transmit system with a scaled B1+
@@ -23,16 +19,19 @@ IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
     
     Parameters
     ----------
-        fname :  str
+    fname : str
         Requires coms_server_flask to be running before the unit test is run (i.e.: run coms_server_flask.py first)
     
     Returns
     -------
-        payload
-         - contains the Q-matrix, GSAR head and body for now
-         - will include local SAR based on disucssions related to ongoing project
+    payload
+        * contains the Q-matrix, GSAR head and body for now
+        * will include local SAR based on disucssions related to ongoing project
 
 """
+
+SAR_PATH = constants.RF_SAR_PATH
+IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
 
 
 def calc_SAR(Q, I):
@@ -47,15 +46,12 @@ def calc_SAR(Q, I):
 
 def loadQ():
     """
-        #. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
+    #. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
 
-
-        Returns
-        -------
-            Qtmf, Qhmf : numpy.ndarray
-            contains the Q-matrix, GSAR head and body for now
-
-
+    Returns
+    -------
+    Qtmf, Qhmf : numpy.ndarray
+        Contains the Q-matrix, GSAR head and body for now
     """
 
     # Load relevant Q matrices computed from the model - this code will be integrated later - starting from E fields
@@ -71,27 +67,21 @@ def loadQ():
 
 
 def SARfromseq(fname, Qtmf, Qhmf):
-    # Read sequence from file path supplied to the method
-
     """
-        #. This definition computes the global whole body and head only SAR values
+    #. This definition computes the global whole body and head only SAR values
 
+    Parameters
+    ----------
+    fname : str
+    Qtmf : numpy.ndarray
+    Qhmf : numpy.ndarray
 
-        Parameters
-        ----------
-        fname : str
-        Qtmf : numpy.ndarray
-        Qhmf : numpy.ndarray
-
-
-        Returns
-        -------
-        SARwbg_vec : numpy.ndarray
-        SARhg_vec : numpy.ndarray
-        t_vec : numpy.ndarray
-            contains the Q-matrix, GSAR head and body for now
-
-
+    Returns
+    -------
+    SARwbg_vec : numpy.ndarray
+    SARhg_vec : numpy.ndarray
+    t_vec : numpy.ndarray
+        contains the Q-matrix, GSAR head and body for now
     """
 
     obj = Sequence()
@@ -123,23 +113,19 @@ def SARfromseq(fname, Qtmf, Qhmf):
 
 def SARinterp(SAR, t):
     """
-        #. This definition interpolates the SAR values for one second resolution
+    #. This definition interpolates the SAR values for one second resolution
 
+    Parameters
+    ----------
+    SAR : numpy.ndarray
+    t : numpy.ndarray
 
-        Parameters
-        ----------
-        SAR : numpy.ndarray
-        t : numpy.ndarray
-
-
-        Returns
-        -------
-        SARinterp : numpy.ndarray
-        tsec : numpy.ndarray
-            Interpolated values of SAR for a temporal resolution of 1 second
-
-
-        """
+    Returns
+    -------
+    SARinterp : numpy.ndarray
+    tsec : numpy.ndarray
+        Interpolated values of SAR for a temporal resolution of 1 second
+    """
     tsec = np.arange(1, np.floor(t[-1]) + 1, 1)
     f = interpolate.interp1d(t, SAR)
     SARinterp = f(tsec)
@@ -147,27 +133,20 @@ def SARinterp(SAR, t):
 
 
 def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
-    # Declare constants for checks - IEC 60601-2 - W/kg for six minute and ten seconds for whole body and head
-
     """
-        #. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
+    #. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
 
+    Parameters
+    ----------
+    SARwbg_lim_s : numpy.ndarray
+    SARhg_lim_s : numpy.ndarray
+    tsec : numpy.ndarray
 
-        Parameters
-        ----------
-        SARwbg_lim_s : numpy.ndarray
-        SARhg_lim_s : numpy.ndarray
-        tsec : numpy.ndarray
-
-
-        Returns
-        -------
-        SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak : numpy.ndarray
+    Returns
+    -------
+    SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak : numpy.ndarray
         SAR values that are interpolated for the fixed IEC time intervals
-
-
     """
-
     if (tsec[-1] > 10):
 
         SixMinThresh_wbg = 4
@@ -219,22 +198,18 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
 def do_sw_sar(SAR, tsec, t):
     """
-        #. This definition computes a sliding window average of SAR values
+    #. This definition computes a sliding window average of SAR values
 
+    Parameters
+    ----------
+    SAR : numpy.ndarray
+    tsec : numpy.ndarray
+    t : numpy.ndarray
 
-        Parameters
-        ----------
-        SAR : numpy.ndarray
-        tsec : numpy.ndarray
-        t : numpy.ndarray
-
-
-        Returns
-        -------
-        SAR_timeavag : numpy.ndarray
+    Returns
+    -------
+    SAR_timeavag : numpy.ndarray
         Sliding window time average of SAR values
-
-
     """
     SAR_timeavg = np.zeros(len(tsec) + int(t))
     for instant in range(int(t / 2), int(t / 2) + (int(tsec[-1]))):  # better to go from  -sw / 2: sw / 2
@@ -245,20 +220,17 @@ def do_sw_sar(SAR, tsec, t):
 
 def payload_process(fname='rad2D.seq'):
     """
-                #. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
+    #. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
 
+    Parameters
+    ----------
+    fname : str, optional
+        Default is rad2.seq
 
-                Parameters
-                ----------
-                fname : str, optional
-                Default is rad2.seq
-
-
-                Returns
-                -------
-                payload : dict
-                SAR graph figure filename, peak SAR values
-
+    Returns
+    -------
+    payload : dict
+        SAR graph figure filename, peak SAR values
     """
     Qtmf, Qhmf = loadQ()
     SARwbg, SARhg, t_vec = SARfromseq(fname, Qtmf, Qhmf)

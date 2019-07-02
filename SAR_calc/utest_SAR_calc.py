@@ -1,18 +1,17 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
-# Unit test Script to check for registration functions independently
 """
-    #. This script unit tests the SAR calculation
+#. This script unit tests the SAR calculation
 
-    Parameters
-    ----------
-        .seq : str, optional
-        Default is 'rad2D.seq'
+Parameters
+----------
+    .seq : str, optional
+    Default is 'rad2D.seq'
 
-    Returns
-    -------
-    status: int
-        0: tests passed
-        1: fail
+Returns
+-------
+status: int
+    0: tests passed
+    1: fail
 
 """
 
@@ -21,5 +20,6 @@ from virtualscanner.utils import constants
 
 SAR_PATH = constants.RF_SAR_PATH
 
-fname = 'rad2D.seq'
-payload = SAR.payload_process()
+if __name__ == '__main__':
+    fname = 'rad2D.seq'
+    payload = SAR.payload_process()
