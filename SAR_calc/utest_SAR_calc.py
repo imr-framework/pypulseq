@@ -1,6 +1,6 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
 """
-#. This script unit tests the SAR calculation
+This script unit tests the SAR calculation
 
 Parameters
 ----------

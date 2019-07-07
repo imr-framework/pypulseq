@@ -46,7 +46,7 @@ def calc_SAR(Q, I):
 
 def loadQ():
     """
-    #. This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
+    This definition loads the Q matrix that is precomputed based on the VHM model for 8 channels
 
     Returns
     -------
@@ -68,7 +68,7 @@ def loadQ():
 
 def SARfromseq(fname, Qtmf, Qhmf):
     """
-    #. This definition computes the global whole body and head only SAR values
+    This definition computes the global whole body and head only SAR values
 
     Parameters
     ----------
@@ -113,7 +113,7 @@ def SARfromseq(fname, Qtmf, Qhmf):
 
 def SARinterp(SAR, t):
     """
-    #. This definition interpolates the SAR values for one second resolution
+    This definition interpolates the SAR values for one second resolution
 
     Parameters
     ----------
@@ -134,7 +134,7 @@ def SARinterp(SAR, t):
 
 def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     """
-    #. This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
+    This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
 
     Parameters
     ----------
@@ -144,7 +144,14 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
     Returns
     -------
-    SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak : numpy.ndarray
+    SAR_wbg_tensec : numpy.ndarray
+    SAR_wbg_sixmin : numpy.ndarray
+    SAR_hg_tensec : numpy.ndarray
+    SAR_hg_sixmin : numpy.ndarray
+    SAR_wbg_sixmin_peak : numpy.ndarray
+    SAR_hg_sixmin_peak : numpy.ndarray
+    SAR_wbg_tensec_peak : numpy.ndarray
+    SAR_hg_tensec_peak : numpy.ndarray
         SAR values that are interpolated for the fixed IEC time intervals
     """
     if (tsec[-1] > 10):
@@ -198,7 +205,7 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
 
 def do_sw_sar(SAR, tsec, t):
     """
-    #. This definition computes a sliding window average of SAR values
+    This definition computes a sliding window average of SAR values
 
     Parameters
     ----------
@@ -220,7 +227,7 @@ def do_sw_sar(SAR, tsec, t):
 
 def payload_process(fname='rad2D.seq'):
     """
-    #. This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
+    This definition processes the seq file to compute Global SAR values for head and whole body over the specified time averages
 
     Parameters
     ----------
