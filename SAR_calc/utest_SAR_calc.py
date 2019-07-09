@@ -1,17 +1,17 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
 """
-This script unit tests the SAR calculation
+    This script unit tests the SAR calculation
 
-Parameters
-----------
+    Parameters
+    ----------
     .seq : str, optional
-    Default is 'rad2D.seq'
+        Default is 'rad2D.seq'
 
-Returns
--------
-status: int
-    0: tests passed
-    1: fail
+    Returns
+    -------
+    status: int
+      0: tests passed
+      1: fail
 
 """
 

@@ -1,4 +1,21 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
+"""
+    #. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
+    #. This assumes an eight channel multi-transmit system with a scaled B1+
+    #. IEC checks on SAR resulting from a given sequence file
+
+    Parameters
+    ----------
+    fname : str
+        Requires coms_server_flask to be running before the unit test is run (i.e.: run coms_server_flask.py first)
+
+    Returns
+    -------
+    payload : dict
+        * Contains the Q-matrix, GSAR head and body for now
+        * Will include local SAR based on discussions related to ongoing project
+
+"""
 
 import time
 
@@ -12,23 +29,7 @@ from scipy import interpolate
 
 from virtualscanner.utils import constants
 
-"""
-    #. This script computes the global head and body Specific Absoprtion Rate (SAR) values based on the Visible HUman Male model
-    #. This assumes an eight channel multi-transmit system with a scaled B1+
-    #. IEC checks on SAR resulting from a given sequence file
-    
-    Parameters
-    ----------
-    fname : str
-        Requires coms_server_flask to be running before the unit test is run (i.e.: run coms_server_flask.py first)
-    
-    Returns
-    -------
-    payload
-        * contains the Q-matrix, GSAR head and body for now
-        * will include local SAR based on disucssions related to ongoing project
 
-"""
 
 SAR_PATH = constants.RF_SAR_PATH
 IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
@@ -134,7 +135,9 @@ def SARinterp(SAR, t):
 
 def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     """
-    This definition checks for SAR violates as compared to IEC 10 second and 6 minute averages
+    This definition checks for SAR violations as compared to IEC 10 second and 6 minute averages;
+    it returns SAR values that are interpolated for the fixed IEC time intervals.
+
 
     Parameters
     ----------
@@ -152,7 +155,7 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     SAR_hg_sixmin_peak : numpy.ndarray
     SAR_wbg_tensec_peak : numpy.ndarray
     SAR_hg_tensec_peak : numpy.ndarray
-        SAR values that are interpolated for the fixed IEC time intervals
+
     """
     if (tsec[-1] > 10):
 
