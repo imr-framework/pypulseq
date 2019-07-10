@@ -36,6 +36,21 @@ IMG_SAR_PATH = constants.RF_SAR_STATIC_IMG_PATH
 
 
 def calc_SAR(Q, I):
+    """
+        This definition computes the SAR output for a given Q matrix and I current values
+
+        Parameters
+        ----------
+        Q : numpy.ndarray
+        I : numpy.ndarray
+
+
+        Returns
+        -------
+        SAR : numpy.ndarray
+           contains the SAR value for a particular Q matrix
+        """
+
     if len(I.shape) == 1:  # Just to fit the multi-transmit case for now, ToDo
         I = np.matlib.repmat(I, Q.shape[0], 1)  # Nc x Nt
 
