@@ -3,7 +3,6 @@ import numpy as np
 
 class EventLibrary:
     def __init__(self):
-        # size of data is 0x0 because of range_len in find()
         self.keys, self.data, self.lengths, self.type, self.keymap = {}, {}, {}, {}, {}
 
     def __str__(self):
@@ -15,7 +14,7 @@ class EventLibrary:
         return s
 
     def find(self, new_data):
-        data_string = np.array2string(new_data, formatter={'float_kind': lambda x: "%.6g" % x})
+        data_string = np.array2string(new_data, formatter={'float': lambda x: f'{x:.6g}'})
         data_string = data_string.replace('[', '')
         data_string = data_string.replace(']', '')
         try:
@@ -38,6 +37,6 @@ class EventLibrary:
         if data_type is not None:
             self.type[key_id] = data_type
 
-    def out(self, key_id):
+    def get(self, key_id):
         return {'key': self.keys[key_id], 'data': self.data[key_id], 'length': self.lengths[key_id],
                 'type': self.type[key_id]}

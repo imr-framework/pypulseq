@@ -8,7 +8,7 @@ from pypulseq.opts import Opts
 
 
 def make_sinc_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase_offset=0, time_bw_product=4,
-                    apodization=0, center_pos=0.5, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=''):
+                    apodization=0, center_pos=0.5, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=None):
     """
     Makes a Holder object for an RF pulse Event.
 
@@ -47,7 +47,7 @@ def make_sinc_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase_
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    if use != '':
+    if use is not None:
         rf.use = use
 
     if rf.dead_time > rf.delay:

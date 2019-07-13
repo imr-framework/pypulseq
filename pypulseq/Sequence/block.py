@@ -30,7 +30,7 @@ def add_block(self, block_index, *args):
             mag = np.abs(event.signal)
             amplitude = np.max(mag)
             mag = np.divide(mag, amplitude)
-            # Following two lines of code are workarounds for numpy's divide functions returning NaN when mathematical
+            # Following line of code is a workaround for numpy's divide functions returning NaN when mathematical
             # edge cases are encountered (eg. divide by 0)
             mag[np.isnan(mag)] = 0
             phase = np.angle(event.signal)
@@ -38,8 +38,6 @@ def add_block(self, block_index, *args):
             phase /= 2 * np.pi
 
             mag_shape = compress_shape(mag)
-            # data = np.array([[mag_shape.num_samples]])
-            # data = np.append(data, mag_shape.data, axis=1)
             data = np.insert(mag_shape.data, 0, mag_shape.num_samples)
             mag_id, found = self.shape_library.find(data)
             if not found:
@@ -64,7 +62,8 @@ def add_block(self, block_index, *args):
 
             self.block_events[block_index][1] = data_id
             duration = max(duration,
-                           max(mag.shape) * self.rf_raster_time + event.dead_time + event.ringdown_time + event.delay)
+                           max(
+                               mag.shape) * self.rf_raster_time + event.dead_time + event.ringdown_time + event.delay)
         elif event.type == 'grad':
             channel_num = ['x', 'y', 'z'].index(event.channel)
             idx = 2 + channel_num
@@ -75,21 +74,23 @@ def add_block(self, block_index, *args):
             check_g[channel_num].stop = np.array(
                 (event.delay + max(event.t) + self.system.grad_raster_time, event.last))
 
-            amplitude = max(abs(event.waveform[0]))
-            g = event.waveform / amplitude
+            amplitude = max(abs(event.waveform))
+            if amplitude > 0:
+                g = event.waveform / amplitude
+            else:
+                g = event.waveform
             shape = compress_shape(g)
-            data = np.array([[shape.num_samples]])
-            data = np.append(data, shape.data, axis=1)
+            data = np.insert(shape.data, 0, shape.num_samples)
             shape_id, found = self.shape_library.find(data)
             if not found:
                 self.shape_library.insert(shape_id, data)
-            data = np.array([amplitude, shape_id])
+            data = np.array([amplitude, shape_id, event.delay, event.first, event.last])
             grad_id, found = self.grad_library.find(data)
             if not found:
                 self.grad_library.insert(grad_id, data, 'g')
             idx = 2 + channel_num
             self.block_events[block_index][idx] = grad_id
-            duration = max(duration, len(g[0]) * self.grad_raster_time)
+            duration = max(duration, len(g) * self.grad_raster_time)
         elif event.type == 'trap':
             channel_num = ['x', 'y', 'z'].index(event.channel)
             idx = 2 + channel_num
@@ -130,12 +131,12 @@ def add_block(self, block_index, *args):
             if cg.start[0] != 0:
                 raise ValueError('No delay allowed for gradients which start with a non-zero amplitude')
 
-            if index > 1:
-                prev_id = self.block_events[index][cg.idx]
+            if block_index > 1:
+                prev_id = self.block_events[block_index - 1][cg.idx]
                 if prev_id != 0:
-                    prev_lib = self.grad_library[prev_id]
-                    prev_dat = prev_lib.data
-                    prev_type = prev_lib.type
+                    prev_lib = self.grad_library.get(prev_id)
+                    prev_dat = prev_lib['data']
+                    prev_type = prev_lib['type']
                     if prev_type == 't':
                         raise Exception(
                             'Two consecutive gradients need to have the same amplitude at the connection point')

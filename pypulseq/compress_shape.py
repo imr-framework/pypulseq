@@ -24,10 +24,10 @@ def compress_shape(decompressed_shape):
     qerr = decompressed_shape_scaled - np.cumsum(datq)
     qcor = np.insert(np.diff(np.round(qerr)), 0, 0)
     datd = datq + qcor
-    mask_changes = np.insert(np.diff(datd) != 0, 0, 1)
-    vals = np.multiply(datd[mask_changes], quant_factor).astype(np.float)
+    mask_changes = np.insert(np.asarray(np.diff(datd) != 0, dtype=np.int), 0, 1)
+    vals = datd[mask_changes.nonzero()[0]] * quant_factor
 
-    k = np.where(np.append(mask_changes, 1) != 0)[0]
+    k = np.append(mask_changes, 1).nonzero()[0]
     n = np.diff(k)
 
     n_extra = (n - 2).astype(np.float16)  # Cast as float for nan assignment to work

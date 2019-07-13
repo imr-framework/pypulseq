@@ -1,39 +1,34 @@
-import math
-from math import pi
 from types import SimpleNamespace
 
 import numpy as np
+import math
 
-from pypulseq.holder import Holder
 from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
+from types import SimpleNamespace
 
 
-def make_arbitrary_rf(flip_angle, system=Opts(), signal=0, freq_offset=0, phase_offset=0, time_bw_product=0,
+def make_arbitrary_rf(signal, flip_angle, system=Opts(), freq_offset=0, phase_offset=0, time_bw_product=0,
                       bandwidth=0, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=None):
     """
-    Makes a Holder object for an arbitrary RF pulse Event.
+    Makes a Holder object for an arbitrary gradient Event.
 
     Parameters
     ----------
     kwargs : dict
         Key value mappings of RF Event parameters_params and values.
-    nargout: int
-        Number of output arguments to be returned. Default is 1, only RF Event is returned. Passing any number greater
-        than 1 will return the Gz Event along with the RF Event.
 
     Returns
     -------
-    rf : Holder
-        RF Event configured based on supplied kwargs.
-    gz : Holder
-        Slice select trapezoidal gradient Event.
+    grad : Holder
+        Trapezoidal gradient Event configured based on supplied kwargs.
     """
 
-    signal = signal / np.sum(signal * system.rf_raster_time) * flip_angle / (2 * pi)
+    signal = signal / np.sum(signal * system.rf_raster_time) * flip_angle / (2 * np.pi)
+
     N = len(signal)
     duration = N * system.rf_raster_time
-    t = np.arange(1, N=1) * system.rf_raster_time
+    t = np.arange(1, N + 1) * system.rf_raster_time
 
     rf = SimpleNamespace()
     rf.type = 'rf'
@@ -41,17 +36,21 @@ def make_arbitrary_rf(flip_angle, system=Opts(), signal=0, freq_offset=0, phase_
     rf.t = t
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
-    rf.rf_dead_time = system.rf_dead_time
+    rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
+
     if use is not None:
         rf.use = use
 
+    if rf.dead_time > rf.delay:
+        rf.delay = rf.dead_time
+
     try:
         if slice_thickness <= 0:
-            raise ValueError('Slice thickness must be provided')
+            raise ValueError('Slice thickness must be provided.')
         if bandwidth <= 0:
-            raise ValueError('Bandwidth of pulse must be provided')
+            raise ValueError('Bandwidth of pulse must be provided.')
 
         if max_grad > 0:
             system.max_grad = max_grad
@@ -74,7 +73,7 @@ def make_arbitrary_rf(flip_angle, system=Opts(), signal=0, freq_offset=0, phase_
     except:
         gz = None
 
-    if rf.ring_down_time > 0:
+    if rf.ringdown_time > 0:
         t_fill = np.arange(1, round(rf.ringdown_time / 1e-6) + 1) * 1e-6
         rf.t = np.concatenate((rf.t, rf.t[-1] + t_fill))
         rf.signal = np.concatenate((rf.signal, np.zeros(len(t_fill))))

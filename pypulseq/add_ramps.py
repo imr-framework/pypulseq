@@ -6,7 +6,9 @@ from copy import copy
 
 
 def add_ramps(k, system=Opts(), rf=None, max_grad=0, max_slew=0):
-    # k has to either be a numpy.ndarray or a list of such arrays
+    if not isinstance(k, tuple) and not isinstance(k, list) and not isinstance(k, np.ndarray):
+        raise Exception()
+
     k_arg = copy(k)
     if max_grad > 0:
         system.max_grad = max_grad

@@ -23,6 +23,9 @@ def add_gradients(grads, system=Opts(), max_grad=0, max_slew=0):
         lasts.append(grads[ii].last)
         durs.append(calc_duration(grads[ii]))
 
+    # Convert to numpy.ndarray for fancy-indexing later on
+    firsts, lasts = np.array(firsts), np.array(lasts)
+
     common_delay = min(delays)
     total_duration = max(durs)
 
@@ -50,15 +53,17 @@ def add_gradients(grads, system=Opts(), max_grad=0, max_slew=0):
             raise ValueError('Unknown gradient type')
 
         if g.delay - common_delay > 0:
-            t_delay = list(range(0, g.delay - common_delay - system.grad_raster_time, system.grad_raster_time))
-            waveforms[ii] = waveforms[ii].insert(0, t_delay)
+            # Stop for numpy.arange is not g.delay - common_delay - system.grad_raster_time like in Matlab
+            # so as to include the endpoint
+            t_delay = np.arange(0, g.delay - common_delay, step=system.grad_raster_time)
+            waveforms[ii] = np.insert(waveforms[ii], 0, t_delay)
 
         num_points = len(waveforms[ii])
         max_length = num_points if num_points > max_length else max_length
 
-    w = np.zeros((max_length, 1))
+    w = np.zeros(max_length)
     for ii in range(len(grads)):
-        wt = np.zeros((max_length, 1))
+        wt = np.zeros(max_length)
         wt[0:len(waveforms[ii])] = waveforms[ii]
         w += wt
 

@@ -8,7 +8,7 @@ from pypulseq.opts import Opts
 
 
 def make_block_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase_offset=0, time_bw_product=0,
-                     bandwidth=0, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=''):
+                     bandwidth=0, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=None):
     """
     Makes a Holder object for an RF pulse Event.
 
@@ -30,7 +30,7 @@ def make_block_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase
     """
 
     valid_use_pulses = ['excitation', 'refocusing', 'inversion']
-    if use not in valid_use_pulses:
+    if use is not None and use not in valid_use_pulses:
         raise Exception()
 
     if duration == 0:
@@ -53,9 +53,10 @@ def make_block_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
-    rf.ring_down_time = system.rf_ring_down_time
+    rf.ringdown_time = system.rf_ringdown_time
+    rf.delay = delay
 
-    if use != '':
+    if use is not None:
         rf.use = use
 
     if rf.dead_time > rf.delay:
@@ -83,8 +84,8 @@ def make_block_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase
     except:
         gz = None
 
-    if rf.ring_down_time > 0:
-        t_fill = np.arange(round(rf.ring_down_time / 1e-6) + 1) * 1e-6
+    if rf.ringdown_time > 0:
+        t_fill = np.arange(1, round(rf.ringdown_time / 1e-6) + 1) * 1e-6
         rf.t = np.concatenate((rf.t, (rf.t[-1] + t_fill)))
         rf.signal = np.concatenate((rf.signal, np.zeros(len(t_fill))))
 

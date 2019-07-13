@@ -24,7 +24,6 @@ class Sequence:
         self.version_revision = 1
         self.system = system
         self.definitions = dict()
-        # EventLibrary.data is a dict
         self.grad_library = EventLibrary()
         self.shape_library = EventLibrary()
         self.rf_library = EventLibrary()
@@ -47,6 +46,19 @@ class Sequence:
         return s
 
     def duration(self):
+        """
+        Get duration of this sequence.
+
+        Returns
+        -------
+        duration : float
+            Duration of this sequence in millis.
+        num_blocks : int
+            Number of blocks in this sequence.
+        event_count : int
+            Number of events in this sequence.
+        """
+
         num_blocks = len(self.block_events)
         event_count = np.zeros(len(self.block_events[1]))
         duration = 0
@@ -58,6 +70,16 @@ class Sequence:
         return duration, num_blocks, event_count
 
     def check_timing(self):
+        """
+        Check timing of the events in each block based on grad raster time system limit.
+
+        Returns
+        -------
+        is_ok : bool
+            Boolean flag indicating timing errors.
+        error_report : str
+            Error report in case of timing errors.
+        """
         num_blocks = len(self.block_events)
         is_ok = True
         error_report = []
@@ -87,27 +109,9 @@ class Sequence:
             return None
 
     def add_block(self, *args):
-        """
-        Adds supplied list of Holder objects as a Block.
-
-        Parameters
-        ----------
-        args : list
-            List of Holder objects to be added as a Block.
-        """
-
         block.add_block(self, len(self.block_events) + 1, *args)
 
     def get_block(self, block_index):
-        """
-        Returns Block at block_index.
-
-        Parameters
-        ----------
-        block_index : int
-            Index of required block.
-        """
-
         return block.get_block(self, block_index)
 
     def read(self, file_path):
@@ -117,6 +121,19 @@ class Sequence:
         write(self, name)
 
     def rf_from_lib_data(self, lib_data):
+        """
+        Construct RF object from `lib_data`.
+
+        Parameters
+        ----------
+        lib_data : list
+            RF data.
+
+        Returns
+        -------
+        rf : SimpleNamespace
+            RF object constructed from lib_data.
+        """
         rf = SimpleNamespace()
         rf.type = 'rf'
 
@@ -259,14 +276,22 @@ class Sequence:
                     if waveform.size != np.sum(np.isfinite(waveform)):
                         raise Warning('Not all elements of the generated waveform are finite')
 
-                    grad_waveforms[j, int(t0_n + nt_start):int(t0_n + nt_start + max(waveform.shape))] = waveform
+                    """
+                    Matlab dynamically resizes arrays during slice assignment operation if assignment is out of bounds
+                    Numpy does not
+                    Following lines are a workaround
+                    """
+                    l1, l2 = int(t0_n + nt_start), int(t0_n + nt_start + max(waveform.shape))
+                    if l2 > grad_waveforms.shape[1]:
+                        grad_waveforms.resize((len(grad_channels), l2))
+                    grad_waveforms[j, l1:l2] = waveform
 
             t0 += calc_duration(block)
             t0_n = round(t0 / self.grad_raster_time)
 
         return grad_waveforms
 
-    def plot(self, time_range=(0, np.inf)):
+    def plot(self, type='Gradient', time_range=(0, np.inf), time_disp='s'):
         """
         Show Matplotlib plot of all Events in the Sequence object.
 
@@ -276,43 +301,61 @@ class Sequence:
             Time range (x-axis limits) for plot to be shown. Default is 0 to infinity (entire plot shown).
         """
 
+        valid_plot_types = ['Gradient', 'Kspace']
+        valid_time_units = ['s', 'ms', 'us']
+        if type not in valid_plot_types:
+            raise Exception()
+        if time_disp not in valid_time_units:
+            raise Exception()
+
         fig1, fig2 = plt.figure(1), plt.figure(2)
         f11, f12, f13 = fig1.add_subplot(311), fig1.add_subplot(312), fig1.add_subplot(313)
         f2 = [fig2.add_subplot(311), fig2.add_subplot(312), fig2.add_subplot(313)]
+
+        t_factor_list = [1, 1e3, 1e6]
+        t_factor = t_factor_list[valid_time_units.index(time_disp)]
         t0 = 0
         for iB in range(1, len(self.block_events) + 1):
             block = self.get_block(iB)
             is_valid = time_range[0] <= t0 <= time_range[1]
             if is_valid:
-                if block is not None:
-                    if 'adc' in block:
-                        adc = block['adc']
-                        t = adc.delay + [(x * adc.dwell) for x in range(0, int(adc.num_samples))]
-                        f11.plot((t0 + t), np.zeros(len(t)))
-                    if 'rf' in block:
-                        rf = block['rf']
-                        t = rf.t
-                        f12.plot(np.squeeze(t0 + t), abs(rf.signal))
-                        f13.plot(np.squeeze(t0 + t), np.angle(rf.signal))
-                    grad_channels = ['gx', 'gy', 'gz']
-                    for x in range(0, len(grad_channels)):
-                        if grad_channels[x] in block:
-                            grad = block[grad_channels[x]]
-                            if grad.type == 'grad':
-                                t = grad.t
-                                waveform = 1e-3 * grad.waveform
-                            else:
-                                t = np.cumsum([0, grad.rise_time, grad.flat_time, grad.fall_time])
-                                waveform = [1e-3 * grad.amplitude * x for x in [0, 1, 1, 0]]
-                            f2[x].plot(np.squeeze(t0 + t), waveform)
+                if hasattr(block, 'adc'):
+                    adc = block.adc
+                    t = adc.delay + [(x * adc.dwell) for x in range(0, int(adc.num_samples))]
+                    f11.plot((t0 + t), np.zeros(len(t)), 'rx')
+                if hasattr(block, 'rf'):
+                    rf = block.rf
+                    tc, ic = calc_rf_center(rf)
+                    t = rf.t + rf.delay
+                    tc = tc + rf.delay
+                    f12.plot(t_factor * (t0 + t), abs(rf.signal))
+                    f13.plot(t_factor * (t0 + t), np.angle(
+                        rf.signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)),
+                             t_factor * (t0 + tc), np.angle(rf.signal[ic] * np.exp(1j * rf.phase_offset) * np.exp(
+                            1j * 2 * math.pi * rf.t[ic] * rf.freq_offset)), 'xb')
+                grad_channels = ['gx', 'gy', 'gz']
+                for x in range(0, len(grad_channels)):
+                    if hasattr(block, grad_channels[x]):
+                        grad = getattr(block, grad_channels[x])
+                        if grad.type == 'grad':
+                            # In place unpacking of grad.t with the starred expression
+                            t = grad.delay + [0, *(grad.t + (grad.t[1] - grad.t[0]) / 2),
+                                              grad.t[-1] + grad.t[1] - grad.t[0]]
+                            waveform = np.array([grad.first, grad.last])
+                            waveform = 1e-3 * np.insert(waveform, 1, grad.waveform)
+                        else:
+                            t = np.cumsum([0, grad.delay, grad.rise_time, grad.flat_time, grad.fall_time])
+                            waveform = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
+                        f2[x].plot(t_factor * (t0 + t), waveform)
             t0 += calc_duration(block)
 
-        f11.set_ylabel('adc')
-        f12.set_ylabel('rf mag hz')
-        f13.set_ylabel('rf phase rad')
-        [f2[x].set_ylabel(grad_channels[x]) for x in range(3)]
+        grad_plot_labels = ['x', 'y', 'z']
+        f11.set_ylabel('ADC')
+        f12.set_ylabel('RF mag (Hz)')
+        f13.set_ylabel('RF phase (rad)')
+        [f2[x].set_ylabel(f'G{grad_plot_labels[x]} (kHz/m)') for x in range(3)]
         # Setting display limits
-        disp_range = [time_range[0], min(t0, time_range[1])]
+        disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
         f11.set_xlim(disp_range)
         f12.set_xlim(disp_range)
         f13.set_xlim(disp_range)

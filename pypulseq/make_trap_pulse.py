@@ -36,7 +36,9 @@ def make_trapezoid(channel='z', system=Opts(), duration=0, area=-1, flat_time=No
         raise ValueError('Must supply either \'area\', \'flat_area\' or \'amplitude\'')
 
     if flat_time is not None:
-        if amplitude is None:
+        if amplitude is not None:
+            amplitude_temp = amplitude
+        else:
             amplitude_temp = flat_area / flat_time
 
         if rise_time is None:
