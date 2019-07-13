@@ -5,15 +5,16 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pypulseq",
-    version="0.0.3",
+    version="1.2.1",
     author="Keerthi Sravan Ravi",
     author_email="sravan953@gmail.com",
     description="Pulseq in Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/imr-framework/pypulseq",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['pypulseq.utils', 'pypulseq.seq_examples*', 'pypulseq.recon_examples']),
     install_requires=['numpy', 'matplotlib'],
+    license='License :: OSI Approved :: GNU Affero General Public License v3',
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU Affero General Public License v3",
