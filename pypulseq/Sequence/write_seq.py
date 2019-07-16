@@ -54,7 +54,7 @@ def write(self, file_name):
         output_file.write('[RF]\n')
         rf_lib_keys = self.rf_library.keys
         # id_format_str = '{:>1.0f} {:>12g} {:>1.0f} {:>1.0f} {:>g} {:>g}\n'
-        id_format_str = '{:d} {:12g} {:.0f} {:.0f} {:g} {:g} {:g}\n'
+        id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:g} {:g} {:g}\n'
         for k in rf_lib_keys.keys():
             lib_data1 = self.rf_library.data[k][0:3]
             lib_data2 = self.rf_library.data[k][4:7]

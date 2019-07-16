@@ -73,8 +73,7 @@ def make_block_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase
 
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        kwargs_for_trap = {'channel': 'z', 'system': system, 'flat_time': duration, 'flat_area': area}
-        gz = make_trapezoid(kwargs_for_trap)
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
 
         if rf.delay > gz.rise_time:
             gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time

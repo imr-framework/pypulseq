@@ -7,16 +7,17 @@ from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 
 
-def add_block(self, block_index, *args):
+def add_block(self, block_index: int, *args):
     """
-    Adds supplied list of Holder objects at position specified by block_index.
+    Inserts list of `SimpleNamespace` event objects into `self.block_events` at position `block_index`.
+    Also performs gradient checks.
 
     Parameters
     ----------
     block_index : int
-        Index at which Block has to be inserted.
+        Index at which SimpleNamespace events have to be inserted into `self.block_events`.
     args : list
-        List of Holder objects to be added as a Block.
+        List of `SimpleNamespace` event objects to be added as a Pulseq block.
     """
 
     block_duration = calc_duration(*args)
@@ -151,19 +152,19 @@ def add_block(self, block_index, *args):
             raise Exception('A gradient that doesnt end at zero needs to be aligned to the block boundary.')
 
 
-def get_block(self, block_index):
+def get_block(self, block_index: int) -> SimpleNamespace:
     """
-    Returns Block at position specified by block_index.
+    Returns Pulseq block at `block_index` position in `self.block_events`.
 
     Parameters
     ----------
     block_index : int
-        Index of Block to be retrieved.
+        Index of Pulseq block to be retrieved from `self.block_events`.
 
     Returns
     -------
-    block : dict
-        Block at position specified by block_index.
+    block : SimpleNamespace
+        Pulseq block at 'block_index' position in `self.block_events`.
     """
 
     block = SimpleNamespace()
