@@ -23,17 +23,18 @@ rf_spoiling_inc = 117
 
 sys = Opts(max_grad=28, grad_unit='mT/m', max_slew=150, slew_unit='T/m/s', rf_ringdown_time=20e-6, rf_dead_time=100e-6,
            adc_dead_time=10e-6)
+
 rf, gz, gzr = make_sinc_pulse(flip_angle=alpha * math.pi / 180, duration=4e-3, slice_thickness=slice_thickness,
                               apodization=0.5, time_bw_product=4, system=sys)
 
-deltak = 1 / fov
-gx = make_trapezoid(channel='x', flat_area=Nx * deltak, flat_time=6.4e-3, system=sys)
+delta_k = 1 / fov
+gx = make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=sys)
 adc = make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=sys)
 gx_pre = make_trapezoid(channel='x', area=-gx.area / 2, duration=2e-3, system=sys)
 gz_reph = make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=sys)
-phase_areas = (np.arange(Ny) - Ny / 2) * deltak
+phase_areas = (np.arange(Ny) - Ny / 2) * delta_k
 
-gx_spoil = make_trapezoid(channel='x', area=2 * Nx * deltak, system=sys)
+gx_spoil = make_trapezoid(channel='x', area=2 * Nx * delta_k, system=sys)
 gz_spoil = make_trapezoid(channel='z', area=4 / slice_thickness, system=sys)
 
 delay_TE = math.ceil((TE - calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - calc_duration(
@@ -41,8 +42,7 @@ delay_TE = math.ceil((TE - calc_duration(gx_pre) - gz.fall_time - gz.flat_time /
 delay_TR = math.ceil((TR - calc_duration(gx_pre) - calc_duration(gz) - calc_duration(
     gx) - delay_TE) / seq.grad_raster_time) * seq.grad_raster_time
 
-if not np.all(delay_TR >= calc_duration(gx_spoil, gz_spoil)):
-    raise Exception()
+assert np.all(delay_TR >= calc_duration(gx_spoil, gz_spoil))
 
 rf_phase = 0
 rf_inc = 0
@@ -62,5 +62,6 @@ for i in range(Ny):
     seq.add_block(make_delay(delay_TR), gx_spoil, gy_pre, gz_spoil)
 
 report = seq.test_report()
-# seq.calculate_kspace()
+seq.calculate_kspace()
+seq.plot()
 seq.write('gre_pypulseq.seq')
