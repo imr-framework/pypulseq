@@ -1,8 +1,6 @@
 <p align="center">
 <img src="logo.png"/>
 </p>
-# pypulseq
-Pulseq in Python
 
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to 
 be acquainted with each hardware platform's programming environment.
@@ -14,7 +12,7 @@ This tool is targeted at MR pulse sequence designers, MRI researchers and other 
 of the Pulseq framework originally written in Matlab [[2]](#references).
 
 It is strongly recommended to first read the [Pulseq specification](https://pulseq.github.io/specification.pdf) 
-before proceeding. The specification document defines the concepts required for pulse sequence design using `pypulseq`.   
+before proceeding. The specification document defines the concepts required for pulse sequence design using `pypulseq`. Checkout the [`pypulseq-gpi`](https://github.com/imr-framework/pypulseq/tree/pypulseq-gpi) branch to design pulse sequences on a GUI.
 
 ## 1 minute demo
 1. Clone this repository.
@@ -33,13 +31,26 @@ Getting started with pulse sequence design using `pypulseq` is simple:
     system = Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/s')
     seq = Sequence(system=system)
     ```
-3. Then, design gradient, RF or ADC pulse sequence events. An example RF sinc pulse with a 90 degree flip angle:
+3. Then, design gradient, RF or ADC pulse sequence events:
     ```python
     from pypulseq.make_sinc_pulse import make_sinc_pulse
+    
+    Nx, Ny = 256, 256 # matrix size
+    fov = 220e-3 # field of view
+    delta_k = fov / Nx
+    
+    # RF sinc pulse with a 90 degree flip angle
     rf90, _, _ = make_sinc_pulse(flip_angle=90, system=system, slice_thickness=5e-3, apodization=0.5, time_bw_product=4)
+    
+    # Frequency encode, trapezoidal event
+    gx = make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=system)
+    
+    # ADC readout
+    adc = make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
     ```
-
-### References
+4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be simultaneously executed, simply pass them all to the `add_block()` method.
+---
+## References
 1. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping 
 pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018): 
 9-15.
