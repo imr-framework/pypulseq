@@ -48,7 +48,19 @@ Getting started with pulse sequence design using `pypulseq` is simple:
     # ADC readout
     adc = make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
     ```
-4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be simultaneously executed, simply pass them all to the `add_block()` method.
+4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be executed simultaneously, simply pass them all to the `add_block()` method. For example, the `gx` and `adc` pulse sequence events need to be executed simultaneously:
+    ```python
+    seq.add_block(rf90)
+    seq.add_block(gx, adc)
+    ```
+5. Visualize plots:
+    ```python
+    seq.plot()
+    ```
+6. Generate a `.seq` file to be executed on a real MR scanner:
+    ```python
+    seq.write('demo.seq')
+    ```
 ---
 ## References
 1. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping 
