@@ -12,7 +12,7 @@ from pypulseq.Sequence.sequence import Sequence
 from pypulseq.calc_duration import calc_duration
 
 
-def calc_SAR(Q, I):
+def __calc_SAR(Q, I):
     """
         Compute the SAR output for a given Q matrix and I current values.
 
@@ -58,7 +58,7 @@ def loadQ():
     return Qtmf, Qhmf
 
 
-def SARfromseq(seq, Qtmf, Qhmf):
+def __SAR_from_seq(seq, Qtmf, Qhmf):
     """
     Compute global whole body and head only SAR values.
 
@@ -76,7 +76,8 @@ def SARfromseq(seq, Qtmf, Qhmf):
         Contains the Q-matrix, GSAR head and body for now.
     """
 
-    # Identify rf blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than 4 (WB) and 3.2 (head-20)
+    # Identify RF blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than
+    # 4 (WB) and 3.2 (head-20)
     blockEvents = seq.block_events
     numEvents = len(blockEvents)
     t_vec = np.zeros(numEvents)
@@ -94,13 +95,13 @@ def SARfromseq(seq, Qtmf, Qhmf):
             t = rf.t
             signal = rf.signal
             # This rf could be parallel transmit as well
-            SARwbg_vec[iB] = calc_SAR(Qtmf, signal)
-            SARhg_vec[iB] = calc_SAR(Qhmf, signal)
+            SARwbg_vec[iB] = __calc_SAR(Qtmf, signal)
+            SARhg_vec[iB] = __calc_SAR(Qhmf, signal)
 
     return SARwbg_vec, SARhg_vec, t_vec
 
 
-def SARinterp(SAR, t):
+def __SAR_interp(SAR, t):
     """
     Interpolate SAR values for one second resolution.
 
@@ -111,7 +112,7 @@ def SARinterp(SAR, t):
 
     Returns
     -------
-    SARinterp : numpy.ndarray
+    __SAR_interp : numpy.ndarray
     tsec : numpy.ndarray
         Interpolated values of SAR for a temporal resolution of 1 second
     """
@@ -121,7 +122,7 @@ def SARinterp(SAR, t):
     return SARinterp, tsec
 
 
-def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
+def __SAR_lims_check(SARwbg_lim_s, SARhg_lim_s, tsec):
     """
     Check for SAR violations as compared to IEC 10 second and 6 minute averages;
     returns SAR values that are interpolated for the fixed IEC time intervals.
@@ -154,8 +155,8 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
         SARwbg_lim_app = np.concatenate((np.zeros(5), SARwbg_lim_s, np.zeros(5)), axis=0)
         SARhg_lim_app = np.concatenate((np.zeros(5), SARhg_lim_s, np.zeros(5)), axis=0)
 
-        SAR_wbg_tensec = do_sw_sar(SARwbg_lim_app, tsec, 10)  # < 2  SARmax
-        SAR_hg_tensec = do_sw_sar(SARhg_lim_app, tsec, 10)  # < 2 SARmax
+        SAR_wbg_tensec = __do_sw_sar(SARwbg_lim_app, tsec, 10)  # < 2  SARmax
+        SAR_hg_tensec = __do_sw_sar(SARhg_lim_app, tsec, 10)  # < 2 SARmax
         SAR_wbg_tensec_peak = np.round(np.max(SAR_wbg_tensec), 2)
         SAR_hg_tensec_peak = np.round(np.max(SAR_hg_tensec), 2)
 
@@ -171,8 +172,8 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
             SARwbg_lim_app = np.concatenate((np.zeros(300), SARwbg_lim_s, np.zeros(300)), axis=0)
             SARhg_lim_app = np.concatenate((np.zeros(300), SARhg_lim_s, np.zeros(300)), axis=0)
 
-            SAR_hg_sixmin = do_sw_sar(SARhg_lim_app, tsec, 600)
-            SAR_wbg_sixmin = do_sw_sar(SARwbg_lim_app, tsec, 600)
+            SAR_hg_sixmin = __do_sw_sar(SARhg_lim_app, tsec, 600)
+            SAR_wbg_sixmin = __do_sw_sar(SARwbg_lim_app, tsec, 600)
             SAR_wbg_sixmin_peak = np.round(np.max(SAR_wbg_sixmin), 2)
             SAR_hg_sixmin_peak = np.round(np.max(SAR_hg_sixmin), 2)
 
@@ -192,7 +193,7 @@ def SARlimscheck(SARwbg_lim_s, SARhg_lim_s, tsec):
     return SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak
 
 
-def do_sw_sar(SAR, tsec, t):
+def __do_sw_sar(SAR, tsec, t):
     """
     Compute a sliding window average of SAR values.
 
@@ -214,7 +215,7 @@ def do_sw_sar(SAR, tsec, t):
     return SAR_timeavg
 
 
-def payload_process(seq: Sequence):
+def calc_SAR(seq: Sequence):
     """
     Compute Global SAR values on the `seq` object for head and whole body over the specified time averages.
 
@@ -228,10 +229,10 @@ def payload_process(seq: Sequence):
         raise TypeError(f'Sequence object expected. You passed: {type(seq)}')
 
     Qtmf, Qhmf = loadQ()
-    SARwbg, SARhg, t_vec = SARfromseq(seq, Qtmf, Qhmf)
-    SARwbg_lim, tsec = SARinterp(SARwbg, t_vec)
-    SARhg_lim, tsec = SARinterp(SARhg, t_vec)
-    SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak = SARlimscheck(
+    SARwbg, SARhg, t_vec = __SAR_from_seq(seq, Qtmf, Qhmf)
+    SARwbg_lim, tsec = __SAR_interp(SARwbg, t_vec)
+    SARhg_lim, tsec = __SAR_interp(SARhg, t_vec)
+    SAR_wbg_tensec, SAR_wbg_sixmin, SAR_hg_tensec, SAR_hg_sixmin, SAR_wbg_sixmin_peak, SAR_hg_sixmin_peak, SAR_wbg_tensec_peak, SAR_hg_tensec_peak = __SAR_lims_check(
         SARwbg_lim, SARhg_lim, tsec)
 
     # Plot 10 sec average SAR
