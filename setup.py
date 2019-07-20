@@ -16,7 +16,7 @@ setuptools.setup(
     install_requires=['numpy', 'matplotlib'],
     license='License :: OSI Approved :: GNU Affero General Public License v3',
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Operating System :: OS Independent",
     ],
