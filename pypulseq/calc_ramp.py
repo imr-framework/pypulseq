@@ -3,8 +3,41 @@ import numpy as np
 from pypulseq.opts import Opts
 
 
-def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), max_slew=np.zeros(0)):
-    def inside_limits(grad, slew):
+def calc_ramp(k0: np.ndarray, k_end: np.ndarray, system: Opts = Opts(), max_points: int = 500, max_grad=np.zeros(0),
+              max_slew=np.zeros(0)):
+    """
+    Join the points `k0` and `k_end` in three-dimensional  k-space in minimal time, observing the gradient and slew limits
+    (`max_grad` and `max_slew` respectively), and the gradient strength G0 before `k0[:, 1]` and Gend after
+    `k_end[:, 1]`. In the context of a fixed gradient dwell time this is a discrete problem with an a priori unknown
+    number of discretization steps. Therefore this method tries out the optimization with 0 steps, then 1 step, and so
+    on, until  all conditions can be fulfilled, thus yielding a short connection.
+
+    Parameters
+    ----------
+    k0 : numpy.ndarray
+        Two preceding points in k-space. Shape is `[3, 2]`. From these points, the starting gradient will be calculated.
+    k_end : numpy.ndarray
+        Two following points in k-space. Shape is `[3, 2]`. From these points, the target gradient will be calculated.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    max_points : int, optional
+        Maximum number of k-space points to be used in connecting `k0` and `k_end`. Default is 500.
+    max_grad : float/list, optional
+        Maximum total gradient strength. Either a single value or one value for each coordinate, of shape `[3, 1]`.
+        Default is 0.
+     max_slew : float/list, optional
+        Maximum total slew rate. Either a single value or one value for each coordinate, of shape `[3, 1]`.
+        Default is 0.
+
+    Returns
+    -------
+    k_out : numpy.ndarray
+        Connected k-space trajectory.
+    success : bool
+        Boolean flag indicating if `k0` and `k_end` were successfully joined.
+    """
+
+    def __inside_limits(grad, slew):
         if mode == 0:
             grad2 = np.sum(np.square(grad), axis=1)
             slew2 = np.sum(np.square(slew), axis=1)
@@ -21,7 +54,7 @@ def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), ma
             S = (G[:, 1:] - G[:, :-1]) / grad_raster
 
             k_out_left = np.zeros((3, 0))
-            success = inside_limits(G, S)
+            success = __inside_limits(G, S)
 
             return success, k_out_left
 
@@ -83,7 +116,7 @@ def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), ma
             S = (G[:, 1:] - G[:, :-1]) / grad_raster
 
             k_out_left = np.zeros((3, 0))
-            success = inside_limits(G, S)
+            success = __inside_limits(G, S)
 
             return success, k_out_left
 
@@ -137,7 +170,7 @@ def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), ma
             S = (G[:, 1:] - G[:, :-1]) / grad_raster
 
             k_out_right = np.zeros((3, 0))
-            success = inside_limits(G, S)
+            success = __inside_limits(G, S)
 
             return success, k_out_right
 
@@ -199,7 +232,7 @@ def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), ma
             S = (G[:, 1:] - G[:, :-1]) / grad_raster
 
             k_out_right = np.zeros((3, 0))
-            success = inside_limits(G, S)
+            success = __inside_limits(G, S)
 
             return success, k_out_right
 
@@ -247,7 +280,9 @@ def calc_ramp(k0, k_end, system=Opts(), max_points=500, max_grad=np.zeros(0), ma
 
         return success, k_out_right
 
+    # =========
     # MAIN FUNCTION
+    # =========
     if np.all(np.where(max_grad <= 0)):
         max_grad = [system.max_grad]
     if np.all(np.where(max_slew <= 0)):

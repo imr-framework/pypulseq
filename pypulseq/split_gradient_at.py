@@ -1,13 +1,26 @@
-from types import SimpleNamespace
-
 import numpy as np
 
-from pypulseq.calc_duration import calc_duration
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 
 
-def split_gradient_at(grad, time_point, system=Opts()):
+def split_gradient_at(grad: np.ndarray, time_point: float, system: Opts = Opts()):
+    """
+    Split gradient waveform `grad` into two at time point `time_point`.
+
+    Parameters
+    ----------
+    grad : numpy.ndarray
+        Gradient waveform to be split into two gradient waveforms.
+    time_point : float, optional
+        Time point at which `grad` will be split into two gradient waveforms.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    Returns
+    -------
+    grad1, grad2 : numpy.ndarray
+        Gradient waveforms after splitting.
+    """
     grad_raster_time = system.grad_raster_time
 
     time_index = round(time_point / grad_raster_time)

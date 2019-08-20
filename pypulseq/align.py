@@ -3,7 +3,25 @@ import numpy as np
 from pypulseq.calc_duration import calc_duration
 
 
-def align(*args):
+def align(*args) -> list:
+    """
+    Aligns `SimpleNamespace` blocks as per specified alignment options by setting delays of the pulse sequence events
+    within the block. All previously configured delays within objects are taken into account during calculating of the
+    block duration but then reset according to the selected alignment. Possible values for align_spec are 'left',
+    'center', 'right'.
+
+    Parameters
+    ----------
+    args : list
+        List of alignment options and `SimpleNamespace` blocks.
+        Template: [alignment_spec, 'SimpleNamespace` block, [alignment_spec, `SimpleNamespace` block, ...]].
+        Alignment spec can be one of `left`, `center` or `right`.
+
+    Returns
+    -------
+    objects : list
+        List of aligned `SimpleNamespace` blocks.
+    """
     alignment_options = ['left', 'center', 'right']
     if not isinstance(args[0], str):
         raise ValueError('First parameter must be of type str.')

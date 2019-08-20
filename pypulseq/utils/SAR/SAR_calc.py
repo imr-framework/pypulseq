@@ -36,7 +36,7 @@ def __calc_SAR(Q, I):
     return SAR
 
 
-def loadQ():
+def __loadQ():
     """
     Load Q matrix that is precomputed based on the VHM model for 8 channels.
 
@@ -48,8 +48,7 @@ def loadQ():
 
     # Load relevant Q matrices computed from the model - this code will be integrated later - starting from E fields
     Qpath = str(Path(__file__).parent / 'QGlobal.mat')
-    Qmat = sio.loadmat(
-        Qpath)
+    Qmat = sio.loadmat(Qpath)
     Q = Qmat['Q']
     val = Q[0, 0]
 
@@ -70,35 +69,35 @@ def __SAR_from_seq(seq, Qtmf, Qhmf):
 
     Returns
     -------
-    SARwbg_vec : numpy.ndarray
-    SARhg_vec : numpy.ndarray
+    SAR_wbg_vec : numpy.ndarray
+    SAR_hg_vec : numpy.ndarray
     t_vec : numpy.ndarray
         Contains the Q-matrix, GSAR head and body for now.
     """
 
     # Identify RF blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than
     # 4 (WB) and 3.2 (head-20)
-    blockEvents = seq.block_events
-    numEvents = len(blockEvents)
-    t_vec = np.zeros(numEvents)
-    SARwbg_vec = np.zeros(t_vec.shape)
-    SARhg_vec = np.zeros(t_vec.shape)
+    block_events = seq.block_events
+    num_events = len(block_events)
+    t_vec = np.zeros(num_events)
+    SAR_wbg_vec = np.zeros(t_vec.shape)
+    SAR_hg_vec = np.zeros(t_vec.shape)
     t_prev = 0
 
-    for iB in blockEvents:
+    for iB in block_events:
         block = seq.get_block(iB)
         block_dur = calc_duration(block)
         t_vec[iB - 1] = t_prev + block_dur
         t_prev = t_vec[iB - 1]
-        if ('rf' in block):  # has rf
-            rf = block['rf']
+        if hasattr(block, 'rf'):  # has rf
+            rf = block.rf
             t = rf.t
             signal = rf.signal
             # This rf could be parallel transmit as well
-            SARwbg_vec[iB] = __calc_SAR(Qtmf, signal)
-            SARhg_vec[iB] = __calc_SAR(Qhmf, signal)
+            SAR_wbg_vec[iB] = __calc_SAR(Qtmf, signal)
+            SAR_hg_vec[iB] = __calc_SAR(Qhmf, signal)
 
-    return SARwbg_vec, SARhg_vec, t_vec
+    return SAR_wbg_vec, SAR_hg_vec, t_vec
 
 
 def __SAR_interp(SAR, t):
@@ -144,8 +143,7 @@ def __SAR_lims_check(SARwbg_lim_s, SARhg_lim_s, tsec):
     SAR_wbg_tensec_peak : numpy.ndarray
     SAR_hg_tensec_peak : numpy.ndarray
     """
-    if (tsec[-1] > 10):
-
+    if tsec[-1] > 10:
         SixMinThresh_wbg = 4
         TenSecThresh_wbg = 8
 
@@ -167,8 +165,7 @@ def __SAR_lims_check(SARwbg_lim_s, SARhg_lim_s, tsec):
         SAR_wbg_sixmin_peak = 'NA'
         SAR_hg_sixmin_peak = 'NA'
 
-        if (tsec[-1] > 600):
-
+        if tsec[-1] > 600:
             SARwbg_lim_app = np.concatenate((np.zeros(300), SARwbg_lim_s, np.zeros(300)), axis=0)
             SARhg_lim_app = np.concatenate((np.zeros(300), SARhg_lim_s, np.zeros(300)), axis=0)
 
@@ -215,7 +212,7 @@ def __do_sw_sar(SAR, tsec, t):
     return SAR_timeavg
 
 
-def calc_SAR(seq: Sequence):
+def calc_SAR(seq):
     """
     Compute Global SAR values on the `seq` object for head and whole body over the specified time averages.
 
@@ -225,10 +222,12 @@ def calc_SAR(seq: Sequence):
         pypulseq `Sequence` object for which global SAR values will be computed.
     """
 
-    if not isinstance(seq, Sequence):
-        raise TypeError(f'Sequence object expected. You passed: {type(seq)}')
+    if isinstance(seq, str):
+        seq_obj = Sequence()
+        seq_obj.read(seq)
+        seq = seq_obj
 
-    Qtmf, Qhmf = loadQ()
+    Qtmf, Qhmf = __loadQ()
     SARwbg, SARhg, t_vec = __SAR_from_seq(seq, Qtmf, Qhmf)
     SARwbg_lim, tsec = __SAR_interp(SARwbg, t_vec)
     SARhg_lim, tsec = __SAR_interp(SARhg, t_vec)

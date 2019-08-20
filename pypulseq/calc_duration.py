@@ -1,19 +1,20 @@
 from types import SimpleNamespace
 
 
-def calc_duration(*events):
+def calc_duration(*events: list) -> float:
     """
     Calculate the cumulative duration of Events.
 
     Parameters
     ----------
     events : list
-        List of Holder objects. Can also be a list containing a single block (see plot() in Sequence).
+        List of `SimpleNamespace` events. Can also be a list containing a single block (see
+        `pypulseq.Sequence.sequence.plot()`).
 
     Returns
     -------
     duration : float
-        The cumulative duration of the Events passed.
+        The cumulative duration of the pulse events in `events`.
     """
 
     for e in events:

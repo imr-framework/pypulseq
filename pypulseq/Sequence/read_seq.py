@@ -1,12 +1,13 @@
+from pathlib import Path
+
 import numpy as np
 
 from pypulseq.event_lib import EventLibrary
-from pathlib import Path
 
 
-def read(self, path: Path, **kwargs):
+def read(self, path: str, **kwargs):
     """
-    Constructs a `Sequence` object by reading .seq file from `path`.
+    Reads a `.seq` file from `path`.
 
     Parameters
     ----------

@@ -1,19 +1,19 @@
 from types import SimpleNamespace
 
 
-def make_delay(d):
+def make_delay(d: float) -> SimpleNamespace:
     """
-    Makes a Holder object for an delay Event.
+    Creates a delay event.
 
     Parameters
     ----------
     d : float
-        Delay time, in seconds.
+        Delay time in milliseconds (ms).
 
     Returns
     -------
-    delay : Holder
-        Delay Event.
+    delay : SimpleNamespace
+        Delay event.
     """
 
     delay = SimpleNamespace()

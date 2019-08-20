@@ -5,23 +5,33 @@ import numpy as np
 from pypulseq.opts import Opts
 
 
-def make_arbitrary_grad(channel, waveform, system=Opts(), max_grad=0, max_slew=0, delay=0):
+def make_arbitrary_grad(channel: str, waveform: np.ndarray, system: Opts = Opts(), max_grad: float = 0,
+                        max_slew: float = 0, delay: float = 0) -> SimpleNamespace:
     """
-    Makes a Holder object for an arbitrary gradient Event.
+    Creates a gradient event with arbitrary waveform.
 
     Parameters
     ----------
-    kwargs : dict
-        Key value mappings of RF Event parameters_params and values.
+    channel : str
+        Orientation of gradient event of arbitrary shape. Must be one of `x`, `y` or `z`.
+    waveform : numpy.ndarray
+        Arbitrary waveform.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+     max_grad : float, optional
+        Maximum gradient strength. Default is 0.
+     max_slew : float, optional
+        Maximum slew rate. Default is 0.
+    delay : float, optional
+        Delay in milliseconds (ms).
 
     Returns
     -------
-    grad : Holder
-        Trapezoidal gradient Event configured based on supplied kwargs.
+    grad : SimpleNamespace
+        Gradient event with arbitrary waveform.
     """
-
     if channel not in ['x', 'y', 'z']:
-        raise ValueError()
+        raise ValueError(f'Invalid channel. Must be one of x, y or z. You passed: {channel}')
 
     if max_grad <= 0:
         max_grad = system.max_grad

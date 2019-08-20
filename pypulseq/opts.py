@@ -1,12 +1,39 @@
 from pypulseq.convert import convert
-from types import SimpleNamespace
 
 
-class Opts():
-    """This class contains the gradient limits of the MR system."""
+class Opts:
+    """
+    System limits of an MR scanner.
 
-    def __init__(self, grad_unit=None, slew_unit=None, max_grad=None, max_slew=None, rise_time=None, rf_dead_time=0,
-                 rf_ringdown_time=0, adc_dead_time=0, rf_raster_time=1e-6, grad_raster_time=10e-6, gamma=42.576e6):
+    Attributes
+    ----------
+    grad_unit : str
+        Unit of maximum gradient amplitude. Must be one of Hz/m, mT/m or rad/ms/mm.
+    slew_unit : str
+        Unit of maximum slew rate. Must be one of Hz/m/s, mT/m/ms, T/m/s or rad/ms/mm/ms.
+    max_grad : float
+        Maximum gradient amplitude.
+    max_slew : float
+        Maximum slew rate.
+    rise_time : float
+        Rise time for gradients.
+    rf_dead_time : float
+        Dead time for radio-frequency pulses.
+    rf_ringdown_time : float
+        Ringdown time for radio-frequency pulses.
+    adc_dead_time : float
+        Dead time for ADC readout pulses.
+    rf_raster_time : float
+        Raster time for radio-frequency pulses.
+    grad_raster_time : float
+        Raster time for gradient waveforms.
+    gamma : float
+        Gyromagnetic ratio. Default is 42.576 MHz for Hydrogen.
+    """
+    def __init__(self, grad_unit: str = None, slew_unit: str = None, max_grad: float = None, max_slew: float = None,
+                 rise_time: float = None, rf_dead_time: float = 0, rf_ringdown_time: float = 0,
+                 adc_dead_time: float = 0, rf_raster_time: float = 1e-6, grad_raster_time: float = 10e-6,
+                 gamma: float = 42.576e6):
         valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
 
@@ -43,15 +70,11 @@ class Opts():
         s = "System limits:"
         s += "\nmax_grad: " + str(self.max_grad) + str(self.grad_unit)
         s += "\nmax_slew: " + str(self.max_slew) + str(self.slew_unit)
-        s += "\nte: " + str(self.te)
-        s += "\ntr: " + str(self.tr)
-        s += "\nflip: " + str(self.flip)
-        s += "\nfov: " + str(self.fov)
-        s += "\nNx: " + str(self.Nx)
-        s += "\nNy: " + str(self.Ny)
         s += "\nrise_time: " + str(self.rise_time)
         s += "\nrf_dead_time: " + str(self.rf_dead_time)
+        s += "\nrf_ring_time: " + str(self.rf_ringdown_time)
         s += "\nadc_dead_time: " + str(self.adc_dead_time)
         s += "\nrf_raster_time: " + str(self.rf_raster_time)
         s += "\ngrad_raster_time: " + str(self.grad_raster_time)
+        s += "\ngamma: " + str(self.gamma)
         return s

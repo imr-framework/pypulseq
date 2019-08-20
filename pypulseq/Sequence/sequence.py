@@ -97,27 +97,90 @@ class Sequence:
         return is_ok, error_report
 
     def test_report(self):
+        """
+        Analyze the sequence and return a text report.
+        """
         pypulseq.Sequence.test_report.test_report(self)
 
-    def set_definition(self, key, val):
+    def set_definition(self, key: str, val: str):
+        """
+        Sets custom definition to the `Sequence`.
+
+        Parameters
+        ----------
+        key : str
+            Definition key.
+        val : str
+            Definition value.
+        """
         self.definitions[key] = val
 
-    def get_definition(self, key):
+    def get_definition(self, key: str) -> str:
+        """
+        Retrieves definition identified by `key` from `Sequence`. Returns `None` if no matching definition is found.
+
+        Parameters
+        ----------
+        key : str
+            Key of definition to retrieve.
+
+        Returns
+        -------
+        str
+            Definition identified by `key` if found, else returns `None`.
+        """
         if key in self.definitions:
             return self.definitions[key]
         else:
             return None
 
     def add_block(self, *args):
+        """
+        Adds event(s) as a block to `Sequence`.
+
+        Parameters
+        ----------
+        args
+            Event or list of events to be added as a block to `Sequence`.
+        """
         block.add_block(self, len(self.block_events) + 1, *args)
 
-    def get_block(self, block_index):
+    def get_block(self, block_index: int) -> SimpleNamespace:
+        """
+        Retrieves block of events identified by `block_index` from `Sequence`.
+
+        Parameters
+        ----------
+        block_index : int
+            Index of block to be retrieved from `Sequence`.
+
+        Returns
+        -------
+        SimpleNamespace
+            Block identified by `block_index`.
+        """
         return block.get_block(self, block_index)
 
-    def read(self, file_path):
+    def read(self, file_path: str):
+        """
+        Read `.seq` file from `file_path`.
+
+        Parameters
+        ----------
+        file_path : str
+            Path to `.seq` file to be read.
+        """
         read(self, file_path)
 
-    def write(self, name):
+    def write(self, name: str):
+        """
+        Writes the calling `Sequence` object as a `.seq` file with filename `name`.
+
+        Parameters
+        ----------
+        name :str
+            Filename of `.seq` file to be written to disk.
+        """
         write(self, name)
 
     def rf_from_lib_data(self, lib_data):
@@ -127,7 +190,7 @@ class Sequence:
         Parameters
         ----------
         lib_data : list
-            RF data.
+            RF envelope.
 
         Returns
         -------
@@ -172,7 +235,28 @@ class Sequence:
 
         return rf
 
-    def calculate_kspace(self, trajectory_delay=0):
+    def calculate_kspace(self, trajectory_delay: int = 0):
+        """
+        Calculates the k-space trajectory of the entire pulse sequence.
+
+        Parameters
+        ----------
+        trajectory_delay : int
+            Compensation factor in millis to align ADC and gradients in the reconstruction.
+
+        Returns
+        -------
+        k_traj_adc : numpy.ndarray
+            K-space trajectory sampled at `t_adc` timepoints.
+        k_traj : numpy.ndarray
+            K-space trajectory of the entire pulse sequence.
+        t_excitation : numpy.ndarray
+            Excitation timepoints.
+        t_refocusing : numpy.ndarray
+            Refocusing timepoints.
+        t_adc : numpy.ndarray
+            Sampling timepoints.
+        """
         c_excitation = 0
         c_refocusing = 0
         c_adc_samples = 0
@@ -237,7 +321,16 @@ class Sequence:
 
         return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
 
-    def gradient_waveforms(self):
+    def gradient_waveforms(self) -> np.ndarray:
+        """
+        Decompress the entire gradient waveform. Returns an array of shape `gradient_axesxtimepoints`.
+        `gradient_axes` is typically 3.
+
+        Returns
+        -------
+        grad_waveforms : numpy.ndarray
+            Decompressed gradient waveform.
+        """
         duration, num_blocks, _ = self.duration()
 
         wave_length = math.ceil(duration / self.grad_raster_time)
@@ -291,14 +384,18 @@ class Sequence:
 
         return grad_waveforms
 
-    def plot(self, type='Gradient', time_range=(0, np.inf), time_disp='s'):
+    def plot(self, type: str = 'Gradient', time_range=(0, np.inf), time_disp: str = 's'):
         """
-        Show Matplotlib plot of all Events in the Sequence object.
+        Plot `Sequence`.
 
         Parameters
         ----------
+        type : str
+            Gradients display type, must be one of either 'Gradient' or 'Kspace'.
         time_range : List
-            Time range (x-axis limits) for plot to be shown. Default is 0 to infinity (entire plot shown).
+            Time range (x-axis limits) for plotting the sequence. Default is 0 to infinity (entire sequence).
+        time_disp : str
+            Time display type, must be one of `s`, `ms` or `us`.
         """
 
         valid_plot_types = ['Gradient', 'Kspace']

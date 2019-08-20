@@ -1,11 +1,33 @@
+from types import SimpleNamespace
+
 import numpy as np
-from pypulseq.opts import Opts
+
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
+from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 
 
-def add_gradients(grads, system=Opts(), max_grad=0, max_slew=0):
+def add_gradients(grads: list, system=Opts(), max_grad: int = 0, max_slew: int = 0) -> np.ndarray:
+    """
+    Superpose several gradient events.
+
+    Parameters
+    ----------
+    grads : list
+        List of 'SimpleNamespace' gradient events.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    max_grad : float, optional
+        Maximum gradient amplitude. Default is 0.
+    max_slew : float, optional
+        Maximum slew rate. Default is 0.
+
+    Returns
+    -------
+    grad : SimpleNamespace
+        Superimposition of gradient events from `grads`.
+    """
     max_grad = max_grad if max_grad > 0 else system.max_grad
     max_slew = max_slew if max_slew > 0 else system.max_slew
 

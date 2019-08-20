@@ -3,6 +3,10 @@ from pypulseq.convert import convert
 
 
 def test_report(self):
+    """
+    Analyze the sequence and return a text report.
+    """
+    # Find RF pulses and list flip angles
     flip_angles_deg = []
     for k in self.rf_library.keys:
         lib_data = self.rf_library.data[k]
@@ -11,6 +15,7 @@ def test_report(self):
 
     flip_angles_deg = np.unique(flip_angles_deg)
 
+    # Calculate TE, TR
     duration, num_blocks, event_count = self.duration()
 
     k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc = self.calculate_kspace()
@@ -30,16 +35,19 @@ def test_report(self):
         else:
             TR = t_ex_tmp1[0] - t_ex_tmp[-1]
 
+    # Check sequence dimensionality and spatial resolution
     k_extent = np.max(np.abs(k_traj_adc), axis=1)
     k_scale = np.max(k_extent)
     if k_scale != 0:
         k_bins = 4e6
         k_threshold = k_scale / k_bins
 
+        # Detect unused dimensions and delete them
         if np.any(k_extent < k_threshold):
             k_traj_adc = np.delete(k_traj_adc, np.where(k_extent < k_threshold), axis=0)
             k_extent = np.delete(k_extent, np.where(k_extent < k_threshold), axis=0)
 
+        # Bin the k-space trajectory to detect repetitions / slices
         k_len = k_traj_adc.shape[1]
         k_repeat = np.zeros(k_len)
 

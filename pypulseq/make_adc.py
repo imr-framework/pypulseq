@@ -1,22 +1,34 @@
-from decimal import *
-
 from types import SimpleNamespace
+
 from pypulseq.opts import Opts
 
 
-def make_adc(num_samples=0, system=Opts(), dwell=0, duration=0, delay=0, freq_offset=0, phase_offset=0):
+def make_adc(num_samples: int = 0, system: Opts = Opts(), dwell: float = 0, duration: float = 0, delay: float = 0,
+             freq_offset: float = 0, phase_offset: float = 0) -> SimpleNamespace:
     """
-    Makes a Holder object for an ADC Event.
+    Creates an ADC readout event.
 
     Parameters
     ----------
-    kwargs : dict
-        Key value mappings of ADC Event parameters_params and values.
+    num_samples: int, optional
+        Number of readout samples.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    dwell : float, optional
+        ADC dead time in milliseconds (ms) after sampling.
+    duration : float, optional
+        Duration in milliseconds (ms) of ADC readout event with `num_samples` number of samples.
+    delay : float, optional
+        Delay in milliseconds (ms) of ADC readout event.
+    freq_offset : float, optional
+        Frequency offset of ADC readout event.
+    phase_offset : float, optional
+        Phase offset of ADC readout event.
 
     Returns
     -------
-    adc : Holder
-        ADC Event.
+    adc : SimpleNamespace
+        ADC readout event.
     """
     adc = SimpleNamespace()
     adc.type = 'adc'

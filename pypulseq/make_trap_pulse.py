@@ -7,19 +7,38 @@ from pypulseq.opts import Opts
 def make_trapezoid(channel='z', system=Opts(), duration=0, area=-1, flat_time=None, flat_area=None, amplitude=None,
                    max_grad=0, max_slew=0, rise_time=0, delay=0):
     """
-    Makes a Holder object for an trapezoidal gradient Event.
+    Creates a trapezoidal gradient event.
 
     Parameters
     ----------
-    kwargs : dict
-        Key value mappings of trapezoidal gradient Event parameters_params and values.
+    channel : str, optional
+        Orientation of trapezoidal gradient event. Must be one of `x`, `y` or `z`.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    duration : float, optional
+        Duration in milliseconds (ms). Default is 0.
+    area : float, optional
+        Area. Default is -1.
+    flat_time : float, optional
+        Flat duration in milliseconds (ms). Default is `None`.
+    flat_area : float, optional
+        Flat area. Default is `None`.
+    amplitude : float, optional
+        Amplitude. Default is `None`.
+    max_grad : float, optional
+        Maximum gradient strength. Default is 0.
+    max_slew : float, optional
+        Maximum slew rate. Default is 0.
+    rise_time : float, optional
+        Rise time in milliseconds (ms). Default is 0.
+    delay : float, optional
+        Delay in milliseconds (ms). Default is 0.
 
     Returns
     -------
-    grad : Holder
-        Trapezoidal gradient Event configured based on supplied kwargs.
+    grad : SimpleNamespace
+        Trapezoidal gradient event created based on the supplied parameters.
     """
-
     if channel not in ['x', 'y', 'z']:
         raise ValueError()
 

@@ -9,15 +9,14 @@ from pypulseq.decompress_shape import decompress_shape
 
 def add_block(self, block_index: int, *args):
     """
-    Inserts list of `SimpleNamespace` event objects into `self.block_events` at position `block_index`.
-    Also performs gradient checks.
+    Inserts pulse sequence events into `self.block_events` at position `block_index`. Also performs gradient checks.
 
     Parameters
     ----------
     block_index : int
-        Index at which SimpleNamespace events have to be inserted into `self.block_events`.
+        Index at which `SimpleNamespace` events have to be inserted into `self.block_events`.
     args : list
-        List of `SimpleNamespace` event objects to be added as a Pulseq block.
+        List of `SimpleNamespace` pulse sequence events to be added to `self.block_events`.
     """
 
     block_duration = calc_duration(*args)

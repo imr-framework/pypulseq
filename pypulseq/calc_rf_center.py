@@ -1,7 +1,26 @@
+from types import SimpleNamespace
+
 import numpy as np
 
 
-def calc_rf_center(rf):
+def calc_rf_center(rf: SimpleNamespace):
+    """
+    Calculate the time point of the effective rotation calculated as the peak of the radio-frequency amplitude for the
+    shaped pulses and the center of the pulse for the block pulses. Zero padding in the radio-frequency pulse is
+    considered as a part of the shape. Delay field of the radio-frequency object is not taken into account.
+
+    Parameters
+    ----------
+    rf : SimpleNamespace
+        Radio-frequency pulse event.
+
+    Returns
+    -------
+    tc : float
+        Time point of the center of the radio-frequency pulse.
+    ic : float
+        Corresponding position of `tc` in the radio-frequency pulse's envelope.
+    """
     eps = np.finfo(float).eps
     for first, x in enumerate(rf.signal):
         if abs(x) > eps:

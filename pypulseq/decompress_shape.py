@@ -1,18 +1,18 @@
 import numpy as np
 
 
-def decompress_shape(compressed_shape):
+def decompress_shape(compressed_shape: np.ndarray) -> np.ndarray:
     """
     Decompresses a run-length encoded shape.
 
     Parameters
     ----------
-    compressed_shape : ndarray
+    compressed_shape : numpy.ndarray
         Run-length encoded shape.
 
     Returns
     -------
-    decompressed_shape : ndarray
+    decompressed_shape : numpy.ndarray
         Decompressed shape.
     """
     data_pack, num_samples = compressed_shape.data, int(compressed_shape.num_samples)
