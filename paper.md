@@ -65,15 +65,15 @@ Therefore, any custom pulse sequence can be synthesised by concatenating *blocks
 The `pypulseq` package presented in this work is an open-source vendor-neutral MRI pulse sequence design tool. It 
 enables researchers and users to program pulse sequences in Python and export as a `.seq` file. These `.seq` files can 
 be executed on the three MR vendors by leveraging vendor-specific interpreters. The MR methods have been reported 
-previously [@ravi2018pulseq]. The `pypulseq` package allows for both representing and deploying custom sequences. This 
-work focuses on the software aspect of the tool. `pypulseq` was entirely developed in Python, and this has multiple 
+previously [@ravi2018pulseq-gpi]. The `pypulseq` package allows for both representing and deploying custom sequences. 
+This work focuses on the software aspect of the tool. `pypulseq` was entirely developed in Python, and this has multiple 
 advantages. First, it does not involve any licensing fees that are otherwise associated with other scientific research 
 platforms such as MATLAB. Second, there has been a proliferation of deep learning projects developed in Python in recent 
 years. This allows `pypulseq` to be integrated with deep learning techniques for acquisition (for example, intelligent 
 slice planning in [@ravi2018amri]), and related downstream reconstruction, etc. Also, the standard Python package 
 manager - PyPI - enables convenient installs on multiple OS platforms. These Python related benefits ensure that 
 `pypulseq` can reach a wider audience. We have leveraged the `pypulseq` library to implement acquisition oriented 
-components of the Autonomous MRI (AMRI) package [@ravi2018amri], [@ravi2019accessible-amri], [@ravi2019selfadmin], 
+components of the Autonomous MRI (AMRI) package [@ravi2018amri; @ravi2019accessible-amri; @ravi2019selfadmin], 
 Virtual Scanner [@gehua2019ismrm], and the non-Cartesian acquisition library [@ravi2018imrframework]. Also, 
 the [`pypulseq-gpi`](pypulseq-gpi-branch) branch integrates a previous version of `pypulseq` with [GPI](gpilab) to 
 enable GUI-based pulse sequence design. This work has been previously reported [@ravi2018pulseq-gpi] and is not within 
