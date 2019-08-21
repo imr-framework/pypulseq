@@ -7,26 +7,57 @@ from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
 
 
-def make_sinc_pulse(flip_angle, system=Opts(), duration=0, freq_offset=0, phase_offset=0, time_bw_product=4,
-                    apodization=0, center_pos=0.5, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=None):
+def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 0, freq_offset: float = 0,
+                    phase_offset: float = 0, time_bw_product: float = 4, apodization: float = 0,
+                    center_pos: float = 0.5, max_grad: float = 0, max_slew: float = 0, slice_thickness: float = 0,
+                    delay: float = 0, use: str = None):
     """
-    Makes a Holder object for an RF pulse Event.
+    Creates a radio-frequency sinc pulse event and optionally accompanying slice select and slice select rephasing
+    trapezoidal gradient events.
 
     Parameters
     ----------
-    kwargs : dict
-        Key value mappings of RF Event parameters_params and values.
-    nargout: int
-        Number of output arguments to be returned. Default is 1, only RF Event is returned. Passing any number greater
-        than 1 will return the Gz Event along with the RF Event.
+    flip_angle : float
+        Flip angle in radians.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    duration : float, optional
+        Duration in milliseconds (ms). Default is 0.
+    freq_offset : float, optional
+        Frequency offset in Hertz (Hz). Default is 0.
+    phase_offset : float, optional
+        Phase offset in Hertz (Hz). Default is 0.
+    time_bw_product : float, optional
+        Time-bandwidth product. Default is 4.
+    apodization : float, optional
+        Apodization. Default is 0.
+    center_pos : float, optional
+        Position of peak. Default is 0.5 (midway).
+     max_grad : float, optional
+        Maximum gradient strength of accompanying slice select trapezoidal event. Default is 0.
+     max_slew : float, optional
+        Maximum slew rate of accompanying slice select trapezoidal event. Default is 0.
+    slice_thickness : float, optional
+        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
+        slice select event. Default is 0.
+    delay : float, optional
+        Delay in milliseconds (ms). Default is 0.
+    use : str, optional
+        Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
 
     Returns
     -------
-    rf : Holder
-        RF Event configured based on supplied kwargs.
-    gz : Holder
-        Slice select trapezoidal gradient Event.
+    rf : SimpleNamespace
+        Radio-frequency sinc pulse event.
+    gz : SimpleNamespace, optional
+        Accompanying slice select trapezoidal gradient event. Returned only if `slice_thickness` is provided.
+    gzr : SimpleNamespace, optional
+        Accompanying slice select rephasing trapezoidal gradient event. Returned only if `slice_thickness` is provided.
     """
+    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
+    if use is not None and use not in valid_use_pulses:
+        raise ValueError(
+            f'Invalid use parameter. Must be one of excitation, refocusing or inversion. You passed: {use}')
 
     BW = time_bw_product / duration
     alpha = apodization

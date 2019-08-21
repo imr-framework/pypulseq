@@ -8,21 +8,53 @@ from pypulseq.opts import Opts
 from types import SimpleNamespace
 
 
-def make_arbitrary_rf(signal, flip_angle, system=Opts(), freq_offset=0, phase_offset=0, time_bw_product=0,
-                      bandwidth=0, max_grad=0, max_slew=0, slice_thickness=0, delay=0, use=None):
+def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, system: Opts = Opts(), freq_offset: float = 0,
+                      phase_offset: float = 0, time_bw_product: float = 0, bandwidth: float = 0, max_grad: float = 0,
+                      max_slew: float = 0, slice_thickness: float = 0, delay: float = 0,
+                      use: str = None) -> SimpleNamespace:
     """
-    Makes a Holder object for an arbitrary gradient Event.
+    Creates a radio-frequency pulse event with arbitrary pulse shape and optionally an accompanying slice select
+    trapezoidal gradient event.
 
     Parameters
     ----------
-    kwargs : dict
-        Key value mappings of RF Event parameters_params and values.
+    signal : np.ndarray
+        Arbitrary waveform.
+    flip_angle : float
+        Flip angle in radians.
+    system : Opts
+        System limits. Default is a system limits object initialised to default values.
+    freq_offset : float
+        Frequency offset in Hertz (Hz). Default is 0.
+    phase_offset : float
+        Phase offset in Hertz (Hz). Default is 0.
+    time_bw_product : float
+        Time-bandwidth product. Default is 4.
+    bandwidth : float
+        Bandwidth in Hertz (Hz).
+     max_grad : float
+        Maximum gradient strength of accompanying slice select trapezoidal event. Default is `system`'s `max_grad`.
+     max_slew : float
+        Maximum slew rate of accompanying slice select trapezoidal event. Default is `system`'s `max_slew`.
+    slice_thickness : float
+        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
+        slice select event.
+    delay : float
+        Delay in milliseconds (ms) of accompanying slice select trapezoidal event.
+    use : str
+        Use of arbitrary radio-frequency pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
 
     Returns
     -------
-    grad : Holder
-        Trapezoidal gradient Event configured based on supplied kwargs.
+    rf : SimpleNamespace
+        Radio-frequency pulse event with arbitrary pulse shape.
+    gz : SimpleNamespace
+        Slice select trapezoidal gradient event accompanying the arbitrary radio-frequency pulse event.
     """
+    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
+    if use is not None and use not in valid_use_pulses:
+        raise ValueError(
+            f'Invalid use parameter. Must be one of excitation, refocusing or inversion. You passed: {use}')
 
     signal = signal / np.sum(signal * system.rf_raster_time) * flip_angle / (2 * np.pi)
 

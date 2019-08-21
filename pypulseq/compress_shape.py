@@ -3,21 +3,20 @@ from types import SimpleNamespace
 import numpy as np
 
 
-def compress_shape(decompressed_shape):
+def compress_shape(decompressed_shape: np.ndarray) -> np.ndarray:
     """
     Returns a run-length encoded compressed shape.
 
     Parameters
     ----------
-    decompressed_shape : ndarray
+    decompressed_shape : numpy.ndarray
         Decompressed shape.
 
     Returns
     -------
-    compressed_shape : Holder
-        A Holder object containing the shape of the compressed shape ndarray and the compressed shape ndarray itself.
+    compressed_shape : SimpleNamespace
+        A `SimpleNamespace` object containing the compressed data and corresponding shape.
     """
-
     quant_factor = 1e-7
     decompressed_shape_scaled = decompressed_shape / quant_factor
     datq = np.round(np.insert(np.diff(decompressed_shape_scaled), 0, decompressed_shape_scaled[0]))

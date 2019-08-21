@@ -1,12 +1,13 @@
+from pathlib import Path
+
 import numpy as np
 
 from pypulseq.event_lib import EventLibrary
-from pathlib import Path
 
 
-def read(self, path: Path, **kwargs):
+def read(self, path: str, **kwargs):
     """
-    Constructs a `Sequence` object by reading .seq file from `path`.
+    Reads a `.seq` file from `path`.
 
     Parameters
     ----------
@@ -44,7 +45,7 @@ def read(self, path: Path, **kwargs):
             self.block_events = __read_blocks(input_file)
         elif section == '[RF]':
             self.rf_library = __read_events(input_file, [1, 1, 1, 1e-6, 1, 1])
-        elif section == '[GRAD]':
+        elif section == '[GRADIENTS]':
             self.grad_library = __read_events(input_file, [1, 1, 1e-6], 'g', self.grad_library)
         elif section == '[TRAP]':
             self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
@@ -151,7 +152,7 @@ def __read_blocks(input_file) -> dict:
     return event_table
 
 
-def __read_events(input_file, scale: int, type: str = None, event_library: EventLibrary = None) -> EventLibrary:
+def __read_events(input_file, scale, type: str = None, event_library: EventLibrary = None) -> EventLibrary:
     """
     Read Pulseq events from .seq file.
 

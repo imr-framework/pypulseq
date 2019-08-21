@@ -7,7 +7,21 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 
 
-def split_gradient(grad, system=Opts()):
+def split_gradient(grad: np.ndarray, system: Opts = Opts()):
+    """
+    Split gradient waveform `grad` into two gradient waveforms at the center.
+
+    Parameters
+    ----------
+    grad : numpy.ndarray
+        Gradient waveform to be split into two gradient waveforms.
+    system : Opts, optional
+        System limits. Default is a system limits object initialised to default values.
+    Returns
+    -------
+    grad1, grad2 : numpy.ndarray
+        Split gradient waveforms.
+    """
     grad_raster_time = system.grad_raster_time
     total_length = calc_duration(grad)
 

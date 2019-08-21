@@ -3,15 +3,15 @@ import numpy as np
 
 def write(self, file_name):
     """
-    Writes a .seq file from the Sequence object calling the method.
-    >.0f is used when only decimals have to be displayed.
-    >g is used when insignificant zeros have to be truncated.
+    Writes the calling `Sequence` object as a `.seq` file with filename `file_name`.
 
     Parameters
     ----------
     file_name : str
-        File name of .seq file to be written.
+        File name of `.seq` file to be written to disk.
     """
+    # `>.0f` is used when only decimals have to be displayed.
+    # `>g` is used when insignificant zeros have to be truncated.
     file_name += '.seq' if file_name[-4:] != '.seq' not in file_name else ''
     output_file = open(file_name, 'w')
     output_file.write('# Pulseq sequence file\n')

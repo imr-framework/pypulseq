@@ -2,34 +2,38 @@ import math
 
 import numpy as np
 
+from pypulseq.opts import Opts
 from pypulseq.utils import k2g
 
 
-def vds_2d(fov, N, n_shots, alpha, system):
+def vds_2d(fov: int, N: int, n_shots: int, alpha: int, system: Opts):
     """
     Generates a variable density k-space trajectory spiral with a method adapted from [1].
 
     [1] "Simple Analytic Variable Density Spiral Design", Dong-hyun Kim, Elfar Adalsteinsson, and Daniel M. Spielman,
     Magnetic Resonance in Medicine 50:214-219 (2003).
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     fov : int
-        Field of view in meters
+        Field of view in meters.
     N : int
-        Resolution (Nyquist distance) in meters
+        Resolution (Nyquist distance) in meters.
     n_shots : int
-        Number of interleaves
+        Number of interleaves.
     alpha : int
-        Variable density factor
-    system : Holder
-        System limits
+        Variable density factor.
+    system : Opts
+        System limits.
 
-    Returns:
-    --------
-    k_shot : int
-    Gn : int
-    lamda : int
+    Returns
+    -------
+    k_shot : numpy.ndarray
+        K-space trajectory for the nth shot.
+    Gn : numpy.ndarray
+        Gradient waveform for the nth shot.
+    lamda : float
+        Inter-shot distance factor.
     """
 
     gamma = 42576000
@@ -71,11 +75,8 @@ def vds_2d(fov, N, n_shots, alpha, system):
     complex_vectorized = np.vectorize(lambda x, y: complex(x, y))
     for s in range(n_shots):
         k_shot[:, s] = kn * pow(math.e, 2 * math.pi * 1j * (s + 1) / n_shots)
-        # Gn[:, s] = np.concatenate((0, np.divide(np.diff(np.squeeze(kn[:, s])) * 1e3, dt)))
         km = np.array([np.real(np.squeeze(k_shot[:, s])), np.imag(np.squeeze(k_shot[:, s]))])
         Gx, Gy, _ = k2g.k2g(km, DT)
         Gn[:, s] = complex_vectorized(Gx, Gy)
-        # gx = makearbitrary_grad({'channel': 'x', 'system': system, 'waveform': np.squeeze(Gx)})
-        # gy = makearbitrary_grad({'channel': 'y', 'system': system, 'waveform': np.squeeze(Gy)})
 
     return k_shot, Gn, lamda
