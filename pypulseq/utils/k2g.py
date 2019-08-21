@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def k2g(k, dt=10e-6):
+def k2g(k: np.ndarray, dt: float = 10e-6):
     """
     Derives gradient-waveforms from k-space trajectory in compliance with the dwell time.
 
