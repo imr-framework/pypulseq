@@ -50,7 +50,7 @@ across vendors in MR is challenging given the sophisticated choices with respect
 software and the application. This work introduces an open-source tool that enables pulse sequence programming for 
 Siemens/GE/Bruker platforms in Python.
 
-# Introduction to the Pulseq file format: .seq
+# Introduction to the Pulseq file format: `.seq`
 
 The `.seq` file format introduced in Pulseq [@layton2017pulseq] is a novel way to capture a pulse sequence as plain 
 text. The file format was designed keeping in mind design goals such as: human-readable, easily parsable, vendor 
@@ -86,8 +86,6 @@ envisage pypulseq to be utilized for repeatability and reproducibility studies s
 (multi-site, multi-vendor). The package could also serve as a hands-on teaching aid for MR faculty and students. 
 Beginners can get started with the bundled example pulse sequences. More familiar users can import the appropriate 
 packages to construct and deploy custom pulse sequences.
-
-# Reference
 
 [bruker]: https://github.com/pulseq/bruker_interpreter
 [gpilab]: http://gpilab.com/
