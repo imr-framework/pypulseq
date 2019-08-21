@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pypulseq",
-    version="1.2.1",
+    version="1.2.2",
     author="Keerthi Sravan Ravi",
     author_email="sravan953@gmail.com",
     description="Pulseq in Python",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/imr-framework/pypulseq",
     packages=setuptools.find_packages(exclude=['pypulseq.utils', 'pypulseq.seq_examples*', 'pypulseq.recon_examples']),
-    install_requires=['numpy', 'matplotlib'],
+    install_requires=['numpy==1.16.3', 'matplotlib==3.0.3'],
     license='License :: OSI Approved :: GNU Affero General Public License v3',
     classifiers=[
         "Programming Language :: Python :: 3.6",

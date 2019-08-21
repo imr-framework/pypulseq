@@ -2,27 +2,30 @@
 <img src="logo.png"/>
 </p>
 
+# pypulseq
+Pulseq in Python
+
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to 
 be acquainted with each hardware platform's programming environment.
 
 `pypulseq` enables vendor-neutral pulse sequence design in Python [[1]](#references). The pulse sequences can be 
-exported as a `.seq` file to be run on  Siemens/[GE](https://toppemri.github.io)/
-[Bruker](https://github.com/pulseq/bruker_interpreter) hardware by leveraging their respective Pulseq interpreters. 
-This tool is targeted at MR pulse sequence designers, MRI researchers and other interested users. It is a translation 
-of the Pulseq framework originally written in Matlab [[2]](#references).
+exported as a `.seq` file to be run on  Siemens/[GE](toppe)/[Bruker](bruker) hardware by leveraging their respective 
+Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested 
+users. It is a translation of the Pulseq framework originally written in Matlab [[2]](#references).
 
-It is strongly recommended to first read the [Pulseq specification](https://pulseq.github.io/specification.pdf) 
-before proceeding. The specification document defines the concepts required for pulse sequence design using `pypulseq`. Checkout the [`pypulseq-gpi`](https://github.com/imr-framework/pypulseq/tree/pypulseq-gpi) branch to design pulse sequences on a GUI.
+It is strongly recommended to first read the [Pulseq specification](pulseq-spec)  before proceeding. The specification 
+document defines the concepts required for pulse sequence design using `pypulseq`.
 
 ## 1 minute demo
 1. Clone this repository.
-2. Run any of the example scripts in your favourite IDE on Python 3.6 or above.
+2. `cd` into this repository (or set as working directory in an IDE).
+2. Run any of the example scripts on Python 3.6 or above.
 3. Inspect plots!
-4. Get in touch regarding running the `.seq` files on your Siemens/GE/Bruker scanner.
+?. Get in touch regarding running the `.seq` files on your Siemens/GE/Bruker scanner.
 
 ## Custom pulse sequences
 Getting started with pulse sequence design using `pypulseq` is simple:
-1. `pip install pypulseq` on Python 3.6 or above.
+1. `pip install pypulseq` in your virtual environment (>=Python 3.6).
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
     ```python
     from pypulseq.opts import Opts
@@ -48,7 +51,9 @@ Getting started with pulse sequence design using `pypulseq` is simple:
     # ADC readout
     adc = make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
     ```
-4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be executed simultaneously, simply pass them all to the `add_block()` method. For example, the `gx` and `adc` pulse sequence events need to be executed simultaneously:
+4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be executed 
+simultaneously, simply pass them all to the `add_block()` method. For example, the `gx` and `adc` pulse sequence events 
+need to be executed simultaneously:
     ```python
     seq.add_block(rf90)
     seq.add_block(gx, adc)
@@ -61,6 +66,11 @@ Getting started with pulse sequence design using `pypulseq` is simple:
     ```python
     seq.write('demo.seq')
     ```
+
+## Community guidelines
+`pypulseq` adheres to a code of conduct adapted from the [Contributor Covenant](contrib-covenant) code of conduct. 
+Contributing guidelines can be found [here](contrib-guidelines).
+
 ---
 ## References
 1. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping 
@@ -68,3 +78,11 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 9-15.
 2. Layton, Kelvin J., et al. "Pulseq: a rapid and hardware‐independent pulse sequence prototyping framework." Magnetic 
 resonance in medicine 77.4 (2017): 1544-1552.
+
+[api-docs]: https://pypulseq.readthedocs.io/en/latest
+[bruker]: https://github.com/pulseq/bruker_interpreter
+[contrib-covenant]: http://contributor-covenant.org
+[contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING
+[pulseq-gpi-branch]: https://github.com/imr-framework/pypulseq/tree/pypulseq-gpi
+[pulseq-spec]: https://pulseq.github.io/specification.pdf
+[toppe]: https://toppemri.github.io
