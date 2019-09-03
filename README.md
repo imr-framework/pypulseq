@@ -8,10 +8,10 @@ Pulseq in Python
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
 
-`pypulseq` enables vendor-neutral pulse sequence design in Python [1](#references). The pulse sequences can be
+`pypulseq` enables vendor-neutral pulse sequence design in Python [[1]](#references). The pulse sequences can be
 exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by leveraging their respective
 Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
-users. It is a translation of the Pulseq framework originally written in Matlab [2](#references).
+users. It is a translation of the Pulseq framework originally written in Matlab [[2]](#references).
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using `pypulseq`. API docs can be found [here][api-docs].
