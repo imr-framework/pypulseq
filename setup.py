@@ -14,10 +14,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/imr-framework/pypulseq",
     packages=setuptools.find_packages(exclude=['pypulseq.utils', 'pypulseq.seq_examples*', 'pypulseq.recon_examples']),
-    install_requires=['numpy==1.16.3', 'matplotlib==3.0.3'],
+    install_requires=['numpy>=1.16.3', 'matplotlib>=3.0.3'],
     license='License :: OSI Approved :: GNU Affero General Public License v3',
     classifiers=[
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Operating System :: OS Independent",
     ],
