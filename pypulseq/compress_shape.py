@@ -17,7 +17,7 @@ def compress_shape(decompressed_shape: np.ndarray) -> np.ndarray:
     compressed_shape : SimpleNamespace
         A `SimpleNamespace` object containing the compressed data and corresponding shape.
     """
-    quant_factor = 1e-7
+    quant_factor = 1e-8
     decompressed_shape_scaled = decompressed_shape / quant_factor
     datq = np.round(np.insert(np.diff(decompressed_shape_scaled), 0, decompressed_shape_scaled[0]))
     qerr = decompressed_shape_scaled - np.cumsum(datq)

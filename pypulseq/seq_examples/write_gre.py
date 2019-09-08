@@ -11,12 +11,12 @@ from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
 
 seq = Sequence()
-fov = 256e-3
+fov = 250e-3
 Nx = 256
 Ny = 256
 alpha = 10
 slice_thickness = 3e-3
-TE = 7.38e-3
+TE = np.array([7.38, 9.84]) * 1e-3
 TR = 100e-3
 
 rf_spoiling_inc = 117
@@ -37,9 +37,9 @@ phase_areas = (np.arange(Ny) - Ny / 2) * delta_k
 gx_spoil = make_trapezoid(channel='x', area=2 * Nx * delta_k, system=sys)
 gz_spoil = make_trapezoid(channel='z', area=4 / slice_thickness, system=sys)
 
-delay_TE = math.ceil((TE - calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - calc_duration(
+delay_TE = np.ceil((TE - calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - calc_duration(
     gx) / 2) / seq.grad_raster_time) * seq.grad_raster_time
-delay_TR = math.ceil((TR - calc_duration(gx_pre) - calc_duration(gz) - calc_duration(
+delay_TR = np.ceil((TR - calc_duration(gx_pre) - calc_duration(gz) - calc_duration(
     gx) - delay_TE) / seq.grad_raster_time) * seq.grad_raster_time
 
 assert np.all(delay_TR >= calc_duration(gx_spoil, gz_spoil))
@@ -48,20 +48,22 @@ rf_phase = 0
 rf_inc = 0
 
 for i in range(Ny):
-    rf.phase_offset = rf_phase / 180 * np.pi
-    adc.phase_offset = rf_phase / 180 * np.pi
-    rf_inc = divmod(rf_inc + rf_spoiling_inc, 360.0)[1]
-    rf_phase = divmod(rf_phase + rf_inc, 360.0)[1]
+    for j in range(len(TE)):
+        rf.phase_offset = rf_phase / 180 * np.pi
+        adc.phase_offset = rf_phase / 180 * np.pi
+        rf_inc = divmod(rf_inc + rf_spoiling_inc, 360.0)[1]
+        rf_phase = divmod(rf_phase + rf_inc, 360.0)[1]
 
-    seq.add_block(rf, gz)
-    gy_pre = make_trapezoid(channel='y', area=phase_areas[i], duration=2e-3, system=sys)
-    seq.add_block(gx_pre, gy_pre, gz_reph)
-    seq.add_block(make_delay(delay_TE))
-    seq.add_block(gx, adc)
-    gy_pre.amplitude = -gy_pre.amplitude
-    seq.add_block(make_delay(delay_TR), gx_spoil, gy_pre, gz_spoil)
+        seq.add_block(rf, gz)
+        gy_pre = make_trapezoid(channel='y', area=phase_areas[i], duration=2e-3, system=sys)
+        seq.add_block(gx_pre, gy_pre, gz_reph)
+        seq.add_block(make_delay(delay_TE[j]))
+        seq.add_block(gx, adc)
+        gy_pre.amplitude = -gy_pre.amplitude
+        seq.add_block(make_delay(delay_TR[j]), gx_spoil, gy_pre, gz_spoil)
 
 report = seq.test_report()
+print(report)
 seq.calculate_kspace()
 seq.plot()
 seq.write('gre_pypulseq.seq')

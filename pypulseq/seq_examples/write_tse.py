@@ -169,6 +169,7 @@ for k_ex in range(n_ex + 1):
         seq.add_block(delay_TR)
 
 report = seq.test_report()
-seq.calculate_kspace()
-seq.plot()
+# print(report)
+# seq.calculate_kspace()
+# seq.plot()
 seq.write('tse_pypulseq.seq')
