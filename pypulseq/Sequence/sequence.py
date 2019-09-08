@@ -406,8 +406,10 @@ class Sequence:
             raise Exception()
 
         fig1, fig2 = plt.figure(1), plt.figure(2)
-        f11, f12, f13 = fig1.add_subplot(311), fig1.add_subplot(312), fig1.add_subplot(313)
-        f2 = [fig2.add_subplot(311), fig2.add_subplot(312), fig2.add_subplot(313)]
+        sp11 = fig1.add_subplot(311)
+        sp12, sp13 = fig1.add_subplot(312, sharex=sp11), fig1.add_subplot(313, sharex=sp11)
+        fig2_sp_list = [fig2.add_subplot(311, sharex=sp11), fig2.add_subplot(312, sharex=sp11),
+                        fig2.add_subplot(313, sharex=sp11)]
 
         t_factor_list = [1, 1e3, 1e6]
         t_factor = t_factor_list[valid_time_units.index(time_disp)]
@@ -419,16 +421,16 @@ class Sequence:
                 if hasattr(block, 'adc'):
                     adc = block.adc
                     t = adc.delay + [(x * adc.dwell) for x in range(0, int(adc.num_samples))]
-                    f11.plot((t0 + t), np.zeros(len(t)), 'rx')
+                    sp11.plot((t0 + t), np.zeros(len(t)), 'rx')
                 if hasattr(block, 'rf'):
                     rf = block.rf
                     tc, ic = calc_rf_center(rf)
                     t = rf.t + rf.delay
                     tc = tc + rf.delay
-                    f12.plot(t_factor * (t0 + t), abs(rf.signal))
-                    f13.plot(t_factor * (t0 + t), np.angle(
+                    sp12.plot(t_factor * (t0 + t), abs(rf.signal))
+                    sp13.plot(t_factor * (t0 + t), np.angle(
                         rf.signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)),
-                             t_factor * (t0 + tc), np.angle(rf.signal[ic] * np.exp(1j * rf.phase_offset) * np.exp(
+                              t_factor * (t0 + tc), np.angle(rf.signal[ic] * np.exp(1j * rf.phase_offset) * np.exp(
                             1j * 2 * math.pi * rf.t[ic] * rf.freq_offset)), 'xb')
                 grad_channels = ['gx', 'gy', 'gz']
                 for x in range(0, len(grad_channels)):
@@ -443,19 +445,19 @@ class Sequence:
                         else:
                             t = np.cumsum([0, grad.delay, grad.rise_time, grad.flat_time, grad.fall_time])
                             waveform = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
-                        f2[x].plot(t_factor * (t0 + t), waveform)
+                        fig2_sp_list[x].plot(t_factor * (t0 + t), waveform)
             t0 += calc_duration(block)
 
         grad_plot_labels = ['x', 'y', 'z']
-        f11.set_ylabel('ADC')
-        f12.set_ylabel('RF mag (Hz)')
-        f13.set_ylabel('RF phase (rad)')
-        [f2[x].set_ylabel(f'G{grad_plot_labels[x]} (kHz/m)') for x in range(3)]
+        sp11.set_ylabel('ADC')
+        sp12.set_ylabel('RF mag (Hz)')
+        sp13.set_ylabel('RF phase (rad)')
+        [fig2_sp_list[x].set_ylabel(f'G{grad_plot_labels[x]} (kHz/m)') for x in range(3)]
         # Setting display limits
         disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
-        f11.set_xlim(disp_range)
-        f12.set_xlim(disp_range)
-        f13.set_xlim(disp_range)
-        [x.set_xlim(disp_range) for x in f2]
+        sp11.set_xlim(disp_range)
+        sp12.set_xlim(disp_range)
+        sp13.set_xlim(disp_range)
+        [x.set_xlim(disp_range) for x in fig2_sp_list]
 
         plt.show()
