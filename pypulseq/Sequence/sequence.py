@@ -100,7 +100,7 @@ class Sequence:
         """
         Analyze the sequence and return a text report.
         """
-        pypulseq.Sequence.test_report.test_report(self)
+        return pypulseq.Sequence.test_report.test_report(self)
 
     def set_definition(self, key: str, val: str):
         """
