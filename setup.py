@@ -1,11 +1,12 @@
 import setuptools
+import pypulseq
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="pypulseq",
-    version="1.2.2",
+    version=pypulseq.__version__,
     author="Keerthi Sravan Ravi",
     author_email="sravan953@gmail.com",
     description="Pulseq in Python",
