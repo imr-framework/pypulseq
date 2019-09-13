@@ -2,8 +2,7 @@
 <img src="logo.png"/>
 </p>
 
-# pypulseq
-Pulseq in Python
+# PyPulseq
 
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
@@ -16,11 +15,16 @@ users. It is a translation of the Pulseq framework originally written in Matlab 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using `pypulseq`. API docs can be found [here][api-docs].
 
+## Dependencies
+1. numpy>=1.16.3
+2. matplotlib>=3.0.3
+
 ## 1 minute demo
 1. Clone this repository.
 2. `cd` into this repository (or set as working directory in an IDE).
-2. Run any of the example scripts on Python 3.6 or above.
-3. Inspect plots!
+3. Install [dependencies](#dependencies).
+3. Run any of the example scripts on Python 3.6 or above.
+4. Inspect plots!
 ?. Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.
 
 ## Custom pulse sequences
@@ -82,6 +86,6 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [api-docs]: https://pypulseq.readthedocs.io/en/latest
 [Bruker]: https://github.com/pulseq/bruker_interpreter
 [Contributor Covenant]: http://contributor-covenant.org
-[contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING
+[contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
 [GE]: https://toppemri.github.io
 [Pulseq specification]: https://pulseq.github.io/specification.pdf
