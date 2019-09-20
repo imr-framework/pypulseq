@@ -15,6 +15,9 @@ users. It is a translation of the Pulseq framework originally written in Matlab 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using `PyPulseq`. API docs can be found [here][api-docs].
 
+## Pulseq compatibility
+Currently, `PyPulseq` is compatible with Pulseq 1.2.0. 
+
 ## Dependencies
 1. numpy>=1.16.3
 2. matplotlib>=3.0.3

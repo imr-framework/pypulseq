@@ -21,7 +21,7 @@ class Sequence:
     def __init__(self, system=Opts()):
         self.version_major = 1
         self.version_minor = 2
-        self.version_revision = 1
+        self.version_revision = 0
         self.system = system
         self.definitions = dict()
         self.grad_library = EventLibrary()
