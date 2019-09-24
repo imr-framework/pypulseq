@@ -38,10 +38,11 @@ class Opts:
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
 
         if grad_unit is not None and grad_unit not in valid_grad_units:
-            raise ValueError()
+            raise ValueError(f'Invalid gradient unit, must be one of Hz/m, mT/m or rad/ms/mm. You passed: {grad_unit}')
 
         if slew_unit is not None and slew_unit not in valid_slew_units:
-            raise ValueError()
+            raise ValueError(f'Invalid slew rate unit, must be one of Hz/m/s, mT/m/ms, T/m/s or rad/ms/mm/ms. You '
+                             f'passed: {slew_unit}')
 
         if max_grad is None:
             max_grad = convert(from_value=40, from_unit='mT/m', gamma=gamma)
