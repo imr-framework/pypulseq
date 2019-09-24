@@ -24,7 +24,7 @@ Currently, `PyPulseq` is compatible with Pulseq 1.2.0.
 
 ## 1 minute demo
 1. Clone this repository.
-2. `cd` into this repository (or set as working directory in an IDE).
+2. Set as working directory in your IDE.
 3. Install [dependencies](#dependencies).
 3. Run any of the example scripts on Python 3.6 or above.
 4. Inspect plots!
@@ -44,13 +44,16 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
 3. Then, design gradient, RF or ADC pulse sequence events:
     ```python
     from pypulseq.make_sinc_pulse import make_sinc_pulse
+    from pypulseq.make_trap_pulse import make_trapezoid
+    from pypulseq.make_adc import make_adc
 
     Nx, Ny = 256, 256 # matrix size
     fov = 220e-3 # field of view
     delta_k = fov / Nx
 
     # RF sinc pulse with a 90 degree flip angle
-    rf90, _, _ = make_sinc_pulse(flip_angle=90, system=system, slice_thickness=5e-3, apodization=0.5, time_bw_product=4)
+    rf90, _, _ = make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5, 
+       time_bw_product=4)
 
     # Frequency encode, trapezoidal event
     gx = make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=system)
