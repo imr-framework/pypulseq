@@ -68,7 +68,7 @@ by concatenating *blocks*.
 # About `PyPulseq`
 
 The `PyPulseq` package presented in this work is an open source vendor-neutral MRI pulse sequence design tool. It 
-enables researchers and users to program pulse sequences in Python, and export them a `.seq` file. These `.seq` files 
+enables researchers and users to program pulse sequences in Python, and export them as a `.seq` file. These `.seq` files 
 can be executed on the three MRI vendors by leveraging vendor-specific interpreters. The MRI methods have been reported 
 previously [@ravi2018pulseq-gpi]. The `PyPulseq` package allows for both representing and deploying custom sequences. 
 This work focuses on the software aspect of the tool. `PyPulseq` was entirely developed in Python, and this has multiple 
