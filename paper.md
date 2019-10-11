@@ -1,5 +1,5 @@
 ---
-title: 'PyPulseq'
+title: 'PyPulseq: A Python Package for MRI Pulse Sequence Design'
 tags:
   - Python
   - MRI

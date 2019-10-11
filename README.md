@@ -2,7 +2,7 @@
 <img src="logo.png"/>
 </p>
 
-# PyPulseq
+# PyPulseq: A Python Package for MRI Pulse Sequence Design
 
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
