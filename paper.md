@@ -77,7 +77,7 @@ advantages. Firstly, unlike existing C++ frameworks such as ODIN [@jochimsen2004
 fees that are otherwise associated with other scientific research platforms such as MATLAB. Thirdly, there has been a 
 proliferation of deep learning projects developed in Python in recent years. These advantages allow `PyPulseq` to be 
 integrated with projects related to various stages of the MRI pipeline. For example - deep learning techniques for 
-acquisition (intelligent slice planning in [@ravi2018amri]) and related downstream reconstruction. Finally, the 
+acquisition (intelligent slice planning in @ravi2018amri) and related downstream reconstruction. Finally, the 
 standard Python package manager - PyPI - enables convenient installs on multiple OS platforms. These Python-derived 
 benefits ensure that `PyPulseq` can reach a wider audience.
 
@@ -93,7 +93,7 @@ MATLAB [@layton2017pulseq].
 # Target audience
 
 `PyPulseq` is aimed at MRI researchers focusing on pulse sequence design, image reconstruction, and MRI physics. We also 
-envisage PyPulseq to be utilized for repeatability and reproducibility studies such as those for functional MRI 
+envisage PyPulseq to be utilized for replicability and reproducibility studies such as those for functional MRI 
 (multi-site, multi-vendor). The package could also serve as a hands-on teaching aid for MRI faculty and students. 
 Beginners can get started with the bundled example pulse sequences. More familiar users can import the appropriate 
 packages to construct and deploy custom pulse sequences.
