@@ -65,6 +65,7 @@ def make_trapezoid(channel='z', system=Opts(), duration=0, area=-1, flat_time=No
             rise_time = math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
         fall_time, flat_time = rise_time, flat_time
     elif duration > 0:
+        amplitude2 = amplitude
         if amplitude is None:
             if rise_time is None:
                 dC = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
