@@ -89,9 +89,10 @@ def __read_definitions(input_file) -> dict:
     line = __strip_line(input_file)
     while line != '' and line[0] != '#':
         tok = line.split(' ')
-        if not any([x.isalpha() for x in tok[1:]]):
+        try:  # Try converting every element into a float
+            [float(x) for x in tok[1:]]
             definitions[tok[0]] = np.array(tok[1:], dtype=float)
-        else:
+        except ValueError:  # Try clause did not work!
             definitions[tok[0]] = tok[1:]
         line = __strip_line(input_file)
 
