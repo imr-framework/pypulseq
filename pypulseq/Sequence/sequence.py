@@ -2,6 +2,8 @@ import math
 from types import SimpleNamespace
 
 import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 from matplotlib import pyplot as plt
 
 import pypulseq.Sequence.test_report
