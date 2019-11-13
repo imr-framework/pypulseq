@@ -1,8 +1,12 @@
 import setuptools
 import pypulseq
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+# Unicode decode error on Windows
+try:
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+except:
+    long_description = 'Pulseq on Python'
 
 setuptools.setup(
     name="pypulseq",
