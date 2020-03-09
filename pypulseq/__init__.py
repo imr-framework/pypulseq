@@ -1,5 +1,5 @@
 name = 'pypulseq'
-__version__ = '1.2.3'
+__version__ = '1.2.0post1'
 __all__ = ['Sequence',
            'add_gradients',
            'add_ramps',
