@@ -220,20 +220,20 @@ class Sequence:
         rf.freq_offset = lib_data[4]
         rf.phase_offset = lib_data[5]
 
-        if max(lib_data.shape) < 6:
-            lib_data = np.append(lib_data, 0)
-        rf.dead_time = lib_data[5]
-
         if max(lib_data.shape) < 7:
             lib_data = np.append(lib_data, 0)
-        rf.ringdown_time = lib_data[6]
+        rf.dead_time = lib_data[6]
 
         if max(lib_data.shape) < 8:
             lib_data = np.append(lib_data, 0)
+        rf.ringdown_time = lib_data[7]
+
+        if max(lib_data.shape) < 9:
+            lib_data = np.append(lib_data, 0)
 
         use_cases = {1: 'excitation', 2: 'refocusing', 3: 'inversion'}
-        if lib_data[7] in use_cases:
-            rf.use = use_cases[lib_data[7]]
+        if lib_data[8] in use_cases:
+            rf.use = use_cases[lib_data[8]]
 
         return rf
 
