@@ -7,22 +7,32 @@
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
 
-`PyPulseq` enables vendor-neutral pulse sequence design in Python [[1]](#references). The pulse sequences can be
+`PyPulseq` enables vendor-neutral pulse sequence design in Python [[1,2]](#references). The pulse sequences can be
 exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by leveraging their respective
 Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
-users. It is a translation of the Pulseq framework originally written in Matlab [[2]](#references).
+users. It is a translation of the Pulseq framework originally written in Matlab [[3]](#references).
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using `PyPulseq`. API docs can be found [here][api-docs].
 
+If you use `pypulseq` in your work, cite as:
+```
+Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." Journal 
+of Open Source Software 4.42 (2019): 1725.
+```
+
 ---
 ## [Citations][scholar-citations]
-1. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv preprint arXiv:2002.04265 (2020).
-2. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335.
-3. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of Magnetic Resonance Imaging 49.7 (2019): e65-e77.
-3. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
-4. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence development for a reproducible research."
-5. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São Paulo, 2018.
+1. Ravi, Keerthi Sravan, and Sairam Geethanath. "Autonomous Magnetic Resonance Imaging." medRxiv (2020).
+2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source Hardware-Independent PyPulseq Tool."
+3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv preprint arXiv:2002.04265 (2020).
+4. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using TOPPE and Pulseq."
+5. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335.
+6. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of Magnetic Resonance Imaging 49.7 (2019): e65-e77.
+7. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
+8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence development for a reproducible research."
+9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São Paulo, 2018.
+
 
 ---
 ## Pulseq compatibility
@@ -38,7 +48,8 @@ Currently, `PyPulseq` is compatible with Pulseq 1.2.0.
 3. Install [dependencies](#dependencies).
 3. Run any of the example scripts on Python 3.6 or above.
 4. Inspect plots!
-?. Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.
+
+Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.
 
 ## Custom pulse sequences
 Getting started with pulse sequence design using `PyPulseq` is simple:
@@ -93,10 +104,12 @@ Contributing guidelines can be found [here][contrib-guidelines].
 
 ---
 ## References
-1. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping
+1. Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." 
+Journal of Open Source Software 4.42 (2019): 1725.
+2. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping
 pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018):
 9-15.
-2. Layton, Kelvin J., et al. "Pulseq: a rapid and hardware‐independent pulse sequence prototyping framework." Magnetic
+3. Layton, Kelvin J., et al. "Pulseq: a rapid and hardware‐independent pulse sequence prototyping framework." Magnetic
 resonance in medicine 77.4 (2017): 1544-1552.
 
 [api-docs]: https://pypulseq.readthedocs.io/en/latest
