@@ -4,7 +4,6 @@ import numpy as np
 
 from pypulseq.event_lib import EventLibrary
 
-
 def read(self, path: str, **kwargs):
     """
     Reads a `.seq` file from `path`.
@@ -28,6 +27,8 @@ def read(self, path: str, **kwargs):
     self.grad_raster_time = self.system.grad_raster_time
     self.definitions = {}
 
+    jemris_generated = False
+
     while True:
         section = __skip_comments(input_file)
         if section == -1:
@@ -35,6 +36,8 @@ def read(self, path: str, **kwargs):
 
         if section == '[DEFINITIONS]':
             self.definitions = __read_definitions(input_file)
+        elif section == '[JEMRIS]': # Added by GT
+            jemris_generated = True
         elif section == '[VERSION]':
             version_major, version_minor, version_revision = __read_version(input_file)
             if version_major != self.version_major or version_minor != self.version_minor or version_revision != self.version_revision:
@@ -44,11 +47,17 @@ def read(self, path: str, **kwargs):
         elif section == '[BLOCKS]':
             self.block_events = __read_blocks(input_file)
         elif section == '[RF]':
-            self.rf_library = __read_events(input_file, [1, 1, 1, 1e-6, 1, 1])
+            if jemris_generated:
+                self.rf_library = __read_events(input_file, [1, 1, 1, 1, 1])
+            else:
+                self.rf_library = __read_events(input_file, [1, 1, 1, 1e-6, 1, 1])
         elif section == '[GRADIENTS]':
             self.grad_library = __read_events(input_file, [1, 1, 1e-6], 'g', self.grad_library)
         elif section == '[TRAP]':
-            self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
+            if jemris_generated:
+                self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
+            else:
+                self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
         elif section == '[ADC]':
             self.adc_library = __read_events(input_file, [1, 1e-9, 1e-6, 1, 1])
         elif section == '[DELAYS]':
@@ -69,6 +78,7 @@ def read(self, path: str, **kwargs):
                 else:
                     lib_data[8] = 2
                 self.rf_library.data[k] = lib_data
+
 
 
 def __read_definitions(input_file) -> dict:
