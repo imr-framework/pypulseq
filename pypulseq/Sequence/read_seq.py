@@ -181,7 +181,7 @@ def __read_events(input_file, scale, type: str = None, event_library: EventLibra
     while line != '' and line != '#':
         data = np.fromstring(line, dtype=float, sep=' ')
         id = data[0]
-        data = data[1:] * scale
+        data = np.round(data[1:] * scale, decimals=6)
         if type is None:
             event_library.insert(key_id=id, new_data=data)
         else:

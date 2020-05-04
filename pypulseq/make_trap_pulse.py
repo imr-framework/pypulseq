@@ -87,7 +87,6 @@ def make_trapezoid(channel='z', system=Opts(), duration=0, area=-1, flat_time=No
 
         if amplitude is None:
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
-
     else:
         if area is None:
             raise ValueError('Must supply a duration')

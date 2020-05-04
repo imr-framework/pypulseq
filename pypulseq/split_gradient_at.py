@@ -1,17 +1,19 @@
+from types import SimpleNamespace
+
 import numpy as np
 
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 
 
-def split_gradient_at(grad: np.ndarray, time_point: float, system: Opts = Opts()):
+def split_gradient_at(grad: SimpleNamespace, time_point: float, system: Opts = Opts()):
     """
     Split gradient waveform `grad` into two at time point `time_point`.
 
     Parameters
     ----------
-    grad : numpy.ndarray
-        Gradient waveform to be split into two gradient waveforms.
+    grad : SimpleNamespace
+        Gradient event to be split into two gradient events.
     time_point : float, optional
         Time point at which `grad` will be split into two gradient waveforms.
     system : Opts, optional
@@ -24,7 +26,7 @@ def split_gradient_at(grad: np.ndarray, time_point: float, system: Opts = Opts()
     grad_raster_time = system.grad_raster_time
 
     time_index = round(time_point / grad_raster_time)
-    time_point = time_index * grad_raster_time
+    time_point = round(time_index * grad_raster_time, 6)  # Work around floating-point arithmetic limitation
     time_index += 1
 
     if grad.type == 'trap':
@@ -48,7 +50,7 @@ def split_gradient_at(grad: np.ndarray, time_point: float, system: Opts = Opts()
             grad.delay = 0
 
         amplitudes = np.array(amplitudes)
-        times = np.array(times)
+        times = np.array(times).round(6)  # Work around floating-point arithmetic limitation
 
         amp_tp = np.interp(x=time_point, xp=times, fp=amplitudes)
         times1 = np.append(times[np.where(times < time_point)], time_point)

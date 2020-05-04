@@ -38,4 +38,4 @@ def calc_duration(*events: list) -> float:
         elif event.type == 'trap':
             duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
 
-    return duration
+    return round(duration, ndigits=6)
