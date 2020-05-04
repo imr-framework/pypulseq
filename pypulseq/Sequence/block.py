@@ -201,7 +201,11 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                     grad.first = grad.waveform[0]
                     grad.last = grad.waveform[-1]
             else:
-                grad.amplitude, grad.rise_time, grad.flat_time, grad.fall_time, grad.delay = [lib_data[x] for x in
+                if max(lib_data.shape) < 5: # added by GT
+                    grad.amplitude, grad.rise_time, grad.flat_time, grad.fall_time = [lib_data[x] for x in range(4)]
+                    grad.delay = 0
+                else:
+                    grad.amplitude, grad.rise_time, grad.flat_time, grad.fall_time, grad.delay = [lib_data[x] for x in
                                                                                               range(5)]
                 grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
                 grad.flat_area = grad.amplitude * grad.flat_time

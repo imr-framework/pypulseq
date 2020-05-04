@@ -216,9 +216,17 @@ class Sequence:
         rf.signal = amplitude * mag * np.exp(rf.signal)
         rf.t = np.arange(1, max(mag.shape) + 1) * self.rf_raster_time
 
-        rf.delay = lib_data[3]
-        rf.freq_offset = lib_data[4]
-        rf.phase_offset = lib_data[5]
+
+        if max(lib_data.shape) < 6:
+            rf.delay = 0
+            rf.freq_offset = lib_data[3]
+            rf.phase_offset = lib_data[4]
+            lib_data = np.append(lib_data, 0)
+        else:
+            rf.delay = lib_data[3]
+            rf.freq_offset = lib_data[4]
+            rf.phase_offset = lib_data[5]
+
 
         if max(lib_data.shape) < 7:
             lib_data = np.append(lib_data, 0)
