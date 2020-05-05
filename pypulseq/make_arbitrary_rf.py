@@ -1,11 +1,10 @@
+import math
 from types import SimpleNamespace
 
 import numpy as np
-import math
 
 from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
-from types import SimpleNamespace
 
 
 def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, system: Opts = Opts(), freq_offset: float = 0,
@@ -56,6 +55,9 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, system: Opts = Opts
         raise ValueError(
             f'Invalid use parameter. Must be one of excitation, refocusing or inversion. You passed: {use}')
 
+    signal = np.squeeze(signal)
+    if signal.ndim > 1:
+        raise ValueError(f'signal should have ndim=1. You passed ndim={signal.ndim}')
     signal = signal / np.sum(signal * system.rf_raster_time) * flip_angle / (2 * np.pi)
 
     N = len(signal)
