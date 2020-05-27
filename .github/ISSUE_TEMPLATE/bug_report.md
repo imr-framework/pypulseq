@@ -3,7 +3,7 @@ name: Bug report
 about: Create a report to help us improve
 title: ''
 labels: ''
-assignees: ''
+assignees: sravan953
 
 ---
 
@@ -23,7 +23,8 @@ If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. macOS]
- - Version [e.g. 1.2.1]
+ - OS Version: [e.g. 1.2.1]
+- `pypulseq` version: [e.g. 1.2.0]
 
 **Additional context**
 Add any other context about the problem here.
