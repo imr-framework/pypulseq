@@ -1,7 +1,5 @@
 from types import SimpleNamespace
 
-import numpy as np
-
 
 def make_delay(d: float) -> SimpleNamespace:
     """
@@ -19,7 +17,7 @@ def make_delay(d: float) -> SimpleNamespace:
     """
 
     delay = SimpleNamespace()
-    d = d - np.mod(d, 1e-6) # causes crashes on scanners if the precision is better than 1us
+    d = round(d, 5)  # causes crashes on scanners if the precision is better than 10us - this is confusing - To Do:
     if d < 0:
         raise ValueError('Delay {:.2f} ms is invalid'.format(d * 1e3))
     delay.type = 'delay'
