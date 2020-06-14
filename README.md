@@ -7,22 +7,33 @@
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
 
-`PyPulseq` enables vendor-neutral pulse sequence design in Python [[1,2]](#references). The pulse sequences can be
+PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]](#references). The pulse sequences can be
 exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by leveraging their respective
 Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
-users. It is a translation of the Pulseq framework originally written in Matlab [[3]](#references).
+users. It is a translation of the Pulseq framework originally written in Matlab [[3]](#references). Currently, 
+PyPulseq is compatible with Pulseq 1.2.0.
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
-document defines the concepts required for pulse sequence design using `PyPulseq`. API docs can be found [here][api-docs].
+document defines the concepts required for pulse sequence design using PyPulseq. API docs can be found [here][api-docs].
 
-If you use `pypulseq` in your work, cite as:
+If you use PyPulseq in your work, cite as:
 ```
 Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." Journal 
 of Open Source Software 4.42 (2019): 1725.
+
+Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping 
+pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018): 
+9-15.
 ```
 
+## 📢 Pulse sequence development in your browser!
+`pypulseq` enables you to design pulse sequences in your browser! 👏 Here's how:
+1. Create a new Google Colab notebook
+2. Run `!pip install pypulseq`
+3. PyPulseq is now installed and can be imported as `import pypulseq`! 👏
+
 ---
-## [Citations][scholar-citations]
+## [Relevant literature][scholar-citations] (reverse chronological)
 1. Ravi, Keerthi Sravan, and Sairam Geethanath. "Autonomous Magnetic Resonance Imaging." medRxiv (2020).
 2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source Hardware-Independent PyPulseq Tool."
 3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv preprint arXiv:2002.04265 (2020).
@@ -32,28 +43,22 @@ of Open Source Software 4.42 (2019): 1725.
 7. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
 8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence development for a reproducible research."
 9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São Paulo, 2018.
-
-
+10. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018): 9-15.
 ---
-## Pulseq compatibility
-Currently, `PyPulseq` is compatible with Pulseq 1.2.0.
 
-## Dependencies
-1. numpy>=1.16.3
-2. matplotlib>=3.0.3
+## Installation
+\>=Python 3.6, virtual environment recommended:
 
-## 1 minute demo
-1. Clone this repository.
-2. Set as working directory in your IDE.
-3. Install [dependencies](#dependencies).
-3. Run any of the example scripts on Python 3.6 or above.
-4. Inspect plots!
+```pip install pypulseq```
 
-Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.
+## Quickstart 🏃‍♂ - running example scripts
+Every example script creates a pulse sequence, plots the pulse timing diagram and writes a `.seq` file to disk.
+1. [Install][installation] PyPulseq
+2. Download and run any of the [examlpe][example] scripts.
 
-## Custom pulse sequences
+## Deep dive 🤿 - custom pulse sequences
 Getting started with pulse sequence design using `PyPulseq` is simple:
-1. `pip install pypulseq` in your virtual environment (>=Python 3.6).
+1. [Install][installation] PyPulseq
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
     ```python
     from pypulseq.opts import Opts
@@ -98,6 +103,8 @@ need to be executed simultaneously:
     seq.write('demo.seq')
     ```
 
+**Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.**
+
 ## Contributing and Community guidelines
 `PyPulseq` adheres to a code of conduct adapted from the [Contributor Covenant] code of conduct.
 Contributing guidelines can be found [here][contrib-guidelines].
@@ -116,6 +123,8 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [Bruker]: https://github.com/pulseq/bruker_interpreter
 [Contributor Covenant]: http://contributor-covenant.org
 [contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
+[example]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples
 [GE]: https://toppemri.github.io
+[installation]: #install
 [Pulseq specification]: https://pulseq.github.io/specification.pdf
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
