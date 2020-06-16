@@ -8,7 +8,7 @@ except:
 
 setuptools.setup(
     name="pypulseq",
-    version="1.2.0.post2",
+    version="1.2.0.post3",
     author="Keerthi Sravan Ravi",
     author_email="ks3621@columbia.edu",
     description="Pulseq in Python",
