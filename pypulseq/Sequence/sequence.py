@@ -393,7 +393,7 @@ class Sequence:
 
         return grad_waveforms
 
-    def plot(self, type: str = 'Gradient', time_range=(0, np.inf), time_disp: str = 's'):
+    def plot(self, type: str = 'Gradient', time_range=(0, np.inf), time_disp: str = 's', save: bool=False):
         """
         Plot `Sequence`.
 
@@ -405,6 +405,9 @@ class Sequence:
             Time range (x-axis limits) for plotting the sequence. Default is 0 to infinity (entire sequence).
         time_disp : str
             Time display type, must be one of `s`, `ms` or `us`.
+        save_as : bool
+            Boolean flag indicating if plots should be saved. The two figures will be saved as JPG with numerical
+            suffixes to the filename 'seq_plot'.
         """
 
         valid_plot_types = ['Gradient', 'Kspace']
@@ -469,4 +472,9 @@ class Sequence:
         sp13.set_xlim(disp_range)
         [x.set_xlim(disp_range) for x in fig2_sp_list]
 
+        fig1.tight_layout()
+        fig2.tight_layout()
+        if save:
+            fig1.savefig('seq_plot1.jpg')
+            fig2.savefig('seq_plot2.jpg')
         plt.show()
