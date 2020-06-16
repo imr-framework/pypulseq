@@ -60,7 +60,7 @@ Or, explore an example notebook:
 ## Quickstart 🏃‍♂ - example scripts
 Every example script creates a pulse sequence, plots the pulse timing diagram and writes a `.seq` file to disk.
 1. [Install][installation] PyPulseq
-2. Download and run any of the [examlpe][example] scripts.
+2. Download and run any of the [example][script-examples] scripts.
 
 ## Deep dive 🤿 - custom pulse sequences
 Getting started with pulse sequence design using `PyPulseq` is simple:
@@ -129,11 +129,11 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [Bruker]: https://github.com/pulseq/bruker_interpreter
 [Contributor Covenant]: http://contributor-covenant.org
 [contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
-[example]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples
 [GE]: https://toppemri.github.io
 [google-colab]: https://colab.research.google.com/
 [installation]: #installation
-[lightning-start]: #lightning-start----pypulseq-in-your-browser!
+[lightning-start]: #lightning-start----pypulseq-in-your-browser
 [notebook-examples]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples/notebooks
 [Pulseq specification]: https://pulseq.github.io/specification.pdf
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
+[script-examples]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples/scripts
