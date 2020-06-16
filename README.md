@@ -27,10 +27,8 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 ```
 
 ## 📢 Pulse sequence development in your browser!
-`pypulseq` enables you to design pulse sequences in your browser! 👏 Here's how:
-1. Create a new Google Colab notebook
-2. Run `!pip install pypulseq`
-3. PyPulseq is now installed and can be imported as `import pypulseq`! 👏
+Design pulse sequences using `pypulseq` in your browser! Check out the [Lightning-start ⚡][lightning-start] section to 
+learn how!
 
 ---
 ## [Relevant literature][scholar-citations] (reverse chronological)
@@ -43,7 +41,6 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 7. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
 8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence development for a reproducible research."
 9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São Paulo, 2018.
-10. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018): 9-15.
 ---
 
 ## Installation
@@ -51,7 +48,16 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 
 ```pip install pypulseq```
 
-## Quickstart 🏃‍♂ - running example scripts
+## Lightning-start ⚡ - PyPulseq in your browser!
+1. Create a new notebook on [Google Colab][google-colab]
+2. [Install][installation] PyPulseq
+3. Get going!
+
+Or, explore an example notebook:
+1. Copy URL of an example notebook from [here][notebook-examples]
+2. On [Google Colab][google-colab], insert the copied link to get started
+
+## Quickstart 🏃‍♂ - example scripts
 Every example script creates a pulse sequence, plots the pulse timing diagram and writes a `.seq` file to disk.
 1. [Install][installation] PyPulseq
 2. Download and run any of the [examlpe][example] scripts.
@@ -125,6 +131,9 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
 [example]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples
 [GE]: https://toppemri.github.io
-[installation]: #install
+[google-colab]: https://colab.research.google.com/
+[installation]: #installation
+[lightning-start]: #lightning-start----pypulseq-in-your-browser!
+[notebook-examples]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples/notebooks
 [Pulseq specification]: https://pulseq.github.io/specification.pdf
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
