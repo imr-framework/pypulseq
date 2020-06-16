@@ -87,7 +87,7 @@ def write(self, file_name):
         keys = np.array(list(self.grad_library.keys.keys()))
         id_format_str = '{:2g} {:12g} {:3g} {:4g} {:3g} {:3g}\n'
         for k in keys[trap_grad_mask]:
-            data = self.grad_library.data[k]
+            data = np.copy(self.grad_library.data[k])  # Make a copy to leave the original untouched
             data[1:] = np.round(1e6 * data[1:])
             s = id_format_str.format(k, *data)
             output_file.write(s)
