@@ -2,7 +2,7 @@ import numpy as np
 from pypulseq.convert import convert
 
 
-def test_report(self):
+def main(self):
     """
     Analyze the sequence and return a text report.
     """

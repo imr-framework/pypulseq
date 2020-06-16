@@ -1,4 +1,4 @@
-from pypulseq.Sequence.sequence import Sequence
+from pypulseq.sequence.sequence import Sequence
 from pypulseq.add_gradients import add_gradients
 from pypulseq.add_ramps import add_ramps
 from pypulseq.align import align

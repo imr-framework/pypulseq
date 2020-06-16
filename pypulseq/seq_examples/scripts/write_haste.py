@@ -4,7 +4,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pypulseq.Sequence.sequence import Sequence
+from pypulseq.sequence.sequence import Sequence
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_adc import make_adc
 from pypulseq.make_delay import make_delay

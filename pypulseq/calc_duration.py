@@ -9,7 +9,7 @@ def calc_duration(*events: list) -> float:
     ----------
     events : list
         List of `SimpleNamespace` events. Can also be a list containing a single block (see
-        `pypulseq.Sequence.sequence.plot()`).
+        `pypulseq.sequence.sequence.Sequence.plot()`).
 
     Returns
     -------

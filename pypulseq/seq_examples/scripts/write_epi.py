@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from pypulseq.Sequence.sequence import Sequence
+from pypulseq.sequence.sequence import Sequence
 from pypulseq.make_adc import make_adc
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trap_pulse import make_trapezoid
