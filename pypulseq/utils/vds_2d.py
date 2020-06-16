@@ -6,7 +6,7 @@ from pypulseq.opts import Opts
 from pypulseq.utils import k2g
 
 
-def vds_2d(fov: int, N: int, n_shots: int, alpha: int, system: Opts):
+def vds_2d(fov: float, N: float, n_shots: int, alpha: int, system: Opts):
     """
     Generates a variable density k-space trajectory spiral with a method adapted from [1].
 
@@ -15,7 +15,7 @@ def vds_2d(fov: int, N: int, n_shots: int, alpha: int, system: Opts):
 
     Parameters
     ----------
-    fov : int
+    fov : float
         Field of view in meters.
     N : int
         Resolution (Nyquist distance) in meters.
