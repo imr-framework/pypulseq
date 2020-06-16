@@ -8,7 +8,7 @@ import numpy.matlib
 import scipy.io as sio
 from scipy import interpolate
 
-from pypulseq.sequence.sequence import Sequence
+from pypulseq.Sequence.sequence import Sequence
 from pypulseq.calc_duration import calc_duration
 
 

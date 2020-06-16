@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from pypulseq.sequence.sequence import Sequence
+from pypulseq.Sequence.sequence import Sequence
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_adc import make_adc
 from pypulseq.make_delay import make_delay

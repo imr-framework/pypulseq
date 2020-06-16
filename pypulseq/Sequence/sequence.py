@@ -1,17 +1,16 @@
 import math
 from types import SimpleNamespace
 
-import matplotlib as mpl
 import numpy as np
-
+import matplotlib as mpl
 mpl.use('TkAgg')
 from matplotlib import pyplot as plt
 
-import pypulseq.sequence.test_report
+import pypulseq.Sequence.test_report
 import pypulseq.check_timing
-from pypulseq.sequence import block
-from pypulseq.sequence.read_seq import read
-from pypulseq.sequence.write_seq import write
+from pypulseq.Sequence import block
+from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.write_seq import write
 from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.decompress_shape import decompress_shape
@@ -92,7 +91,7 @@ class Sequence:
             ind = [hasattr(block, 'rf'), hasattr(block, 'gx'), hasattr(block, 'gy'), hasattr(block, 'gz'),
                    hasattr(block, 'adc'), hasattr(block, 'delay')]
             ev = [getattr(block, event_names[i]) for i in range(len(event_names)) if ind[i] == 1]
-            res, rep = pypulseq.check_timing(self, *ev)
+            res, rep = pypulseq.check_timing.check_timing(self, *ev)
             is_ok = is_ok and res
             if len(rep) != 0:
                 error_report.append(f'Block: {i} - {rep}\n')
@@ -103,11 +102,11 @@ class Sequence:
         """
         Analyze the sequence and return a text report.
         """
-        return pypulseq.sequence.test_report.main(self)
+        return pypulseq.Sequence.test_report.test_report(self)
 
     def set_definition(self, key: str, val: str):
         """
-        Sets custom definition to the `sequence`.
+        Sets custom definition to the `Sequence`.
 
         Parameters
         ----------
@@ -217,6 +216,7 @@ class Sequence:
         rf.signal = amplitude * mag * np.exp(rf.signal)
         rf.t = np.arange(1, max(mag.shape) + 1) * self.rf_raster_time
 
+
         if max(lib_data.shape) < 6:
             rf.delay = 0
             rf.freq_offset = lib_data[3]
@@ -226,6 +226,7 @@ class Sequence:
             rf.delay = lib_data[3]
             rf.freq_offset = lib_data[4]
             rf.phase_offset = lib_data[5]
+
 
         if max(lib_data.shape) < 7:
             lib_data = np.append(lib_data, 0)

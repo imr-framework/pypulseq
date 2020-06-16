@@ -4,7 +4,7 @@ from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pypulseq.sequence.sequence import Sequence
+from pypulseq.Sequence.sequence import Sequence
 from pypulseq.add_gradients import add_gradients
 from pypulseq.align import align
 from pypulseq.calc_duration import calc_duration
