@@ -33,14 +33,23 @@ learn how!
 ---
 ## [Relevant literature][scholar-citations] (reverse chronological)
 1. Ravi, Keerthi Sravan, and Sairam Geethanath. "Autonomous Magnetic Resonance Imaging." medRxiv (2020).
-2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source Hardware-Independent PyPulseq Tool."
-3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv preprint arXiv:2002.04265 (2020).
-4. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using TOPPE and Pulseq."
+2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source 
+Hardware-Independent PyPulseq Tool." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic 
+Resonance in Medicine (ISMRM) (2020).
+3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv 
+preprint arXiv:2002.04265 (2020).
+4. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using 
+TOPPE and Pulseq." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic Resonance in 
+Medicine (ISMRM) (2020).
 5. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335.
-6. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of Magnetic Resonance Imaging 49.7 (2019): e65-e77.
+6. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of 
+Magnetic Resonance Imaging 49.7 (2019): e65-e77.
 7. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
-8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence development for a reproducible research."
-9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São Paulo, 2018.
+8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence 
+development for a reproducible research." ISMRM 27th Annual Meeting & Exhibition, International Society for 
+Magnetic Resonance in Medicine (ISMRM) (2019).
+9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São 
+Paulo (2018).
 ---
 
 ## Installation
@@ -68,7 +77,7 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
     ```python
     from pypulseq.opts import Opts
-    from pypulseq.Sequence.sequence import Sequence
+    from pypulseq.sequence.sequence import Sequence
 
     system = Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/s')
     seq = Sequence(system=system)
