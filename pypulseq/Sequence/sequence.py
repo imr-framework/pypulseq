@@ -1,19 +1,16 @@
 import math
 from types import SimpleNamespace
 
-import matplotlib as mpl
 import numpy as np
-
-mpl.use('TkAgg')
 from matplotlib import pyplot as plt
 
-from pypulseq.Sequence.test_report import test_report as ext_test_report
-from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.Sequence import block
 from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.test_report import test_report as ext_test_report
 from pypulseq.Sequence.write_seq import write
 from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_center import calc_rf_center
+from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
@@ -393,7 +390,7 @@ class Sequence:
 
         return grad_waveforms
 
-    def plot(self, type: str = 'Gradient', time_range=(0, np.inf), time_disp: str = 's', save: bool=False):
+    def plot(self, type: str = 'Gradient', time_range=(0, np.inf), time_disp: str = 's', save: bool = False):
         """
         Plot `Sequence`.
 
