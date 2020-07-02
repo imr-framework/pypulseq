@@ -131,7 +131,7 @@ def write(self, file_name):
         output_file.write('extension TRIGGERS 1\n')
         ext_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:.0f}\n'
         for k in keys.values():
-            s = ext_format_str.format(k, 1, 3, *np.round(1e6 * self.extension_library.data[k])) # use always digital output trigger (trigger type:1, channel: 3)
+            s = ext_format_str.format(k, 1, 3, *np.round(1e6 * self.extension_library.data[k])) # use always digital output trigger - trigger type:1, channel: 3 (Siemens-specific)
             output_file.write(s)
         output_file.write('\n')
 
