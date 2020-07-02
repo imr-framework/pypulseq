@@ -64,6 +64,12 @@ def read(self, path: str, **kwargs):
             self.delay_library = __read_events(input_file, 1e-6)
         elif section == '[SHAPES]':
             self.shape_library = __read_shapes(input_file)
+        # inserted for trigger support by mveldmann
+        elif section == '[EXTENSIONS]':
+            line = __strip_line(input_file)
+        elif section == 'extension TRIGGERS 1':
+            self.extension_library = __read_triggers(input_file, [1e-6, 1e-6], event_library=self.extension_library)
+        ###
         else:
             raise ValueError(f'Unknown section code: {section}')
 
@@ -200,6 +206,44 @@ def __read_events(input_file, scale, type: str = None, event_library: EventLibra
 
     return event_library
 
+### inserted for trigger support by mveldmann
+def __read_triggers(input_file, scale, type: str = None, event_library: EventLibrary = None) -> EventLibrary:
+    """
+    Read Pulseq triggers from .seq file.
+
+    Parameters
+    ----------
+    input_file : file object
+        .seq file
+    scale : int
+        Scaling factor.
+    type : str
+        Type of Pulseq event.
+    event_library : EventLibrary
+        EventLibrary
+
+    Returns
+    -------
+    definitions : dict
+        `EventLibrary` object containing Pulseq trigger definitions.
+    """
+    scale = 1 if scale is None else scale
+    event_library = event_library if event_library is not None else EventLibrary()
+
+    line = __strip_line(input_file)
+
+    while line != '' and line != '#':
+        data = np.fromstring(line, dtype=float, sep=' ')
+        id = data[0]
+        data = np.round(data[3:] * scale, decimals=6)
+        if type is None:
+            event_library.insert(key_id=id, new_data=data)
+        else:
+            event_library.insert(key_id=id, new_data=data, data_type=type)
+        line = __strip_line(input_file)
+
+    return event_library
+###
 
 def __read_shapes(input_file) -> EventLibrary:
     """

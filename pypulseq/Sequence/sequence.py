@@ -32,6 +32,7 @@ class Sequence:
         self.rf_library = EventLibrary()
         self.adc_library = EventLibrary()
         self.delay_library = EventLibrary()
+        self.extension_library = EventLibrary() # inserted for trigger support by mveldmann
         self.block_events = {}
         self.rf_raster_time = self.system.rf_raster_time
         self.grad_raster_time = self.system.grad_raster_time
@@ -43,6 +44,7 @@ class Sequence:
         s += "\ngrad_library: " + str(self.grad_library)
         s += "\nadc_library: " + str(self.adc_library)
         s += "\ndelay_library: " + str(self.delay_library)
+        s += "\nextension_library: " + str(self.extension_library) # inserted for trigger support by mveldmann
         s += "\nrf_raster_time: " + str(self.rf_raster_time)
         s += "\ngrad_raster_time: " + str(self.grad_raster_time)
         s += "\nblock_events: " + str(len(self.block_events))

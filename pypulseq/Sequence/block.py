@@ -20,7 +20,7 @@ def add_block(self, block_index: int, *args):
     """
 
     block_duration = calc_duration(*args)
-    self.block_events[block_index] = np.zeros(6, dtype=np.int)
+    self.block_events[block_index] = np.zeros(7, dtype=np.int) # changed to 7 entries for trigger support by mveldmann
     duration = 0
 
     check_g = {}
@@ -120,6 +120,15 @@ def add_block(self, block_index: int, *args):
                 self.delay_library.insert(delay_id, data)
             self.block_events[block_index][0] = delay_id
             duration = max(duration, event.delay)
+
+        # inserted for trigger support by mveldmann
+        elif event.type == 'trigger':
+            data = np.array([event.delay, event.duration])
+            extension_id, found = self.extension_library.find(data)
+            if not found:
+                self.extension_library.insert(extension_id, data)
+            self.block_events[block_index][6] = extension_id
+            duration = max(duration, event.delay + event.duration)
 
     # =========
     # PERFORM GRADIENT CHECKS
@@ -221,4 +230,13 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         adc.num_samples = int(adc.num_samples)
         adc.type = 'adc'
         block.adc = adc
+        
+    # inserted for trigger support by mveldmann
+    if event_ind[6] > 0:
+        trig = SimpleNamespace()
+        trig.type = 'trigger'
+        trig.delay = self.extension_library.data[event_ind[6]][0]
+        trig.duration = self.extension_library.data[event_ind[6]][1]
+        block.trig = trig
+
     return block
