@@ -73,7 +73,7 @@ target/
 .ipynb_checkpoints
 
 # VS Code
-pypulseq/.vscode/
+.vscode/
 
 # pyenv
 .python-version
