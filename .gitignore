@@ -73,7 +73,7 @@ target/
 .ipynb_checkpoints
 
 # VS Code
-.vscode
+.vscode/
 
 # pyenv
 .python-version
