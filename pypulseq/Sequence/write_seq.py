@@ -38,10 +38,10 @@ def write(self, file_name):
         output_file.write('\n')
 
     output_file.write('# Format of blocks:\n')
-    output_file.write('#  #  D RF  GX  GY  GZ ADC\n')
+    output_file.write('#  #  D RF  GX  GY  GZ ADC EXT\n') # EXT not part of pypulseq - inserted for trigger support by mveldmann
     output_file.write('[BLOCKS]\n')
     id_format_width = '{:' + str(len(str(len(self.block_events)))) + 'd} '
-    id_format_str = id_format_width + '{:2d} {:2d} {:3d} {:3d} {:3d} {:2d}\n'
+    id_format_str = id_format_width + '{:2d} {:2d} {:3d} {:3d} {:3d} {:2d} {:2d}\n' # EXT not part of pypulseq - inserted for trigger support by mveldmann
     for i in range(len(self.block_events)):
         s = id_format_str.format(*np.insert(self.block_events[i + 1], 0, (i + 1)))
         output_file.write(s)
@@ -116,6 +116,25 @@ def write(self, file_name):
             s = id_format_str.format(k, *np.round(1e6 * self.delay_library.data[k]))
             output_file.write(s)
         output_file.write('\n')
+
+    # inserted for trigger support by mveldmann
+    if len(self.extension_library.keys) != 0:
+        output_file.write('# Format of extensions:\n')
+        output_file.write('# id type ref next\n')
+        output_file.write('[EXTENSIONS]\n')
+        keys = self.extension_library.keys
+        id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f}\n'
+        for k in keys.values():
+            s = id_format_str.format(k, 1, k, 0) # always use extension type 1 - TRIGGERS
+            output_file.write(s)
+        output_file.write('\n')
+        output_file.write('extension TRIGGERS 1\n')
+        ext_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:.0f}\n'
+        for k in keys.values():
+            s = ext_format_str.format(k, 1, 3, *np.round(1e6 * self.extension_library.data[k])) # use always digital output trigger - trigger type:1, channel: 3 (Siemens-specific)
+            output_file.write(s)
+        output_file.write('\n')
+
 
     if len(self.shape_library.keys) != 0:
         output_file.write('# Sequence Shapes\n')
