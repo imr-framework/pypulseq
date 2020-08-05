@@ -10,9 +10,9 @@ changes to this document in a pull request.
 
 ## Code of Conduct
 This project and everyone participating in it is governed by the 
-[`pypulseq` Code of Conduct](code_of_conduct). 
+[`pypulseq` Code of Conduct][code_of_conduct].
 By participating, you are expected to uphold this code. Please report unacceptable behavior to 
-[imr.framework2018@gmail.com](email).
+[imr.framework2018@gmail.com][email].
 
 ## Pull requests
 Follow the coding conventions laid out in the [Style Guide for Python Code](style_guide). Ensure source code is 
