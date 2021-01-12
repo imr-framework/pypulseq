@@ -1,5 +1,7 @@
 import setuptools
 
+from pypulseq import major, minor, revision
+
 try:  # Unicode decode error on Windows
     with open("README.md", "r") as fh:
         long_description = fh.read()
@@ -8,7 +10,7 @@ except:
 
 setuptools.setup(
     name="pypulseq",
-    version="1.2.0.post3",
+    version=".".join([major, minor, revision]),
     author="Keerthi Sravan Ravi",
     author_email="ks3621@columbia.edu",
     description="Pulseq in Python",

@@ -29,7 +29,7 @@ def compress_shape(decompressed_shape: np.ndarray) -> np.ndarray:
     k = np.append(mask_changes, 1).nonzero()[0]
     n = np.diff(k)
 
-    n_extra = (n - 2).astype(np.float16)  # Cast as float for nan assignment to work
+    n_extra = (n - 2).astype(np.float32)  # Cast as float for nan assignment to work
     vals2 = np.copy(vals)
     vals2[n_extra < 0] = np.nan
     n_extra[n_extra < 0] = np.nan
