@@ -1,10 +1,16 @@
 import numpy as np
+
 from pypulseq.convert import convert
 
 
-def test_report(self):
+def test_report(self) -> str:
     """
     Analyze the sequence and return a text report.
+
+    Returns
+    -------
+    report : str
+
     """
     # Find RF pulses and list flip angles
     flip_angles_deg = []
@@ -38,6 +44,7 @@ def test_report(self):
     # Check sequence dimensionality and spatial resolution
     k_extent = np.max(np.abs(k_traj_adc), axis=1)
     k_scale = np.max(k_extent)
+    is_cartesian = False
     if k_scale != 0:
         k_bins = 4e6
         k_threshold = k_scale / k_bins
@@ -97,21 +104,21 @@ def test_report(self):
     timing_ok, timing_error_report = self.check_timing()
 
     report = f'Number of blocks: {num_blocks}\n' \
-        f'Number of events:\n' \
-        f'RF: {event_count[1]:6.0f}\n' \
-        f'Gx: {event_count[2]:6.0f}\n' \
-        f'Gy: {event_count[3]:6.0f}\n' \
-        f'Gz: {event_count[4]:6.0f}\n' \
-        f'ADC: {event_count[5]:6.0f}\n' \
-        f'Delay: {event_count[0]:6.0f}\n' \
-        f'Sequence duration: {duration:.6f} s\n' \
-        f'TE: {TE:.6f} s\n' \
-        f'TR: {TR:.6f} s\n'
+             f'Number of events:\n' \
+             f'RF: {event_count[1]:6.0f}\n' \
+             f'Gx: {event_count[2]:6.0f}\n' \
+             f'Gy: {event_count[3]:6.0f}\n' \
+             f'Gz: {event_count[4]:6.0f}\n' \
+             f'ADC: {event_count[5]:6.0f}\n' \
+             f'Delay: {event_count[0]:6.0f}\n' \
+             f'Sequence duration: {duration:.6f} s\n' \
+             f'TE: {TE:.6f} s\n' \
+             f'TR: {TR:.6f} s\n'
     report += 'Flip angle: ' + ('{:.02f} ' * len(flip_angles_deg)).format(*flip_angles_deg) + 'deg\n'
     report += 'Unique k-space positions (aka cols, rows, etc.): ' + ('{:.0f} ' * len(unique_k_positions)).format(
         *unique_k_positions) + '\n'
 
-    if len(np.where(unique_k_positions > 1)):
+    if np.all(unique_k_positions > 1):
         report += f'Dimensions: {len(k_extent)}\n'
         report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*(0.5 / k_extent * 1e3))
         report += f'Repetitions/slices/contrasts: {repeats}\n'
@@ -122,16 +129,16 @@ def test_report(self):
             report += 'Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n'
 
     if timing_ok:
-        report += 'Block timing check passed successfully\n'
+        report += 'Event timing check passed successfully\n'
     else:
-        report += f'Block timing check failed. Error listing follows:\n {timing_error_report}'
+        report += f'Event timing check failed. Error listing follows:\n {timing_error_report}'
 
     ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m')
     gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s')
     report += 'Max gradient: ' + ('{:.0f} ' * len(ga)).format(*ga) + 'Hz/m == ' + (
             '{:.02f} ' * len(ga_converted)).format(*ga_converted) + 'mT/m\n'
     report += 'Max slew rate: ' + ('{:.0f} ' * len(gs)).format(*gs) + 'Hz/m/s == ' + (
-            '{:.02f} ' * len(gs_converted)).format(*gs_converted) + 'mT/m/s\n'
+            '{:.02f} ' * len(ga_converted)).format(*gs_converted) + 'mT/m/s\n'
 
     ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m')
     gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s')

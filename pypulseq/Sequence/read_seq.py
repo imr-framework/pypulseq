@@ -2,9 +2,11 @@ from pathlib import Path
 
 import numpy as np
 
+from pypulseq.calc_duration import calc_duration
 from pypulseq.event_lib import EventLibrary
 
-def read(self, path: str, **kwargs):
+
+def read(self, path: str, detect_rf_use: bool = False) -> None:
     """
     Reads a `.seq` file from `path`.
 
@@ -12,20 +14,29 @@ def read(self, path: str, **kwargs):
     ----------
     path : Path
         Path of .seq file to be read.
-    """
+    detect_rf_use : bool, default=False
 
-    detect_rf_use = True if 'detect_rf_use' in kwargs else False
+    Raises
+    ------
+    ValueError
+
+    RuntimeError
+    """
 
     input_file = open(path, 'r')
     self.shape_library = EventLibrary()
-    self.rf_library = EventLibrary()
-    self.grad_library = EventLibrary()
     self.adc_library = EventLibrary()
     self.delay_library = EventLibrary()
-    self.block_events = {}
-    self.rf_raster_time = self.system.rf_raster_time
+    self.grad_library = EventLibrary()
     self.grad_raster_time = self.system.grad_raster_time
-    self.definitions = {}
+    self.rf_library = EventLibrary()
+    self.rf_raster_time = self.system.rf_raster_time
+    self.label_inc_library = EventLibrary()
+    self.label_set_library = EventLibrary()
+    self.trigger_library = EventLibrary()
+
+    self.dict_block_events = {}
+    self.dict_definitions = {}
 
     jemris_generated = False
 
@@ -35,61 +46,130 @@ def read(self, path: str, **kwargs):
             break
 
         if section == '[DEFINITIONS]':
-            self.definitions = __read_definitions(input_file)
-        elif section == '[JEMRIS]': # Added by GT
+            self.dict_definitions = __read_definitions(input_file)
+        elif section == '[JEMRIS]':
             jemris_generated = True
         elif section == '[VERSION]':
             version_major, version_minor, version_revision = __read_version(input_file)
-            if version_major != self.version_major or version_minor != self.version_minor or version_revision != self.version_revision:
-                raise Exception(
-                    f'Unsupported version: {version_major, version_minor, version_revision}. '
-                    f'Expected: {self.version_major, self.version_minor, self.version_revision}')
+
+            if version_major != self.version_major:
+                raise RuntimeError(f'Unsupported version_major: {version_major}. Expected: {self.version_major}')
+
+            if version_major == 1 and version_minor == 2 and self.version_major == 1 and self.version_minor == 3:
+                compatibility_mode_12x_13x = True
+            else:
+                compatibility_mode_12x_13x = False
+
+                if version_minor != self.version_minor:
+                    raise RuntimeError(f'Unsupported version_minor: {version_minor}. Expected: {self.version_minor}')
+
+                if version_revision > self.version_revision:  # TODO check if revision is checked properly with 1.2.1postx
+                    raise RuntimeError(
+                        f'Unsupported version_revision: {version_revision}. Expected: {self.version_revision}')
+
+            if not compatibility_mode_12x_13x:
+                self.version_major = version_major
+                self.version_minor = version_minor
+                self.version_revision = version_revision
+
         elif section == '[BLOCKS]':
-            self.block_events = __read_blocks(input_file)
+            self.dict_block_events = __read_blocks(input_file, compatibility_mode_12x_13x)
         elif section == '[RF]':
             if jemris_generated:
-                self.rf_library = __read_events(input_file, [1, 1, 1, 1, 1])
+                self.rf_library = __read_events(input_file, (1, 1, 1, 1, 1), event_library=self.rf_library)
             else:
-                self.rf_library = __read_events(input_file, [1, 1, 1, 1e-6, 1, 1])
+                self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
         elif section == '[GRADIENTS]':
-            self.grad_library = __read_events(input_file, [1, 1, 1e-6], 'g', self.grad_library)
+            self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
         elif section == '[TRAP]':
             if jemris_generated:
-                self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
+                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
             else:
-                self.grad_library = __read_events(input_file, [1, 1e-6, 1e-6, 1e-6, 1e-6], 't', self.grad_library)
+                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
-            self.adc_library = __read_events(input_file, [1, 1e-9, 1e-6, 1, 1])
+            self.adc_library = __read_events(input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library)
         elif section == '[DELAYS]':
-            self.delay_library = __read_events(input_file, 1e-6)
+            self.delay_library = __read_events(input_file, (1e-6,), event_library=self.delay_library)
         elif section == '[SHAPES]':
             self.shape_library = __read_shapes(input_file)
-        # inserted for trigger support by mveldmann
         elif section == '[EXTENSIONS]':
-            line = __strip_line(input_file)
-        elif section == 'extension TRIGGERS 1':
-            self.extension_library = __read_triggers(input_file, [1e-6, 1e-6], event_library=self.extension_library)
-        ###
+            self.extensions_library = __read_events(input_file)
+        elif section[:18] == 'extension TRIGGERS':
+            extension_id = int(section[18:])
+            self.set_extension_string_id('TRIGGERS', extension_id)
+            self.trigger_library = __read_events(input_file, (1, 1, 1e-6, 1e-6), event_library=self.trigger_library)
+        elif section[:18] == 'extension LABELSET':
+            extension_id = int(section[18:])
+            self.set_extension_string_and_id('LABELSET', extension_id)
+            self.label_set_library = __read_and_parse_events(input_file, [1, 1, 1e-6, 1e-6])
+        elif section[:18] == 'extension LABELINC':
+            extension_id = int(section[18:])
+            self.set_extension_string_and_id('LABELINC', extension_id)
+            self.label_inc_library = __read_and_parse_events(input_file, [1, 1, 1e-6, 1e-6])
         else:
             raise ValueError(f'Unknown section code: {section}')
+
+    self.arr_block_durations = np.zeros(len(self.dict_block_events))
+    grad_channels = ['gx', 'gy', 'gz']
+    grad_prev_last = np.zeros(len(grad_channels))
+    for block_counter in range(len(self.dict_block_events)):
+        block = self.get_block(block_counter + 1)
+        block_duration = calc_duration(block)
+        self.arr_block_durations[block_counter] = block_duration
+        # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
+        # repeated entries so searching by content will fail
+        event_idx = self.dict_block_events[block_counter + 1]
+        # Update the objects by filling in the fields not contained in the PyPulseq file
+        for j in range(len(grad_channels)):
+            if hasattr(block, grad_channels[j]):
+                grad = getattr(block, grad_channels[j])
+            else:
+                grad_prev_last[j] = 0
+                continue
+
+            if grad.type == 'grad':
+                if grad.delay > 0:
+                    grad_prev_last[j] = 0
+
+                if hasattr(grad, 'first'):
+                    continue
+
+                grad.first = grad_prev_last[j]
+                # Restore samples on the edges of the gradient raster intervals for that we need the first sample
+                odd_step1 = [grad.first, *2 * grad.waveform]
+                odd_step2 = odd_step1 * (np.mod(range(len(odd_step1)), 2) * 2 - 1)
+                waveform_odd_rest = np.cumsum(odd_step2) * (np.mod(len(odd_step2), 2) * 2 - 1)
+                grad.lsat = waveform_odd_rest[-1]
+                grad_prev_last[j] = grad.last
+
+                eps = np.finfo(np.float).eps
+                if grad.delay + len(grad.waveform) * self.grad_raster_time + eps < block_duration:
+                    grad_prev_last[j] = 0
+
+                amplitude = np.max(np.abs(grad.waveform))
+                old_data = [amplitude, grad.shape_id, grad.delay]
+                new_data = [amplitude, grad.shape_id, grad.delay, grad.first, grad.last]
+                event_id = event_idx[j + 2]
+                # update_data()
+            else:
+                grad_prev_last[j] = 0
 
     if detect_rf_use:
         for k in self.rf_library.keys():
             lib_data = self.rf_library.data[k]
             rf = self.rf_from_lib_data(lib_data)
-            flip_deg = abs(np.sum(rf.signal)) * rf.t[0] * 360
+            flip_deg = np.abs(np.sum(rf.signal)) * rf.t[0] * 360
             if len(lib_data) < 9:
-                if flip_deg <= 90:
+                if flip_deg < 90.01:
                     lib_data[8] = 0
                 else:
                     lib_data[8] = 2
                 self.rf_library.data[k] = lib_data
 
 
-
 def __read_definitions(input_file) -> dict:
     """
-    Read definitions from .seq file.
+    Read dict_definitions from .seq file.
 
     Parameters
     ----------
@@ -98,8 +178,8 @@ def __read_definitions(input_file) -> dict:
 
     Returns
     -------
-    definitions : dict
-        Dict object containing key value pairs of definitions.
+    dict_definitions : dict
+        Dict object containing key value pairs of dict_definitions.
     """
     definitions = dict()
     line = __strip_line(input_file)
@@ -138,12 +218,14 @@ def __read_version(input_file) -> tuple:
             minor = np.array(tok[1:], dtype=float)
         elif tok[0] == 'revision':
             revision = np.array(tok[1:], dtype=float)
+        else:
+            raise RuntimeError()
         line = __strip_line(input_file)
 
     return major, minor, revision
 
 
-def __read_blocks(input_file) -> dict:
+def __read_blocks(input_file, compatibility_mode_12x_13x: bool) -> dict:
     """
     Read Pulseq blocks from .seq file.
 
@@ -151,6 +233,7 @@ def __read_blocks(input_file) -> dict:
     ----------
     input_file : file
         .seq file
+    compatibility_mode_12x_13x : bool
 
     Returns
     -------
@@ -163,13 +246,19 @@ def __read_blocks(input_file) -> dict:
     event_table = dict()
     while line != '' and line != '#':
         block_events = np.fromstring(line, dtype=int, sep=' ')
-        event_table[block_events[0]] = block_events[1:]
+
+        if compatibility_mode_12x_13x:
+            event_table[block_events[0]] = np.array([*block_events[1:], 0])
+        else:
+            event_table[block_events[0]] = block_events[1:]
+
         line = __strip_line(input_file)
 
     return event_table
 
 
-def __read_events(input_file, scale, type: str = None, event_library: EventLibrary = None) -> EventLibrary:
+def __read_events(input_file, scale: tuple = (1,), type: str = str(),
+                  event_library: EventLibrary = EventLibrary()) -> EventLibrary:
     """
     Read Pulseq events from .seq file.
 
@@ -177,73 +266,32 @@ def __read_events(input_file, scale, type: str = None, event_library: EventLibra
     ----------
     input_file : file object
         .seq file
-    scale : int
+    scale : int, default=(1,)
         Scaling factor.
     type : str
         Type of Pulseq event.
-    event_library : EventLibrary
+    event_library : EventLibrary, default=EventLibrary()
         EventLibrary
 
     Returns
     -------
-    definitions : dict
-        `EventLibrary` object containing Pulseq event definitions.
+    dict_definitions : dict
+        `EventLibrary` object containing Pulseq event dict_definitions.
     """
-    scale = 1 if scale is None else scale
-    event_library = event_library if event_library is not None else EventLibrary()
-
     line = __strip_line(input_file)
 
     while line != '' and line != '#':
         data = np.fromstring(line, dtype=float, sep=' ')
-        id = data[0]
-        data = np.round(data[1:] * scale, decimals=6)
-        if type is None:
-            event_library.insert(key_id=id, new_data=data)
+        event_id = data[0]
+        data = data[1:] * scale
+        if type == '':
+            event_library.insert(key_id=event_id, new_data=data)
         else:
-            event_library.insert(key_id=id, new_data=data, data_type=type)
+            event_library.insert(key_id=event_id, new_data=data, data_type=type)
         line = __strip_line(input_file)
 
     return event_library
 
-### inserted for trigger support by mveldmann
-def __read_triggers(input_file, scale, type: str = None, event_library: EventLibrary = None) -> EventLibrary:
-    """
-    Read Pulseq triggers from .seq file.
-
-    Parameters
-    ----------
-    input_file : file object
-        .seq file
-    scale : int
-        Scaling factor.
-    type : str
-        Type of Pulseq event.
-    event_library : EventLibrary
-        EventLibrary
-
-    Returns
-    -------
-    definitions : dict
-        `EventLibrary` object containing Pulseq trigger definitions.
-    """
-    scale = 1 if scale is None else scale
-    event_library = event_library if event_library is not None else EventLibrary()
-
-    line = __strip_line(input_file)
-
-    while line != '' and line != '#':
-        data = np.fromstring(line, dtype=float, sep=' ')
-        id = data[0]
-        data = np.round(data[3:] * scale, decimals=6)
-        if type is None:
-            event_library.insert(key_id=id, new_data=data)
-        else:
-            event_library.insert(key_id=id, new_data=data, data_type=type)
-        line = __strip_line(input_file)
-
-    return event_library
-###
 
 def __read_shapes(input_file) -> EventLibrary:
     """
@@ -257,7 +305,7 @@ def __read_shapes(input_file) -> EventLibrary:
     Returns
     -------
     shape_library : EventLibrary
-        `EventLibrary` object containing shape definitions.
+        `EventLibrary` object containing shape dict_definitions.
     """
     shape_library = EventLibrary()
 
@@ -304,7 +352,7 @@ def __skip_comments(input_file) -> str:
     return line
 
 
-def __strip_line(input_file):
+def __strip_line(input_file) -> str:
     """
     Removes spaces and newline whitespaces.
 
