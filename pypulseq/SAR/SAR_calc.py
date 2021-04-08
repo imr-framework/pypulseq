@@ -77,25 +77,25 @@ def __SAR_from_seq(seq, Qtmf, Qhmf):
 
     # Identify RF blocks and compute SAR - 10 seconds must be less than twice and 6 minutes must be less than
     # 4 (WB) and 3.2 (head-20)
-    block_events = seq.block_events
+    block_events = seq.dict_block_events
     num_events = len(block_events)
     t_vec = np.zeros(num_events)
     SAR_wbg_vec = np.zeros(t_vec.shape)
     SAR_hg_vec = np.zeros(t_vec.shape)
     t_prev = 0
 
-    for iB in block_events:
-        block = seq.get_block(iB)
+    for block_counter in block_events:
+        block = seq.get_block(block_counter)
         block_dur = calc_duration(block)
-        t_vec[iB - 1] = t_prev + block_dur
-        t_prev = t_vec[iB - 1]
+        t_vec[block_counter - 1] = t_prev + block_dur
+        t_prev = t_vec[block_counter - 1]
         if hasattr(block, 'rf'):  # has rf
             rf = block.rf
             t = rf.t
             signal = rf.signal
             # This rf could be parallel transmit as well
-            SAR_wbg_vec[iB] = __calc_SAR(Qtmf, signal)
-            SAR_hg_vec[iB] = __calc_SAR(Qhmf, signal)
+            SAR_wbg_vec[block_counter] = __calc_SAR(Qtmf, signal)
+            SAR_hg_vec[block_counter] = __calc_SAR(Qhmf, signal)
 
     return SAR_wbg_vec, SAR_hg_vec, t_vec
 
