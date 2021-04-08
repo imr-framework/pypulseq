@@ -13,12 +13,17 @@ from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
 
+# ======
+# SETUP
+# ======
 dG = 250e-6
+
+# Set system limits
 system = Opts(max_grad=30, grad_unit='mT/m', max_slew=170, slew_unit='T/m/s', rf_ringdown_time=100e-6,
               rf_dead_time=100e-6, adc_dead_time=10e-6)
 
-seq = Sequence(system=system)
-
+seq = Sequence(system=system)  # Create a new sequence object
+# Define FOV and resolution
 fov = 256e-3
 Ny_pre = 8
 Nx, Ny = 128, 128
@@ -27,7 +32,7 @@ n_slices = 1
 rf_flip = 180
 if isinstance(rf_flip, int):
     rf_flip = np.zeros(n_echo) + rf_flip
-slice_thickness = 5e-3
+slice_thickness = 5e-3  # Slice thickness
 TE = 12e-3
 TR = 2000e-3
 TE_eff = 60e-3
@@ -47,14 +52,19 @@ fspS = 0.5
 rfex_phase = math.pi / 2
 rfref_phase = 0
 
+# ======
+# CREATE EVENTS
+# ======
+# Create 90 degree slice selection pulse and gradient
 flipex = 90 * math.pi / 180
 rfex, gz, _ = make_sinc_pulse(flip_angle=flipex, system=system, duration=t_ex, slice_thickness=slice_thickness,
-                              apodization=0.5, time_bw_product=4, phase_offset=rfex_phase)
+                              apodization=0.5, time_bw_product=4, phase_offset=rfex_phase, return_gz=True)
 GS_ex = make_trapezoid(channel='z', system=system, amplitude=gz.amplitude, flat_time=t_ex_wd, rise_time=dG)
 
 flipref = rf_flip[0] * math.pi / 180
 rfref, gz, _ = make_sinc_pulse(flip_angle=flipref, system=system, duration=t_ref, slice_thickness=slice_thickness,
-                               apodization=0.5, time_bw_product=4, phase_offset=rfref_phase, use='refocusing')
+                               apodization=0.5, time_bw_product=4, phase_offset=rfref_phase, use='refocusing',
+                               return_gz=True)
 GS_ref = make_trapezoid(channel='z', system=system, amplitude=GS_ex.amplitude, flat_time=tf_ref_wd, rise_time=dG)
 
 AGS_ex = GS_ex.area / 2
@@ -77,6 +87,7 @@ n_ex = 1
 PE_order = np.arange(-Ny_pre, Ny + 1).T
 phase_areas = PE_order * delta_k
 
+# Split gradients and recombine into blocks
 GS1_times = [0, GS_ex.rise_time]
 GS1_amp = [0, GS_ex.amplitude]
 GS1 = make_extended_trapezoid(channel='z', times=GS1_times, amplitudes=GS1_amp)
@@ -104,6 +115,7 @@ GS7_times = [0, GS_spr.rise_time, GS_spr.rise_time + GS_spr.flat_time,
 GS7_amp = [0, GS_spr.amplitude, GS_spr.amplitude, GS_ref.amplitude]
 GS7 = make_extended_trapezoid(channel='z', times=GS7_times, amplitudes=GS7_amp)
 
+# Readout gradient
 GR3 = GR_preph
 
 GR5_times = [0, GR_spr.rise_time, GR_spr.rise_time + GR_spr.flat_time,
@@ -120,11 +132,12 @@ GR7_times = [0, GR_spr.rise_time, GR_spr.rise_time + GR_spr.flat_time,
 GR7_amp = [GR_acq.amplitude, GR_spr.amplitude, GR_spr.amplitude, 0]
 GR7 = make_extended_trapezoid(channel='x', times=GR7_times, amplitudes=GR7_amp)
 
+# Fill-times
 tex = GS1.t[-1] + GS2.t[-1] + GS3.t[-1]
 tref = GS4.t[-1] + GS5.t[-1] + GS7.t[-1] + readout_time
 tend = GS4.t[-1] + GS5.t[-1]
 TE_train = tex + n_echo * tref + tend
-TR_fill = (TR - n_slices * TE_train) / n_slices
+TR_fill = (TR - n_slices * TE_train) / n_slices  # Round to gradient raster
 
 TR_fill = system.grad_raster_time * round(TR_fill / system.grad_raster_time)
 if TR_fill < 0:
@@ -135,10 +148,15 @@ else:
 delay_TR = make_delay(TR_fill)
 delay_end = make_delay(5)
 
+# ======
+# CONSTRUCT SEQUENCE
+# ======
+# Define sequence blocks
 for k_ex in range(n_ex):
     for s in range(n_slices):
         rfex.freq_offset = GS_ex.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         rfref.freq_offset = GS_ref.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+        # Align the phase for off-center slices
         rfex.phase_offset = rfex_phase - 2 * math.pi * rfex.freq_offset * calc_rf_center(rfex)[0]
         rfref.phase_offset = rfref_phase - 2 * math.pi * rfref.freq_offset * calc_rf_center(rfref)[0]
 
@@ -171,10 +189,17 @@ for k_ex in range(n_ex):
 
 seq.add_block(delay_end)
 
+# ======
+# VISUALIZATION
+# ======
+seq.plot()
+
 ktraj_adc, ktraj, t_excitation, t_refocusing, _ = seq.calculate_kspace()
-plt.plot(ktraj.T)
+plt.plot(ktraj.T)  # Plot the entire k-space trajectory
 plt.figure()
-plt.plot(ktraj[0], ktraj[1], 'b', ktraj_adc[0], ktraj_adc[1], 'r.')
+plt.plot(ktraj[0], ktraj[1], 'b')  # 2D plot
+plt.axis('equal')  # Enforce aspect ratio for the correct trajectory display
+plt.plot(ktraj_adc[0], ktraj_adc[1], 'r.')
 plt.show()
 
 seq.write('haste_pypulseq.seq')
