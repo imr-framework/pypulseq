@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 
 
-def compress_shape(decompressed_shape: np.ndarray) -> np.ndarray:
+def compress_shape(decompressed_shape: np.ndarray) -> SimpleNamespace:
     """
     Returns a run-length encoded compressed shape.
 
@@ -36,6 +36,7 @@ def compress_shape(decompressed_shape: np.ndarray) -> np.ndarray:
     v = np.stack((vals, vals2, n_extra))
     v = v.T[np.isfinite(v).T]  # Use transposes to match Matlab's Fortran indexing order
     v[abs(v) < 1e-10] = 0
+
     compressed_shape = SimpleNamespace()
     compressed_shape.num_samples = len(decompressed_shape)
     compressed_shape.data = v

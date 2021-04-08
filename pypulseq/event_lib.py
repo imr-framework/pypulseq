@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 
 
@@ -7,15 +9,15 @@ class EventLibrary:
 
     Attributes
     ----------
-    keys : dict
+    keys : dict{str, int}
         Key-value pairs of event keys and corresponding... event keys.
-    data : dict
+    data : dict{str: numpy.array}
         Key-value pairs of event keys and corresponding data.
-    lengths : dict
+    lengths : dict{str, int}
         Key-value pairs of event keys and corresponding length of data values in `self.data`.
-    type : dict
+    type : dict{str, str}
         Key-value pairs of event keys and corresponding event types.
-    keymap : dict
+    keymap : dict{str, int}
         Key-value pairs of data values and corresponding event keys.
     """
 
@@ -30,13 +32,13 @@ class EventLibrary:
         s += "\ntype: " + str(len(self.type))
         return s
 
-    def find(self, new_data: np.ndarray):
+    def find(self, new_data: np.ndarray) -> Tuple[int, bool]:
         """
         Finds data `new_data` in event library.
 
         Parameters
         ----------
-        new_data : np.ndarray
+        new_data : numpy.ndarray
             Data to be found in event library.
 
         Returns
@@ -46,19 +48,20 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
+        new_data = np.array(new_data)
         data_string = np.array2string(new_data, formatter={'float': lambda x: f'{x:.6g}'})
         data_string = data_string.replace('[', '')
         data_string = data_string.replace(']', '')
         try:
             key_id = self.keymap[data_string]
             found = True
-        except:
+        except KeyError:
             key_id = 1 if len(self.keys) == 0 else max(self.keys) + 1
             found = False
 
         return key_id, found
 
-    def insert(self, key_id: int, new_data: np.ndarray, data_type: str = None):
+    def insert(self, key_id: int, new_data: np.ndarray, data_type: str = str()) -> None:
         """
         Inserts `new_data` of data type `data_type` into the event library with key `key_id`.
 
@@ -66,11 +69,12 @@ class EventLibrary:
         ----------
         key_id : int
             Key of `new_data`.
-        new_data : np.ndarray
+        new_data : numpy.ndarray
             Data to be inserted into event library.
-        data_type : str
+        data_type : str, default=str()
             Data type of `new_data`.
         """
+        new_data = np.array(new_data)
         self.keys[key_id] = key_id
         self.data[key_id] = new_data
         self.lengths[key_id] = max(new_data.shape)
@@ -78,7 +82,7 @@ class EventLibrary:
         data_string = data_string.replace('[', '')
         data_string = data_string.replace(']', '')
         self.keymap[data_string] = key_id
-        if data_type is not None:
+        if data_type != '':
             self.type[key_id] = data_type
 
     def get(self, key_id: int):

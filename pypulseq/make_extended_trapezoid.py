@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Iterable
 
 import numpy as np
 
@@ -7,8 +8,9 @@ from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 
 
-def make_extended_trapezoid(channel: str, times: np.ndarray = np.zeros(1), amplitudes: np.ndarray = np.zeros(1),
-                            system: Opts = Opts(), max_grad: float = 0, max_slew: float = 0, skip_check: bool = False):
+def make_extended_trapezoid(channel: str, amplitudes: Iterable = np.zeros(1), max_grad: float = 0,
+                            max_slew: float = 0, system: Opts = Opts(), skip_check: bool = False,
+                            times: Iterable = np.zeros(1)) -> SimpleNamespace:
     """
     Creates an extend trapezoidal gradient event by defined by amplitude values in `amplitudes` at time indices in
     `times`.
@@ -16,27 +18,36 @@ def make_extended_trapezoid(channel: str, times: np.ndarray = np.zeros(1), ampli
     Parameters
     ----------
     channel : str
-        Orientation of extended trapezoidal gradient event. Must be one of x, y or z.
-    times : numpy.ndarray, optional
-        Time points at which `amplitudes` defines amplitude values. Default is 0.
-    amplitudes : numpy.ndarray, optional
-        Values defined at `times` time indices. Default is 0.
-    system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
-    max_grad : float, optional
-        Maximum gradient strength. Default is 0.
-    max_slew : float, optional
-        Maximum slew rate. Default is 0.
-    skip_check : bool, optional
-        Perform check. Default is false.
+        Orientation of extended trapezoidal gradient event. Must be one of 'x', 'y' or 'z'.
+    amplitudes : numpy.ndarray, optional, default=09
+        Values defined at `times` time indices.
+    max_grad : float, optional, default=0
+        Maximum gradient strength.
+    max_slew : float, optional, default=0
+        Maximum slew rate.
+    system : Opts, optional, default=Opts()
+        System limits.
+    skip_check : bool, optional, default=False
+        Perform check.
+    times : numpy.ndarray, optional, default=np.zeros(1)
+        Time points at which `amplitudes` defines amplitude values.
 
     Returns
     -------
     grad : SimpleNamespace
         Extended trapezoid gradient event.
+
+    Raises
+    ------
+    ValueError
+        If invalid `channel` is passed. Must be one of 'x', 'y' or 'z'.
+        If all elements in `times` are zero.
+        If elements in `times` are not in ascending order or not distinct.
+        If all elements in `amplitudes` are zero.
+        If first amplitude of a gradient is non-ero and does not connect to a previous block.
     """
     if channel not in ['x', 'y', 'z']:
-        raise ValueError()
+        raise ValueError(f"Invalid channel. Must be one of 'x', 'y' or 'z'. Passed: {channel}")
 
     if not np.any(times):
         raise ValueError('At least one of the given times must be non-zero')

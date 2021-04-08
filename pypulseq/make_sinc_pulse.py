@@ -1,5 +1,6 @@
 import math
 from types import SimpleNamespace
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -7,10 +8,12 @@ from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
 
 
-def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 0, freq_offset: float = 0,
-                    phase_offset: float = 0, time_bw_product: float = 4, apodization: float = 0,
-                    center_pos: float = 0.5, max_grad: float = 0, max_slew: float = 0, slice_thickness: float = 0,
-                    delay: float = 0, use: str = None):
+def make_sinc_pulse(flip_angle: float, apodization: float = 0, delay: float = 0, duration: float = 0,
+                    freq_offset: float = 0, center_pos: float = 0.5, max_grad: float = 0, max_slew: float = 0,
+                    phase_offset: float = 0, return_gz: bool = False, slice_thickness: float = 0, system: Opts = Opts(),
+                    time_bw_product: float = 4, use: str = str()) -> Union[SimpleNamespace,
+                                                                           Tuple[SimpleNamespace, SimpleNamespace,
+                                                                                 SimpleNamespace]]:
     """
     Creates a radio-frequency sinc pulse event and optionally accompanying slice select and slice select rephasing
     trapezoidal gradient events.
@@ -19,30 +22,32 @@ def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 
     ----------
     flip_angle : float
         Flip angle in radians.
+    apodization : float, optional, default=0
+        Apodization.
+    center_pos : float, optional, default=0.5
+        Position of peak.5 (midway).
+    delay : float, optional, default=0
+        Delay in milliseconds (ms).
+    duration : float, optional, default=0
+        Duration in milliseconds (ms).
+    freq_offset : float, optional, default=0
+        Frequency offset in Hertz (Hz).
+    max_grad : float, optional, default=0
+        Maximum gradient strength of accompanying slice select trapezoidal event.
+    max_slew : float, optional, default=0
+        Maximum slew rate of accompanying slice select trapezoidal event.
+    phase_offset : float, optional, default=0
+        Phase offset in Hertz (Hz).
+    return_gz:bool, default=True
+        Boolean flag to indicate if slice-selective gradient has to be returned.
+    slice_thickness : float, optional, default=0
+        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
+        slice select event.
     system : Opts, optional
         System limits. Default is a system limits object initialised to default values.
-    duration : float, optional
-        Duration in milliseconds (ms). Default is 0.
-    freq_offset : float, optional
-        Frequency offset in Hertz (Hz). Default is 0.
-    phase_offset : float, optional
-        Phase offset in Hertz (Hz). Default is 0.
-    time_bw_product : float, optional
-        Time-bandwidth product. Default is 4.
-    apodization : float, optional
-        Apodization. Default is 0.
-    center_pos : float, optional
-        Position of peak. Default is 0.5 (midway).
-     max_grad : float, optional
-        Maximum gradient strength of accompanying slice select trapezoidal event. Default is 0.
-     max_slew : float, optional
-        Maximum slew rate of accompanying slice select trapezoidal event. Default is 0.
-    slice_thickness : float, optional
-        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
-        slice select event. Default is 0.
-    delay : float, optional
-        Delay in milliseconds (ms). Default is 0.
-    use : str, optional
+    time_bw_product : float, optional, default=4
+        Time-bandwidth product.
+    use : str, optional, default=str()
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
 
     Returns
@@ -53,11 +58,17 @@ def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 
         Accompanying slice select trapezoidal gradient event. Returned only if `slice_thickness` is provided.
     gzr : SimpleNamespace, optional
         Accompanying slice select rephasing trapezoidal gradient event. Returned only if `slice_thickness` is provided.
+
+    Raises
+    ------
+    ValueError
+        If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        If `return_gz=True` and `slice_thickness` was not provided.
     """
     valid_use_pulses = ['excitation', 'refocusing', 'inversion']
-    if use is not None and use not in valid_use_pulses:
+    if use != '' and use not in valid_use_pulses:
         raise ValueError(
-            f'Invalid use parameter. Must be one of excitation, refocusing or inversion. You passed: {use}')
+            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}")
 
     BW = time_bw_product / duration
     alpha = apodization
@@ -78,13 +89,13 @@ def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    if use is not None:
+    if use != '':
         rf.use = use
 
     if rf.dead_time > rf.delay:
         rf.delay = rf.dead_time
 
-    try:
+    if return_gz:
         if slice_thickness == 0:
             raise ValueError('Slice thickness must be provided')
 
@@ -104,9 +115,6 @@ def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
-    except:
-        gz = None
-        gzr = None
 
     if rf.ringdown_time > 0:
         t_fill = np.arange(1, round(rf.ringdown_time / 1e-6) + 1) * 1e-6
@@ -117,4 +125,4 @@ def make_sinc_pulse(flip_angle: float, system: Opts = Opts(), duration: float = 
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    return rf, gz, gzr
+    return rf, gz, gzr if return_gz else rf

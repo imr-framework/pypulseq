@@ -1,9 +1,10 @@
 from types import SimpleNamespace
+from typing import Tuple
 
 import numpy as np
 
 
-def calc_rf_center(rf: SimpleNamespace):
+def calc_rf_center(rf: SimpleNamespace) -> Tuple[float, float]:
     """
     Calculate the time point of the effective rotation calculated as the peak of the radio-frequency amplitude for the
     shaped pulses and the center of the pulse for the block pulses. Zero padding in the radio-frequency pulse is
@@ -16,10 +17,10 @@ def calc_rf_center(rf: SimpleNamespace):
 
     Returns
     -------
-    tc : float
+    time_center : float
         Time point of the center of the radio-frequency pulse.
-    ic : float
-        Corresponding position of `tc` in the radio-frequency pulse's envelope.
+    id_center : float
+        Corresponding position of `time_center` in the radio-frequency pulse's envelope.
     """
     eps = np.finfo(float).eps
     for first, x in enumerate(rf.signal):
@@ -30,12 +31,14 @@ def calc_rf_center(rf: SimpleNamespace):
         if abs(x) > eps:
             break
 
-    last = len(rf.signal) - last - 1  # Because we traverse over in-place reverse of rf.signal
-    rf_min = min(abs(rf.signal[first:last]))
-    rf_max, ic = max(abs(rf.signal[first:last])), np.argmax(abs(rf.signal[first:last]))
+    # Detect the excitation peak: we traverse over in-place reverse of rf.signal; we want index from the ending
+    last = len(rf.signal) - last - 1
+    rf_min = min(abs(rf.signal[first:last + 1]))
+    rf_max = max(abs(rf.signal[first:last + 1]))
+    id_center = np.argmax(abs(rf.signal[first:last + 1]))
     if rf_max - rf_min <= eps:
-        ic = round((last - first + 1) / 2)
+        id_center = round((last - first + 1) / 2) - 1
 
-    tc = rf.t[first - 1 + ic]
+    time_center = rf.t[first + id_center]
 
-    return tc, ic
+    return time_center, id_center

@@ -1,14 +1,14 @@
 from types import SimpleNamespace
 
 
-def calc_duration(*events: list) -> float:
+def calc_duration(*events: SimpleNamespace) -> float:
     """
     Calculate the cumulative duration of Events.
 
     Parameters
     ----------
-    events : list
-        List of `SimpleNamespace` events. Can also be a list containing a single block (see
+    events : list[SimpleNamespace]
+        List of `SimpleNamespace` objects. Can also be a list containing a single block (see
         `pypulseq.Sequence.sequence.plot()`).
 
     Returns
@@ -16,10 +16,13 @@ def calc_duration(*events: list) -> float:
     duration : float
         The cumulative duration of the pulse events in `events`.
     """
-
+    # Convert block to list of events
     for e in events:
-        if isinstance(e, SimpleNamespace) and isinstance(getattr(e, list(e.__dict__.keys())[0]), SimpleNamespace):
-            events = list(e.__dict__.values())
+        if isinstance(e, SimpleNamespace):
+            attrs = list(e.__dict__.keys())  # Get child attrs
+            # Sanity check: is every child an event?
+            if all([isinstance(getattr(e, a), SimpleNamespace) for a in attrs]):
+                events = list(e.__dict__.values())
             break
 
     duration = 0
@@ -38,4 +41,4 @@ def calc_duration(*events: list) -> float:
         elif event.type == 'trap':
             duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
 
-    return round(duration, ndigits=6)
+    return duration
