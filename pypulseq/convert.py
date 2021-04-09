@@ -34,11 +34,13 @@ def convert(from_value: Union[float, Iterable], from_unit: str, to_unit: str = s
     valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
     valid_units = valid_grad_units + valid_slew_units
 
-    if from_unit not in valid_grad_units:
-        raise ValueError("Invalid from_unit. Must be one of 'Hz/m', 'mT/m', or 'rad/ms/mm'.")
+    if from_unit not in valid_units:
+        raise ValueError("Invalid from_unit. Must be one of 'Hz/m', 'mT/m', or 'rad/ms/mm' for gradients;"
+                         "or must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms' for slew rate.")
 
     if to_unit != '' and to_unit not in valid_units:
-        raise ValueError("Invalid to_unit. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms'.")
+        raise ValueError("Invalid to_unit. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms' for gradients;"
+                         "or must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms' for slew rate..")
 
     if to_unit == '':
         if from_unit in valid_grad_units:

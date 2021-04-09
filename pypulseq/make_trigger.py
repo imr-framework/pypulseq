@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from pypulseq.opts import Opts
 
 
-def make_trig(channel: str, delay: float = 0, duration: float = 0, system: Opts = Opts()) -> SimpleNamespace:
+def make_trigger(channel: str, delay: float = 0, duration: float = 0, system: Opts = Opts()) -> SimpleNamespace:
     """
     Creates a trigger event.
 
