@@ -275,6 +275,7 @@ class Sequence:
 
     def flip_grad_axis(self, axis: str) -> None:
         """
+        # TODO
 
         Parameters
         ----------
@@ -325,16 +326,17 @@ class Sequence:
 
     def get_extension_type_ID(self, extension_string: str) -> int:
         """
-        # TODO
+        Get numeric extension ID for `extension_string`. Will automatically create a new ID if unknown.
 
         Parameters
         ----------
         extension_string : str
-
+            Given string extension ID.
 
         Returns
         -------
         extension_id : int
+            Numeric ID for given string extension ID.
 
         """
         if extension_string not in self.arr_extension_string_idx:
@@ -354,17 +356,22 @@ class Sequence:
 
     def get_extension_type_string(self, extension_id: int) -> str:
         """
-        # TODO
+        Get string extension ID for `extension_id`.
 
         Parameters
         ----------
         extension_id : int
-
+            Given numeric extension ID.
 
         Returns
         -------
         extension_str : str
+            String ID for the given numeric extension ID.
 
+        Raises
+        ------
+        ValueError
+            If given numeric extension ID is unknown.
         """
         if extension_id in self.arr_extension_numeric_idx:
             num = self.arr_extension_numeric_idx.index(extension_id)
@@ -440,6 +447,7 @@ class Sequence:
 
     def mod_grad_axis(self, axis: str, modifier: int):
         """
+        # TODO
 
         Parameters
         ----------
@@ -468,7 +476,7 @@ class Sequence:
         raise RuntimeError('Implementation incomplete')  # TODO
 
     def plot(self, label: str = str(), save: bool = False, time_range=(0, np.inf), time_disp: str = 's',
-             plot_type: str = 'Gradient'):
+             plot_type: str = 'Gradient') -> None:
         """
         Plot `Sequence`.
 
@@ -601,7 +609,7 @@ class Sequence:
             fig2.savefig('seq_plot2.jpg')
         plt.show()
 
-    def read(self, file_path: str):
+    def read(self, file_path: str) -> None:
         """
         Read `.seq` file from `file_path`.
 
@@ -663,7 +671,7 @@ class Sequence:
 
         return rf
 
-    def set_definition(self, key: str, val: Union[int, list, np.ndarray, str, tuple]):
+    def set_definition(self, key: str, val: Union[int, list, np.ndarray, str, tuple]) -> None:
         """
         Sets custom definition to the `Sequence`.
 
@@ -682,16 +690,21 @@ class Sequence:
 
         self.dict_definitions[key] = val
 
-    def set_extension_string_id(self, extension_str: str, extension_id: int):
+    def set_extension_string_id(self, extension_str: str, extension_id: int) -> None:
         """
-
+        Set numeric ID for the given string extension ID.
 
         Parameters
         ----------
         extension_str : str
-
+            Given string extension ID.
         extension_id : int
+            Given numeric extension ID.
 
+        Raises
+        ------
+        ValueError
+            If given numeric or string extension ID is not unique.
         """
         if extension_str in self.arr_extension_string_idx or extension_id in self.arr_extension_numeric_idx:
             raise ValueError('Numeric or string ID is not unique')
@@ -851,7 +864,7 @@ class Sequence:
     #
     #     return wave_pp, t_excitation, t_refocusing, t_adc
 
-    def write(self, name: str):
+    def write(self, name: str) -> None:
         """
         Writes the calling `Sequence` object as a `.seq` file with filename `name`.
 

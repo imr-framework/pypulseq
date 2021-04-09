@@ -63,7 +63,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 if version_minor != self.version_minor:
                     raise RuntimeError(f'Unsupported version_minor: {version_minor}. Expected: {self.version_minor}')
 
-                if version_revision > self.version_revision:  # TODO check if revision is checked properly with 1.2.1postx
+                if version_revision > self.version_revision:
                     raise RuntimeError(
                         f'Unsupported version_revision: {version_revision}. Expected: {self.version_revision}')
 
