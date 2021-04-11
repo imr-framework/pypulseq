@@ -40,9 +40,12 @@ def write(self, file_name: str) -> None:
                 output_file.write(values[block_counter] + ' ')
             elif isinstance(values[block_counter], float):
                 output_file.write(f'{values[block_counter]:0.9g} ')
-            elif isinstance(values[block_counter], (list, tuple, np.ndarray)):
+            elif isinstance(values[block_counter], (list, tuple, np.ndarray)):  # For example, [FOV, FOV, FOV]
                 for i in range(len(values[block_counter])):
-                    output_file.write(f'{values[block_counter][i]:0.9g} ')
+                    if isinstance(values[block_counter][i], (int, float)):
+                        output_file.write(f'{values[block_counter][i]:0.9g} ')
+                    else:
+                        output_file.write(f'{values[block_counter][i]} ')
             else:
                 raise RuntimeError('Unsupported definition')
             output_file.write('\n')

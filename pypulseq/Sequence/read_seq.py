@@ -1,9 +1,12 @@
+import re
 from pathlib import Path
+from typing import Dict, Tuple
 
 import numpy as np
 
 from pypulseq.calc_duration import calc_duration
 from pypulseq.event_lib import EventLibrary
+from pypulseq.supported_labels import get_supported_labels
 
 
 def read(self, path: str, detect_rf_use: bool = False) -> None:
@@ -44,7 +47,6 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
         section = __skip_comments(input_file)
         if section == -1:
             break
-
         if section == '[DEFINITIONS]':
             self.dict_definitions = __read_definitions(input_file)
         elif section == '[JEMRIS]':
@@ -96,16 +98,20 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             self.extensions_library = __read_events(input_file)
         elif section[:18] == 'extension TRIGGERS':
             extension_id = int(section[18:])
-            self.set_extension_string_id('TRIGGERS', extension_id)
+            self.set_extension_string_ID('TRIGGERS', extension_id)
             self.trigger_library = __read_events(input_file, (1, 1, 1e-6, 1e-6), event_library=self.trigger_library)
         elif section[:18] == 'extension LABELSET':
             extension_id = int(section[18:])
-            self.set_extension_string_and_id('LABELSET', extension_id)
-            self.label_set_library = __read_and_parse_events(input_file, [1, 1, 1e-6, 1e-6])
+            self.set_extension_string_ID('LABELSET', extension_id)
+            l1 = lambda s: int(s)
+            l2 = lambda s: get_supported_labels().index(s) + 1
+            self.label_set_library = __read_and_parse_events(input_file, l1, l2)
         elif section[:18] == 'extension LABELINC':
             extension_id = int(section[18:])
-            self.set_extension_string_and_id('LABELINC', extension_id)
-            self.label_inc_library = __read_and_parse_events(input_file, [1, 1, 1e-6, 1e-6])
+            self.set_extension_string_ID('LABELINC', extension_id)
+            l1 = lambda s: int(s)
+            l2 = lambda s: get_supported_labels().index(s) + 1
+            self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
         else:
             raise ValueError(f'Unknown section code: {section}')
 
@@ -167,7 +173,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 self.rf_library.data[k] = lib_data
 
 
-def __read_definitions(input_file) -> dict:
+def __read_definitions(input_file) -> Dict[str, str]:
     """
     Read dict_definitions from .seq file.
 
@@ -195,7 +201,7 @@ def __read_definitions(input_file) -> dict:
     return definitions
 
 
-def __read_version(input_file) -> tuple:
+def __read_version(input_file) -> Tuple[int, int, int]:
     """
     Read version from .seq file.
 
@@ -210,14 +216,15 @@ def __read_version(input_file) -> tuple:
         Tuple of major, minor and revision number.
     """
     line = __strip_line(input_file)
+    major, minor, revision = 0, 0, 0
     while line != '' and line[0] != '#':
         tok = line.split(' ')
         if tok[0] == 'major':
-            major = np.array(tok[1:], dtype=float)
+            major = int(tok[1])
         elif tok[0] == 'minor':
-            minor = np.array(tok[1:], dtype=float)
+            minor = int(tok[1])
         elif tok[0] == 'revision':
-            revision = np.array(tok[1:], dtype=float)
+            revision = int(tok[1])
         else:
             raise RuntimeError()
         line = __strip_line(input_file)
@@ -257,7 +264,7 @@ def __read_blocks(input_file, compatibility_mode_12x_13x: bool) -> dict:
     return event_table
 
 
-def __read_events(input_file, scale: tuple = (1,), type: str = str(),
+def __read_events(input_file, scale: list = (1,), event_type: str = str(),
                   event_library: EventLibrary = EventLibrary()) -> EventLibrary:
     """
     Read Pulseq events from .seq file.
@@ -266,9 +273,9 @@ def __read_events(input_file, scale: tuple = (1,), type: str = str(),
     ----------
     input_file : file object
         .seq file
-    scale : int, default=(1,)
+    scale : list, default=(1,)
         Scaling factor.
-    type : str
+    event_type : str
         Type of Pulseq event.
     event_library : EventLibrary, default=EventLibrary()
         EventLibrary
@@ -284,10 +291,30 @@ def __read_events(input_file, scale: tuple = (1,), type: str = str(),
         data = np.fromstring(line, dtype=float, sep=' ')
         event_id = data[0]
         data = data[1:] * scale
-        if type == '':
+        if event_type == '':
             event_library.insert(key_id=event_id, new_data=data)
         else:
-            event_library.insert(key_id=event_id, new_data=data, data_type=type)
+            event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+        line = __strip_line(input_file)
+
+    return event_library
+
+
+def __read_and_parse_events(input_file, *args) -> EventLibrary:
+    event_library = EventLibrary()
+    line = __strip_line(input_file)
+
+    while line != '' and line != '#':
+        datas = re.split('(\s+)', line)
+        datas = [d for d in datas if d != ' ']
+        data = np.zeros(len(datas) - 1, dtype=np.int)
+        event_id = int(datas[0])
+        for i in range(1, len(datas)):
+            if i > len(args):
+                data[i - 1] = int(datas[i])
+            else:
+                data[i - 1] = args[i - 1](datas[i])
+        event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 
     return event_library
