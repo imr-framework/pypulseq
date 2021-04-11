@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from pypulseq.block_to_events import block_to_events
 from pypulseq.calc_duration import calc_duration
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
@@ -30,14 +31,15 @@ def add_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If the first gradient in the block does not start with 0.
         If a gradient that doesn't end at zero is not aligned to the block boundary.
     """
-    block_duration = calc_duration(*args)
+    events = block_to_events(args)
+    block_duration = calc_duration(*events)
     self.dict_block_events[block_index] = np.zeros(7, dtype=np.int)
     duration = 0
 
     check_g = {}  # Key-value mapping of index and  pairs of gradients/times
     extensions = []
 
-    for event in args:
+    for event in events:
         if event.type == 'rf':
             mag = np.abs(event.signal)
             amplitude = np.max(mag)
