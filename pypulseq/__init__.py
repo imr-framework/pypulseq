@@ -1,7 +1,11 @@
-major = 1
-minor = 3
-revision = 1
+from pathlib import Path
 
+path_version = Path(__file__).parent.parent / 'VERSION'
+with open(str(path_version), 'r') as version_file:
+    version = version_file.read().strip().split('.')
+    major, minor, revision = [int(v) for v in version]
+
+from pypulseq.SAR.SAR_calc import calc_SAR
 from pypulseq.Sequence.sequence import Sequence
 from pypulseq.add_gradients import add_gradients
 from pypulseq.align import align
