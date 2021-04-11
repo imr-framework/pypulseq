@@ -23,8 +23,6 @@ from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.supported_labels import get_supported_labels
 
-mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
-
 
 class Sequence:
     version_major = major
@@ -494,6 +492,8 @@ class Sequence:
         plot_type : str, default='Gradient'
             Gradients display type, must be one of either 'Gradient' or 'Kspace'.
         """
+        mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
+
         valid_plot_types = ['Gradient', 'Kspace']
         valid_time_units = ['s', 'ms', 'us']
         valid_labels = get_supported_labels()
