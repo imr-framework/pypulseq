@@ -196,19 +196,6 @@ class Sequence:
 
         return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
 
-    # def calculate_kspace_PP(self, trajectory_delay: float = 0):
-    #     gw_pp, t_excitation, t_refocusing, t_adc = self.waveforms_and_times()
-    #     t_adc += trajectory_delay
-    #
-    #     ng = len(gw_pp)
-    #     # Integrate waveforms as PP
-    #     gm_pp = np.empty(ng)
-    #     tc = []
-    #     for i in range(ng):
-    #         if gw_pp[i] is None:
-    #             continue
-    #         gm_pp[i] = 0  # TODO
-
     def check_timing(self) -> Tuple[bool, list]:
         """
         Check timing of the events in each block based on grad raster time system limit.
@@ -273,19 +260,14 @@ class Sequence:
 
     def flip_grad_axis(self, axis: str) -> None:
         """
-        # TODO
+        Convenience function to invert all gradients along specified axis.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        Raises
-        ------
+        axis : str
+            Gradients to invert or scale. Must be one of 'x', 'y' or 'z'.
         """
-        # self.mod_grad_axis(axis, modifier=-1)
-        raise RuntimeError('Implementation incomplete')  # TODO
+        self.mod_grad_axis(axis, modifier=-1)
 
     def get_block(self, block_index: int) -> SimpleNamespace:
         """
@@ -443,24 +425,35 @@ class Sequence:
 
         return grad_waveforms
 
-    def mod_grad_axis(self, axis: str, modifier: int):
+    def mod_grad_axis(self, axis: str, modifier: int) -> None:
         """
-        # TODO
+        Invert or scale all gradients along the corresponding axis/channel. The function acts on all gradient objects
+        already added to the sequence object.
 
         Parameters
         ----------
-
-        Returns
-        -------
+        axis : str
+            Gradients to invert or scale. Must be one of 'x', 'y' or 'z'.
+        modifier : int
+            Scaling value.
 
         Raises
         ------
+        ValueError
+            If invalid `axis` is passed. Must be one of 'x', 'y','z'.
+        RuntimeError
+            If same gradient event is used on multiple axes.
         """
+        if axis not in ['x', 'y', 'z']:
+            raise ValueError(f"Invalid axis. Must be one of 'x', 'y','z'. Passed: {axis}")
+
         channel_num = ['x', 'y', 'z'].index(axis)
-        other_channels = ['x', 'y', 'z'].pop(channel_num)
+        other_channels = [0, 1, 2]
+        other_channels.remove(channel_num)
 
         # Go through all event table entries and list gradient objects in the library
-        all_grad_events = np.vstack(self.dict_block_events)[2:5]
+        all_grad_events = np.array(list(self.dict_block_events.values()))
+        all_grad_events = all_grad_events[:, 2:5]
 
         selected_events = np.unique(all_grad_events[:, channel_num])
         selected_events = selected_events[selected_events != 0]
@@ -469,9 +462,11 @@ class Sequence:
             raise RuntimeError('mod_grad_axis does not yet support the same gradient event used on multiple axes.')
 
         for i in range(len(selected_events)):
-            self.grad_library.data[selected_events[i]] = None
-
-        raise RuntimeError('Implementation incomplete')  # TODO
+            self.grad_library.data[selected_events[i]][0] *= modifier
+            if self.grad_library.type[selected_events[i]] == 'g' and self.grad_library.lengths[selected_events[i]] == 5:
+                # Need to update first and last fields
+                self.grad_library.data[selected_events[i]][3] *= modifier
+                self.grad_library.data[selected_events[i]][4] *= modifier
 
     def plot(self, label: str = str(), save: bool = False, time_range=(0, np.inf), time_disp: str = 's',
              plot_type: str = 'Gradient') -> None:
@@ -690,7 +685,7 @@ class Sequence:
 
         self.dict_definitions[key] = val
 
-    def set_extension_string_id(self, extension_str: str, extension_id: int) -> None:
+    def set_extension_string_ID(self, extension_str: str, extension_id: int) -> None:
         """
         Set numeric ID for the given string extension ID.
 
@@ -718,151 +713,6 @@ class Sequence:
         Analyze the sequence and return a text report.
         """
         return ext_test_report(self)
-
-    # def waveforms_and_times(self) -> Tuple[np.array, np.array, np.array, np.array]:
-    #     """
-    #
-    #     """
-    #     num_grad_channels = 3
-    #     grad_channels = ['gx', 'gy', 'gz']
-    #
-    #     num_blocks = len(self.dict_block_events)
-    #
-    #     # Collect the shape pieces into an array
-    #     grad_pieces = np.empty((num_grad_channels, num_blocks), dtype=np.object)
-    #     # Also collect RF and timing data
-    #     t_excitation, t_refocusing, t_adc = [], [], []
-    #
-    #     current_duration = 0
-    #     out_len = np.zeros(num_grad_channels, dtype=np.int)
-    #     eps = np.finfo(np.float).eps
-    #
-    #     for block_counter in range(num_blocks):
-    #         block = self.get_block(block_counter + 1)
-    #
-    #         for j in range(num_grad_channels):
-    #             if hasattr(block, grad_channels[j]):
-    #                 grad = getattr(block, grad_channels[j])
-    #                 if grad.type == 'grad':
-    #                     """
-    #                     Restore & recompress shape: if we had a trapezoid converted to shape, we have to find the
-    #                     "corners" and we can eliminate internal samples on the straight segments. But first we have to
-    #                     restore samples on the edges of the gradient raster intervals. For that we need the first
-    #                     sample.
-    #                     """
-    #                     max_abs = max(abs(grad.waveform))
-    #                     odd_step1 = [grad.first, *2 * grad.waveform]
-    #                     odd_step2 = np.multiply(odd_step1, np.mod(np.arange(1, len(odd_step1) + 1), 2) * 2 - 1)
-    #                     waveform_odd_rest = np.multiply(np.cumsum(odd_step2),
-    #                                                     np.mod(np.arange(1, len(odd_step2) + 1), 2) * 2 - 1)
-    #                     waveform_odd_interp = np.array(
-    #                         [grad.first, *0.5 * (grad.waveform[:-1] + grad.waveform[1:]), grad.last])
-    #
-    #                     m1 = abs(waveform_odd_rest[-1] - grad.last)
-    #                     m2 = abs(waveform_odd_rest[-1] - grad.last) / max_abs * 100
-    #                     message = f'Last restored point of shaped gradient differs too much from the recorded last, ' \
-    #                               f'deviation: {m1} Hz/m ({m2} %). Event number: {block_counter}'
-    #                     assert abs(waveform_odd_rest[-1] - grad.last) <= 2e-5 * max_abs, message
-    #
-    #                     waveform_odd_mask = abs(waveform_odd_rest - waveform_odd_interp) <= eps + 2e-5 * max_abs
-    #                     waveform_odd = waveform_odd_interp * waveform_odd_mask + waveform_odd_rest * (
-    #                             1 - waveform_odd_mask)
-    #
-    #                     # Combine odd and even
-    #                     comb = np.array(([0, *grad.waveform], [*waveform_odd]))
-    #                     waveform_os = np.concatenate([*comb.T])[1:]
-    #
-    #                     tt_os = np.arange(len(waveform_os - 1)) * self.grad_raster_time * 0.5
-    #
-    #                     mask_changes = np.abs([1, *np.diff(waveform_os, 2), 1]) > 1e-8
-    #                     waveform_changes = waveform_os[mask_changes]
-    #                     tt_changes = tt_os[mask_changes]
-    #
-    #                     tgc = np.array([tt_changes, waveform_changes])
-    #                     out_len[j] = tgc.shape[1]
-    #                     grad_pieces[j, block_counter] = current_duration + grad.delay + tgc
-    #                 else:
-    #                     if abs(grad.flat_time) > eps:
-    #                         out_len[j] += 4
-    #                         grad_pieces[j, block_counter] = np.array([current_duration +
-    #                                                                   grad.delay +
-    #                                                                   np.cumsum(
-    #                                                                       [0, grad.rise_time, grad.flat_time,
-    #                                                                        grad.fall_time]),
-    #                                                                   grad.amplitude * np.array([0, 1, 1, 0])])
-    #                     else:
-    #                         out_len[j] = out_len[j] + 3
-    #                         grad_pieces[j, block_counter] = np.array([current_duration +
-    #                                                                   grad.delay +
-    #                                                                   np.cumsum([0, grad.rise_time, grad.fall_time]),
-    #                                                                   grad.amplitude * np.array([0, 1, 0])])
-    #
-    #         if hasattr(block, 'rf'):
-    #             rf = block.rf
-    #             t, _ = rf.delay + calc_rf_center(rf)
-    #             if not hasattr(block.rf, 'use') or block.rf.use != 'refocusing':
-    #                 t_excitation.append(current_duration + t)
-    #             else:
-    #                 t_refocusing.append(current_duration + t)
-    #
-    #         if hasattr(block, 'adc'):
-    #             t_adc.extend(
-    #                 (np.arange(block.adc.num_samples) + 0.5) * block.adc.dwell + block.adc.delay + current_duration)
-    #
-    #         current_duration += self.arr_block_durations[block_counter]
-    #
-    #     # Collect wave data
-    #     wave_data = np.empty(num_grad_channels, dtype=np.object)
-    #     for i in range(num_grad_channels):
-    #         wave_data[i] = np.zeros((2, out_len[i]))
-    #
-    #     wave_count = np.zeros(num_grad_channels, dtype=np.int)
-    #     for block_counter in range(num_blocks):
-    #         for j in range(num_grad_channels):
-    #             if grad_pieces[j, block_counter] is not None:
-    #                 wave_data_local = grad_pieces[j, block_counter]
-    #                 length = wave_data_local.shape[1]
-    #                 if wave_count[j] == 0 or wave_data[j][0, wave_count[j] - 1] != wave_data_local[0, 0]:
-    #                     # Python does not dynamically resize arrays during slice-based assignment
-    #                     # Indices do not necessarily start from 0, so take max()
-    #                     new_size = max(wave_count[j] + np.arange(length))
-    #                     # Last index in an array of shape (..., new_size) would be this value
-    #                     last_ind = wave_data[j].shape[1] - 1
-    #                     if new_size > last_ind:
-    #                         diff = new_size - last_ind  # Pad the array with these many values
-    #                         wave_data[j] = np.hstack((wave_data[j], np.zeros((wave_data[j].shape[0], diff))))
-    #
-    #                     wave_data[j][:, wave_count[j] + np.arange(length)] = wave_data_local
-    #                     wave_count[j] += length
-    #                 else:
-    #                     new_size = max(wave_count[j] + np.arange(length - 1))  # See previous if-block
-    #                     if new_size > wave_data[j].shape[1] - 1:
-    #                         diff = new_size - (wave_data[j].shape[1] - 1)
-    #                         wave_data[j] = np.hstack((wave_data[j], np.zeros((wave_data[j].shape[0], diff))))
-    #
-    #                     wave_data[j][:, wave_count[j] + np.arange(length - 1)] = wave_data_local[:, 1:]
-    #                     wave_count[j] += length - 1
-    #
-    #     wave_pp = []
-    #     for j in range(num_grad_channels):
-    #         if wave_count[j] <= 0:
-    #             continue
-    #
-    #         if not np.all(np.isfinite(wave_data[j])):
-    #             warn('Not all elements of the generated waveform are finite.')
-    #
-    #         x = wave_data[j][0, :wave_count[j]]
-    #         fp = wave_data[j][1, :wave_count[j]]
-    #
-    #         P_linear = np.zeros(x.shape)
-    #         for n in range(1, N + 1):
-    #             P_linear += ((data[n, 1] - data[n - 1, 1]) / (data[n, 0] - data[n - 1, 0]) * (x - data[n - 1, 0])
-    #                          + data[n - 1, 1]) * (x > data[n - 1, 0]) * (x <= data[n, 0])
-    #
-    #         wave_pp[j] = interp1d(x, fp)
-    #         # TODO
-    #
-    #     return wave_pp, t_excitation, t_refocusing, t_adc
 
     def write(self, name: str) -> None:
         """
