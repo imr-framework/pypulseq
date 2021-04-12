@@ -5,3 +5,4 @@ pypulseq
    :maxdepth: 4
 
    pypulseq
+   setup
