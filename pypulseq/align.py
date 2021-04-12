@@ -1,46 +1,56 @@
+from types import SimpleNamespace
+from typing import List, Union
+
 import numpy as np
 
 from pypulseq.calc_duration import calc_duration
 
 
-def align(*args) -> list:
+def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[SimpleNamespace]:
     """
-    Aligns `SimpleNamespace` blocks as per specified alignment options by setting delays of the pulse sequence events
+    Aligns `SimpleNamespace` objects as per specified alignment options by setting delays of the pulse sequence events
     within the block. All previously configured delays within objects are taken into account during calculating of the
     block duration but then reset according to the selected alignment. Possible values for align_spec are 'left',
     'center', 'right'.
 
     Parameters
     ----------
-    args : list
-        List of alignment options and `SimpleNamespace` blocks.
-        Template: [alignment_spec, 'SimpleNamespace` block, [alignment_spec, `SimpleNamespace` block, ...]].
-        Alignment spec can be one of `left`, `center` or `right`.
+    args : dict[str, list[SimpleNamespace]
+        Dictionary mapping of alignment options and `SimpleNamespace` objects.
+        Template: alignment_spec1=SimpleNamespace, alignment_spec2=[SimpleNamespace, ...], ...
+        Alignment spec must be one of `left`, `center` or `right`.
 
     Returns
     -------
     objects : list
-        List of aligned `SimpleNamespace` blocks.
+        List of aligned `SimpleNamespace` objects.
+
+    Raises
+    ------
+    ValueError
+        If first parameter is not of type `str`.
+        If invalid alignment spec is passed. Must be one of `left`, `center` or `right`.
     """
+    alignment_specs = list(kwargs.keys())
+    if not isinstance(alignment_specs[0], str):
+        raise ValueError(f'First parameter must be of type str. Passed: {type(alignment_specs[0])}')
+
     alignment_options = ['left', 'center', 'right']
-    if not isinstance(args[0], str):
-        raise ValueError('First parameter must be of type str.')
+    if np.any([align_opt not in alignment_options for align_opt in alignment_specs]):
+        raise ValueError('Invalid alignment spec.')
 
-    curr_align = alignment_options.index(args[0]) if args[0] in alignment_options else None
-
-    i_objects = []
     alignments = []
-    for i in range(1, len(args)):
-        if curr_align is None:
-            raise ValueError('Invalid alignment spec.')
-        if isinstance(args[i], str):
-            curr_align = alignment_options.index(args[i]) if args[i] in alignment_options else None
-            continue
-        i_objects.append(i)
-        alignments.append(curr_align)
+    objects = []
+    for a in alignment_specs:
+        objects_to_align = kwargs[a]
+        a = alignment_options.index(a)
+        if isinstance(objects_to_align, (list, np.ndarray, tuple)):
+            alignments.extend([a] * len(objects_to_align))
+            objects.extend(objects_to_align)
+        elif isinstance(objects_to_align, SimpleNamespace):
+            alignments.extend([a])
+            objects.append(objects_to_align)
 
-    args = np.array(args)
-    objects = args[i_objects]
     dur = calc_duration(*objects)
 
     for i in range(len(objects)):

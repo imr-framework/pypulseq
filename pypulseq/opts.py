@@ -7,55 +7,63 @@ class Opts:
 
     Attributes
     ----------
-    grad_unit : str
-        Unit of maximum gradient amplitude. Must be one of Hz/m, mT/m or rad/ms/mm.
-    slew_unit : str
-        Unit of maximum slew rate. Must be one of Hz/m/s, mT/m/ms, T/m/s or rad/ms/mm/ms.
-    max_grad : float
-        Maximum gradient amplitude.
-    max_slew : float
-        Maximum slew rate.
-    rise_time : float
-        Rise time for gradients.
-    rf_dead_time : float
-        Dead time for radio-frequency pulses.
-    rf_ringdown_time : float
-        Ringdown time for radio-frequency pulses.
-    adc_dead_time : float
+    adc_dead_time : float, default=0
         Dead time for ADC readout pulses.
-    rf_raster_time : float
-        Raster time for radio-frequency pulses.
-    grad_raster_time : float
+    gamma : float, default=42.576e6
+        Gyromagnetic ratio. Default gamma is specified for Hydrogen.
+    grad_raster_time : float, default=10e-6
         Raster time for gradient waveforms.
-    gamma : float
-        Gyromagnetic ratio. Default is 42.576 MHz for Hydrogen.
+    grad_unit : str, default='Hz/m'
+        Unit of maximum gradient amplitude. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'.
+    max_grad : float, default=0
+        Maximum gradient amplitude.
+    max_slew : float, default=0
+        Maximum slew rate.
+    rf_dead_time : float, default=0
+        Dead time for radio-frequency pulses.
+    rf_raster_time : float, default=1e-6
+        Raster time for radio-frequency pulses.
+    rf_ringdown_time : float, default=0
+        Ringdown time for radio-frequency pulses.
+    rise_time : float, default=0
+        Rise time for gradients.
+    slew_unit : str, default='Hz/m/s'
+        Unit of maximum slew rate. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'.
+
+    Raises
+    ------
+    ValueError
+        If invalid `grad_unit` is passed. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'.
+        If invalid `slew_unit` is passed. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'.
     """
-    def __init__(self, grad_unit: str = None, slew_unit: str = None, max_grad: float = None, max_slew: float = None,
-                 rise_time: float = None, rf_dead_time: float = 0, rf_ringdown_time: float = 0,
-                 adc_dead_time: float = 0, rf_raster_time: float = 1e-6, grad_raster_time: float = 10e-6,
-                 gamma: float = 42.576e6):
+
+    def __init__(self, adc_dead_time: float = 0, gamma: float = 42.576e6, grad_raster_time: float = 10e-6,
+                 grad_unit: str = 'Hz/m', max_grad: float = 0, max_slew: float = 0, rf_dead_time: float = 0,
+                 rf_raster_time: float = 1e-6, rf_ringdown_time: float = 0, rise_time: float = 0,
+                 slew_unit: str = 'Hz/m/s'):
         valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
 
-        if grad_unit is not None and grad_unit not in valid_grad_units:
-            raise ValueError(f'Invalid gradient unit, must be one of Hz/m, mT/m or rad/ms/mm. You passed: {grad_unit}')
+        if grad_unit not in valid_grad_units:
+            raise ValueError(f"Invalid gradient unit. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'. "
+                             f"Passed: {grad_unit}")
 
-        if slew_unit is not None and slew_unit not in valid_slew_units:
-            raise ValueError(f'Invalid slew rate unit, must be one of Hz/m/s, mT/m/ms, T/m/s or rad/ms/mm/ms. You '
-                             f'passed: {slew_unit}')
+        if slew_unit not in valid_slew_units:
+            raise ValueError(f"Invalid slew rate unit. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'. "
+                             f"Passed: {slew_unit}")
 
-        if max_grad is None:
+        if max_grad == 0:
             max_grad = convert(from_value=40, from_unit='mT/m', gamma=gamma)
         else:
             max_grad = convert(from_value=max_grad, from_unit=grad_unit, to_unit='Hz/m', gamma=gamma)
 
-        if max_slew is None:
+        if max_slew == 0:
             max_slew = convert(from_value=170, from_unit='T/m/s', gamma=gamma)
         else:
             max_slew = convert(from_value=max_slew, from_unit=slew_unit, to_unit='Hz/m', gamma=gamma)
 
-        if rise_time is not None:
-            max_slew = None
+        if rise_time != 0:
+            max_slew = 0
 
         self.max_grad = max_grad
         self.max_slew = max_slew

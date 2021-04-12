@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Union
 
 import numpy as np
 
@@ -8,20 +9,20 @@ from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 
 
-def add_gradients(grads: list, system=Opts(), max_grad: int = 0, max_slew: int = 0) -> np.ndarray:
+def add_gradients(grads: Union[list, tuple], system=Opts(), max_grad: int = 0, max_slew: int = 0) -> SimpleNamespace:
     """
     Superpose several gradient events.
 
     Parameters
     ----------
-    grads : list
-        List of 'SimpleNamespace' gradient events.
-    system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
-    max_grad : float, optional
-        Maximum gradient amplitude. Default is 0.
-    max_slew : float, optional
-        Maximum slew rate. Default is 0.
+    grads : list or tuple
+        List or tuple of 'SimpleNamespace' gradient events.
+    system : Opts, optional, default=Opts()
+        System limits.
+    max_grad : float, optional, default=0
+        Maximum gradient amplitude.
+    max_slew : float, optional, default=0
+        Maximum slew rate.
 
     Returns
     -------
@@ -90,7 +91,7 @@ def add_gradients(grads: list, system=Opts(), max_grad: int = 0, max_slew: int =
         w += wt
 
     grad = make_arbitrary_grad(channel, w, system, max_slew=max_slew, max_grad=max_grad, delay=common_delay)
-    grad.first = np.sum(firsts[np.where(delays == common_delay)])
+    grad.first = np.sum(firsts[np.array(delays) == common_delay])
     grad.last = np.sum(lasts[np.where(durs == total_duration)])
 
     return grad

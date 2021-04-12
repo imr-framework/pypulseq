@@ -1,19 +1,19 @@
 import numpy as np
 
 
-def points_to_waveform(times: np.ndarray, amplitudes: np.ndarray, grad_raster_time: float):
+def points_to_waveform(amplitudes: np.ndarray, grad_raster_time: float, times: np.ndarray) -> np.ndarray:
     """
     1D interpolate amplitude values `amplitudes` at time indices `times` as per the gradient raster time
     `grad_raster_time` to generate a gradient waveform.
 
     Parameters
     ----------
-    times : numpy.ndarray
-        Time indices.
     amplitudes : numpy.ndarray
         Amplitude values at time indices `times`.
     grad_raster_time : float
         Gradient raster time.
+    times : numpy.ndarray
+        Time indices.
 
     Returns
     -------

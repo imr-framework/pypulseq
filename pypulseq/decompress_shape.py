@@ -1,13 +1,15 @@
+from types import SimpleNamespace
+
 import numpy as np
 
 
-def decompress_shape(compressed_shape: np.ndarray) -> np.ndarray:
+def decompress_shape(compressed_shape: SimpleNamespace) -> np.ndarray:
     """
     Decompresses a run-length encoded shape.
 
     Parameters
     ----------
-    compressed_shape : numpy.ndarray
+    compressed_shape : SimpleNamespace
         Run-length encoded shape.
 
     Returns

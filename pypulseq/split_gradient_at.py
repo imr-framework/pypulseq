@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -6,7 +7,8 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 
 
-def split_gradient_at(grad: SimpleNamespace, time_point: float, system: Opts = Opts()):
+def split_gradient_at(grad: SimpleNamespace, time_point: float,
+                      system: Opts = Opts()) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
     Split gradient waveform `grad` into two at time point `time_point`.
 
@@ -14,14 +16,20 @@ def split_gradient_at(grad: SimpleNamespace, time_point: float, system: Opts = O
     ----------
     grad : SimpleNamespace
         Gradient event to be split into two gradient events.
-    time_point : float, optional
+    time_point : float
         Time point at which `grad` will be split into two gradient waveforms.
-    system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
+    system : Opts, optional, default=Opts()
+        System limits.
+
     Returns
     -------
-    grad1, grad2 : numpy.ndarray
+    grad1, grad2 : SimpleNamespace
         Gradient waveforms after splitting.
+
+    Raises
+    ------
+    ValueError
+        If non-gradient event is passed.
     """
     grad_raster_time = system.grad_raster_time
 

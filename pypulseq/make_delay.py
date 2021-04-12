@@ -1,3 +1,4 @@
+import numpy as np
 from types import SimpleNamespace
 
 
@@ -14,11 +15,15 @@ def make_delay(d: float) -> SimpleNamespace:
     -------
     delay : SimpleNamespace
         Delay event.
+
+    Raises
+    ------
+    ValueError
+        If delay is invalid (not finite or < 0).
     """
 
     delay = SimpleNamespace()
-    d = round(d, 5)  # causes crashes on scanners if the precision is better than 10us - this is confusing - To Do:
-    if d < 0:
+    if not np.isfinite(d) or d < 0:
         raise ValueError('Delay {:.2f} ms is invalid'.format(d * 1e3))
     delay.type = 'delay'
     delay.delay = d

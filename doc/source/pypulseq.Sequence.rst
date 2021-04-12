@@ -12,6 +12,14 @@ pypulseq.Sequence.block module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.Sequence.parula module
+-------------------------------
+
+.. automodule:: pypulseq.Sequence.parula
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.Sequence.read\_seq module
 ----------------------------------
 
@@ -43,7 +51,6 @@ pypulseq.Sequence.write\_seq module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------

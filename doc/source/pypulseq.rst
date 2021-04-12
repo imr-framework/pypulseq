@@ -5,9 +5,10 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
+   pypulseq.SAR
    pypulseq.Sequence
-   pypulseq.utils
 
 Submodules
 ----------
@@ -32,6 +33,14 @@ pypulseq.align module
 ---------------------
 
 .. automodule:: pypulseq.align
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.block\_to\_events module
+---------------------------------
+
+.. automodule:: pypulseq.block_to_events
    :members:
    :undoc-members:
    :show-inheritance:
@@ -140,6 +149,14 @@ pypulseq.make\_delay module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.make\_digital\_output\_pulse module
+--------------------------------------------
+
+.. automodule:: pypulseq.make_digital_output_pulse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.make\_extended\_trapezoid module
 -----------------------------------------
 
@@ -148,10 +165,26 @@ pypulseq.make\_extended\_trapezoid module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.make\_extended\_trapezoid\_area module
+-----------------------------------------------
+
+.. automodule:: pypulseq.make_extended_trapezoid_area
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.make\_gauss\_pulse module
 ----------------------------------
 
 .. automodule:: pypulseq.make_gauss_pulse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.make\_label module
+---------------------------
+
+.. automodule:: pypulseq.make_label
    :members:
    :undoc-members:
    :show-inheritance:
@@ -168,6 +201,14 @@ pypulseq.make\_trap\_pulse module
 ---------------------------------
 
 .. automodule:: pypulseq.make_trap_pulse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.make\_trigger module
+-----------------------------
+
+.. automodule:: pypulseq.make_trigger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -204,6 +245,14 @@ pypulseq.split\_gradient\_at module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.supported\_labels module
+---------------------------------
+
+.. automodule:: pypulseq.supported_labels
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.traj\_to\_grad module
 ------------------------------
 
@@ -211,7 +260,6 @@ pypulseq.traj\_to\_grad module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Tuple
 
 import numpy as np
 
@@ -7,20 +8,28 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 
 
-def split_gradient(grad: np.ndarray, system: Opts = Opts()):
+def split_gradient(grad: SimpleNamespace,
+                   system: Opts = Opts()) -> Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]:
     """
     Split gradient waveform `grad` into two gradient waveforms at the center.
 
     Parameters
     ----------
-    grad : numpy.ndarray
+    grad : array_like
         Gradient waveform to be split into two gradient waveforms.
-    system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
+    system : Opts, optional, default=Opts()
+        System limits.
+
     Returns
     -------
     grad1, grad2 : numpy.ndarray
         Split gradient waveforms.
+
+    Raises
+    ------
+    ValueError
+         If arbitrary gradients are passed.
+         If non-gradient event is passed.
     """
     grad_raster_time = system.grad_raster_time
     total_length = calc_duration(grad)
