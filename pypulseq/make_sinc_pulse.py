@@ -125,4 +125,7 @@ def make_sinc_pulse(flip_angle: float, apodization: float = 0, delay: float = 0,
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    return rf, gz, gzr if return_gz else rf
+    if return_gz:
+        return rf, gz, gzr
+    else:
+        return rf
