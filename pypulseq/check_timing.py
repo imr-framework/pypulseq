@@ -56,6 +56,9 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
             raster = system.grad_raster_time
 
         if hasattr(e, 'delay'):
+            eps = np.finfo(np.float).eps
+            if e.delay < -eps:
+                ok = False
             if not __div_check(e.delay, raster):
                 ok = False
 
@@ -93,6 +96,9 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
     return is_ok, text_err, total_duration
 
 
-def __div_check(a, b) -> bool:
+def __div_check(a: float, b: float) -> bool:
+    """
+    Checks whether `a` can be divided by `b` to an accuracy of 1e-9.
+    """
     c = a / b
     return abs(c - np.round(c)) < 1e-9
