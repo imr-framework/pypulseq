@@ -121,4 +121,4 @@ def make_block_pulse(flip_angle: float, bandwidth: float = 0, delay: float = 0, 
     if return_gz:
         return rf, gz
     else:
-        rf
+        return rf

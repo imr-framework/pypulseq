@@ -132,7 +132,8 @@ def make_gauss_pulse(flip_angle: float, apodization: float = 0, bandwidth: float
 
     if return_gz:
         return rf, gz, gzr
-    return rf
+    else:
+        return rf
 
 
 def __gauss(x):
