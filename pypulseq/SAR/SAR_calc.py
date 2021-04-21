@@ -252,7 +252,7 @@ def calc_SAR(file: Union[str, Path, Sequence]) -> None:
 
         if file.exists() and file.is_file():
             seq_obj = Sequence()
-            seq_obj.read(file)
+            seq_obj.read(str(file))
             seq_obj = seq_obj
         else:
             raise ValueError('Seq file does not exist.')
