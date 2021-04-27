@@ -44,7 +44,7 @@ dur = math.ceil(2 * math.sqrt(delta_k / system.max_slew) / 10e-6) * 10e-6
 gy = pp.make_trapezoid(channel='y', system=system, area=delta_k, duration=dur)
 
 # Refocusing pulse with spoiling gradients
-rf180, _ = pp.make_block_pulse(flip_angle=np.pi, system=system, duration=500e-6, use='refocusing')
+rf180 = pp.make_block_pulse(flip_angle=np.pi, system=system, duration=500e-6, use='refocusing')
 gz_spoil = pp.make_trapezoid(channel='z', system=system, area=gz.area * 2, duration=3 * pre_time)
 
 # Calculate delay time
