@@ -2,8 +2,10 @@ from pathlib import Path
 
 path_version = Path(__file__).parent.parent / 'VERSION'
 with open(str(path_version), 'r') as version_file:
-    version = version_file.read().strip().split('.')
-    major, minor, revision = [int(v) for v in version]
+    major, minor, revision = version_file.read().strip().split('.')
+    major = int(major)
+    minor = int(minor)
+
 
 from pypulseq.SAR.SAR_calc import calc_SAR
 from pypulseq.Sequence.sequence import Sequence
