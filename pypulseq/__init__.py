@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import numpy as np
+
 path_version = Path(__file__).parent.parent / 'VERSION'
 with open(str(path_version), 'r') as version_file:
     major, minor, revision = version_file.read().strip().split('.')
@@ -7,6 +9,20 @@ with open(str(path_version), 'r') as version_file:
     minor = int(minor)
 
 
+# =========
+# BANKER'S ROUNDING FIX
+# =========
+def round_half_up(n, decimals=0):
+    """
+    Avoid banker's rounding inconsistencies; from https://realpython.com/python-rounding/#rounding-half-up
+    """
+    multiplier = 10 ** decimals
+    return np.floor(np.abs(n) * multiplier + 0.5) / multiplier
+
+
+# =========
+# PACKAGE-LEVEL IMPORTS
+# =========
 from pypulseq.SAR.SAR_calc import calc_SAR
 from pypulseq.Sequence.sequence import Sequence
 from pypulseq.add_gradients import add_gradients
