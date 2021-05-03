@@ -40,7 +40,7 @@ rf, gz, gz_reph = pp.make_sinc_pulse(flip_angle=alpha * np.pi / 180, duration=1e
 
 # Align RO asymmetry to ADC samples
 Nxo = np.round(ro_os * Nx)
-ro_asymmetry = np.round(ro_asymmetry * Nxo / 2) / Nxo * 2
+ro_asymmetry = pp.round_half_up(ro_asymmetry * Nxo / 2) / Nxo * 2  # Avoid banker's rounding
 
 # Define other gradients and ADC events
 delta_k = 1 / fov / (1 + ro_asymmetry)
