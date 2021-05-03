@@ -1,11 +1,13 @@
 import math
 from types import SimpleNamespace
 
+import numpy as np
+
 from pypulseq.opts import Opts
 
 
 def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay: float = 0, duration: float = 0,
-                   flat_area: float = 0, flat_time: float = 0, max_grad: float = 0, max_slew: float = 0,
+                   flat_area: float = 0, flat_time: float = -1, max_grad: float = 0, max_slew: float = 0,
                    rise_time: float = 0, system: Opts = Opts()) -> SimpleNamespace:
     """
     Creates a trapezoidal gradient event.
@@ -24,8 +26,8 @@ def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay
         Duration in milliseconds (ms).
     flat_area : float, optional, default=0
         Flat area.
-    flat_time : float, optional, default=0
-        Flat duration in milliseconds (ms).
+    flat_time : float, optional, default=-1
+        Flat duration in milliseconds (ms). Default is -1 to account for triangular pulses.
     max_grad : float, optional, default=0
         Maximum gradient strength.
     max_slew : float, optional, default=0
@@ -43,9 +45,10 @@ def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay
     Raises
     ------
     ValueError
-        - If none of `area`, `flat_area` and `amplitude` are passed
-        - If requested area is too large for this gradient
-        - Amplitude violation
+        If none of `area`, `flat_area` and `amplitude` are passed
+        If requested area is too large for this gradient
+        If `flat_time`, `duration` and `area` are not supplied.
+        Amplitude violation
     """
     if channel not in ['x', 'y', 'z']:
         raise ValueError(f"Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}")
@@ -62,7 +65,7 @@ def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay
     if area is None and flat_area == 0 and amplitude == 0:
         raise ValueError("Must supply either 'area', 'flat_area' or 'amplitude'.")
 
-    if flat_time != 0:
+    if flat_time != -1:
         if amplitude != 0:
             amplitude2 = amplitude
         else:
@@ -98,11 +101,11 @@ def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay
         if amplitude == 0:
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
     else:
-        if area is None:
-            raise ValueError('Must supply a duration')
+        if area == 0:
+            raise ValueError('Must supply a duration.')
         else:
             rise_time = math.ceil(math.sqrt(abs(area) / max_slew) / system.grad_raster_time) * system.grad_raster_time
-            amplitude2 = area / rise_time
+            amplitude2 = np.divide(area, rise_time)  # To handle nan
             t_eff = rise_time
 
             if abs(amplitude2) > max_grad:
@@ -115,7 +118,7 @@ def make_trapezoid(channel: str, amplitude: float = 0, area: float = None, delay
             fall_time = rise_time
 
     if abs(amplitude2) > max_grad:
-        raise ValueError("Amplitude violation")
+        raise ValueError("Amplitude violation.")
 
     grad = SimpleNamespace()
     grad.type = 'trap'

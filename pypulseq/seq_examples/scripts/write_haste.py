@@ -75,7 +75,7 @@ delta_k = 1 / fov
 k_width = Nx * delta_k
 
 GR_acq = make_trapezoid(channel='x', system=system, flat_area=k_width, flat_time=readout_time, rise_time=dG)
-adc = make_adc(num_samples=Nx, duration=GR_acq.flat_time - 40e-6, delay=20e-6)
+adc = make_adc(num_samples=Nx, duration=GR_acq.flat_time - 2 * system.adc_dead_time, delay=20e-6)
 GR_spr = make_trapezoid(channel='x', system=system, area=GR_acq.area * fspR, duration=t_sp, rise_time=dG)
 GR_spex = make_trapezoid(channel='x', system=system, area=GR_acq.area * (1 + fspR), duration=t_sp_ex, rise_time=dG)
 
@@ -188,6 +188,13 @@ for k_ex in range(n_ex):
         seq.add_block(delay_TR)
 
 seq.add_block(delay_end)
+
+ok, error_report = seq.check_timing()  # Check whether the timing of the sequence is correct
+if ok:
+    print('Timing check passed successfully')
+else:
+    print('Timing check failed. Error listing follows:')
+    [print(e) for e in error_report]
 
 # ======
 # VISUALIZATION

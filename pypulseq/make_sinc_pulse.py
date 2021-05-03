@@ -38,7 +38,7 @@ def make_sinc_pulse(flip_angle: float, apodization: float = 0, delay: float = 0,
         Maximum slew rate of accompanying slice select trapezoidal event.
     phase_offset : float, optional, default=0
         Phase offset in Hertz (Hz).
-    return_gz:bool, default=True
+    return_gz:bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, optional, default=0
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
@@ -125,4 +125,7 @@ def make_sinc_pulse(flip_angle: float, apodization: float = 0, delay: float = 0,
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    return rf, gz, gzr if return_gz else rf
+    if return_gz:
+        return rf, gz, gzr
+    else:
+        return rf

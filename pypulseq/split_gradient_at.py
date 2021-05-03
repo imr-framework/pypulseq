@@ -79,12 +79,12 @@ def split_gradient_at(grad: SimpleNamespace, time_point: float,
         else:
             grad1 = grad
             grad2 = grad
-            grad1.last = grad.waveform[time_index]
-            grad2.first = grad.waveform[time_index]
+            grad1.last = 0.5 * (grad.waveform[time_index - 1] + grad.waveform[time_index])
+            grad2.first = grad1.last
             grad2.delay = grad.delay + grad.t[time_index]
             grad1.t = grad.t[:time_index]
             grad1.waveform = grad.waveform[:time_index]
-            grad2.t = grad.t[time_index:]
+            grad2.t = grad.t[time_index:] - time_point
             grad2.waveform = grad.waveform[time_index:]
             return grad1, grad2
     else:

@@ -14,13 +14,13 @@ import pypulseq as pp
 seq = pp.Sequence()  # Create a new sequence object
 # Define FOV and resolution
 fov = 250e-3
-Nx = 256
+Nx = 250
 alpha = 10  # Flip angle
 slice_thickness = 3e-3  # Slice thickness
 TR = 10e-3  # TR
 Nr = 128  # Number of radial spokes
-delta = 2 * np.pi / Nr  # AAngular increment; try golden angle pi*(3-5^0.5) or 0.5 of i
-ro_duration = 2.4e-3  # Read-out time: controls RO bandwidth and T2-blurring
+delta = 2 * np.pi / Nr  # Angular increment; try golden angle pi*(3-5^0.5) or 0.5 of i
+ro_duration = 2.5e-3  # Read-out time: controls RO bandwidth and T2-blurring
 ro_os = 2  # Oversampling
 ro_asymmetry = 0.97  # 0: Fully symmetric; 1: half-echo
 minRF_to_ADC_time = 50e-6  # Defines TE together with the RO asymmetry
@@ -40,14 +40,13 @@ rf, gz, gz_reph = pp.make_sinc_pulse(flip_angle=alpha * np.pi / 180, duration=1e
 
 # Align RO asymmetry to ADC samples
 Nxo = np.round(ro_os * Nx)
-ro_asymmetry = np.round(ro_asymmetry * Nxo / 2) / Nxo * 2
+ro_asymmetry = pp.round_half_up(ro_asymmetry * Nxo / 2) / Nxo * 2  # Avoid banker's rounding
 
 # Define other gradients and ADC events
 delta_k = 1 / fov / (1 + ro_asymmetry)
 ro_area = Nx * delta_k
 gx = pp.make_trapezoid(channel='x', flat_area=ro_area, flat_time=ro_duration, system=system)
 adc = pp.make_adc(num_samples=Nxo, duration=gx.flat_time, delay=gx.rise_time, system=system)
-adc.delay = adc.delay - 0.5 * adc.dwell  # compensate for the 0.5 samples shift
 gx_pre = pp.make_trapezoid(channel='x', area=-(gx.area - ro_area) / 2 - ro_area / 2 * (1 - ro_asymmetry), system=system)
 
 # Gradient spoiling
@@ -104,6 +103,13 @@ for i in range(Nr):
         seq.add_block(gpc, gps, gz_reph)
         seq.add_block(grc, grs, adc)
         seq.add_block(gsc, gss, pp.make_delay(delay_TR))
+
+ok, error_report = seq.check_timing()  # Check whether the timing of the sequence is correct
+if ok:
+    print('Timing check passed successfully')
+else:
+    print('Timing check failed. Error listing follows:')
+    [print(e) for e in error_report]
 
 # ======
 # VISUALIZATION
