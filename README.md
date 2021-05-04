@@ -12,7 +12,7 @@
 1. [📚 Relevant literature][section-relevant-literature]
 2. [🔨 Installation][section-installation]
 3. [⚡ Lightning-start - PyPulseq in your browser!][section-lightning-start]
-4. [🏃‍♂ Quickstart - example scripts][section-notebook-examples]
+4. [🏃‍♂ Quickstart - example scripts][section-quickstart-examples]
 5. [🤿 Deep dive - custom pulse sequences][section-deep-dive]
 6. [👥 Contributing and Community guidelines][section-contributing]
 7. [📖 References][section-references]
@@ -23,10 +23,10 @@
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
 
-PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]](section-references). The pulse sequences can be
+PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]][section-references]. The pulse sequences can be
 exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by leveraging their respective
 Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
-users. It is a translation of the Pulseq framework originally written in Matlab [[3]](section-references).
+users. It is a translation of the Pulseq framework originally written in Matlab [[3]][section-references].
 
 👉 Currently, PyPulseq is compatible with Pulseq 1.3.1. 👈
 
@@ -159,10 +159,10 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [google-colab]: https://colab.research.google.com/
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
 [script-examples]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples/scripts
-[section-contributing]: #contributing-and-community-guidelines
-[section-deep-dive]: #--deep-dive---custom-pulse-sequences
-[section-installation]: #--installation
-[section-lightning-start]: #--lightning-start---pypulseq-in-your-browser
-[section-notebook-examples]: https://github.com/imr-framework/pypulseq/tree/dev/pypulseq/seq_examples/notebooks
-[section-references]: #--references
-[section-relevant-literature]: #--relevant-literature
+[section-contributing]: #-contributing-and-community-guidelines
+[section-deep-dive]: #-deep-dive---custom-pulse-sequences
+[section-installation]: #-installation
+[section-lightning-start]: #-lightning-start---pypulseq-in-your-browser
+[section-quickstart-examples]: #-quickstart---example-scripts
+[section-references]: #-references
+[section-relevant-literature]: #-relevant-literature-reverse-chronological
