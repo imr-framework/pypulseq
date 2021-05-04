@@ -158,7 +158,7 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
 [google-colab]: https://colab.research.google.com/
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
-[script-examples]: https://github.com/imr-framework/pypulseq/tree/master/pypulseq/seq_examples/scripts
+[script-examples]: https://github.com/imr-framework/pypulseq/tree/dev/pypulseq/seq_examples/scripts
 [section-contributing]: #-contributing-and-community-guidelines
 [section-deep-dive]: #-deep-dive---custom-pulse-sequences
 [section-installation]: #-installation
