@@ -27,7 +27,7 @@ from pypulseq.supported_labels import get_supported_labels
 class Sequence:
     version_major: int = major
     version_minor: int = minor
-    version_revision = revision
+    version_revision: int = revision
 
     def __init__(self, system=Opts()):
         # =========

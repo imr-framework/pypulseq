@@ -7,6 +7,8 @@ with open(str(path_version), 'r') as version_file:
     major, minor, revision = version_file.read().strip().split('.')
     major = int(major)
     minor = int(minor)
+    if len(revision) > 1:
+        revision = int(revision[0])
 
 
 # =========

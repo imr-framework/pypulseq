@@ -224,7 +224,7 @@ def __read_version(input_file) -> Tuple[int, int, int]:
         elif tok[0] == 'minor':
             minor = int(tok[1])
         elif tok[0] == 'revision':
-            revision = tok[1]
+            revision = int(tok[1])
         else:
             raise RuntimeError(f'Incompatible version. Expected: {major}{minor}{revision}')
         line = __strip_line(input_file)

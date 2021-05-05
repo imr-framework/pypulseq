@@ -1,9 +1,9 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 import setuptools
 
 
-def _get_version() -> Tuple[int, int, Union[int, str]]:
+def _get_version() -> Tuple[int, int, int]:
     """
     Returns version of current PyPulseq release.
 
