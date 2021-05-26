@@ -334,11 +334,11 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 trigger_types = ['output', 'trigger']
                 data = self.trigger_library.data[ext_data[1]]
                 trigger = SimpleNamespace()
-                trigger.type = trigger_types[int(data[0])]
-                if data[0] == 0:
+                trigger.type = trigger_types[int(data[0]) - 1]
+                if data[0] == 1:
                     trigger_channels = ['osc0', 'osc1', 'ext1']
                     trigger.channel = trigger_channels[int(data[1])]
-                elif data[0] == 1:
+                elif data[0] == 2:
                     trigger_channels = ['physio1', 'physio2']
                     trigger.channel = trigger_channels[int(data[1])]
                 else:
