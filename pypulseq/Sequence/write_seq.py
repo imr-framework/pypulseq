@@ -81,7 +81,7 @@ def write(self, file_name: str) -> None:
     arb_grad_mask = grad_lib_values == 'g'
     trap_grad_mask = grad_lib_values == 't'
 
-    if any(arb_grad_mask):
+    if np.any(arb_grad_mask):
         output_file.write('# Format of arbitrary gradients:\n')
         output_file.write('# id amplitude shape_id delay\n')
         output_file.write('# ..      Hz/m     ....    us\n')
@@ -93,7 +93,7 @@ def write(self, file_name: str) -> None:
             output_file.write(s)
         output_file.write('\n')
 
-    if any(trap_grad_mask):
+    if np.any(trap_grad_mask):
         output_file.write('# Format of trapezoid gradients:\n')
         output_file.write('# id amplitude rise flat fall delay\n')
         output_file.write('# ..      Hz/m   us   us   us    us\n')
