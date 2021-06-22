@@ -121,4 +121,7 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
         rf.t = np.concatenate((rf.t, rf.t[-1] + t_fill))
         rf.signal = np.concatenate((rf.signal, np.zeros(len(t_fill))))
 
-    return rf, gz if return_gz else rf
+    if return_gz:
+        return rf, gz
+    else:
+        return rf
