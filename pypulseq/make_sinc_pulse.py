@@ -106,6 +106,7 @@ def make_sinc_pulse(flip_angle: float, apodization: float = 0, delay: float = 0,
             system.max_slew = max_slew
 
         amplitude = BW / slice_thickness
+        print(amplitude)
         area = amplitude * duration
         gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(channel='z', system=system, area=-area * (1 - center_pos) - 0.5 * (gz.area - area))
