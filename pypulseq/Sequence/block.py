@@ -337,10 +337,10 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 trigger.type = trigger_types[int(data[0]) - 1]
                 if data[0] == 1:
                     trigger_channels = ['osc0', 'osc1', 'ext1']
-                    trigger.channel = trigger_channels[int(data[1])]
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
                 elif data[0] == 2:
                     trigger_channels = ['physio1', 'physio2']
-                    trigger.channel = trigger_channels[int(data[1])]
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
                 else:
                     raise ValueError('Unsupported trigger event type')
 
