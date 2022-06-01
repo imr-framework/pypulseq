@@ -31,8 +31,9 @@ Design pulse sequences using `pypulseq` in your browser! Check out the [Lightnin
 learn how!
 
 ---
-## [Relevant literature][scholar-citations] (reverse chronological)
-1.Ravi KS, Geethanath S. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging. 2020 Nov 1;73:177-85.
+## 📚 [Relevant literature][scholar-citations] (reverse chronological)
+
+1. Ravi, K.S. and Geethanath, S., 2020. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging, 73, pp.177-185.
 2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
 Hardware-Independent PyPulseq Tool." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic
 Resonance in Medicine (ISMRM) (2020).
