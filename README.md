@@ -32,12 +32,11 @@ learn how!
 
 ---
 ## [Relevant literature][scholar-citations] (reverse chronological)
-1. Ravi, Keerthi Sravan, and Sairam Geethanath. "Autonomous Magnetic Resonance Imaging." medRxiv (2020).
+1.Ravi KS, Geethanath S. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging. 2020 Nov 1;73:177-85.
 2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
 Hardware-Independent PyPulseq Tool." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic
 Resonance in Medicine (ISMRM) (2020).
-3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv
-preprint arXiv:2002.04265 (2020).
+3. Loktyushin, A., Herz, K., Dang, N., Glang, F., Deshmane, A., Weinmüller, S., Doerfler, A., Schölkopf, B., Scheffler, K. and Zaiss, M., 2021. MRzero‐Automated discovery of MRI sequences using supervised learning. Magnetic Resonance in Medicine, 86(2), pp.709-724.
 4. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using
 TOPPE and Pulseq." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic Resonance in
 Medicine (ISMRM) (2020).
