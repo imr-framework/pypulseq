@@ -46,9 +46,11 @@ setuptools.setup(
     description="Pulseq in Python",
     include_package_data=True,
     install_requires=[
-        'matplotlib>=3.3.4',
+        'coverage>=6.2',
+        'matplotlib>=3.5.2',
         'numpy>=1.19.5',
-        'scipy>=1.5.4'
+        'scipy>=1.8.1',
+        'sigpy==0.1.23'
     ],
     license='License :: OSI Approved :: GNU Affero General Public License v3',
     long_description=_get_long_description(),
