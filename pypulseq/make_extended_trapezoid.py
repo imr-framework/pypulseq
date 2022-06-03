@@ -9,14 +9,14 @@ from pypulseq.points_to_waveform import points_to_waveform
 
 
 def make_extended_trapezoid(
-        channel: str,
-        amplitudes: np.ndarray = np.zeros(1),
-        convert_to_arbitrary: bool = False,
-        max_grad: float = 0,
-        max_slew: float = 0,
-        skip_check: bool = False,
-        system: Opts = Opts(),
-        times: np.ndarray = np.zeros(1),
+    channel: str,
+    amplitudes: np.ndarray = np.zeros(1),
+    convert_to_arbitrary: bool = False,
+    max_grad: float = 0,
+    max_slew: float = 0,
+    skip_check: bool = False,
+    system: Opts = Opts(),
+    times: np.ndarray = np.zeros(1),
 ) -> SimpleNamespace:
     """
     Create a gradient by specifying a set of points (amplitudes) at specified time points(times) at a given channel
@@ -103,11 +103,11 @@ def make_extended_trapezoid(
     else:
         #  Keep the original possibly irregular sampling
         if np.any(
-                np.abs(
-                    np.round(times / system.grad_raster_time) * system.grad_raster_time
-                    - times
-                )
-                > eps
+            np.abs(
+                np.round(times / system.grad_raster_time) * system.grad_raster_time
+                - times
+            )
+            > eps
         ):
             raise ValueError(
                 'All time points must be on a gradient raster or "convert2arbitrary" option must be used.'
@@ -118,11 +118,11 @@ def make_extended_trapezoid(
         grad.channel = channel
         grad.waveform = amplitudes
         grad.delay = (
-                np.round(times[0] / system.grad_raster_time) * system.grad_raster_time
+            np.round(times[0] / system.grad_raster_time) * system.grad_raster_time
         )
         grad.tt = times - grad.delay
         grad.shape_dur = (
-                np.round(times[-1] / system.grad_raster_time) * system.grad_raster_time
+            np.round(times[-1] / system.grad_raster_time) * system.grad_raster_time
         )
 
     grad.first = amplitudes[0]

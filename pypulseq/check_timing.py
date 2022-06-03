@@ -77,9 +77,9 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
 
         if hasattr(e, "type") and e.type == "trap":
             if (
-                    not __div_check(e.rise_time, system.grad_raster_time)
-                    or not __div_check(e.flat_time, system.grad_raster_time)
-                    or not __div_check(e.fall_time, system.grad_raster_time)
+                not __div_check(e.rise_time, system.grad_raster_time)
+                or not __div_check(e.flat_time, system.grad_raster_time)
+                or not __div_check(e.fall_time, system.grad_raster_time)
             ):
                 ok = False
 

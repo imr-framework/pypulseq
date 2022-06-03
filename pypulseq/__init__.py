@@ -16,7 +16,7 @@ def _get_version() -> Tuple[str, str, str]:
     major, minor, revision : str
         Major, minor and revision numbers of current PyPulseq release.
     """
-    version_file = Path(__file__).parent.parent / 'VERSION'
+    version_file = Path(__file__).parent.parent / "VERSION"
     major, minor, revision = version_file.read_text().strip().split(".")
     return str(major), str(minor), str(revision)
 
