@@ -1,29 +1,4 @@
-class PulseOpts:
-    """
-    System limits of an MR scanner.
-
-    Attributes
-    ----------
-    pulse_type: str, default='slr'
-        Type of RF pulse.
-    ptype : str, default='st'
-        Gyromagnetic ratio. Default gamma is specified for Hydrogen.
-    ftype : str, default='ls'
-        Raster time for gradient waveforms.
-    d1 : float, default=0.01
-        Unit of maximum gradient amplitude. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'.
-    d2 : float, default=0.01
-        Maximum gradient amplitude.
-    cancel_alpha_phs: str, default='None'
-        Maximum slew rate.
-    n_bands : int, default=3
-        Number of SMS slices to excite
-    band_sep : int, default=20
-        Raster time for radio-frequency pulses.
-    phs_0_pht : str, default='None'
-        #Unit of maximum slew rate. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'.
-    """
-
+class SigpyPulseOpts:
     def __init__(
         self,
         pulse_type: str = "slr",
