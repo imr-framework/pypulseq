@@ -15,9 +15,9 @@ def make_digital_output_pulse(
     channel : str
         Must be one of 'osc0','osc1', or 'ext1'.
     delay : float, default=0
-        Delay, in millis.
+        Delay in seconds (s).
     duration : float, default=0
-        Duration of trigger event, in millis.
+        Duration of trigger event in seconds (s).
     system : Opts, default=Opts()
         System limits.
 

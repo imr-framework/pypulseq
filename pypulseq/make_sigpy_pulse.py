@@ -40,9 +40,9 @@ def sigpy_n_seq(
     center_pos : float, optional, default=0.5
         Position of peak.5 (midway).
     delay : float, optional, default=0
-        Delay in milliseconds (ms).
+        Delay in seconds (s).
     duration : float, optional, default=0
-        Duration in milliseconds (ms).
+        Duration in seconds (s).
     freq_offset : float, optional, default=0
         Frequency offset in Hertz (Hz).
     max_grad : float, optional, default=0

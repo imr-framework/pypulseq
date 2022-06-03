@@ -49,10 +49,10 @@ def make_gauss_pulse(
     center_pos : float, default=0.5
         Position of peak.
     delay : float, default=0
-        Delay in milliseconds (ms).
+        Delay in seconds (s).
     dwell : float, default=0
     duration : float, default=0
-        Duration in milliseconds (ms).
+        Duration in seconds (s).
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
     max_grad : float, default=0

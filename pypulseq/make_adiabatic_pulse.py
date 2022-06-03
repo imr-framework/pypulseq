@@ -89,7 +89,7 @@ def make_adiabatic_pulse(
     beta : int, default=800
         AM waveform parameter.
     delay : float, default=0
-        Delay in milliseconds (ms).
+        Delay in seconds (s).
     duration : float, default=10e-3
         Pulse time (s).
     dwell : float, default=0

@@ -35,19 +35,19 @@ def make_trapezoid(
     area : float, default=None
         Area.
     delay : float, default=0
-        Delay in milliseconds (ms).
+        Delay in seconds (s).
     duration : float, default=0
-        Duration in milliseconds (ms).
+        Duration in seconds (s).
     flat_area : float, default=0
         Flat area.
     flat_time : float, default=-1
-        Flat duration in milliseconds (ms). Default is -1 to account for triangular pulses.
+        Flat duration in seconds (s). Default is -1 to account for triangular pulses.
     max_grad : float, default=0
         Maximum gradient strength.
     max_slew : float, default=0
         Maximum slew rate.
     rise_time : float, default=0
-        Rise time in milliseconds (ms).
+        Rise time in seconds (s).
     system : Opts, default=Opts()
         System limits.
 

@@ -22,11 +22,11 @@ def make_adc(
     system : Opts, default=Opts()
         System limits. Default is a system limits object initialised to default values.
     dwell : float, default=0
-        ADC dead time in milliseconds (ms) after sampling.
+        ADC dead time in seconds (s) after sampling.
     duration : float, default=0
-        Duration in milliseconds (ms) of ADC readout event with `num_samples` number of samples.
+        Duration in seconds (s) of ADC readout event with `num_samples` number of samples.
     delay : float, default=0
-        Delay in milliseconds (ms) of ADC readout event.
+        Delay in seconds (s) of ADC readout event.
     freq_offset : float, default=0
         Frequency offset of ADC readout event.
     phase_offset : float, default=0

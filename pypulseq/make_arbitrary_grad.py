@@ -31,7 +31,7 @@ def make_arbitrary_grad(
     max_slew : float, default=0
         Maximum slew rate.
     delay : float, default=0
-        Delay in milliseconds (ms).
+        Delay in seconds (s).
 
     Returns
     -------

@@ -35,7 +35,7 @@ def make_arbitrary_rf(
     bandwidth : float, default=0
         Bandwidth in Hertz (Hz).
     delay : float, default=0
-        Delay in milliseconds (ms) of accompanying slice select trapezoidal event.
+        Delay in seconds (s) of accompanying slice select trapezoidal event.
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
     max_grad : float, default=system.max_grad

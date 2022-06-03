@@ -128,7 +128,7 @@ class Sequence:
         Parameters
         ----------
         trajectory_delay : int, default=0
-            Compensation factor in millis to align ADC and gradients in the reconstruction.
+            Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
 
         Returns
         -------
@@ -273,7 +273,7 @@ class Sequence:
         Parameters
         ----------
         trajectory_delay : int, default=0
-            Compensation factor in millis to align ADC and gradients in the reconstruction.
+            Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
 
         Returns
         -------
@@ -471,7 +471,7 @@ class Sequence:
         Returns
         -------
         duration : int
-            Duration of this sequence in millis.
+            Duration of this sequence in seconds (s).
         num_blocks : int
             Number of blocks in this sequence.
         event_count : np.ndarray

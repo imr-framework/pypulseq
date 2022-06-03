@@ -9,7 +9,7 @@ def make_delay(d: float) -> SimpleNamespace:
     Parameters
     ----------
     d : float
-        Delay time in milliseconds (ms).
+        Delay time in seconds (s).
 
     Returns
     -------

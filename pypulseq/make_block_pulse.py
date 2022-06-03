@@ -30,9 +30,9 @@ def make_block_pulse(
     bandwidth : float, default=0
         Bandwidth in Hertz (hz).
     delay : float, default=0
-        Delay in milliseconds (ms) of accompanying slice select trapezoidal event.
+        Delay in seconds (s) of accompanying slice select trapezoidal event.
     duration : float, default=0
-        Duration in milliseconds (ms).
+        Duration in seconds (s).
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
     phase_offset : float, default=0
