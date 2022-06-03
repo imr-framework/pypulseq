@@ -5,10 +5,18 @@ import numpy as np
 from pypulseq.opts import Opts
 
 
-def make_arbitrary_grad(channel: str, waveform: np.ndarray, system: Opts = Opts(), max_grad: float = 0,
-                        max_slew: float = 0, delay: float = 0) -> SimpleNamespace:
+def make_arbitrary_grad(
+    channel: str,
+    waveform: np.ndarray,
+    delay: float = 0,
+    max_grad: float = 0,
+    max_slew: float = 0,
+    system: Opts = Opts(),
+) -> SimpleNamespace:
     """
     Creates a gradient event with arbitrary waveform.
+
+    See also pypulseq.Sequence.sequence.Sequence.add_block()`.
 
     Parameters
     ----------
@@ -37,8 +45,10 @@ def make_arbitrary_grad(channel: str, waveform: np.ndarray, system: Opts = Opts(
         If slew rate is violated.
         If gradient amplitude is violated.
     """
-    if channel not in ['x', 'y', 'z']:
-        raise ValueError(f'Invalid channel. Must be one of x, y or z. Passed: {channel}')
+    if channel not in ["x", "y", "z"]:
+        raise ValueError(
+            f"Invalid channel. Must be one of x, y or z. Passed: {channel}"
+        )
 
     if max_grad <= 0:
         max_grad = system.max_grad
@@ -49,12 +59,12 @@ def make_arbitrary_grad(channel: str, waveform: np.ndarray, system: Opts = Opts(
     g = waveform
     slew = np.squeeze(np.subtract(g[1:], g[:-1]) / system.grad_raster_time)
     if max(abs(slew)) >= max_slew:
-        raise ValueError(f'Slew rate violation {max(abs(slew)) / max_slew * 100}')
+        raise ValueError(f"Slew rate violation {max(abs(slew)) / max_slew * 100}")
     if max(abs(g)) >= max_grad:
-        raise ValueError(f'Gradient amplitude violation {max(abs(g)) / max_grad * 100}')
+        raise ValueError(f"Gradient amplitude violation {max(abs(g)) / max_grad * 100}")
 
     grad = SimpleNamespace()
-    grad.type = 'grad'
+    grad.type = "grad"
     grad.channel = channel
     grad.waveform = g
     grad.delay = delay
