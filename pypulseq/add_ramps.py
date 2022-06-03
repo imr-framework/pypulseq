@@ -26,7 +26,7 @@ def add_ramps(
         If `k` is multiple trajectoriess: add segments of the same length for each trajectory in the cell array.
     system : Opts, default=Opts()
         System limits.
-    rf : SimpleNamespace, optional
+    rf : SimpleNamespace, default=None
         Add a segment of zeros over the ramp times to an RF shape.
     max_grad : int, default=0
         Maximum gradient amplitude.

@@ -4,6 +4,7 @@ from typing import Iterable
 
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
@@ -12,10 +13,10 @@ from pypulseq.points_to_waveform import points_to_waveform
 
 
 def add_gradients(
-    grads: Iterable[SimpleNamespace],
-    max_grad: int = 0,
-    max_slew: int = 0,
-    system=Opts(),
+        grads: Iterable[SimpleNamespace],
+        max_grad: int = 0,
+        max_slew: int = 0,
+        system=Opts(),
 ) -> SimpleNamespace:
     """
     Returns the superposition of several gradients.
@@ -39,7 +40,6 @@ def add_gradients(
     # copy() to emulate pass-by-value; otherwise passed grad events are modified
     grads = deepcopy(grads)
 
-    eps = np.finfo(float).eps
     max_grad = max_grad if max_grad > 0 else system.max_grad
     max_slew = max_slew if max_slew > 0 else system.max_slew
 
@@ -105,7 +105,7 @@ def add_gradients(
         if np.any(ieps):
             dtx = [times[0], *dt]
             dtx[ieps] = (
-                dtx[ieps] + dtx[ieps + 1]
+                    dtx[ieps] + dtx[ieps + 1]
             )  # Assumes that no more than two too similar values can occur
             dtx[ieps + 1] = []
             times = np.cumsum(dtx)
@@ -193,7 +193,7 @@ def add_gradients(
     w = np.zeros(max_length)
     for ii in range(len(grads)):
         wt = np.zeros(max_length)
-        wt[0 : len(waveforms[ii])] = waveforms[ii]
+        wt[0: len(waveforms[ii])] = waveforms[ii]
         w += wt
 
     grad = make_arbitrary_grad(

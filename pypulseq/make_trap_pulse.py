@@ -28,7 +28,7 @@ def make_trapezoid(
 
     Parameters
     ----------
-    channel : str, optional
+    channel : str
         Orientation of trapezoidal gradient event. Must be one of `x`, `y` or `z`.
     amplitude : float, default=0
         Amplitude.

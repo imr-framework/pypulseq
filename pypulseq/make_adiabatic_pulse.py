@@ -4,6 +4,7 @@ from typing import Tuple, Union
 import numpy as np
 from sigpy.mri.rf import hypsec, wurst
 
+from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_bandwidth import calc_rf_bandwidth
 from pypulseq.calc_rf_center import calc_rf_center
@@ -14,24 +15,24 @@ from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 
 def make_adiabatic_pulse(
-    pulse_type: str,
-    adiabaticity: int = 4,
-    bandwidth: int = 40000,
-    beta: int = 800,
-    delay: float = 0,
-    duration: float = 10e-3,
-    dwell: float = 0,
-    freq_offset: float = 0,
-    max_grad: float = 0,
-    max_slew: float = 0,
-    n_fac: int = 40,
-    mu: float = 4.9,
-    phase_offset: float = 0,
-    return_gz: bool = False,
-    return_delay: bool = False,
-    slice_thickness: float = 0,
-    system=Opts(),
-    use: str = str(),
+        pulse_type: str,
+        adiabaticity: int = 4,
+        bandwidth: int = 40000,
+        beta: int = 800,
+        delay: float = 0,
+        duration: float = 10e-3,
+        dwell: float = 0,
+        freq_offset: float = 0,
+        max_grad: float = 0,
+        max_slew: float = 0,
+        n_fac: int = 40,
+        mu: float = 4.9,
+        phase_offset: float = 0,
+        return_gz: bool = False,
+        return_delay: bool = False,
+        slice_thickness: float = 0,
+        system=Opts(),
+        use: str = str(),
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -108,7 +109,7 @@ def make_adiabatic_pulse(
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
-    system : Opts, optional, default=Opts()
+    system : Opts, default=Opts()
         System limits.
     use : str
         Whether it is a 'refocusing' pulse (for k-space calculation).
@@ -145,9 +146,9 @@ def make_adiabatic_pulse(
     if dwell == 0:
         dwell = system.rf_raster_time
 
-    n_raw = np.round(duration / dwell + np.finfo(np.float).eps)
+    n_raw = np.round(duration / dwell + eps)
     N = (
-        np.floor(n_raw / 4) * 4
+            np.floor(n_raw / 4) * 4
     )  # Number of points must be divisible by 4 - requirement of sigpy.mri
 
     if pulse_type == "hypsec":
@@ -241,8 +242,8 @@ def make_adiabatic_pulse(
 
         if rf.delay > gz.rise_time:  # Round-up to gradient raster
             gz.delay = (
-                np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
+                    np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                    * system.grad_raster_time
             )
 
         if rf.delay < (gz.rise_time + gz.delay):

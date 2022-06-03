@@ -64,7 +64,7 @@ def make_sinc_pulse(
     slice_thickness : float, default=0
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
-    system : Opts, optional
+    system : Opts, default=Opts()
         System limits. Default is a system limits object initialised to default values.
     time_bw_product : float, default=4
         Time-bandwidth product.

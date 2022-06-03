@@ -48,7 +48,7 @@ def make_gauss_pulse(
         Bandwidth in Hertz (Hz).
     center_pos : float, default=0.5
         Position of peak.
-    delay : float, optional
+    delay : float, default=0
         Delay in milliseconds (ms).
     dwell : float, default=0
     duration : float, default=0

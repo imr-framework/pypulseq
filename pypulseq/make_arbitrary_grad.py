@@ -24,13 +24,13 @@ def make_arbitrary_grad(
         Orientation of gradient event of arbitrary shape. Must be one of `x`, `y` or `z`.
     waveform : numpy.ndarray
         Arbitrary waveform.
-    system : Opts, optional, default=Opts()
+    system : Opts, default=Opts()
         System limits.
-    max_grad : float, optional, default=0
+    max_grad : float, default=0
         Maximum gradient strength.
-    max_slew : float, optional, default=0
+    max_slew : float, default=0
         Maximum slew rate.
-    delay : float, optional, default=0
+    delay : float, default=0
         Delay in milliseconds (ms).
 
     Returns
