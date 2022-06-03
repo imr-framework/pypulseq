@@ -3,7 +3,7 @@ import numpy as np
 from pypulseq.convert import convert
 
 
-def test_report(self) -> str:
+def ext_test_report(self) -> str:
     """
     Analyze the sequence and return a text report.
 
@@ -61,7 +61,7 @@ def test_report(self) -> str:
         k_map = dict()
         for i in range(k_len):
             l = k_bins + np.round(k_traj_adc[:, i] / k_threshold)
-            key_string = ('{:.0f} ' * len(l)).format(*l)
+            key_string = ("{:.0f} " * len(l)).format(*l)
             if key_string in k_map:
                 k_repeat[i] = k_map[key_string] + 1
             else:
@@ -103,46 +103,73 @@ def test_report(self) -> str:
 
     timing_ok, timing_error_report = self.check_timing()
 
-    report = f'Number of blocks: {num_blocks}\n' \
-             f'Number of events:\n' \
-             f'RF: {event_count[1]:6.0f}\n' \
-             f'Gx: {event_count[2]:6.0f}\n' \
-             f'Gy: {event_count[3]:6.0f}\n' \
-             f'Gz: {event_count[4]:6.0f}\n' \
-             f'ADC: {event_count[5]:6.0f}\n' \
-             f'Delay: {event_count[0]:6.0f}\n' \
-             f'Sequence duration: {duration:.6f} s\n' \
-             f'TE: {TE:.6f} s\n' \
-             f'TR: {TR:.6f} s\n'
-    report += 'Flip angle: ' + ('{:.02f} ' * len(flip_angles_deg)).format(*flip_angles_deg) + 'deg\n'
-    report += 'Unique k-space positions (aka cols, rows, etc.): ' + ('{:.0f} ' * len(unique_k_positions)).format(
-        *unique_k_positions) + '\n'
+    report = (
+        f"Number of blocks: {num_blocks}\n"
+        f"Number of events:\n"
+        f"RF: {event_count[1]:6.0f}\n"
+        f"Gx: {event_count[2]:6.0f}\n"
+        f"Gy: {event_count[3]:6.0f}\n"
+        f"Gz: {event_count[4]:6.0f}\n"
+        f"ADC: {event_count[5]:6.0f}\n"
+        f"Delay: {event_count[0]:6.0f}\n"
+        f"Sequence duration: {duration:.6f} s\n"
+        f"TE: {TE:.6f} s\n"
+        f"TR: {TR:.6f} s\n"
+    )
+    report += (
+        "Flip angle: "
+        + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg)
+        + "deg\n"
+    )
+    report += (
+        "Unique k-space positions (aka cols, rows, etc.): "
+        + ("{:.0f} " * len(unique_k_positions)).format(*unique_k_positions)
+        + "\n"
+    )
 
     if np.all(unique_k_positions > 1):
-        report += f'Dimensions: {len(k_extent)}\n'
-        report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*(0.5 / k_extent * 1e3))
-        report += f'Repetitions/slices/contrasts: {repeats}\n'
+        report += f"Dimensions: {len(k_extent)}\n"
+        report += ("Spatial resolution: {:.02f} mm\n" * len(k_extent)).format(
+            *(0.5 / k_extent * 1e3)
+        )
+        report += f"Repetitions/slices/contrasts: {repeats}\n"
 
         if is_cartesian:
-            report += 'Cartesian encoding trajectory detected\n'
+            report += "Cartesian encoding trajectory detected\n"
         else:
-            report += 'Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n'
+            report += "Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n"
 
     if timing_ok:
-        report += 'Event timing check passed successfully\n'
+        report += "Event timing check passed successfully\n"
     else:
-        report += f'Event timing check failed. Error listing follows:\n {timing_error_report}'
+        report += (
+            f"Event timing check failed. Error listing follows:\n {timing_error_report}"
+        )
 
-    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m')
-    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s')
-    report += 'Max gradient: ' + ('{:.0f} ' * len(ga)).format(*ga) + 'Hz/m == ' + (
-            '{:.02f} ' * len(ga_converted)).format(*ga_converted) + 'mT/m\n'
-    report += 'Max slew rate: ' + ('{:.0f} ' * len(gs)).format(*gs) + 'Hz/m/s == ' + (
-            '{:.02f} ' * len(ga_converted)).format(*gs_converted) + 'mT/m/s\n'
+    ga_converted = convert(from_value=ga, from_unit="Hz/m", to_unit="mT/m")
+    gs_converted = convert(from_value=gs, from_unit="Hz/m/s", to_unit="T/m/s")
+    report += (
+        "Max gradient: "
+        + ("{:.0f} " * len(ga)).format(*ga)
+        + "Hz/m == "
+        + ("{:.02f} " * len(ga_converted)).format(*ga_converted)
+        + "mT/m\n"
+    )
+    report += (
+        "Max slew rate: "
+        + ("{:.0f} " * len(gs)).format(*gs)
+        + "Hz/m/s == "
+        + ("{:.02f} " * len(ga_converted)).format(*gs_converted)
+        + "mT/m/s\n"
+    )
 
-    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m')
-    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s')
-    report += f'Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n'
-    report += f'Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s'
+    ga_abs_converted = convert(from_value=ga_abs, from_unit="Hz/m", to_unit="mT/m")
+    gs_abs_converted = convert(from_value=gs_abs, from_unit="Hz/m/s", to_unit="T/m/s")
+    report += (
+        f"Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n"
+    )
+    report += (
+        f"Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s"
+    )
 
     return report
