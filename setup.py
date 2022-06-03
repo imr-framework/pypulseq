@@ -1,20 +1,6 @@
-from typing import Tuple
-
 import setuptools
 
-
-def _get_version() -> Tuple[int, int, int]:
-    """
-    Returns version of current PyPulseq release.
-
-    Returns
-    -------
-    major, minor, revision : int
-        Major, minor and revision numbers of current PyPulseq release.
-    """
-    with open('VERSION', 'r') as version_file:
-        major, minor, revision = version_file.read().strip().split('.')
-    return major, minor, revision
+from pypulseq import major, minor, revision
 
 
 def _get_long_description() -> str:
@@ -67,5 +53,5 @@ setuptools.setup(
     },
     python_requires='>=3.6.3',
     url="https://github.com/imr-framework/pypulseq",
-    version=".".join(_get_version()),
+    version=".".join((major, minor, revision)),
 )

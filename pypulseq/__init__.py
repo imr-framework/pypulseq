@@ -1,14 +1,30 @@
-from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 
-path_version = Path(__file__).parent.parent / 'VERSION'
-with open(str(path_version), 'r') as version_file:
-    major, minor, revision = version_file.read().strip().split('.')
-    major = int(major)
-    minor = int(minor)
-    if len(revision) > 1:
-        revision = int(revision[0])
+
+# =========
+# VERSION NUMBER
+# =========
+def _get_version() -> Tuple[str, str, str]:
+    """
+    Returns version of current PyPulseq release.
+
+    Returns
+    -------
+    major, minor, revision : str
+        Major, minor and revision numbers of current PyPulseq release.
+    """
+    with open("VERSION", "r") as version_file:
+        major, minor, revision = version_file.read().strip().split(".")
+    return str(major), str(minor), str(revision)
+
+
+major, minor, revision = _get_version()
+major = int(major)
+minor = int(minor)
+if len(revision) > 1:
+    revision = int(revision[0])
 
 
 # =========
