@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -15,8 +16,8 @@ def _get_version() -> Tuple[str, str, str]:
     major, minor, revision : str
         Major, minor and revision numbers of current PyPulseq release.
     """
-    with open("VERSION", "r") as version_file:
-        major, minor, revision = version_file.read().strip().split(".")
+    version_file = Path(__file__).parent.parent / 'VERSION'
+    major, minor, revision = version_file.read_text().strip().split(".")
     return str(major), str(minor), str(revision)
 
 
@@ -34,7 +35,7 @@ def round_half_up(n, decimals=0):
     """
     Avoid banker's rounding inconsistencies; from https://realpython.com/python-rounding/#rounding-half-up
     """
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
     return np.floor(np.abs(n) * multiplier + 0.5) / multiplier
 
 
@@ -67,6 +68,7 @@ from pypulseq.make_gauss_pulse import make_gauss_pulse
 from pypulseq.make_label import make_label
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 from pypulseq.make_trigger import make_trigger
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
