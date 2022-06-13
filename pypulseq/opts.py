@@ -37,30 +37,51 @@ class Opts:
         If invalid `slew_unit` is passed. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'.
     """
 
-    def __init__(self, adc_dead_time: float = 0, gamma: float = 42.576e6, grad_raster_time: float = 10e-6,
-                 grad_unit: str = 'Hz/m', max_grad: float = 0, max_slew: float = 0, rf_dead_time: float = 0,
-                 rf_raster_time: float = 1e-6, rf_ringdown_time: float = 0, rise_time: float = 0,
-                 slew_unit: str = 'Hz/m/s'):
-        valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
-        valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
+    def __init__(
+        self,
+        adc_dead_time: float = 0,
+        adc_raster_time: float = 100e-9,
+        block_duration_raster: float = 10e-6,
+        gamma: float = 42.576e6,
+        grad_raster_time: float = 10e-6,
+        grad_unit: str = "Hz/m",
+        max_grad: float = 0,
+        max_slew: float = 0,
+        rf_dead_time: float = 0,
+        rf_raster_time: float = 1e-6,
+        rf_ringdown_time: float = 0,
+        rise_time: float = 0,
+        slew_unit: str = "Hz/m/s",
+        B0: float = 1.5,
+    ):
+        valid_grad_units = ["Hz/m", "mT/m", "rad/ms/mm"]
+        valid_slew_units = ["Hz/m/s", "mT/m/ms", "T/m/s", "rad/ms/mm/ms"]
 
         if grad_unit not in valid_grad_units:
-            raise ValueError(f"Invalid gradient unit. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'. "
-                             f"Passed: {grad_unit}")
+            raise ValueError(
+                f"Invalid gradient unit. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'. "
+                f"Passed: {grad_unit}"
+            )
 
         if slew_unit not in valid_slew_units:
-            raise ValueError(f"Invalid slew rate unit. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'. "
-                             f"Passed: {slew_unit}")
+            raise ValueError(
+                f"Invalid slew rate unit. Must be one of 'Hz/m/s', 'mT/m/ms', 'T/m/s' or 'rad/ms/mm/ms'. "
+                f"Passed: {slew_unit}"
+            )
 
         if max_grad == 0:
-            max_grad = convert(from_value=40, from_unit='mT/m', gamma=gamma)
+            max_grad = convert(from_value=40, from_unit="mT/m", gamma=gamma)
         else:
-            max_grad = convert(from_value=max_grad, from_unit=grad_unit, to_unit='Hz/m', gamma=gamma)
+            max_grad = convert(
+                from_value=max_grad, from_unit=grad_unit, to_unit="Hz/m", gamma=gamma
+            )
 
         if max_slew == 0:
-            max_slew = convert(from_value=170, from_unit='T/m/s', gamma=gamma)
+            max_slew = convert(from_value=170, from_unit="T/m/s", gamma=gamma)
         else:
-            max_slew = convert(from_value=max_slew, from_unit=slew_unit, to_unit='Hz/m', gamma=gamma)
+            max_slew = convert(
+                from_value=max_slew, from_unit=slew_unit, to_unit="Hz/m", gamma=gamma
+            )
 
         if rise_time != 0:
             max_slew = 0
@@ -71,19 +92,19 @@ class Opts:
         self.rf_dead_time = rf_dead_time
         self.rf_ringdown_time = rf_ringdown_time
         self.adc_dead_time = adc_dead_time
+        self.adc_raster_time = adc_raster_time
         self.rf_raster_time = rf_raster_time
         self.grad_raster_time = grad_raster_time
+        self.block_duration_raster = block_duration_raster
         self.gamma = gamma
+        self.B0 = B0
 
-    def __str__(self):
-        s = "System limits:"
-        s += "\nmax_grad: " + str(self.max_grad) + str(self.grad_unit)
-        s += "\nmax_slew: " + str(self.max_slew) + str(self.slew_unit)
-        s += "\nrise_time: " + str(self.rise_time)
-        s += "\nrf_dead_time: " + str(self.rf_dead_time)
-        s += "\nrf_ring_time: " + str(self.rf_ringdown_time)
-        s += "\nadc_dead_time: " + str(self.adc_dead_time)
-        s += "\nrf_raster_time: " + str(self.rf_raster_time)
-        s += "\ngrad_raster_time: " + str(self.grad_raster_time)
-        s += "\ngamma: " + str(self.gamma)
+    def __str__(self) -> str:
+        """
+        Print a string representation of the system limits objects.
+        """
+        variables = vars(self)
+        s = [f"{key}: {value}" for key, value in variables.items()]
+        s = "\n".join(s)
+        s = "System limits:\n" + s
         return s
