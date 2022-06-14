@@ -8,28 +8,34 @@ from pypulseq.calc_ramp import calc_ramp
 from pypulseq.opts import Opts
 
 
-def add_ramps(k: Union[list, np.ndarray, tuple], system=Opts(), rf: SimpleNamespace = None, max_grad: int = 0,
-              max_slew: int = 0) -> List[np.ndarray]:
+def add_ramps(
+    k: Union[list, np.ndarray, tuple],
+    max_grad: int = 0,
+    max_slew: int = 0,
+    rf: SimpleNamespace = None,
+    system=Opts(),
+) -> List[np.ndarray]:
     """
-    Adds segment so that `k` k-space trajectory ramps up from 0 to `k[0]` and ramps down from `k[-1]` to 0. If `k` is a
-    tuple or list of k-space trajectories, ramp-ups and ramp-downs are added to each.
+    Add segments to the trajectory to ramp to and from the given trajectory.
 
     Parameters
     ----------
-    k : array_like
-        Array-like of k-space trajectories to add ramp-ups and -downs to.
-    system : Opts, optional, default=Opts()
+    k : numpy.ndarray, or [numpy.ndarray, ...]
+        If `k` is a single trajectory: Add a segment to `k` so `k_out` travels from 0 to `k[0]` and a segment so `k_out`
+        goes from `k[-1]` back to 0 without violating the gradient and slew constraints.
+        If `k` is multiple trajectoriess: add segments of the same length for each trajectory in the cell array.
+    system : Opts, default=Opts()
         System limits.
-    rf : SimpleNamespace, optional
-        Zeros are added to this pulse sequence event over the ramp times in `k`.
-    max_grad : int, optional, default=0
+    rf : SimpleNamespace, default=None
+        Add a segment of zeros over the ramp times to an RF shape.
+    max_grad : int, default=0
         Maximum gradient amplitude.
-    max_slew : int, optional, default=0
+    max_slew : int, default=0
         Maximum slew rate.
 
     Returns
     -------
-    result : list[
+    result : [numpy.ndarray, ...]
         List of ramped up and ramped down k-space trajectories from `k`.
 
     Raises
@@ -40,7 +46,9 @@ def add_ramps(k: Union[list, np.ndarray, tuple], system=Opts(), rf: SimpleNamesp
         If gradient ramps fail to be calculated
     """
     if not isinstance(k, (list, np.ndarray, tuple)):
-        raise ValueError(f'k has to be one of list, np.ndarray, tuple. Passed: {type(k)}')
+        raise ValueError(
+            f"k has to be one of list, np.ndarray, tuple. Passed: {type(k)}"
+        )
 
     k_arg = copy(k)
     if max_grad > 0:
@@ -53,10 +61,10 @@ def add_ramps(k: Union[list, np.ndarray, tuple], system=Opts(), rf: SimpleNamesp
     num_channels = k.shape[0]
     k = np.vstack((k, np.zeros((3 - num_channels, k.shape[1]))))
 
-    k_up, ok1 = calc_ramp(np.zeros((3, 2)), k[:, :2], system)
-    k_down, ok2 = calc_ramp(k[:, -2:], np.zeros((3, 2)), system)
+    k_up, ok1 = calc_ramp(k0=np.zeros((3, 2)), k_end=k[:, :2], system=system)
+    k_down, ok2 = calc_ramp(k0=k[:, -2:], k_end=np.zeros((3, 2)), system=system)
     if not (ok1 and ok2):
-        raise RuntimeError('Failed to calculate gradient ramps')
+        raise RuntimeError("Failed to calculate gradient ramps")
 
     k_up = np.hstack((np.zeros((3, 2)), k_up))
     k_down = np.hstack((k_down, np.zeros((3, 1))))
@@ -71,6 +79,10 @@ def add_ramps(k: Union[list, np.ndarray, tuple], system=Opts(), rf: SimpleNamesp
             result.append(k[i])
 
     if rf is not None:
-        result.append(np.concatenate((np.zeros(k_up.shape[1] * 10), rf, np.zeros(k_down.shape[1] * 10))))
+        result.append(
+            np.concatenate(
+                (np.zeros(k_up.shape[1] * 10), rf, np.zeros(k_down.shape[1] * 10))
+            )
+        )
 
     return result

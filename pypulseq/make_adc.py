@@ -3,26 +3,33 @@ from types import SimpleNamespace
 from pypulseq.opts import Opts
 
 
-def make_adc(num_samples: int, system: Opts = Opts(), dwell: float = 0, duration: float = 0, delay: float = 0,
-             freq_offset: float = 0, phase_offset: float = 0) -> SimpleNamespace:
+def make_adc(
+    num_samples: int,
+    delay: float = 0,
+    duration: float = 0,
+    dwell: float = 0,
+    freq_offset: float = 0,
+    phase_offset: float = 0,
+    system: Opts = Opts(),
+) -> SimpleNamespace:
     """
-    Creates an ADC readout event.
+    Create an ADC readout event.
 
     Parameters
     ----------
     num_samples: int
         Number of readout samples.
-    system : Opts, optional, default=Opts()
+    system : Opts, default=Opts()
         System limits. Default is a system limits object initialised to default values.
-    dwell : float, optional, default=0
-        ADC dead time in milliseconds (ms) after sampling.
-    duration : float, optional, default=0
-        Duration in milliseconds (ms) of ADC readout event with `num_samples` number of samples.
-    delay : float, optional, default=0
-        Delay in milliseconds (ms) of ADC readout event.
-    freq_offset : float, optional, default=0
+    dwell : float, default=0
+        ADC dead time in seconds (s) after sampling.
+    duration : float, default=0
+        Duration in seconds (s) of ADC readout event with `num_samples` number of samples.
+    delay : float, default=0
+        Delay in seconds (s) of ADC readout event.
+    freq_offset : float, default=0
         Frequency offset of ADC readout event.
-    phase_offset : float, optional, default=0
+    phase_offset : float, default=0
         Phase offset of ADC readout event.
 
     Returns
@@ -36,7 +43,7 @@ def make_adc(num_samples: int, system: Opts = Opts(), dwell: float = 0, duration
         If neither `dwell` nor `duration` are defined.
     """
     adc = SimpleNamespace()
-    adc.type = 'adc'
+    adc.type = "adc"
     adc.num_samples = num_samples
     adc.dwell = dwell
     adc.delay = delay

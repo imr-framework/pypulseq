@@ -1,3 +1,4 @@
+from copy import deepcopy
 from types import SimpleNamespace
 from typing import List, Union
 
@@ -6,23 +7,25 @@ import numpy as np
 from pypulseq.calc_duration import calc_duration
 
 
-def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[SimpleNamespace]:
+def align(
+    **kwargs: Union[SimpleNamespace, List[SimpleNamespace]]
+) -> List[SimpleNamespace]:
     """
-    Aligns `SimpleNamespace` objects as per specified alignment options by setting delays of the pulse sequence events
-    within the block. All previously configured delays within objects are taken into account during calculating of the
-    block duration but then reset according to the selected alignment. Possible values for align_spec are 'left',
-    'center', 'right'.
+    Sets delays of the objects within the block to achieve the desired alignment of the objects in the block. Aligns
+    objects as per specified alignment options by setting delays of the pulse sequence events within the block. All
+    previously configured delays within objects are taken into account during calculating of the block duration but
+    then reset according to the selected alignment. Possible values for align_spec are 'left', 'center', 'right'.
 
     Parameters
     ----------
-    args : dict[str, list[SimpleNamespace]
+    args : dict{str, [SimpleNamespace, ...]}
         Dictionary mapping of alignment options and `SimpleNamespace` objects.
-        Template: alignment_spec1=SimpleNamespace, alignment_spec2=[SimpleNamespace, ...], ...
+        Format: alignment_spec1=SimpleNamespace, alignment_spec2=[SimpleNamespace, ...], ...
         Alignment spec must be one of `left`, `center` or `right`.
 
     Returns
     -------
-    objects : list
+    objects : [SimpleNamespace, ...]
         List of aligned `SimpleNamespace` objects.
 
     Raises
@@ -33,11 +36,13 @@ def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[Simpl
     """
     alignment_specs = list(kwargs.keys())
     if not isinstance(alignment_specs[0], str):
-        raise ValueError(f'First parameter must be of type str. Passed: {type(alignment_specs[0])}')
+        raise ValueError(
+            f"First parameter must be of type str. Passed: {type(alignment_specs[0])}"
+        )
 
-    alignment_options = ['left', 'center', 'right']
+    alignment_options = ["left", "center", "right"]
     if np.any([align_opt not in alignment_options for align_opt in alignment_specs]):
-        raise ValueError('Invalid alignment spec.')
+        raise ValueError("Invalid alignment spec.")
 
     alignments = []
     objects = []
@@ -53,6 +58,10 @@ def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[Simpl
 
     dur = calc_duration(*objects)
 
+    # copy() to emulate pass-by-value; otherwise passed events are modified
+    objects = deepcopy(objects)
+
+    # Set new delays
     for i in range(len(objects)):
         if alignments[i] == 0:
             objects[i].delay = 0
@@ -60,5 +69,9 @@ def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[Simpl
             objects[i].delay = (dur - calc_duration(objects[i])) / 2
         elif alignments[i] == 2:
             objects[i].delay = dur - calc_duration(objects[i]) + objects[i].delay
+            if objects[i].delay < 0:
+                raise ValueError(
+                    "align() attempts to set a negative delay, probably some RF pulses ignore rf_ringdown_time"
+                )
 
     return objects
