@@ -34,9 +34,9 @@ class Sequence:
     See also `demo_read.py`, `demo_write.py`.
     """
 
-    version_major: int = major
-    version_minor: int = minor
-    version_revision: int = revision
+    version_major = major
+    version_minor = minor
+    version_revision = revision
 
     def __init__(self, system=Opts()):
         # =========

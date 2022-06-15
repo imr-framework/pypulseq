@@ -18,14 +18,15 @@ def _get_version() -> Tuple[str, str, str]:
     """
     version_file = Path(__file__).parent.parent / "VERSION"
     major, minor, revision = version_file.read_text().strip().split(".")
-    return str(major), str(minor), str(revision)
+    return major, minor, revision
 
 
 major, minor, revision = _get_version()
 major = int(major)
 minor = int(minor)
-if len(revision) > 1:
-    revision = int(revision[0])
+if len(revision) > 1:  # Example: 1.3.1post1
+    revision = revision[0]
+revision = int(revision)
 
 
 # =========
@@ -35,7 +36,7 @@ def round_half_up(n, decimals=0):
     """
     Avoid banker's rounding inconsistencies; from https://realpython.com/python-rounding/#rounding-half-up
     """
-    multiplier = 10**decimals
+    multiplier = 10 ** decimals
     return np.floor(np.abs(n) * multiplier + 0.5) / multiplier
 
 

@@ -48,5 +48,5 @@ setuptools.setup(
     project_urls={"Documentation": "https://pypulseq.readthedocs.io/en/latest/"},
     python_requires=">=3.6.3",
     url="https://github.com/imr-framework/pypulseq",
-    version=".".join((major, minor, revision)),
+    version=".".join((str(major), str(minor), str(revision))),
 )
