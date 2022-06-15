@@ -6,7 +6,7 @@
 
 # PyPulseq: A Python Package for MRI Pulse Sequence Design
 
-`Compatible with Pulseq 1.3.1`
+`Compatible with Pulseq 1.4.0`
 
 ## Table of contents 🧾
 1. [📚 Relevant literature][section-relevant-literature]
@@ -28,12 +28,12 @@ exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by levera
 Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
 users. It is a translation of the Pulseq framework originally written in Matlab [[3]][section-references].
 
-👉 Currently, PyPulseq is compatible with Pulseq 1.3.1. 👈
+👉 Currently, PyPulseq is compatible with Pulseq 1.4.0. 👈
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using PyPulseq.
 
-If you use PyPulseq in your work, please include both citations:
+If you use PyPulseq in your work, cite the following publications:
 ```
 Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." Journal
 of Open Source Software 4.42 (2019): 1725.
@@ -48,23 +48,42 @@ Design pulse sequences using `pypulseq` in your browser! Check out the [⚡ Ligh
 learn how!
 
 ## 📚 [Relevant literature][scholar-citations] (reverse chronological)
-1. Ravi, Keerthi Sravan, and Sairam Geethanath. "Autonomous Magnetic Resonance Imaging." medRxiv (2020).
-2. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
+1. Niso, G., Botvinik-Nezer, R., Appelhoff, S., De La Vega, A., Esteban, O., Etzel, J.A., Finc, K., Ganz, M., Gau, R., 
+Halchenko, Y.O. and Herholz, P., 2022. Open and reproducible neuroimaging: from study inception to publication.
+2. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan, J.T., Nunes, R.G. and Geethanath, S., 2022. Open-source 
+magnetic resonance imaging acquisition: Data and documentation for two validated pulse sequences. Data in Brief, 42, 
+p.108105.
+3. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan Jr, J.T., Nunes, R.G. and Geethanath, S., 2022. A framework 
+for validating open-source pulse sequences. Magnetic resonance imaging, 87, pp.7-18.
+4. Karakuzu, A., Appelhoff, S., Auer, T., Boudreau, M., Feingold, F., Khan, A.R., Lazari, A., Markiewicz, C., Mulder, 
+M.J., Phillips, C. and Salo, T., 2021. qMRI-BIDS: an extension to the brain imaging data structure for quantitative 
+magnetic resonance imaging data. medRxiv.
+5. Karakuzu, A., Biswas, L., Cohen‐Adad, J. and Stikov, N., 2021. Vendor‐neutral sequences and fully transparent 
+workflows improve inter‐vendor reproducibility of quantitative MRI. Magnetic Resonance in Medicine. 
+6. Geethanath, S., Single echo reconstruction for rapid and silent MRI. (ISMRM) (2021).
+7. Qian, E. and Geethanath, S., Open source Magnetic rEsonance fingerprinting pAckage (OMEGA). (ISMRM) (2021).
+8. Ravi, K.S., O'Reilly, T., Vaughan Jr, J.T., Webb, A. and Geethanath, S., Seq2prospa: translating PyPulseq for 
+low-field imaging. (ISMRM) (2021).
+9. Ravi, K.S., Vaughan Jr, J.T. and Geethanath, S., PyPulseq in a web browser: a zero footprint tool for collaborative 
+and vendor-neutral pulse sequence development. (ISMRM) (2021).
+10. Ravi, K.S. and Geethanath, S., 2020. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging, 73, 
+pp.177-185.
+11. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
 Hardware-Independent PyPulseq Tool." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic
 Resonance in Medicine (ISMRM) (2020).
-3. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv
+12. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv
 preprint arXiv:2002.04265 (2020).
-4. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using
+13. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using
 TOPPE and Pulseq." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic Resonance in
 Medicine (ISMRM) (2020).
-5. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335.
-6. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of
+14. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335. 
+15. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of
 Magnetic Resonance Imaging 49.7 (2019): e65-e77.
-7. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
-8. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence
+16. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
+17. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence
 development for a reproducible research." ISMRM 27th Annual Meeting & Exhibition, International Society for
 Magnetic Resonance in Medicine (ISMRM) (2019).
-9. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São
+18. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São
 Paulo (2018).
 ---
 
