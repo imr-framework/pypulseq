@@ -10,8 +10,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_se_pypulseq.seq")
     # SETUP
     # ======
     seq = pp.Sequence()  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 256e-3
+    fov = 256e-3  # Define FOV and resolution
     Nx = 64
     Ny = 64
 
@@ -115,6 +114,13 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_se_pypulseq.seq")
         seq.add_block(gy)  # Phase blip
         gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
     seq.add_block(pp.make_delay(1e-4))
+
+    ok, error_report = seq.check_timing()
+    if ok:
+        print("Timing check passed successfully")
+    else:
+        print("Timing check failed! Error listing follows:")
+        print(error_report)
 
     # ======
     # VISUALIZATION

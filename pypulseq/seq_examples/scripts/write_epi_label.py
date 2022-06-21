@@ -14,8 +14,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.se
     # SETUP
     # ======
     seq = pp.Sequence()  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 220e-3
+    fov = 220e-3  # Define FOV and resolution
     Nx = 96
     Ny = 96
     slice_thickness = 3e-3  # Slice thickness
@@ -55,7 +54,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.se
     k_width = Nx * delta_k
     dwell_time = 4e-6
     readout_time = Nx * dwell_time
-    flat_time = np.ceil(readout_time * 1e5) * 1e-5  # round-up to the gradient raster
+    flat_time = np.ceil(readout_time * 1e5) * 1e-5  # Round-up to the gradient raster
     gx = pp.make_trapezoid(
         channel="x",
         system=system,
@@ -110,7 +109,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.se
                     pp.make_label(type="SET", label="AVG", value=n + 1 == 3),
                 )
                 if n + 1 != navigator:
-                    # Dummy blip pulse to maintain identical RO gradient timing and the correspnding eddy currents
+                    # Dummy blip pulse to maintain identical RO gradient timing and the corresponding eddy currents
                     seq.add_block(pp.make_delay(pp.calc_duration(gy)))
 
                 gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
@@ -129,9 +128,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.se
                     pp.make_label(type="SET", label="SEG", value=gx.amplitude < 0),
                 )
                 seq.add_block(gx, adc)  # Read one line of k-space
-                seq.add_block(
-                    gy, pp.make_label(type="INC", label="LIN", value=1)
-                )  # Phase blip
+                # Phase blip
+                seq.add_block(gy, pp.make_label(type="INC", label="LIN", value=1))
                 gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
 
             seq.add_block(

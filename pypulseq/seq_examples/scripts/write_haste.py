@@ -31,21 +31,17 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "haste_pypulseq.seq"):
     )
 
     seq = Sequence(system=system)  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 256e-3
+    fov = 256e-3  # Define FOV and resolution
     Ny_pre = 8
     Nx, Ny = 128, 128
-    n_echo = int(Ny / 2 + Ny_pre)
+    n_echo = int(Ny / 2 + Ny_pre)  # Number of echoes
     n_slices = 1
-    rf_flip = 180
+    rf_flip = 180  # Flip angle
     if isinstance(rf_flip, int):
         rf_flip = np.zeros(n_echo) + rf_flip
     slice_thickness = 5e-3  # Slice thickness
-    TE = 12e-3
-    TR = 2000e-3
-    TE_eff = 60e-3
-    k0 = round(TE_eff / TE)
-    PE_type = "linear"
+    TE = 12e-3  # Echo time
+    TR = 2000e-3  # Repetition time
 
     sampling_time = 6.4e-3
     readout_time = sampling_time + 2 * system.adc_dead_time
@@ -304,10 +300,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "haste_pypulseq.seq"):
 
     seq.add_block(delay_end)
 
-    (
-        ok,
-        error_report,
-    ) = seq.check_timing()  # Check whether the timing of the sequence is correct
+    # Check whether the timing of the sequence is correct
+    ok, error_report = seq.check_timing()
     if ok:
         print("Timing check passed successfully")
     else:

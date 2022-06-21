@@ -24,20 +24,16 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     )
 
     seq = pp.Sequence(system)  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 256e-3
+    fov = 256e-3  # Define FOV and resolution
     Nx, Ny = 128, 128
-    n_echo = 16
+    n_echo = 16  # Number of echoes
     n_slices = 1
-    rf_flip = 180
+    rf_flip = 180  # Flip angle
     if isinstance(rf_flip, int):
         rf_flip = np.zeros(n_echo) + rf_flip
     slice_thickness = 5e-3
-    TE = 12e-3
-    TR = 2000e-3
-    TE_eff = 60e-3
-    k0 = round(TE_eff / TE)
-    pe_type = "linear"
+    TE = 12e-3  # Echo time
+    TR = 2000e-3  # Repetition time
 
     sampling_time = 6.4e-3
     readout_time = sampling_time + 2 * system.adc_dead_time
@@ -127,13 +123,6 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         duration=t_sp,
         rise_time=dG,
     )
-    gr_spex = pp.make_trapezoid(
-        channel="x",
-        system=system,
-        area=gr_acq.area * (1 + fsp_r),
-        duration=t_spex,
-        rise_time=dG,
-    )
 
     agr_spr = gr_spr.area
     agr_preph = gr_acq.area / 2 + agr_spr
@@ -145,7 +134,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     n_ex = math.floor(Ny / n_echo)
     pe_steps = np.arange(1, n_echo * n_ex + 1) - 0.5 * n_echo * n_ex - 1
     if divmod(n_echo, 2)[1] == 0:
-        pe_steps = np.roll(pe_steps, -round(n_ex / 2))
+        pe_steps = np.roll(pe_steps, -np.round(n_ex / 2))
     pe_order = pe_steps.reshape((n_ex, n_echo), order="F").T
     phase_areas = pe_order * delta_k
 
@@ -238,9 +227,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
 
     TE_train = t_ex + n_echo * t_ref + t_end
     TR_fill = (TR - n_slices * TE_train) / n_slices
-    TR_fill = system.grad_raster_time * round(
-        TR_fill / system.grad_raster_time
-    )  # Round to gradient raster
+    # Round to gradient raster
+    TR_fill = system.grad_raster_time * np.round(TR_fill / system.grad_raster_time)
     if TR_fill < 0:
         TR_fill = 1e-3
         warnings.warn(

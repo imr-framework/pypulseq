@@ -14,8 +14,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
     # SETUP
     # ======
     seq = pp.Sequence()  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 250e-3
+    fov = 250e-3  # Define FOV and resolution
     Nx = 64
     Ny = 64
     slice_thickness = 3e-3  # Slice thickness
@@ -25,9 +24,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
     pe_enable = 1  # Flag to quickly disable phase encoding (1/0) as needed for the delay calibration
     ro_os = 1  # Oversampling factor
     readout_time = 4.2e-4  # Readout bandwidth
-    part_fourier_factor = (
-        0.75  # Partial Fourier factor: 1: full sampling; 0: start with ky=0
-    )
+    # Partial Fourier factor: 1: full sampling; 0: start with ky=0
+    part_fourier_factor = 0.75
 
     t_RF_ex = 2e-3
     t_RF_ref = 2e-3
@@ -126,9 +124,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
         channel="y", system=system, area=-delta_k, duration=blip_duration
     )
 
-    # Readout gradient is a truncated trapezoid with dead times at the beginning and at the end each equal to a half of blip
-    # duration. The area between the blips should be defined by k_width. We do a two-step calculation: we first increase the
-    # area assuming maximum slew rate and then scale down the amplitude to fix the area
+    # Readout gradient is a truncated trapezoid with dead times at the beginning and at the end each equal to a half of
+    # blip duration. The area between the blips should be defined by k_width. We do a two-step calculation: we first
+    # increase the area assuming maximum slew rate and then scale down the amplitude to fix the area
     extra_area = blip_duration / 2 * blip_duration / 2 * system.max_slew
     gx = pp.make_trapezoid(
         channel="x",
@@ -148,25 +146,23 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
     gx.flat_area = gx.amplitude * gx.flat_time
 
     # Calculate ADC
-    # We use ramp sampling, so we have to calculate the dwell time and the number of samples, which will be quite different
-    # from Nx and readout_time/Nx, respectively.
+    # We use ramp sampling, so we have to calculate the dwell time and the number of samples, which will be quite
+    # different from Nx and readout_time/Nx, respectively.
     adc_dwell_nyquist = delta_k / gx.amplitude / ro_os
     # Round-down dwell time to 100 ns
     adc_dwell = math.floor(adc_dwell_nyquist * 1e7) * 1e-7
-    adc_samples = (
-        math.floor(readout_time / adc_dwell / 4) * 4
-    )  # Number of samples on Siemens needs to be divisible by 4
+    # Number of samples on Siemens needs to be divisible by 4
+    adc_samples = math.floor(readout_time / adc_dwell / 4) * 4
     adc = pp.make_adc(num_samples=adc_samples, dwell=adc_dwell, delay=blip_duration / 2)
     # Realign the ADC with respect to the gradient
-    time_to_center = adc_dwell * (
-        (adc_samples - 1) / 2 + 0.5
-    )  # Supposedly Siemens samples at center of dwell period
+    # Supposedly Siemens samples at center of dwell period
+    time_to_center = adc_dwell * ((adc_samples - 1) / 2 + 0.5)
     # Adjust delay to align the trajectory with the gradient. We have to align the delay to 1us
     adc.delay = round((gx.rise_time + gx.flat_time / 2 - time_to_center) * 1e6) * 1e-6
-    # This rounding actually makes the sampling points on odd and even readouts to appear misaligned. However, on the real
-    # hardware this misalignment is much stronger anyways due to the gradient delays
+    # This rounding actually makes the sampling points on odd and even readouts to appear misaligned. However, on the
+    # real hardware this misalignment is much stronger anyways due to the gradient delays
 
-    # Split the blip into two halves and produnce a combined synthetic gradient
+    # Split the blip into two halves and produce a combined synthetic gradient
     gy_parts = pp.split_gradient_at(
         grad=gy, time_point=blip_duration / 2, system=system
     )
@@ -179,12 +175,10 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
     gy_blipdownup.waveform = gy_blipdownup.waveform * pe_enable
 
     # Phase encoding and partial Fourier
-    Ny_pre = round(
-        part_fourier_factor * Ny / 2 - 1
-    )  # PE steps prior to ky=0, excluding the central line
-    Ny_post = round(
-        Ny / 2 + 1
-    )  # PE lines after the k-space center including the central line
+    # PE steps prior to ky=0, excluding the central line
+    Ny_pre = round(part_fourier_factor * Ny / 2 - 1)
+    # PE lines after the k-space center including the central line
+    Ny_post = round(Ny / 2 + 1)
     Ny_meas = Ny_pre + Ny_post
 
     # Pre-phasing gradients
@@ -233,9 +227,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
     gx_pre.delay = delay_TE2 - pp.calc_duration(gx_pre)
     assert gx_pre.delay >= pp.calc_duration(rf180)  # gx_pre may not overlap with the RF
     gy_pre.delay = pp.calc_duration(rf180)
-    assert pp.calc_duration(gy_pre) <= pp.calc_duration(
-        gx_pre
-    )  # gyPre may not shift the timing
+    # gy_pre may not shift the timing
+    assert pp.calc_duration(gy_pre) <= pp.calc_duration(gx_pre)
 
     # ======
     # CONSTRUCT SEQUENCE
@@ -250,9 +243,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
         seq.add_block(rf180, gz180n, pp.make_delay(delay_TE2), gx_pre, gy_pre)
         for i in range(1, Ny_meas + 1):
             if i == 1:
-                seq.add_block(
-                    gx, gy_blipup, adc
-                )  # Read the first line of k-space with a single half-blip at the end
+                # Read the first line of k-space with a single half-blip at the end
+                seq.add_block(gx, gy_blipup, adc)
             elif i == Ny_meas:
                 # Read the last line of k-space with a single half-blip at the beginning
                 seq.add_block(gx, gy_blipdown, adc)
@@ -261,10 +253,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
                 seq.add_block(gx, gy_blipdownup, adc)
             gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
 
-    (
-        ok,
-        error_report,
-    ) = seq.check_timing()  # Check whether the timing of the sequence is correct
+    # Check whether the timing of the sequence is correct
+    ok, error_report = seq.check_timing()
     if ok:
         print("Timing check passed successfully")
     else:
@@ -272,7 +262,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
         [print(e) for e in error_report]
 
     # Very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within
-    # slewrate limits
+    # slew-rate limits
     rep = seq.test_report()
     print(rep)
 

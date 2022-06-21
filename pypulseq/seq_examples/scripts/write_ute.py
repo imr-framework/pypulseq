@@ -14,20 +14,16 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "ute_pypulseq.seq"):
     # SETUP
     # ======
     seq = pp.Sequence()  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 250e-3
+    fov = 250e-3  # Define FOV and resolution
     Nx = 256
     alpha = 10  # Flip angle
     slice_thickness = 3e-3  # Slice thickness
-    TR = 10e-3  # TR
+    TR = 10e-3  # Repetition tme
     Nr = 128  # Number of radial spokes
-    delta = (
-        2 * np.pi / Nr
-    )  # Angular increment; try golden angle pi*(3-5^0.5) or 0.5 of i
+    delta = 2 * np.pi / Nr  # Angular increment
     ro_duration = 2.56e-3  # Read-out time: controls RO bandwidth and T2-blurring
     ro_os = 2  # Oversampling
     ro_asymmetry = 1  # 0: Fully symmetric; 1: half-echo
-    minRF_to_ADC_time = 50e-6  # Defines TE together with the RO asymmetry
 
     rf_spoiling_inc = 117  # RF spoiling increment
 
@@ -59,9 +55,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "ute_pypulseq.seq"):
 
     # Align RO asymmetry to ADC samples
     Nxo = np.round(ro_os * Nx)
-    ro_asymmetry = (
-        pp.round_half_up(ro_asymmetry * Nxo / 2) / Nxo * 2
-    )  # Avoid banker's rounding
+    ro_asymmetry = pp.round_half_up(ro_asymmetry * Nxo / 2) / Nxo * 2
 
     # Define other gradients and ADC events
     delta_k = 1 / fov / (1 + ro_asymmetry)
@@ -150,10 +144,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "ute_pypulseq.seq"):
             seq.add_block(grc, grs, adc)
             seq.add_block(gsc, gss, pp.make_delay(delay_TR))
 
-    (
-        ok,
-        error_report,
-    ) = seq.check_timing()  # Check whether the timing of the sequence is correct
+    # Check whether the timing of the sequence is correct
+    ok, error_report = seq.check_timing()
     if ok:
         print("Timing check passed successfully")
     else:

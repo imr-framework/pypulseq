@@ -10,8 +10,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "gre_label_pypulseq.se
     # SETUP
     # ======
     seq = pp.Sequence()  # Create a new sequence object
-    # Define FOV and resolution
-    fov = 224e-3
+    fov = 224e-3  # Define FOV and resolution
     Nx = 256
     Ny = Nx
     alpha = 7  # Flip angle

@@ -22,7 +22,6 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "mprage_pypulseq.seq")
         adc_dead_time=10e-6,
     )
 
-    # Define FOV and resolution
     alpha = 7  # Flip angle
     ro_dur = 5017.6e-6
     ro_os = 1  # Readout oversampling
