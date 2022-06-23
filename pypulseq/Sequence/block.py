@@ -1,25 +1,31 @@
 from types import SimpleNamespace
+from typing import Tuple, List, Union
 
 import numpy as np
 
 from pypulseq.block_to_events import block_to_events
-from pypulseq.calc_duration import calc_duration
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
-from pypulseq.supported_labels import get_supported_labels
+from pypulseq.event_lib import EventLibrary
+from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def add_block(self, block_index: int, *args: SimpleNamespace) -> None:
+def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     """
-    Inserts PyPulseq block of sequence events into `self.dict_block_events` at position `block_index`. Also performs
-    gradient checks.
+    Replace block at index with new block provided as block structure, add sequence block, or create a new block
+    from events and store at position specified by index. The block or events are provided in uncompressed form and
+    will be stored in the compressed, non-redundant internal libraries.
+
+    See also:
+    - `pypulseq.Sequence.sequence.Sequence.get_block()`
+    - `pypulseq.Sequence.sequence.Sequence.add_block()`
 
     Parameters
     ----------
     block_index : int
-        Index at which `SimpleNamespace` objects have to be inserted into `self.dict_block_events`.
-    args : iterable[SimpleNamespace]
-        Iterable of `SimpleNamespace` objects to be added to `self.dict_block_events`.
+        Index at which block is replaced.
+    args : SimpleNamespace
+        Block or events to be replaced/added or created at `block_index`.
 
     Raises
     ------
@@ -31,162 +37,136 @@ def add_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If the first gradient in the block does not start with 0.
         If a gradient that doesn't end at zero is not aligned to the block boundary.
     """
-    events = block_to_events(args)
-    block_duration = calc_duration(*events)
-    self.dict_block_events[block_index] = np.zeros(7, dtype=np.int)
+    events = block_to_events(*args)
+    self.block_events[block_index] = np.zeros(7, dtype=np.int)
     duration = 0
 
     check_g = {}  # Key-value mapping of index and  pairs of gradients/times
     extensions = []
 
     for event in events:
-        if event.type == 'rf':
-            mag = np.abs(event.signal)
-            amplitude = np.max(mag)
-            mag = np.divide(mag, amplitude)
-            # Following line of code is a workaround for numpy's divide functions returning NaN when mathematical
-            # edge cases are encountered (eg. divide by 0)
-            mag[np.isnan(mag)] = 0
-            phase = np.angle(event.signal)
-            phase[phase < 0] += 2 * np.pi
-            phase /= 2 * np.pi
+        if not isinstance(event, float):  # If event is not a block duration
+            if event.type == "rf":
+                if hasattr(event, "id"):
+                    rf_id = event.id
+                else:
+                    rf_id, _ = register_rf_event(self, event)
 
-            mag_shape = compress_shape(mag)
-            data = np.insert(mag_shape.data, 0, mag_shape.num_samples)
-            mag_id, found = self.shape_library.find(data)
-            if not found:
-                self.shape_library.insert(mag_id, data)
+                self.block_events[block_index][1] = rf_id
+                duration = max(
+                    duration, event.shape_dur + event.delay + event.ringdown_time
+                )
+            elif event.type == "grad":
+                channel_num = ["x", "y", "z"].index(event.channel)
+                idx = 2 + channel_num
 
-            phase_shape = compress_shape(phase)
-            data = np.insert(phase_shape.data, 0, phase_shape.num_samples)
-            phase_id, found = self.shape_library.find(data)
-            if not found:
-                self.shape_library.insert(phase_id, data)
+                grad_start = (
+                    event.delay
+                    + np.floor(event.tt[0] / self.grad_raster_time + 1e-10)
+                    * self.grad_raster_time
+                )
+                grad_duration = (
+                    event.delay
+                    + np.ceil(event.tt[-1] / self.grad_raster_time - 1e-10)
+                    * self.grad_raster_time
+                )
 
-            use = 0
-            use_cases = {'excitation': 1, 'refocusing': 2, 'inversion': 3}
-            if hasattr(event, 'use'):
-                use = use_cases[event.use]
+                check_g[channel_num] = SimpleNamespace()
+                check_g[channel_num].idx = idx
+                check_g[channel_num].start = np.array((grad_start, event.first))
+                check_g[channel_num].stop = np.array((grad_duration, event.last))
 
-            data = [amplitude, mag_id, phase_id, event.delay, event.freq_offset, event.phase_offset, event.dead_time,
-                    event.ringdown_time, use]
-            data_id, found = self.rf_library.find(data)
-            if not found:
-                self.rf_library.insert(data_id, data)
+                if hasattr(event, "id"):
+                    grad_id = event.id
+                else:
+                    grad_id, _ = register_grad_event(self, event)
 
-            self.dict_block_events[block_index][1] = data_id
-            duration = max(duration, len(mag) * self.rf_raster_time + event.delay)
-        elif event.type == 'grad':
-            channel_num = ['x', 'y', 'z'].index(event.channel)
-            idx = 2 + channel_num
+                self.block_events[block_index][idx] = grad_id
+                duration = np.max([duration, grad_duration])
+            elif event.type == "trap":
+                channel_num = ["x", "y", "z"].index(event.channel)
+                idx = 2 + channel_num
 
-            check_g[channel_num] = SimpleNamespace()
-            check_g[channel_num].idx = idx
-            check_g[channel_num].start = np.array((event.delay + min(event.t), event.first))
-            check_g[channel_num].stop = np.array(
-                (event.delay + max(event.t) + self.system.grad_raster_time, event.last))
+                check_g[channel_num] = SimpleNamespace()
+                check_g[channel_num].idx = idx
+                check_g[channel_num].start = np.array((0, 0))
+                check_g[channel_num].stop = np.array(
+                    (
+                        event.delay
+                        + event.rise_time
+                        + event.fall_time
+                        + event.flat_time,
+                        0,
+                    )
+                )
 
-            amplitude = max(abs(event.waveform))
-            if amplitude > 0:
-                g = event.waveform / amplitude
-            else:
-                g = event.waveform
-            shape = compress_shape(g)
-            data = np.insert(shape.data, 0, shape.num_samples)
-            shape_id, found = self.shape_library.find(data)
-            if not found:
-                self.shape_library.insert(shape_id, data)
-            data = [amplitude, shape_id, event.delay, event.first, event.last]
-            grad_id, found = self.grad_library.find(data)
-            if not found:
-                self.grad_library.insert(grad_id, data, 'g')
-            self.dict_block_events[block_index][idx] = grad_id
-            duration = max(duration, event.delay + len(g) * self.grad_raster_time)
-        elif event.type == 'trap':
-            channel_num = ['x', 'y', 'z'].index(event.channel)
-            idx = 2 + channel_num
+                if hasattr(event, "id"):
+                    trap_id = event.id
+                else:
+                    trap_id = register_grad_event(self, event)
 
-            check_g[channel_num] = SimpleNamespace()
-            check_g[channel_num].idx = idx
-            check_g[channel_num].start = np.array((0, 0))
-            check_g[channel_num].stop = np.array((event.delay + event.rise_time + event.fall_time + event.flat_time, 0))
+                self.block_events[block_index][idx] = trap_id
+                duration = np.max(
+                    [
+                        duration,
+                        event.delay
+                        + event.rise_time
+                        + event.flat_time
+                        + event.fall_time,
+                    ]
+                )
+            elif event.type == "adc":
+                if hasattr(event, "id"):
+                    adc_id = event.id
+                else:
+                    adc_id = register_adc_event(self, event)
 
-            data = [event.amplitude, event.rise_time, event.flat_time, event.fall_time, event.delay]
-            trap_id, found = self.grad_library.find(data)
-            if not found:
-                self.grad_library.insert(trap_id, data, 't')
-            self.dict_block_events[block_index][idx] = trap_id
-            duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
-        elif event.type == 'adc':
-            data = [event.num_samples, event.dwell, max(event.delay, event.dead_time), event.freq_offset,
-                    event.phase_offset, event.dead_time]
-            adc_id, found = self.adc_library.find(data)
-            if not found:
-                self.adc_library.insert(adc_id, data)
-            self.dict_block_events[block_index][5] = adc_id
-            duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
-        elif event.type == 'delay':
-            data = [event.delay]
-            delay_id, found = self.delay_library.find(data)
-            if not found:
-                self.delay_library.insert(delay_id, data)
-            self.dict_block_events[block_index][0] = delay_id
-            duration = max(duration, event.delay)
-        elif event.type == 'output' or event.type == 'trigger':
-            event_type = ['output', 'trigger'].index(event.type) + 1
-            if event_type == 1:
-                # Trigger codes supported by the Siemens interpreter as of May 2019
-                event_channel = ['osc0', 'osc1', 'ext1'].index(event.channel) + 1
-            elif event_type == 2:
-                # Trigger codes supported by the Siemens interpreter as of June 2019
-                event_channel = ['physio1', 'physio2'].index(event.channel) + 1
-            else:
-                raise ValueError('Unsupported control event type.')
+                self.block_events[block_index][5] = adc_id
+                duration = np.max(
+                    [
+                        duration,
+                        event.delay + event.num_samples * event.dwell + event.dead_time,
+                    ]
+                )
+            elif event.type == "delay":
+                duration = np.max([duration, event.delay])
+            elif event.type in ["output", "trigger"]:
+                if hasattr(event, "id"):
+                    event_id = event.id
+                else:
+                    event_id = register_control_event(self, event)
 
-            data = [event_type, event_channel, event.delay, event.duration]
-            trigger_id, found = self.trigger_library.find(data)
-            if not found:
-                self.trigger_library.insert(trigger_id, data)
+                ext = {"type": self.get_extension_type_ID("TRIGGERS"), "ref": event_id}
+                extensions.append(ext)
+                duration = np.max([duration, event.delay + event.duration])
+            elif event.type in ["labelset", "labelinc"]:
+                if hasattr(event, "id"):
+                    label_id = event.id
+                else:
+                    label_id = register_label_event(self, event)
 
-            # Now we collect the list of extension objects and we will add it to the event table later
-            ext = {'type': self.get_extension_type_ID('TRIGGERS'), 'ref': trigger_id}
-            extensions.append(ext)
-            duration = max(duration, event.delay + event.duration)
-        elif event.type == 'labelset':
-            label_id = get_supported_labels().index(event.label) + 1
-            data = [event.value, label_id]
-            label_id2, found = self.label_set_library.find(data)
-            if not found:
-                self.label_set_library.insert(label_id2, data)
-
-            ext = {'type': self.get_extension_type_ID('LABELSET'), 'ref': label_id2}
-            extensions.append(ext)
-        elif event.type == 'labelinc':
-            label_id = get_supported_labels().index(event.label) + 1
-            data = [event.value, label_id]
-            label_id2, found = self.label_inc_library.find(data)
-            if not found:
-                self.label_inc_library.insert(label_id2, data)
-
-            ext = {'type': self.get_extension_type_ID('LABELINC'), 'ref': label_id2}
-            extensions.append(ext)
+                ext = {
+                    "type": self.get_extension_type_ID(event.type.upper()),
+                    "ref": label_id,
+                }
+                extensions.append(ext)
 
     # =========
     # ADD EXTENSIONS
     # =========
     if len(extensions) > 0:
         """
-        Add extensions now... but it's tricky actually we need to check whether the exactly the same list of extensions 
-        already exists, otherwise we have to create a new one... ooops, we have a potential problem with the key 
-        mapping then... The trick is that we rely on the sorting of the extension IDs and then we can always find the 
+        Add extensions now... but it's tricky actually we need to check whether the exactly the same list of extensions
+        already exists, otherwise we have to create a new one... ooops, we have a potential problem with the key
+        mapping then... The trick is that we rely on the sorting of the extension IDs and then we can always find the
         last one in the list by setting the reference to the next to 0 and then proceed with the other elements.
         """
-        sort_idx = np.argsort([e['ref'] for e in extensions])
+        sort_idx = np.argsort([e["ref"] for e in extensions])
         extensions = np.take(extensions, sort_idx)
         all_found = True
         extension_id = 0
         for i in range(len(extensions)):
-            data = [extensions[i]['type'], extensions[i]['ref'], extension_id]
+            data = [extensions[i]["type"], extensions[i]["ref"], extension_id]
             extension_id, found = self.extensions_library.find(data)
             all_found = all_found and found
             if not found:
@@ -196,62 +176,78 @@ def add_block(self, block_index: int, *args: SimpleNamespace) -> None:
             # Add the list
             extension_id = 0
             for i in range(len(extensions)):
-                data = [extensions[i]['type'], extensions[i]['ref'], extension_id]
+                data = [extensions[i]["type"], extensions[i]["ref"], extension_id]
                 extension_id, found = self.extensions_library.find(data)
                 if not found:
                     self.extensions_library.insert(extension_id, data)
 
         # Now we add the ID
-        self.dict_block_events[block_index][6] = extension_id
+        self.block_events[block_index][6] = extension_id
 
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
     for grad_to_check in check_g.values():
 
-        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+        if (
+            abs(grad_to_check.start[1])
+            > self.system.max_slew * self.system.grad_raster_time
+        ):
             if grad_to_check.start[0] != 0:
-                raise ValueError('No delay allowed for gradients which start with a non-zero amplitude')
+                raise ValueError(
+                    "No delay allowed for gradients which start with a non-zero amplitude"
+                )
 
             if block_index > 1:
-                prev_id = self.dict_block_events[block_index - 1][grad_to_check.idx]
+                prev_id = self.block_events[block_index - 1][grad_to_check.idx]
                 if prev_id != 0:
                     prev_lib = self.grad_library.get(prev_id)
-                    prev_dat = prev_lib['data']
-                    prev_type = prev_lib['type']
-                    if prev_type == 't':
+                    prev_data = prev_lib["data"]
+                    prev_type = prev_lib["type"]
+                    if prev_type == "t":
                         raise RuntimeError(
-                            'Two consecutive gradients need to have the same amplitude at the connection point')
-                    elif prev_type == 'g':
-                        last = prev_dat[4]
-                        if abs(last - grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+                            "Two consecutive gradients need to have the same amplitude at the connection point"
+                        )
+                    elif prev_type == "g":
+                        last = prev_data[5]
+                        if (
+                            abs(last - grad_to_check.start[1])
+                            > self.system.max_slew * self.system.grad_raster_time
+                        ):
                             raise RuntimeError(
-                                'Two consecutive gradients need to have the same amplitude at the connection point')
+                                "Two consecutive gradients need to have the same amplitude at the connection point"
+                            )
             else:
-                raise RuntimeError('First gradient in the the first block has to start at 0.')
+                raise RuntimeError(
+                    "First gradient in the the first block has to start at 0."
+                )
 
-        if grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time and abs(
-                grad_to_check.stop[0] - block_duration) > 1e-7:
-            raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
+        if (
+            grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
+            and abs(grad_to_check.stop[0] - duration) > 1e-7
+        ):
+            raise RuntimeError(
+                "A gradient that doesn't end at zero needs to be aligned to the block boundary."
+            )
 
-    eps = np.finfo(np.float).eps
-    assert abs(duration - block_duration) < eps
-    self.arr_block_durations.append(block_duration)
+    self.block_durations.append(float(duration))
 
 
 def get_block(self, block_index: int) -> SimpleNamespace:
     """
-    Returns PyPulseq block at `block_index` position in `self.dict_block_events`.
+    Returns PyPulseq block at `block_index` position in `self.block_events`.
+
+    The block is created from the sequence data with all events and shapes decompressed.
 
     Parameters
     ----------
     block_index : int
-        Index of PyPulseq block to be retrieved from `self.dict_block_events`.
+        Index of PyPulseq block to be retrieved from `self.block_events`.
 
     Returns
     -------
     block : SimpleNamespace
-        PyPulseq block at 'block_index' position in `self.dict_block_events`.
+        PyPulseq block at 'block_index' position in `self.block_events`.
 
     Raises
     ------
@@ -261,53 +257,80 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     """
 
     block = SimpleNamespace()
-    event_ind = self.dict_block_events[block_index]
+    attrs = ["block_duration", "rf", "gx", "gy", "gz", "adc"]
+    values = [None] * len(attrs)
+    for att, val in zip(attrs, values):
+        setattr(block, att, val)
+    event_ind = self.block_events[block_index]
 
     if event_ind[0] > 0:  # Delay
         delay = SimpleNamespace()
-        delay.type = 'delay'
+        delay.type = "delay"
         delay.delay = self.delay_library.data[event_ind[0]][0]
         block.delay = delay
 
     if event_ind[1] > 0:  # RF
-        block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]])
+        if len(self.rf_library.type) >= event_ind[1]:
+            block.rf = self.rf_from_lib_data(
+                self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]]
+            )
+        else:
+            block.rf = self.rf_from_lib_data(
+                self.rf_library.data[event_ind[1]]
+            )  # Undefined type/use
 
     # Gradients
-    grad_channels = ['gx', 'gy', 'gz']
-    for i in range(1, len(grad_channels) + 1):
-        if event_ind[2 + (i - 1)] > 0:
+    grad_channels = ["gx", "gy", "gz"]
+    for i in range(len(grad_channels)):
+        if event_ind[2 + i] > 0:
             grad, compressed = SimpleNamespace(), SimpleNamespace()
-            grad_type = self.grad_library.type[event_ind[2 + (i - 1)]]
-            lib_data = self.grad_library.data[event_ind[2 + (i - 1)]]
-            grad.type = 'trap' if grad_type == 't' else 'grad'
-            grad.channel = grad_channels[i - 1][1]
-            if grad.type == 'grad':
+            grad_type = self.grad_library.type[event_ind[2 + i]]
+            lib_data = self.grad_library.data[event_ind[2 + i]]
+            grad.type = "trap" if grad_type == "t" else "grad"
+            grad.channel = grad_channels[i][1]
+            if grad.type == "grad":
                 amplitude = lib_data[0]
                 shape_id = lib_data[1]
-                delay = lib_data[2]
+                time_id = lib_data[2]
+                delay = lib_data[3]
                 shape_data = self.shape_library.data[shape_id]
                 compressed.num_samples = shape_data[0]
                 compressed.data = shape_data[1:]
                 g = decompress_shape(compressed)
                 grad.waveform = amplitude * g
-                grad.t = np.arange(g.size) * self.grad_raster_time
+
+                if time_id == 0:
+                    grad.tt = np.arange(1, len(g) + 1) - 0.5 * self.grad_raster_time
+                    t_end = len(g) * self.grad_raster_time
+                else:
+                    t_shape_data = self.shape_library.data[time_id]
+                    compressed.num_samples = t_shape_data[0]
+                    compressed.data = t_shape_data[1:]
+                    grad.tt = decompress_shape(compressed) * self.grad_raster_time
+
+                    assert len(grad.waveform) == len(grad.tt)
+                    t_end = grad.tt[-1]
+
+                grad.shape_id = shape_id
+                grad.time_id = time_id
                 grad.delay = delay
-                if len(lib_data) > 4:
-                    grad.first = lib_data[3]
-                    grad.last = lib_data[4]
-                else:
-                    grad.first = grad.waveform[0]
-                    grad.last = grad.waveform[-1]
+                grad.shape_dur = t_end
+                if len(lib_data) > 5:
+                    grad.first = lib_data[4]
+                    grad.last = lib_data[5]
             else:
-                if max(lib_data.shape) < 5:  # added by GT
-                    grad.amplitude, grad.rise_time, grad.flat_time, grad.fall_time = [lib_data[x] for x in range(4)]
-                    grad.delay = 0
-                else:
-                    grad.amplitude, grad.rise_time, grad.flat_time, grad.fall_time, grad.delay = [lib_data[x] for x in
-                                                                                                  range(5)]
-                grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
+                grad.amplitude = lib_data[0]
+                grad.rise_time = lib_data[1]
+                grad.flat_time = lib_data[2]
+                grad.fall_time = lib_data[3]
+                grad.delay = lib_data[4]
+                grad.area = grad.amplitude * (
+                    grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2
+                )
                 grad.flat_area = grad.amplitude * grad.flat_time
-            setattr(block, grad_channels[i - 1], grad)
+
+            setattr(block, grad_channels[i], grad)
+
     # ADC
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
@@ -315,10 +338,16 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             lib_data = np.append(lib_data, 0)
 
         adc = SimpleNamespace()
-        adc.num_samples, adc.dwell, adc.delay, adc.freq_offset, adc.phase_offset, adc.dead_time = [lib_data[x] for x in
-                                                                                                   range(6)]
+        (
+            adc.num_samples,
+            adc.dwell,
+            adc.delay,
+            adc.freq_offset,
+            adc.phase_offset,
+            adc.dead_time,
+        ) = [lib_data[x] for x in range(6)]
         adc.num_samples = int(adc.num_samples)
-        adc.type = 'adc'
+        adc.type = "adc"
         block.adc = adc
 
     # Triggers
@@ -330,46 +359,279 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             # Format: ext_type, ext_id, next_ext_id
             ext_type = self.get_extension_type_string(ext_data[0])
 
-            if ext_type == 'TRIGGERS':
-                trigger_types = ['output', 'trigger']
+            if ext_type == "TRIGGERS":
+                trigger_types = ["output", "trigger"]
                 data = self.trigger_library.data[ext_data[1]]
                 trigger = SimpleNamespace()
                 trigger.type = trigger_types[int(data[0]) - 1]
                 if data[0] == 1:
-                    trigger_channels = ['osc0', 'osc1', 'ext1']
-                    trigger.channel = trigger_channels[int(data[1])]
+                    trigger_channels = ["osc0", "osc1", "ext1"]
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
                 elif data[0] == 2:
-                    trigger_channels = ['physio1', 'physio2']
-                    trigger.channel = trigger_channels[int(data[1])]
+                    trigger_channels = ["physio1", "physio2"]
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
                 else:
-                    raise ValueError('Unsupported trigger event type')
+                    raise ValueError("Unsupported trigger event type")
 
                 trigger.delay = data[2]
                 trigger.duration = data[3]
                 # Allow for multiple triggers per block
-                if hasattr(block, 'trigger'):
+                if hasattr(block, "trigger"):
                     block.trigger[len(block.trigger)] = trigger
                 else:
                     block.trigger = {0: trigger}
-            elif ext_type == 'LABELSET' or ext_type == 'LABELINC':
+            elif ext_type in ["LABELSET", "LABELINC"]:
                 label = SimpleNamespace()
                 label.type = ext_type.lower()
                 supported_labels = get_supported_labels()
-                if ext_type == 'LABELSET':
+                if ext_type == "LABELSET":
                     data = self.label_set_library.data[ext_data[1]]
                 else:
                     data = self.label_inc_library.data[ext_data[1]]
 
-                label.label = supported_labels[data[1] - 1]
+                label.label = supported_labels[int(data[1] - 1)]
                 label.value = data[0]
                 # Allow for multiple labels per block
-                if hasattr(block, 'label'):
+                if hasattr(block, "label"):
                     block.label[len(block.label)] = label
                 else:
                     block.label = {0: label}
             else:
-                raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
+                raise RuntimeError(f"Unknown extension ID {ext_data[0]}")
 
             next_ext_id = ext_data[2]
 
+    block.block_duration = self.block_durations[block_index - 1]
+
     return block
+
+
+def register_adc_event(self, event: EventLibrary) -> int:
+    """
+
+    Parameters
+    ----------
+    event : SimpleNamespace
+        ADC event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered ADC event.
+    """
+    data = np.array(
+        [
+            event.num_samples,
+            event.dwell,
+            np.max([event.delay, event.dead_time]),
+            event.freq_offset,
+            event.phase_offset,
+            event.dead_time,
+        ]
+    )
+    adc_id, _ = self.adc_library.find_or_insert(new_data=data)
+
+    return adc_id
+
+
+def register_control_event(self, event: SimpleNamespace) -> int:
+    """
+
+    Parameters
+    ----------
+    event : SimpleNamespace
+        Control event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered control event.
+    """
+    event_type = ["output", "trigger"].index(event.type)
+    if event_type == 0:
+        # Trigger codes supported by the Siemens interpreter as of May 2019
+        event_channel = ["osc0", "osc1", "ext1"].index(event.channel)
+    elif event_type == 1:
+        # Trigger codes supported by the Siemens interpreter as of June 2019
+        event_channel = ["physio1", "physio2"].index(event.channel)
+    else:
+        raise ValueError("Unsupported control event type")
+
+    data = [event_type + 1, event_channel + 1, event.delay, event.duration]
+    control_id, _ = self.trigger_library.find_or_insert(new_data=data)
+
+    return control_id
+
+
+def register_grad_event(
+    self, event: SimpleNamespace
+) -> Union[int, Tuple[int, List[int]]]:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        Gradient event to be registered.
+
+    Returns
+    -------
+    int, [int, ...]
+        For gradient events: ID of registered gradient event, list of shape IDs
+    int
+        For trapezoid gradient events: ID of registered gradient event
+    """
+    may_exist = True
+    if event.type == "grad":
+        amplitude = np.abs(event.waveform).max()
+        if amplitude > 0:
+            fnz = event.waveform[np.nonzero(event.waveform)[0][0]]
+            amplitude *= (
+                np.sign(fnz) if fnz != 0 else 1
+            )  # Workaround for np.sign(0) = 0
+
+        if hasattr(event, "shape_IDs"):
+            shape_IDs = event.shape_IDs
+        else:
+            shape_IDs = [0, 0]
+            if amplitude != 0:
+                g = event.waveform / amplitude
+            else:
+                g = event.waveform
+            c_shape = compress_shape(g)
+            s_data = np.insert(c_shape.data, 0, c_shape.num_samples)
+            shape_IDs[0], found = self.shape_library.find_or_insert(s_data)
+            may_exist = may_exist & found
+            c_time = compress_shape(event.tt / self.grad_raster_time)
+
+            if not (
+                len(c_time.data) == 4
+                and np.all(c_time.data == [0.5, 1, 1, c_time.num_samples - 3])
+            ):
+                t_data = np.insert(c_time.data, 0, c_time.num_samples)
+                shape_IDs[1], found = self.shape_library.find_or_insert(t_data)
+                may_exist = may_exist & found
+
+        data = [amplitude, *shape_IDs, event.delay, event.first, event.last]
+    elif event.type == "trap":
+        data = np.array(
+            [
+                event.amplitude,
+                event.rise_time,
+                event.flat_time,
+                event.fall_time,
+                event.delay,
+            ]
+        )
+    else:
+        raise ValueError("Unknown gradient type passed to register_grad_event()")
+
+    if may_exist:
+        grad_id, _ = self.grad_library.find_or_insert(
+            new_data=data, data_type=event.type[0]
+        )
+    else:
+        grad_id = self.grad_library.insert(0, data, event.type[0])
+
+    if event.type == "grad":
+        return grad_id, shape_IDs
+    elif event.type == "trap":
+        return grad_id
+
+
+def register_label_event(self, event: SimpleNamespace) -> int:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        ID of label event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered label event.
+    """
+
+    label_id = get_supported_labels().index(event.label) + 1
+    data = [event.value, label_id]
+    if event.type == "labelset":
+        label_id, _ = self.label_set_library.find_or_insert(new_data=data)
+    elif event.type == "labelinc":
+        label_id, _ = self.label_inc_library.find_or_insert(new_data=data)
+    else:
+        raise ValueError("Unsupported label type passed to register_label_event()")
+
+    return label_id
+
+
+def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        RF event to be registered.
+
+    Returns
+    -------
+    int, [int, ...]
+        ID of registered RF event, list of shape IDs
+    """
+    mag = np.abs(event.signal)
+    amplitude = np.max(mag)
+    mag /= amplitude
+    # Following line of code is a workaround for numpy's divide functions returning NaN when mathematical
+    # edge cases are encountered (eg. divide by 0)
+    mag[np.isnan(mag)] = 0
+    phase = np.angle(event.signal)
+    phase[phase < 0] += 2 * np.pi
+    phase /= 2 * np.pi
+    may_exist = True
+
+    if hasattr(event, "shape_IDs"):
+        shape_IDs = event.shape_IDs
+    else:
+        shape_IDs = [0, 0, 0]
+
+        mag_shape = compress_shape(mag)
+        data = np.insert(mag_shape.data, 0, mag_shape.num_samples)
+        shape_IDs[0], found = self.shape_library.find_or_insert(data)
+        may_exist = may_exist & found
+
+        phase_shape = compress_shape(phase)
+        data = np.insert(phase_shape.data, 0, phase_shape.num_samples)
+        shape_IDs[1], found = self.shape_library.find_or_insert(data)
+        may_exist = may_exist & found
+
+        time_shape = compress_shape(
+            event.t / self.rf_raster_time
+        )  # Time shape is stored in units of RF raster
+        if len(time_shape.data) == 4 and np.all(
+            time_shape.data == [0.5, 1, 1, time_shape.num_samples - 3]
+        ):
+            shape_IDs[2] = 0
+        else:
+            data = [time_shape.num_samples, *time_shape.data]
+            shape_IDs[2], found = self.shape_library.find_or_insert(data)
+            may_exist = may_exist & found
+
+    use = "u"  # Undefined
+    if hasattr(event, "use"):
+        if event.use in [
+            "excitation",
+            "refocusing",
+            "inversion",
+            "saturation",
+            "preparation",
+        ]:
+            use = event.use[0]
+        else:
+            use = "u"
+
+    data = np.array(
+        [amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset]
+    )
+
+    if may_exist:
+        rf_id, _ = self.rf_library.find_or_insert(new_data=data, data_type=use)
+    else:
+        rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
+
+    return rf_id, shape_IDs

@@ -8,14 +8,23 @@ from pypulseq.make_trap_pulse import make_trapezoid
 from pypulseq.opts import Opts
 
 
-def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 0, delay: float = 0,
-                      freq_offset: float = 0, max_grad: float = 0, max_slew: float = 0, phase_offset: float = 0,
-                      return_gz: bool = False, slice_thickness: float = 0, system: Opts = Opts(),
-                      time_bw_product: float = 0,
-                      use: str = str()) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
+def make_arbitrary_rf(
+    signal: np.ndarray,
+    flip_angle: float,
+    bandwidth: float = 0,
+    delay: float = 0,
+    freq_offset: float = 0,
+    max_grad: float = 0,
+    max_slew: float = 0,
+    phase_offset: float = 0,
+    return_gz: bool = False,
+    slice_thickness: float = 0,
+    system: Opts = Opts(),
+    time_bw_product: float = 0,
+    use: str = str(),
+) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
-    Creates a radio-frequency pulse event with arbitrary pulse shape and optionally an accompanying slice select
-    trapezoidal gradient event.
+    Create an RF pulse with the given pulse shape.
 
     Parameters
     ----------
@@ -26,7 +35,7 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
     bandwidth : float, default=0
         Bandwidth in Hertz (Hz).
     delay : float, default=0
-        Delay in milliseconds (ms) of accompanying slice select trapezoidal event.
+        Delay in seconds (s) of accompanying slice select trapezoidal event.
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
     max_grad : float, default=system.max_grad
@@ -51,7 +60,7 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
     -------
     rf : SimpleNamespace
         Radio-frequency pulse event with arbitrary pulse shape.
-    gz : SimpleNamespace, if return_gz=True
+    gz : SimpleNamespace, optional
         Slice select trapezoidal gradient event accompanying the arbitrary radio-frequency pulse event.
 
     Raises
@@ -61,22 +70,28 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwith` are not passed.
     """
-    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
-    if use != '' and use not in valid_use_pulses:
+    valid_use_pulses = ["excitation", "refocusing", "inversion"]
+    if use != "" and use not in valid_use_pulses:
         raise ValueError(
-            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}")
+            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
+        )
 
     signal = np.squeeze(signal)
     if signal.ndim > 1:
-        raise ValueError(f'signal should have ndim=1. Passed ndim={signal.ndim}')
-    signal = signal / np.abs(np.sum(signal * system.rf_raster_time)) * flip_angle / (2 * np.pi)
+        raise ValueError(f"signal should have ndim=1. Passed ndim={signal.ndim}")
+    signal = (
+        signal
+        / np.abs(np.sum(signal * system.rf_raster_time))
+        * flip_angle
+        / (2 * np.pi)
+    )
 
     N = len(signal)
     duration = N * system.rf_raster_time
     t = np.arange(1, N + 1) * system.rf_raster_time
 
     rf = SimpleNamespace()
-    rf.type = 'rf'
+    rf.type = "rf"
     rf.signal = signal
     rf.t = t
     rf.freq_offset = freq_offset
@@ -85,7 +100,7 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
 
-    if use != '':
+    if use != "":
         rf.use = use
 
     if rf.dead_time > rf.delay:
@@ -93,9 +108,9 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
 
     if return_gz:
         if slice_thickness <= 0:
-            raise ValueError('Slice thickness must be provided.')
+            raise ValueError("Slice thickness must be provided.")
         if bandwidth <= 0:
-            raise ValueError('Bandwidth of pulse must be provided.')
+            raise ValueError("Bandwidth of pulse must be provided.")
 
         if max_grad > 0:
             system.max_grad = max_grad
@@ -108,10 +123,15 @@ def make_arbitrary_rf(signal: np.ndarray, flip_angle: float, bandwidth: float = 
 
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
+        gz = make_trapezoid(
+            channel="z", system=system, flat_time=duration, flat_area=area
+        )
 
         if rf.delay > gz.rise_time:
-            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
+            gz.delay = (
+                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                * system.grad_raster_time
+            )
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
