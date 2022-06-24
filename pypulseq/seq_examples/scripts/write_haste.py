@@ -9,7 +9,7 @@ from pypulseq.make_adc import make_adc
 from pypulseq.make_delay import make_delay
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_sinc_pulse import make_sinc_pulse
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 
 

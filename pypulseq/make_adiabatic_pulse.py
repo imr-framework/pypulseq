@@ -9,7 +9,7 @@ from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_bandwidth import calc_rf_bandwidth
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_delay import make_delay
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 

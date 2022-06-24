@@ -4,7 +4,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 
 

@@ -6,7 +6,7 @@ import numpy as np
 
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_delay import make_delay
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 
 

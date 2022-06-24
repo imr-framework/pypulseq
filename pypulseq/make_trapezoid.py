@@ -11,7 +11,7 @@ def make_trapezoid(
     amplitude: float = 0,
     area: float = None,
     delay: float = 0,
-    duration: float = 0,
+    duration: float = 4e-3,
     flat_area: float = 0,
     flat_time: float = -1,
     max_grad: float = 0,
@@ -36,7 +36,7 @@ def make_trapezoid(
         Area.
     delay : float, default=0
         Delay in seconds (s).
-    duration : float, default=0
+    duration : float, default=4e-3
         Duration in seconds (s).
     flat_area : float, default=0
         Flat area.

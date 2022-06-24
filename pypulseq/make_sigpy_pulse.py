@@ -6,7 +6,7 @@ import numpy as np
 import sigpy.mri.rf as rf
 import sigpy.plot as pl
 
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 

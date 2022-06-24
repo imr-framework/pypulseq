@@ -5,7 +5,7 @@ from typing import Tuple, Union
 import numpy as np
 
 from pypulseq import make_delay, calc_duration
-from pypulseq.make_trap_pulse import make_trapezoid
+from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
