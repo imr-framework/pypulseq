@@ -17,7 +17,7 @@ def make_gauss_pulse(
     center_pos: float = 0.5,
     delay: float = 0,
     dwell: float = 0,
-    duration: float = 0,
+    duration: float = 4e-3,
     freq_offset: float = 0,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -51,7 +51,7 @@ def make_gauss_pulse(
     delay : float, default=0
         Delay in seconds (s).
     dwell : float, default=0
-    duration : float, default=0
+    duration : float, default=4e-3
         Duration in seconds (s).
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).

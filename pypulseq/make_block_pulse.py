@@ -12,7 +12,7 @@ def make_block_pulse(
     flip_angle: float,
     bandwidth: float = 0,
     delay: float = 0,
-    duration: float = 0,
+    duration: float = 4e-3,
     freq_offset: float = 0,
     phase_offset: float = 0,
     return_delay: bool = False,
@@ -31,7 +31,7 @@ def make_block_pulse(
         Bandwidth in Hertz (hz).
     delay : float, default=0
         Delay in seconds (s) of accompanying slice select trapezoidal event.
-    duration : float, default=0
+    duration : float, default=4e-3
         Duration in seconds (s).
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).

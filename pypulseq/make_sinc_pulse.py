@@ -14,7 +14,7 @@ def make_sinc_pulse(
     flip_angle: float,
     apodization: float = 0,
     delay: float = 0,
-    duration: float = 0,
+    duration: float = 4e-3,
     dwell: float = 0,
     center_pos: float = 0.5,
     freq_offset: float = 0,
@@ -46,7 +46,7 @@ def make_sinc_pulse(
         Position of peak.5 (midway).
     delay : float, default=0
         Delay in seconds (s).
-    duration : float, default=0
+    duration : float, default=4e-3
         Duration in seconds (s).
     dwell : float, default=0
     freq_offset : float, default=0

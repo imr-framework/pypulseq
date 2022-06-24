@@ -4,7 +4,7 @@ from pypulseq.opts import Opts
 
 
 def make_digital_output_pulse(
-    channel: str, delay: float = 0, duration: float = 0, system: Opts = Opts()
+    channel: str, delay: float = 0, duration: float = 4e-3, system: Opts = Opts()
 ) -> SimpleNamespace:
     """
     Create a digital output pulse event a.k.a. trigger. Creates an output trigger event on a given channel with optional
@@ -16,7 +16,7 @@ def make_digital_output_pulse(
         Must be one of 'osc0','osc1', or 'ext1'.
     delay : float, default=0
         Delay in seconds (s).
-    duration : float, default=0
+    duration : float, default=4e-3
         Duration of trigger event in seconds (s).
     system : Opts, default=Opts()
         System limits.

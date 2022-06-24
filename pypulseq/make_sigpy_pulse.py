@@ -14,7 +14,7 @@ from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 def sigpy_n_seq(
     flip_angle: float,
     delay: float = 0,
-    duration: float = 0,
+    duration: float = 4e-3,
     freq_offset: float = 0,
     center_pos: float = 0.5,
     max_grad: float = 0,
@@ -41,7 +41,7 @@ def sigpy_n_seq(
         Position of peak.5 (midway).
     delay : float, optional, default=0
         Delay in seconds (s).
-    duration : float, optional, default=0
+    duration : float, optional, default=4e-3
         Duration in seconds (s).
     freq_offset : float, optional, default=0
         Frequency offset in Hertz (Hz).
