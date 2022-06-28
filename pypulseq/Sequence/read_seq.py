@@ -212,55 +212,48 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     # Fix blocks, gradients and RF objects imported from older versions
     if version_combined < 1004000:
         # Scan through RF objects
-        for i in range(len(self.rf_library.data)):
-            """
-            % % need to (partially) decode the magnitude shape to find out the pulse duration
-            %magSamples = obj.shapeLibrary.data(obj.rfLibrary.data(i).array(2)).array(1);
-            % % create time shape
-            %timeShape = mr.compressShape((1:magSamples)-0.5); % time shape is stored in units of RF raster
-            %data = [timeShape.num_samples timeShape.data];
-            %timeID = obj.shapeLibrary.find_or_insert(data);
-            """
+        for i in self.rf_library.data.keys():
             self.rf_library.data[i] = [
-                self.rf_library.data[i][:3],
+                *self.rf_library.data[i][:3],
                 0,
-                self.rf_library.data[i][3:],
+                *self.rf_library.data[i][3:],
             ]
             self.rf_library.lengths[i] += 1
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
-        for i in range(len(self.grad_library.data)):
-            if self.grad_library.type[i + 1] == "t":
-                if self.grad_library.data[i + 1][1] == 0:
+        for i in self.grad_library.data.keys():
+            if self.grad_library.type[i] == "t":
+                if self.grad_library.data[i][1] == 0:
                     if (
-                        np.abs(self.grad_library.data[i + 1][0]) == 0
-                        and self.grad_library.data[i + 1][2] > 0
+                        np.abs(self.grad_library.data[i][0]) == 0
+                        and self.grad_library.data[i][2] > 0
                     ):
-                        self.grad_library.data[i + 1][2] -= self.grad_raster_time
-                        self.grad_library.data[i + 1][1] = self.grad_raster_time
+                        self.grad_library.data[i][2] -= self.grad_raster_time
+                        self.grad_library.data[i][1] = self.grad_raster_time
 
-                if self.grad_library.data[i + 1][3] == 0:
+                if self.grad_library.data[i][3] == 0:
                     if (
-                        np.abs(self.grad_library.data[i + 1][0]) == 0
-                        and self.grad_library.data[i + 1][2] > 0
+                        np.abs(self.grad_library.data[i][0]) == 0
+                        and self.grad_library.data[i][2] > 0
                     ):
-                        self.grad_library.data[i + 1][2] -= self.grad_raster_time
-                        self.grad_library.data[i + 1][3] = self.grad_raster_time
+                        self.grad_library.data[i][2] -= self.grad_raster_time
+                        self.grad_library.data[i][3] = self.grad_raster_time
 
-            if self.grad_library.type[i + 1] == "g":
-                self.grad_library.data[i + 1] = [
-                    self.grad_library.data[i + 1][:2],
+            if self.grad_library.type[i] == "g":
+                self.grad_library.data[i] = [
+                    self.grad_library.data[i][:2],
                     0,
-                    self.grad_library.data[i + 1][2:],
+                    self.grad_library.data[i][2:],
                 ]
-                self.grad_library.lengths[i + 1] += 1
+                self.grad_library.lengths[i] += 1
 
-        # For versions prior to 1.4.0 blockDurations have not been initialized
+        # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = np.zeros(len(self.block_events))
         # Scan through blocks and calculate durations
         for block_counter in range(len(self.block_events)):
             block = self.get_block(block_counter + 1)
             if delay_ind_temp[block_counter] > 0:
+                block.delay = SimpleNamespace()
                 block.delay.type = "delay"
                 block.delay.delay = temp_delay_library.data[
                     delay_ind_temp[block_counter]
@@ -409,6 +402,8 @@ def __read_version(input_file) -> Tuple[int, int, int]:
         elif tok[0] == "minor":
             minor = int(tok[1])
         elif tok[0] == "revision":
+            if len(tok[1]) != 1:  # Example: x.y.zpostN
+                tok[1] = tok[1][0]
             revision = int(tok[1])
         else:
             raise RuntimeError(
