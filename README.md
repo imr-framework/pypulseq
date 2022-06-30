@@ -48,42 +48,44 @@ Design pulse sequences using `pypulseq` in your browser! Check out the [⚡ Ligh
 learn how!
 
 ## 📚 [Relevant literature][scholar-citations] (reverse chronological)
-1. Niso, G., Botvinik-Nezer, R., Appelhoff, S., De La Vega, A., Esteban, O., Etzel, J.A., Finc, K., Ganz, M., Gau, R., 
+1. Hennig, J., Barghoorn, A., Zhang, S. and Zaitsev, M., 2022. Single shot spiral TSE with annulated segmentation. 
+Magnetic Resonance in Medicine.
+2. Niso, G., Botvinik-Nezer, R., Appelhoff, S., De La Vega, A., Esteban, O., Etzel, J.A., Finc, K., Ganz, M., Gau, R., 
 Halchenko, Y.O. and Herholz, P., 2022. Open and reproducible neuroimaging: from study inception to publication.
-2. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan, J.T., Nunes, R.G. and Geethanath, S., 2022. Open-source 
+3. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan, J.T., Nunes, R.G. and Geethanath, S., 2022. Open-source 
 magnetic resonance imaging acquisition: Data and documentation for two validated pulse sequences. Data in Brief, 42, 
 p.108105.
-3. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan Jr, J.T., Nunes, R.G. and Geethanath, S., 2022. A framework 
+4. Tong, G., Gaspar, A.S., Qian, E., Ravi, K.S., Vaughan Jr, J.T., Nunes, R.G. and Geethanath, S., 2022. A framework 
 for validating open-source pulse sequences. Magnetic resonance imaging, 87, pp.7-18.
-4. Karakuzu, A., Appelhoff, S., Auer, T., Boudreau, M., Feingold, F., Khan, A.R., Lazari, A., Markiewicz, C., Mulder, 
+5. Karakuzu, A., Appelhoff, S., Auer, T., Boudreau, M., Feingold, F., Khan, A.R., Lazari, A., Markiewicz, C., Mulder, 
 M.J., Phillips, C. and Salo, T., 2021. qMRI-BIDS: an extension to the brain imaging data structure for quantitative 
 magnetic resonance imaging data. medRxiv.
-5. Karakuzu, A., Biswas, L., Cohen‐Adad, J. and Stikov, N., 2021. Vendor‐neutral sequences and fully transparent 
+6. Karakuzu, A., Biswas, L., Cohen‐Adad, J. and Stikov, N., 2021. Vendor‐neutral sequences and fully transparent 
 workflows improve inter‐vendor reproducibility of quantitative MRI. Magnetic Resonance in Medicine. 
-6. Geethanath, S., Single echo reconstruction for rapid and silent MRI. (ISMRM) (2021).
-7. Qian, E. and Geethanath, S., Open source Magnetic rEsonance fingerprinting pAckage (OMEGA). (ISMRM) (2021).
-8. Ravi, K.S., O'Reilly, T., Vaughan Jr, J.T., Webb, A. and Geethanath, S., Seq2prospa: translating PyPulseq for 
+7. Geethanath, S., Single echo reconstruction for rapid and silent MRI. (ISMRM) (2021).
+8. Qian, E. and Geethanath, S., Open source Magnetic rEsonance fingerprinting pAckage (OMEGA). (ISMRM) (2021).
+9. Ravi, K.S., O'Reilly, T., Vaughan Jr, J.T., Webb, A. and Geethanath, S., Seq2prospa: translating PyPulseq for 
 low-field imaging. (ISMRM) (2021).
-9. Ravi, K.S., Vaughan Jr, J.T. and Geethanath, S., PyPulseq in a web browser: a zero footprint tool for collaborative 
+10. Ravi, K.S., Vaughan Jr, J.T. and Geethanath, S., PyPulseq in a web browser: a zero footprint tool for collaborative 
 and vendor-neutral pulse sequence development. (ISMRM) (2021).
-10. Ravi, K.S. and Geethanath, S., 2020. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging, 73, 
+11. Ravi, K.S. and Geethanath, S., 2020. Autonomous magnetic resonance imaging. Magnetic Resonance Imaging, 73, 
 pp.177-185.
-11. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
+12. Nunes, Rita G., et al. "Implementation of a Diffusion-Weighted Echo Planar Imaging sequence using the Open Source
 Hardware-Independent PyPulseq Tool." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic
 Resonance in Medicine (ISMRM) (2020).
-12. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv
+13. Loktyushin, Alexander, et al. "MRzero--Fully automated invention of MRI sequences using supervised learning." arXiv
 preprint arXiv:2002.04265 (2020).
-13. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using
+14. Jimeno, Marina Manso, et al. "Cross-vendor implementation of a Stack-of-spirals PRESTO BOLD fMRI sequence using
 TOPPE and Pulseq." ISMRM & SMRT Virtual Conference & Exhibition, International Society for Magnetic Resonance in
 Medicine (ISMRM) (2020).
-14. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335. 
-15. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of
+15. Clarke, William T., et al. "Multi-site harmonization of 7 tesla MRI neuroimaging protocols." NeuroImage 206 (2020): 116335. 
+16. Geethanath, Sairam, and John Thomas Vaughan Jr. "Accessible magnetic resonance imaging: a review." Journal of
 Magnetic Resonance Imaging 49.7 (2019): e65-e77.
-16. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
-17. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence
+17. Tong, Gehua, et al. "Virtual Scanner: MRI on a Browser." Journal of Open Source Software 4.43 (2019): 1637.
+18. Archipovas, Saulius, et al. "A prototype of a fully integrated environment for a collaborative work in MR sequence
 development for a reproducible research." ISMRM 27th Annual Meeting & Exhibition, International Society for
 Magnetic Resonance in Medicine (ISMRM) (2019).
-18. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São
+19. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São
 Paulo (2018).
 ---
 
@@ -111,31 +113,26 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
 1. [Install][section-installation] PyPulseq
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
     ```python
-    from pypulseq.opts import Opts
-    from pypulseq.sequence.sequence import Sequence
+    import pypulseq as pp
 
-    system = Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/s')
-    seq = Sequence(system=system)
+    system = pp.Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/s')
+    seq = pp.Sequence(system=system)
     ```
 3. Then, design gradient, RF or ADC pulse sequence events:
     ```python
-    from pypulseq.make_sinc_pulse import make_sinc_pulse
-    from pypulseq.make_trap_pulse import make_trapezoid
-    from pypulseq.make_adc import make_adc
-
     Nx, Ny = 256, 256 # matrix size
     fov = 220e-3 # field of view
     delta_k = fov / Nx
 
     # RF sinc pulse with a 90 degree flip angle
-    rf90, _, _ = make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,
+    rf90, _, _ = pp.make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,
        time_bw_product=4)
 
     # Frequency encode, trapezoidal event
-    gx = make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=system)
+    gx = pp.make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=system)
 
     # ADC readout
-    adc = make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
+    adc = pp.make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
     ```
 4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be executed
 simultaneously, simply pass them all to the `add_block()` method. For example, the `gx` and `adc` pulse sequence events
