@@ -9,14 +9,15 @@
 `Compatible with Pulseq 1.4.0`
 
 ## Table of contents 🧾
-1. [📚 Relevant literature][section-relevant-literature]
-2. [🔨 Installation][section-installation]
-3. [⚡ Lightning-start - PyPulseq in your browser!][section-lightning-start]
-4. [🏃‍♂ Quickstart - example scripts][section-quickstart-examples]
-5. [🤿 Deep dive - custom pulse sequences][section-deep-dive]
-6. [👥 Contributing and Community guidelines][section-contributing]
-7. [📖 References][section-references]
-8. [📃 API documentation][api-docs]
+1. [👥 Contributors][section-contributors]
+2. [📚 Citations][section-relevant-literature]
+3. [🔨 Installation][section-installation]
+4. [⚡ Lightning-start - PyPulseq in your browser!][section-lightning-start]
+5. [🏃‍♂ Quickstart - example scripts][section-quickstart-examples]
+6. [🤿 Deep dive - custom pulse sequences][section-deep-dive]
+7. [👥 Contributing and Community guidelines][section-contributing]
+8. [📖 References][section-references]
+9. [📃 API documentation][api-docs]
 
 ---
 
@@ -47,7 +48,14 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 Design pulse sequences using `pypulseq` in your browser! Check out the [⚡ Lightning-start][section-lightning-start] section to
 learn how!
 
-## 📚 [Relevant literature][scholar-citations] (reverse chronological)
+## 1. 👥 Contributors (alphabetical)
+- @sairamgeethanath
+- @schuenke
+- @tonggehua
+
+Please email/submit PR/open an issue if any contributors are missing.
+
+## 2. 📚 [Citations][scholar-citations] (reverse chronological)
 1. Hennig, J., Barghoorn, A., Zhang, S. and Zaitsev, M., 2022. Single shot spiral TSE with annulated segmentation. 
 Magnetic Resonance in Medicine.
 2. Niso, G., Botvinik-Nezer, R., Appelhoff, S., De La Vega, A., Esteban, O., Etzel, J.A., Finc, K., Ganz, M., Gau, R., 
@@ -89,12 +97,12 @@ Magnetic Resonance in Medicine (ISMRM) (2019).
 Paulo (2018).
 ---
 
-## 🔨 Installation
+## 3. 🔨 Installation
 \>=Python 3.6, virtual environment recommended:
 
 ```pip install pypulseq```
 
-## ⚡ Lightning-start - PyPulseq in your browser!
+## 4. ⚡ Lightning-start - PyPulseq in your browser!
 1. Create a new notebook on [Google Colab][google-colab]
 2. [Install][section-installation] PyPulseq
 3. Get going!
@@ -103,12 +111,12 @@ Or, explore an example notebook:
 1. Copy URL of an example notebook from [here][section-notebook-examples]
 2. On [Google Colab][google-colab], insert the copied link to get started
 
-## 🏃‍♂ Quickstart - example scripts
+## 5. 🏃‍♂ Quickstart - example scripts
 Every example script creates a pulse sequence, plots the pulse timing diagram and writes a `.seq` file to disk.
 1. [Install][section-installation] PyPulseq
 2. Download and run any of the [example][script-examples] scripts.
 
-## 🤿 Deep dive - custom pulse sequences
+## 6. 🤿 Deep dive - custom pulse sequences
 Getting started with pulse sequence design using `PyPulseq` is simple:
 1. [Install][section-installation] PyPulseq
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
@@ -152,12 +160,11 @@ need to be executed simultaneously:
 
 **Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.**
 
-## 👥 Contributing and Community guidelines
+## 7. 👥 Contributing and Community guidelines
 `PyPulseq` adheres to a code of conduct adapted from the [Contributor Covenant] code of conduct.
 Contributing guidelines can be found [here][contrib-guidelines].
 
----
-## 📖 References
+## 8. 📖 References
 1. Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design."
 Journal of Open Source Software 4.42 (2019): 1725.
 2. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping
@@ -175,10 +182,11 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [google-colab]: https://colab.research.google.com/
 [scholar-citations]: https://scholar.google.com/scholar?oi=bibs&hl=en&cites=16703093871665262997
 [script-examples]: https://github.com/imr-framework/pypulseq/tree/dev/pypulseq/seq_examples/scripts
-[section-contributing]: #-contributing-and-community-guidelines
-[section-deep-dive]: #-deep-dive---custom-pulse-sequences
-[section-installation]: #-installation
-[section-lightning-start]: #-lightning-start---pypulseq-in-your-browser
-[section-quickstart-examples]: #-quickstart---example-scripts
-[section-references]: #-references
-[section-relevant-literature]: #-relevant-literature-reverse-chronological
+[section-contributors]: #1--contributors-alphabetical
+[section-contributing]: #7--contributing-and-community-guidelines
+[section-deep-dive]: #6--deep-dive---custom-pulse-sequences
+[section-installation]: #3--installation
+[section-lightning-start]: #4--lightning-start---pypulseq-in-your-browser
+[section-quickstart-examples]: #5--quickstart---example-scripts
+[section-references]: #8--references
+[section-relevant-literature]: #2--citations-reverse-chronological
