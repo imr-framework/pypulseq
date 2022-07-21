@@ -43,6 +43,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     name="pypulseq",
     packages=setuptools.find_packages(),
+    py_modules=["version"],
     # package_data for wheel distributions; MANIFEST.in for source distributions
     package_data={"pypulseq.SAR": ["QGlobal.mat"]},
     project_urls={"Documentation": "https://pypulseq.readthedocs.io/en/latest/"},
