@@ -1,32 +1,4 @@
-from pathlib import Path
-from typing import Tuple
-
 import numpy as np
-
-
-# =========
-# VERSION NUMBER
-# =========
-def _get_version() -> Tuple[str, str, str]:
-    """
-    Returns version of current PyPulseq release.
-
-    Returns
-    -------
-    major, minor, revision : str
-        Major, minor and revision numbers of current PyPulseq release.
-    """
-    version_file = Path(__file__).parent.parent / "VERSION"
-    major, minor, revision = version_file.read_text().strip().split(".")
-    return major, minor, revision
-
-
-major, minor, revision = _get_version()
-major = int(major)
-minor = int(minor)
-if len(revision) > 1:  # Example: 1.3.1post1
-    revision = revision[0]
-revision = int(revision)
 
 
 # =========
@@ -36,7 +8,7 @@ def round_half_up(n, decimals=0):
     """
     Avoid banker's rounding inconsistencies; from https://realpython.com/python-rounding/#rounding-half-up
     """
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
     return np.floor(np.abs(n) * multiplier + 0.5) / multiplier
 
 

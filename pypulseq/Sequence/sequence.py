@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import interpolate
 
-from pypulseq import eps, major, minor, revision
+from pypulseq import eps
 from pypulseq.Sequence import block, parula
 from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.read_seq import read
@@ -23,6 +23,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.supported_labels_rf_use import get_supported_labels
+from version import major, minor, revision
 
 
 class Sequence:
