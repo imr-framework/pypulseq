@@ -729,6 +729,7 @@ class Sequence:
         save: bool = False,
         time_range=(0, np.inf),
         time_disp: str = "s",
+        grad_disp: str = "kHz/m"
     ) -> None:
         """
         Plot `Sequence`.
@@ -753,6 +754,7 @@ class Sequence:
         mpl.rcParams["lines.linewidth"] = 0.75  # Set default Matplotlib linewidth
 
         valid_time_units = ["s", "ms", "us"]
+        valid_grad_units = ["kHz/m", "mT/m"]
         valid_labels = get_supported_labels()
         if (
             not all([isinstance(x, (int, float)) for x in time_range])
@@ -761,6 +763,9 @@ class Sequence:
             raise ValueError("Invalid time range")
         if time_disp not in valid_time_units:
             raise ValueError("Unsupported time unit")
+
+        if grad_disp not in valid_grad_units:
+            raise ValueError("Unsupported gradient unit. Supported gradient units are: " + str(valid_grad_units))
 
         fig1, fig2 = plt.figure(1), plt.figure(2)
         sp11 = fig1.add_subplot(311)
@@ -774,6 +779,9 @@ class Sequence:
 
         t_factor_list = [1, 1e3, 1e6]
         t_factor = t_factor_list[valid_time_units.index(time_disp)]
+
+        g_factor_list = [1e-3, 1e3/self.system.gamma]
+        g_factor = g_factor_list[valid_grad_units.index(grad_disp)]
 
         t0 = 0
         label_defined = False
@@ -889,7 +897,7 @@ class Sequence:
                             # We extend the shape by adding the first and the last points in an effort of making the
                             # display a bit less confusing...
                             time = grad.delay + [0, *grad.tt, grad.shape_dur]
-                            waveform = 1e-3 * np.array(
+                            waveform = g_factor * np.array(
                                 (grad.first, *grad.waveform, grad.last)
                             )
                         else:
@@ -902,7 +910,7 @@ class Sequence:
                                     grad.fall_time,
                                 ]
                             )
-                            waveform = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
+                            waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
             t0 += self.block_durations[block_counter]
 
@@ -910,11 +918,11 @@ class Sequence:
         sp11.set_ylabel("ADC")
         sp12.set_ylabel("RF mag (Hz)")
         sp13.set_ylabel("RF/ADC phase (rad)")
-        sp13.set_xlabel("t(s)")
+        sp13.set_xlabel(f"t ({time_disp})")
         for x in range(3):
             _label = grad_plot_labels[x]
-            fig2_subplots[x].set_ylabel(f"G{_label} (kHz/m)")
-        fig2_subplots[-1].set_xlabel("t(s)")
+            fig2_subplots[x].set_ylabel(f"G{_label} ({grad_disp})")
+        fig2_subplots[-1].set_xlabel(f"t ({time_disp})")
 
         # Setting display limits
         disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
