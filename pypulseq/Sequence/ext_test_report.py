@@ -1,5 +1,6 @@
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.convert import convert
 
 
@@ -16,8 +17,13 @@ def ext_test_report(self) -> str:
     flip_angles_deg = []
     for k in self.rf_library.keys:
         lib_data = self.rf_library.data[k]
-        rf = self.rf_from_lib_data(lib_data)
-        flip_angles_deg.append(np.abs(np.sum(rf.signal) * rf.t[0] * 360))
+        if len(self.rf_library.type) >= k:
+            rf = self.rf_from_lib_data(lib_data, self.rf_library.type[k])
+        else:
+            rf = self.rf_from_lib_data(lib_data)
+        flip_angles_deg.append(
+            np.abs(np.sum(rf.signal[:-1] * (rf.t[1:] - rf.t[:-1]))) * 360
+        )
 
     flip_angles_deg = np.unique(flip_angles_deg)
 
@@ -29,8 +35,28 @@ def ext_test_report(self) -> str:
     k_abs_adc = np.sqrt(np.sum(np.square(k_traj_adc), axis=0))
     k_abs_echo, index_echo = np.min(k_abs_adc), np.argmin(k_abs_adc)
     t_echo = t_adc[index_echo]
-    t_ex_tmp = t_excitation[t_excitation < t_echo]
-    TE = t_echo - t_ex_tmp[-1]
+    if k_abs_echo > eps:
+        i2check = []
+        # Check if ADC k-space trajectory has elements left and right to index_echo
+        if index_echo > 1:
+            i2check.append(index_echo - 1)
+        if index_echo < len(k_abs_adc):
+            i2check.append(index_echo + 1)
+
+        for a in range(len(i2check)):
+            v_i_to_0 = k_traj_adc[:, index_echo]
+            v_i_to_t = k_traj_adc[:, i2check[a]] - k_traj_adc[:, index_echo]
+            # Project v_i_to_0 to v_i_to_t
+            p_vit = np.matmul(v_i_to_0, v_i_to_t) / np.square(np.linalg.norm(v_i_to_t))
+            if p_vit > 0:
+                # We have found a bracket for the echo and the proportionality coefficient is p_vit
+                t_echo = t_adc[index_echo] * (1 - p_vit) + t_adc[i2check[a]] * p_vit
+
+    if len(t_excitation) != 0:
+        t_ex_tmp = t_excitation[t_excitation < t_echo]
+        TE = t_echo - t_ex_tmp[-1]
+    else:
+        TE = np.nan
 
     if len(t_excitation) < 2:
         TR = duration
@@ -57,49 +83,88 @@ def ext_test_report(self) -> str:
         # Bin the k-space trajectory to detect repetitions / slices
         k_len = k_traj_adc.shape[1]
         k_repeat = np.zeros(k_len)
-
+        k_storage = np.zeros(k_len)
+        k_storage_next = 0
         k_map = dict()
         for i in range(k_len):
-            l = k_bins + np.round(k_traj_adc[:, i] / k_threshold)
-            key_string = ("{:.0f} " * len(l)).format(*l)
-            if key_string in k_map:
-                k_repeat[i] = k_map[key_string] + 1
-            else:
-                k_repeat[i] = 1
-            k_map[key_string] = k_repeat[i]
+            key_string = str(
+                (k_bins + np.round(k_traj_adc[:, i] / k_threshold)).astype(np.int32)
+            )
+            k_storage_ind = k_map.get(key_string)
+            if k_storage_ind is None:
+                k_storage_ind = k_storage_next
+                k_map[key_string] = k_storage_ind
+                k_storage_next += 1
+            k_storage[k_storage_ind] = k_storage[k_storage_ind] + 1
+            k_repeat[i] = k_storage[k_storage_ind]
 
-        repeats = np.max(k_repeat)
+        repeats_max = np.max(k_storage[:k_storage_next])
+        repeats_min = np.min(k_storage[:k_storage_next])
+        repeats_median = np.median(k_storage[:k_storage_next])
+        repeats_unique = np.unique(k_storage[:k_storage_next])
+        counts_unique = np.zeros_like(repeats_unique)
+        for i in range(len(repeats_unique)):
+            counts_unique[i] = np.sum(
+                repeats_unique[i] == k_storage[: k_storage_next - 1]
+            )
 
         k_traj_rep1 = k_traj_adc[:, k_repeat == 1]
 
-        k_counters = np.zeros(k_traj_rep1.shape)
+        k_counters = np.zeros_like(k_traj_rep1)
         dims = k_traj_rep1.shape[0]
-        ordering = dict()
+        k_map = dict()
         for j in range(dims):
-            c = 1
-            k_map = dict()
+            k_storage = np.zeros(k_len)
+            k_storage_next = 1
+
             for i in range(k_traj_rep1.shape[1]):
-                key = round(k_traj_rep1[j, i] / k_threshold)
-                if key in k_map:
-                    k_counters[j, i] = k_map[key]
-                else:
-                    k_counters[j, i] = c
-                    k_map[key] = c
-                    c += 1
-            ordering[j] = k_map.values()
+                key = np.round(k_traj_rep1[j, i] / k_threshold).astype(np.int32)
+                k_storage_ind = k_map.get(key)
+                if k_storage_ind is None:
+                    k_storage_ind = k_map.get(key + 1)
+                if k_storage_ind is None:
+                    k_storage_ind = k_map.get(key - 1)
+                if k_storage_ind is None:
+                    k_storage_ind = k_storage_next
+                    k_map[key] = k_storage_ind
+                    k_storage_next += 1
+                    k_storage[k_storage_ind] = k_traj_rep1[j, i]
+                k_counters[j, i] = k_storage_ind
 
         unique_k_positions = np.max(k_counters, axis=1)
         is_cartesian = np.prod(unique_k_positions) == k_traj_rep1.shape[1]
     else:
         unique_k_positions = 1
 
-    gw = self.gradient_waveforms()
-    gws = (gw[:, 1:] - gw[:, :-1]) / self.system.grad_raster_time
-    ga = np.max(np.abs(gw), axis=1)
-    gs = np.max(np.abs(gws), axis=1)
+    # gw_data = self.gradient_waveforms()
+    waveforms_and_times = self.waveforms_and_times()
+    gw_data = waveforms_and_times[0]
+    gws = np.zeros_like(gw_data)
+    ga = np.zeros(len(gw_data))
+    gs = np.zeros(len(gw_data))
 
-    ga_abs = np.max(np.sqrt(np.sum(np.square(gw), axis=0)))
-    gs_abs = np.max(np.sqrt(np.sum(np.square(gws), axis=0)))
+    common_time = np.unique(np.concatenate(gw_data, axis=1)[0])
+    gw_ct = np.zeros((len(gw_data), len(common_time)))
+    gs_ct = np.zeros((len(gw_data), len(common_time) - 1))
+    for gc in range(len(gw_data)):
+        if gw_data[gc].shape[1] > 0:
+            # Slew
+            gws[gc] = gw_data[gc][1, 1:] - gw_data[gc][1, :-1] / (
+                    gw_data[gc][0, 1:] - gw_data[gc][0, :-1]
+            )
+            # Interpolate to common time
+            gw_ct[gc] = np.interp(
+                x=common_time, xp=gw_data[gc][0], fp=gw_data[gc][1], left=0, right=0
+            )
+            gs_ct[gc] = (gw_ct[gc][1:] -gw_ct[gc][1:]) / (
+                    common_time[1:] - common_time[:-1]
+            )
+            # Max grad/slew per channel
+            ga[gc] = np.max(np.abs(gw_data[gc][1:]))
+            gs[gc] = np.max(np.abs(gws[gc]))
+
+    ga_abs = np.max(np.sqrt(np.sum(np.square(gw_ct), axis=0)))
+    gs_abs = np.max(np.sqrt(np.sum(np.square(gs_ct), axis=0)))
 
     timing_ok, timing_error_report = self.check_timing()
 
@@ -117,22 +182,22 @@ def ext_test_report(self) -> str:
         f"TR: {TR:.6f} s\n"
     )
     report += (
-        "Flip angle: "
-        + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg)
-        + "deg\n"
+            "Flip angle: "
+            + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg)
+            + "deg\n"
     )
     report += (
-        "Unique k-space positions (aka cols, rows, etc.): "
-        + ("{:.0f} " * len(unique_k_positions)).format(*unique_k_positions)
-        + "\n"
+            "Unique k-space positions (aka cols, rows, etc.): "
+            + ("{:.0f} " * len(unique_k_positions)).format(*unique_k_positions)
+            + "\n"
     )
 
-    if np.all(unique_k_positions > 1):
+    if np.any(unique_k_positions > 1):
         report += f"Dimensions: {len(k_extent)}\n"
         report += ("Spatial resolution: {:.02f} mm\n" * len(k_extent)).format(
             *(0.5 / k_extent * 1e3)
         )
-        report += f"Repetitions/slices/contrasts: {repeats}\n"
+        report += f"Repetitions/slices/contrasts: {repeats_median}; range: [{repeats_min, repeats_max}]\n"
 
         if is_cartesian:
             report += "Cartesian encoding trajectory detected\n"
@@ -149,18 +214,18 @@ def ext_test_report(self) -> str:
     ga_converted = convert(from_value=ga, from_unit="Hz/m", to_unit="mT/m")
     gs_converted = convert(from_value=gs, from_unit="Hz/m/s", to_unit="T/m/s")
     report += (
-        "Max gradient: "
-        + ("{:.0f} " * len(ga)).format(*ga)
-        + "Hz/m == "
-        + ("{:.02f} " * len(ga_converted)).format(*ga_converted)
-        + "mT/m\n"
+            "Max gradient: "
+            + ("{:.0f} " * len(ga)).format(*ga)
+            + "Hz/m == "
+            + ("{:.02f} " * len(ga_converted)).format(*ga_converted)
+            + "mT/m\n"
     )
     report += (
-        "Max slew rate: "
-        + ("{:.0f} " * len(gs)).format(*gs)
-        + "Hz/m/s == "
-        + ("{:.02f} " * len(ga_converted)).format(*gs_converted)
-        + "mT/m/s\n"
+            "Max slew rate: "
+            + ("{:.0f} " * len(gs)).format(*gs)
+            + "Hz/m/s == "
+            + ("{:.02f} " * len(ga_converted)).format(*gs_converted)
+            + "mT/m/s\n"
     )
 
     ga_abs_converted = convert(from_value=ga_abs, from_unit="Hz/m", to_unit="mT/m")
