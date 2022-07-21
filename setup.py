@@ -1,6 +1,6 @@
 import setuptools
 
-from pypulseq import major, minor, revision
+from version import major, minor, revision
 
 
 def _get_long_description() -> str:
@@ -44,7 +44,7 @@ setuptools.setup(
     name="pypulseq",
     packages=setuptools.find_packages(),
     # package_data for wheel distributions; MANIFEST.in for source distributions
-    package_data={"": ["../VERSION"], "pypulseq.SAR": ["QGlobal.mat"]},
+    package_data={"pypulseq.SAR": ["QGlobal.mat"]},
     project_urls={"Documentation": "https://pypulseq.readthedocs.io/en/latest/"},
     python_requires=">=3.6.3",
     url="https://github.com/imr-framework/pypulseq",
