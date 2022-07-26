@@ -154,9 +154,9 @@ def ext_test_report(self) -> str:
             )
             # Interpolate to common time
             gw_ct[gc] = np.interp(
-                x=common_time, xp=gw_data[gc][0], fp=gw_data[gc][1], left=0, right=0
+                x=common_time, xp=gw_data[gc][0,:], fp=gw_data[gc][1,:], left=0, right=0
             )
-            gs_ct[gc] = (gw_ct[gc][1:] -gw_ct[gc][1:]) / (
+            gs_ct[gc] = (gw_ct[gc][1:] - gw_ct[gc][:-1]) / (
                     common_time[1:] - common_time[:-1]
             )
             # Max grad/slew per channel
@@ -225,7 +225,7 @@ def ext_test_report(self) -> str:
             + ("{:.0f} " * len(gs)).format(*gs)
             + "Hz/m/s == "
             + ("{:.02f} " * len(ga_converted)).format(*gs_converted)
-            + "mT/m/s\n"
+            + "T/m/s\n"
     )
 
     ga_abs_converted = convert(from_value=ga_abs, from_unit="Hz/m", to_unit="mT/m")
