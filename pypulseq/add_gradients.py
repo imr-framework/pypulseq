@@ -77,7 +77,7 @@ def add_gradients(
         cond1 = 1 == len(np.unique([g.delay for g in grads]))
         cond2 = 1 == len(np.unique([g.rise_time for g in grads]))
         cond3 = 1 == len(np.unique([g.flat_time for g in grads]))
-        cond4 = 1 == len(np.unique([g.fall_tmie for g in grads]))
+        cond4 = 1 == len(np.unique([g.fall_time for g in grads]))
         if cond1 and cond2 and cond3 and cond4:
             grad = grads[0]
             grad.amplitude = np.sum([g.amplitude for g in grads])
