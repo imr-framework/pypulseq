@@ -766,7 +766,8 @@ class Sequence:
         save: bool = False,
         time_range=(0, np.inf),
         time_disp: str = "s",
-        grad_disp: str = "kHz/m"
+        grad_disp: str = "kHz/m",
+        plot_now: bool = True
     ) -> None:
         """
         Plot `Sequence`.
@@ -785,6 +786,11 @@ class Sequence:
             Time range (x-axis limits) for plotting the sequence. Default is 0 to infinity (entire sequence).
         time_disp : str, default='s'
             Time display type, must be one of `s`, `ms` or `us`.
+        grad_disp : str, default='s'
+            Gradient display unit, must be one of `kHz/m` or `mT/m`.
+        plot_now : bool, default=True
+            If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
+            If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
         plot_type : str, default='Gradient'
             Gradients display type, must be one of either 'Gradient' or 'Kspace'.
         """
@@ -974,7 +980,9 @@ class Sequence:
         if save:
             fig1.savefig("seq_plot1.jpg")
             fig2.savefig("seq_plot2.jpg")
-        plt.show()
+        
+        if plot_now:
+            plt.show()
 
     def read(self, file_path: str, detect_rf_use: bool = False) -> None:
         """
