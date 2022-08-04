@@ -3,7 +3,7 @@ from typing import Union, Tuple
 
 import numpy as np
 
-from pypulseq import calc_rf_center
+from pypulseq.calc_rf_center import calc_rf_center
 
 
 def calc_rf_bandwidth(
@@ -41,7 +41,7 @@ def calc_rf_bandwidth(
     nn = np.round(1 / dw / dt)
     tt = np.arange(-np.floor(nn / 2), np.ceil(nn / 2) - 1) * dt
 
-    rfs = np.interp(xp=rf.t - time_center, fp=rf.sig, x=tt)
+    rfs = np.interp(xp=rf.t - time_center, fp=rf.signal, x=tt)
     spectrum = np.fft.fftshift(np.fft.fft(np.fft.fftshift(rfs)))
     w = np.arange(-np.floor(nn / 2), np.ceil(nn / 2) - 1) * dw
 
@@ -60,14 +60,7 @@ def calc_rf_bandwidth(
 
 def __find_flank(x, f, c):
     m = np.max(np.abs(f))
-    f = np.abs(f) / m - c
-    i = (f > 0)[0, 0]
+    f = np.abs(f) / m
+    i = np.argwhere(f > c)[0]
 
-    if i > 1:
-        f0 = f[i - 1]
-        f1 = f[i]
-        xf = (f1 * x[i - 1] - f0 * x[i]) / (f1 - f0)
-    else:
-        xf = x[0]
-
-    return xf
+    return x[i]
