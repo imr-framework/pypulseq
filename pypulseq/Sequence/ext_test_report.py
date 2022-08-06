@@ -149,16 +149,21 @@ def ext_test_report(self) -> str:
     for gc in range(len(gw_data)):
         if gw_data[gc].shape[1] > 0:
             # Slew
-            gws[gc] = gw_data[gc][1, 1:] - gw_data[gc][1, :-1] / (
-                    gw_data[gc][0, 1:] - gw_data[gc][0, :-1]
-            )
+            gws[gc] = (
+                (gw_data[gc][1, 1:] - gw_data[gc][1, :-1])/ 
+                (gw_data[gc][0, 1:] - gw_data[gc][0, :-1])
+                )
+            
             # Interpolate to common time
             gw_ct[gc] = np.interp(
                 x=common_time, xp=gw_data[gc][0,:], fp=gw_data[gc][1,:], left=0, right=0
             )
-            gs_ct[gc] = (gw_ct[gc][1:] - gw_ct[gc][:-1]) / (
-                    common_time[1:] - common_time[:-1]
-            )
+            
+            gs_ct[gc] = (
+                (gw_ct[gc][1:] - gw_ct[gc][:-1]) / 
+                (common_time[1:] - common_time[:-1])
+                )
+
             # Max grad/slew per channel
             ga[gc] = np.max(np.abs(gw_data[gc][1:]))
             gs[gc] = np.max(np.abs(gws[gc]))
