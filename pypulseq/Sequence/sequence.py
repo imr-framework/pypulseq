@@ -1175,10 +1175,10 @@ class Sequence:
                             )
                         else:  # Extended trapezoid
                             out_len[j] += len(grad.tt)
-                            shape_pieces[j, block_counter] = [
-                                [curr_dur + grad.delay + grad.tt],
-                                [grad.waveform],
-                            ]
+                            shape_pieces[j, block_counter] = np.array([
+                                curr_dur + grad.delay + grad.tt,
+                                grad.waveform,
+                            ])
                     else:
                         if np.abs(grad.flat_time) > eps:
                             out_len[j] += 4
