@@ -300,7 +300,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.waveform = amplitude * g
 
                 if time_id == 0:
-                    grad.tt = np.arange(1, len(g) + 1) - 0.5 * self.grad_raster_time
+                    grad.tt = (np.arange(1, len(g) + 1) - 0.5) * self.grad_raster_time
                     t_end = len(g) * self.grad_raster_time
                 else:
                     t_shape_data = self.shape_library.data[time_id]
