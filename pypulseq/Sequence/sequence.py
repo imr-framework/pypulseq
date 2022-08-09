@@ -643,10 +643,10 @@ class Sequence:
         # Create array for waveforms and insert into respective axes
         grad_waveforms = np.zeros((3, round(max_t/dt)))
 
-        grad_waveforms[0, gx_i:] = gx
-        grad_waveforms[1, gy_i:] = gy
-        grad_waveforms[2, gz_i:] = gz
-
+        grad_waveforms[0, gx_i:(gx_i+gx.shape[0])] = gx
+        grad_waveforms[1, gy_i:(gy_i+gy.shape[0])] = gy
+        grad_waveforms[2, gz_i:(gz_i+gz.shape[0])] = gz
+        
         return grad_waveforms
 
         # duration, num_blocks, _ = self.duration()
