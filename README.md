@@ -8,6 +8,10 @@
 
 `Compatible with Pulseq 1.4.0`
 
+
+🚨🚨🚨 **NOTE:** This is the `dev` branch which hosts the bleeding edge version. For the most recent, stable release, 
+switch to the `master` branch by clicking [here](https://github.com/imr-framework/pypulseq/tree/master). 🚨🚨🚨
+
 ## Table of contents 🧾
 1. [👥 Contributors][section-contributors]
 2. [📚 Citations][section-relevant-literature]
@@ -52,6 +56,7 @@ learn how!
 - @sairamgeethanath
 - @schuenke
 - @tonggehua
+- @bilal-tasdelen
 
 Please email/submit PR/open an issue if any contributors are missing.
 
