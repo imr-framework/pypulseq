@@ -22,6 +22,13 @@ def points_to_waveform(
     waveform : numpy.ndarray
         Gradient waveform.
     """
+    
+    amplitudes = np.asarray(amplitudes)
+    times = np.asarray(times)
+
+    if amplitudes.size == 0:
+        return np.array([0])
+
     grd = (
         np.arange(
             start=round(min(times) / grad_raster_time),

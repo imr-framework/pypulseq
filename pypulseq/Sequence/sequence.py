@@ -611,66 +611,103 @@ class Sequence:
         grad_waveforms : np.ndarray
             Decompressed gradient waveform.
         """
-        duration, num_blocks, _ = self.duration()
 
-        wave_length = np.ceil(duration / self.grad_raster_time).astype(int)
-        grad_channels = 3
-        grad_waveforms = np.zeros((grad_channels, wave_length))
-        grad_channels = ["gx", "gy", "gz"]
+        ws,_,_,_,_ = self.waveforms_and_times()
 
-        t0 = 0
-        t0_n = 0
-        for block_counter in range(num_blocks):
-            block = self.get_block(block_counter + 1)
-            for j in range(len(grad_channels)):
-                grad = getattr(block, grad_channels[j])
-                if grad is not None:
-                    if grad.type == "grad":
-                        nt_start = np.round(grad.delay / self.grad_raster_time)
-                        waveform = grad.waveform
-                    else:
-                        nt_start = np.round(grad.delay / self.grad_raster_time)
-                        if np.abs(grad.flat_time) > eps:
-                            t = np.cumsum(
-                                [0, grad.rise_time, grad.flat_time, grad.fall_time]
-                            )
-                            trap_form = np.array([0, 1, 1, 0]) * grad.amplitude
-                        else:
-                            t = np.cumsum([0, grad.rise_time, grad.fall_time])
-                            trap_form = np.array([0, 1, 0]) * grad.amplitude
+        dt = self.system.grad_raster_time
 
-                        tn = math.floor(t[-1] / self.grad_raster_time)
-                        t = np.append(t, t[-1] + self.grad_raster_time)
-                        trap_form = np.append(trap_form, 0)
+        tx = ws[0][0]
+        ty = ws[1][0]
+        tz = ws[2][0]
 
-                        if np.abs(grad.amplitude) > eps:
-                            waveform = points_to_waveform(
-                                times=t,
-                                amplitudes=trap_form,
-                                grad_raster_time=self.grad_raster_time,
-                            )
-                        else:
-                            waveform = np.zeros(tn + 1)
+        gx = points_to_waveform(times=tx, amplitudes=ws[0][1], grad_raster_time=dt)
+        gy = points_to_waveform(times=ty, amplitudes=ws[1][1], grad_raster_time=dt)
+        gz = points_to_waveform(times=tz, amplitudes=ws[2][1], grad_raster_time=dt)
 
-                    if len(waveform) != np.sum(np.isfinite(waveform)):
-                        warn("Not all elements of the generated waveform are finite")
+        # Check for empty arrays, set end and starting times
+        tx_s = 0 if tx.size==0 else tx[0]
+        ty_s = 0 if ty.size==0 else ty[0]
+        tz_s = 0 if tz.size==0 else tz[0]
 
-                    """
-                    Matlab dynamically resizes arrays during slice assignment operation if assignment is out of bounds
-                    Numpy does not; following is a workaround
-                    """
-                    l1, l2 = int(t0_n + nt_start), int(t0_n + nt_start + len(waveform))
-                    if l2 > grad_waveforms.shape[1]:
-                        z = np.zeros(
-                            (grad_waveforms.shape[0], l2 - grad_waveforms.shape[1])
-                        )
-                        grad_waveforms = np.hstack((grad_waveforms, z))
-                    grad_waveforms[j, l1:l2] = waveform
+        tx_e = 0 if tx.size==0 else tx[-1]
+        ty_e = 0 if ty.size==0 else ty[-1]
+        tz_e = 0 if tz.size==0 else tz[-1]
 
-            t0 += self.block_durations[block_counter]
-            t0_n = np.round(t0 / self.grad_raster_time)
+        max_t = np.round(np.max(tx_e, ty_e, tz_e)/dt)*dt
 
+        gx_i = np.round((tx_s)/dt)
+        gy_i = np.round((ty_s)/dt)
+        gz_i = np.round((tz_s)/dt)
+
+        # Create array for waveforms and insert into respective axes
+        grad_waveforms = np.zeros((3, np.round(max_t/dt)))
+
+        grad_waveforms[0, gx_i:(gx_i+gx.shape[0])] = gx
+        grad_waveforms[1, gy_i:(gy_i+gy.shape[0])] = gy
+        grad_waveforms[2, gz_i:(gz_i+gz.shape[0])] = gz
+        
         return grad_waveforms
+
+        # duration, num_blocks, _ = self.duration()
+
+        # wave_length = np.ceil(duration / self.grad_raster_time).astype(int)
+        # grad_channels = 3
+        # grad_waveforms = np.zeros((grad_channels, wave_length))
+        # grad_channels = ["gx", "gy", "gz"]
+
+        # t0 = 0
+        # t0_n = 0
+        # for block_counter in range(num_blocks):
+        #     block = self.get_block(block_counter + 1)
+        #     for j in range(len(grad_channels)):
+        #         grad = getattr(block, grad_channels[j])
+        #         if grad is not None:
+        #             if grad.type == "grad":
+        #                 nt_start = np.round(grad.delay / self.grad_raster_time)
+        #                 waveform = grad.waveform
+        #             else:
+        #                 nt_start = np.round(grad.delay / self.grad_raster_time)
+        #                 if np.abs(grad.flat_time) > eps:
+        #                     t = np.cumsum(
+        #                         [0, grad.rise_time, grad.flat_time, grad.fall_time]
+        #                     )
+        #                     trap_form = np.array([0, 1, 1, 0]) * grad.amplitude
+        #                 else:
+        #                     t = np.cumsum([0, grad.rise_time, grad.fall_time])
+        #                     trap_form = np.array([0, 1, 0]) * grad.amplitude
+
+        #                 tn = math.floor(t[-1] / self.grad_raster_time)
+        #                 t = np.append(t, t[-1] + self.grad_raster_time)
+        #                 trap_form = np.append(trap_form, 0)
+
+        #                 if np.abs(grad.amplitude) > eps:
+        #                     waveform = points_to_waveform(
+        #                         times=t,
+        #                         amplitudes=trap_form,
+        #                         grad_raster_time=self.grad_raster_time,
+        #                     )
+        #                 else:
+        #                     waveform = np.zeros(tn + 1)
+
+        #             if len(waveform) != np.sum(np.isfinite(waveform)):
+        #                 warn("Not all elements of the generated waveform are finite")
+
+        #             """
+        #             Matlab dynamically resizes arrays during slice assignment operation if assignment is out of bounds
+        #             Numpy does not; following is a workaround
+        #             """
+        #             l1, l2 = int(t0_n + nt_start), int(t0_n + nt_start + len(waveform))
+        #             if l2 > grad_waveforms.shape[1]:
+        #                 z = np.zeros(
+        #                     (grad_waveforms.shape[0], l2 - grad_waveforms.shape[1])
+        #                 )
+        #                 grad_waveforms = np.hstack((grad_waveforms, z))
+        #             grad_waveforms[j, l1:l2] = waveform
+
+        #     t0 += self.block_durations[block_counter]
+        #     t0_n = np.round(t0 / self.grad_raster_time)
+
+        # return grad_waveforms
 
     def mod_grad_axis(self, axis: str, modifier: int) -> None:
         """
