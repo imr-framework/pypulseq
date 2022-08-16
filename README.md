@@ -53,10 +53,10 @@ Design pulse sequences using `pypulseq` in your browser! Check out the [⚡ Ligh
 learn how!
 
 ## 1. 👥 Contributors (alphabetical)
+- @bilal-tasdelen
 - @sairamgeethanath
 - @schuenke
 - @tonggehua
-- @bilal-tasdelen
 
 Please email/submit PR/open an issue if any contributors are missing.
 
