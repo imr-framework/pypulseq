@@ -84,6 +84,8 @@ def make_trapezoid(
     if flat_time != -1:
         if amplitude != 0:
             amplitude2 = amplitude
+        elif (area != 0) and (rise_time > 0): # We have rise_time, flat_time and area.
+            amplitude2 = area/(rise_time + flat_time)
         else:
             amplitude2 = flat_area / flat_time
 
