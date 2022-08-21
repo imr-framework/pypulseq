@@ -633,14 +633,14 @@ class Sequence:
         ty_e = 0 if ty.size==0 else ty[-1]
         tz_e = 0 if tz.size==0 else tz[-1]
 
-        max_t = np.round(np.max(tx_e, ty_e, tz_e)/dt)*dt
+        max_t = np.round(np.max((tx_e, ty_e, tz_e))/dt)*dt
 
-        gx_i = np.round((tx_s)/dt)
-        gy_i = np.round((ty_s)/dt)
-        gz_i = np.round((tz_s)/dt)
+        gx_i = int(np.rint((tx_s)/dt))
+        gy_i = int(np.rint((ty_s)/dt))
+        gz_i = int(np.rint((tz_s)/dt))
 
         # Create array for waveforms and insert into respective axes
-        grad_waveforms = np.zeros((3, np.round(max_t/dt)))
+        grad_waveforms = np.zeros((3, int(np.rint(max_t/dt))))
 
         grad_waveforms[0, gx_i:(gx_i+gx.shape[0])] = gx
         grad_waveforms[1, gy_i:(gy_i+gy.shape[0])] = gy
