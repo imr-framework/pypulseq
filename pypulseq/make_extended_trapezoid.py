@@ -64,6 +64,9 @@ def make_extended_trapezoid(
         raise ValueError(
             f"Invalid channel. Must be one of 'x', 'y' or 'z'. Passed: {channel}"
         )
+    
+    times = np.asarray(times)
+    amplitudes = np.asarray(amplitudes)
 
     if len(times) != len(amplitudes):
         raise ValueError("Times and amplitudes must have the same length.")
