@@ -633,7 +633,7 @@ class Sequence:
         ty_e = 0 if ty.size==0 else ty[-1]
         tz_e = 0 if tz.size==0 else tz[-1]
 
-        max_t = np.round(np.max(tx_e, ty_e, tz_e)/dt)*dt
+        max_t = np.round(np.max((tx_e, ty_e, tz_e))/dt)*dt
 
         gx_i = np.round((tx_s)/dt)
         gy_i = np.round((ty_s)/dt)
