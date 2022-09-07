@@ -94,6 +94,7 @@ def make_arbitrary_rf(
     rf.type = "rf"
     rf.signal = signal
     rf.t = t
+    rf.shape_dur = duration
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
