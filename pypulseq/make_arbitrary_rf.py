@@ -5,6 +5,8 @@ from typing import Tuple, Union
 import numpy as np
 
 from pypulseq.make_trapezoid import make_trapezoid
+from pypulseq.make_delay import make_delay
+from pypulseq.calc_duration import calc_duration
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
@@ -19,6 +21,7 @@ def make_arbitrary_rf(
     max_slew: float = 0,
     phase_offset: float = 0,
     return_gz: bool = False,
+    return_delay: bool = False,
     slice_thickness: float = 0,
     system: Opts = Opts(),
     time_bw_product: float = 0,
@@ -138,12 +141,13 @@ def make_arbitrary_rf(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0:
-        t_fill = np.arange(1, round(rf.ringdown_time / 1e-6) + 1) * 1e-6
-        rf.t = np.concatenate((rf.t, rf.t[-1] + t_fill))
-        rf.signal = np.concatenate((rf.signal, np.zeros(len(t_fill))))
+    if rf.ringdown_time > 0 and return_delay:
+        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
 
     if return_gz:
-        return rf, gz
+        if return_delay:
+            return rf, gz, delay
+        else:
+            return rf, gz
     else:
         return rf
