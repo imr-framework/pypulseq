@@ -642,66 +642,6 @@ class Sequence:
         
         return grad_waveforms
 
-        # duration, num_blocks, _ = self.duration()
-
-        # wave_length = np.ceil(duration / self.grad_raster_time).astype(int)
-        # grad_channels = 3
-        # grad_waveforms = np.zeros((grad_channels, wave_length))
-        # grad_channels = ["gx", "gy", "gz"]
-
-        # t0 = 0
-        # t0_n = 0
-        # for block_counter in range(num_blocks):
-        #     block = self.get_block(block_counter + 1)
-        #     for j in range(len(grad_channels)):
-        #         grad = getattr(block, grad_channels[j])
-        #         if grad is not None:
-        #             if grad.type == "grad":
-        #                 nt_start = np.round(grad.delay / self.grad_raster_time)
-        #                 waveform = grad.waveform
-        #             else:
-        #                 nt_start = np.round(grad.delay / self.grad_raster_time)
-        #                 if np.abs(grad.flat_time) > eps:
-        #                     t = np.cumsum(
-        #                         [0, grad.rise_time, grad.flat_time, grad.fall_time]
-        #                     )
-        #                     trap_form = np.array([0, 1, 1, 0]) * grad.amplitude
-        #                 else:
-        #                     t = np.cumsum([0, grad.rise_time, grad.fall_time])
-        #                     trap_form = np.array([0, 1, 0]) * grad.amplitude
-
-        #                 tn = math.floor(t[-1] / self.grad_raster_time)
-        #                 t = np.append(t, t[-1] + self.grad_raster_time)
-        #                 trap_form = np.append(trap_form, 0)
-
-        #                 if np.abs(grad.amplitude) > eps:
-        #                     waveform = points_to_waveform(
-        #                         times=t,
-        #                         amplitudes=trap_form,
-        #                         grad_raster_time=self.grad_raster_time,
-        #                     )
-        #                 else:
-        #                     waveform = np.zeros(tn + 1)
-
-        #             if len(waveform) != np.sum(np.isfinite(waveform)):
-        #                 warn("Not all elements of the generated waveform are finite")
-
-        #             """
-        #             Matlab dynamically resizes arrays during slice assignment operation if assignment is out of bounds
-        #             Numpy does not; following is a workaround
-        #             """
-        #             l1, l2 = int(t0_n + nt_start), int(t0_n + nt_start + len(waveform))
-        #             if l2 > grad_waveforms.shape[1]:
-        #                 z = np.zeros(
-        #                     (grad_waveforms.shape[0], l2 - grad_waveforms.shape[1])
-        #                 )
-        #                 grad_waveforms = np.hstack((grad_waveforms, z))
-        #             grad_waveforms[j, l1:l2] = waveform
-
-        #     t0 += self.block_durations[block_counter]
-        #     t0_n = np.round(t0 / self.grad_raster_time)
-
-        # return grad_waveforms
 
     def mod_grad_axis(self, axis: str, modifier: int) -> None:
         """
@@ -1266,15 +1206,16 @@ class Sequence:
                     pre = []
                     post = []
                     if np.abs(rf.signal[0]) > 0:
-                        pre = np.array([[curr_dur + rf.delay + rf.t[-1] - eps], [0]])
+                        pre = np.array([[curr_dur + rf.delay + rf.t[0] - eps], [0]])
 
                     if np.abs(rf.signal[-1]) > 0:
                         post = np.array([[curr_dur + rf.delay + rf.t[-1] + eps], [0]])
 
                     out_len[-1] += len(rf.t) + pre.shape[1] + post.shape[1]
                     shape_pieces[-1, block_counter] = np.hstack(
-                        (pre, [[curr_dur + rf.delay + rf.signal], rf.signal], post)
+                        (pre, [curr_dur + rf.delay + rf.t, rf.signal*np.exp(1j*(rf.phase_offset+2*np.pi*rf.freq_offset*rf.t))], post)
                     )
+
             if block.adc is not None:  # ADC
                 t_adc.extend(
                     np.arange(block.adc.num_samples)
@@ -1290,6 +1231,11 @@ class Sequence:
         wave_data = np.empty(shape_channels, dtype="object")
         for j in range(shape_channels):
             wave_data[j] = np.zeros((2, int(out_len[j])))
+        
+        # TODO: This is weird, and needs to be fixed. Time points are also complex this way, and spends 4 times more memory than necessary.
+        if append_RF:
+            wave_data[j] = np.zeros((2, int(out_len[j])), dtype=np.complex128)
+
         wave_cnt = np.zeros(shape_channels, dtype=int)
         for block_counter in range(num_blocks):
             for j in range(shape_channels):
