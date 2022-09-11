@@ -6,6 +6,7 @@ import numpy as np
 
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 
 def make_arbitrary_rf(
@@ -70,7 +71,7 @@ def make_arbitrary_rf(
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwith` are not passed.
     """
-    valid_use_pulses = ["excitation", "refocusing", "inversion"]
+    valid_use_pulses = get_supported_rf_uses()
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
             f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
