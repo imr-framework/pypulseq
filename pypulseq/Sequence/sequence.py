@@ -1203,18 +1203,21 @@ class Sequence:
                         [curr_dur + t, block.rf.freq_offset, block.rf.phase_offset]
                     )
                 if append_RF:
-                    pre = []
-                    post = []
+                    rf_piece = np.array([curr_dur + rf.delay + rf.t, rf.signal*np.exp(1j*(rf.phase_offset+2*np.pi*rf.freq_offset*rf.t))])
+                    out_len[-1] += len(rf.t)
+
                     if np.abs(rf.signal[0]) > 0:
                         pre = np.array([[curr_dur + rf.delay + rf.t[0] - eps], [0]])
+                        rf_piece = np.hstack((pre, rf_piece))
+                        out_len[-1] += pre.shape[1]
 
                     if np.abs(rf.signal[-1]) > 0:
                         post = np.array([[curr_dur + rf.delay + rf.t[-1] + eps], [0]])
+                        rf_piece = np.hstack((rf_piece, post))
+                        out_len[-1] += post.shape[1]
 
-                    out_len[-1] += len(rf.t) + pre.shape[1] + post.shape[1]
-                    shape_pieces[-1, block_counter] = np.hstack(
-                        (pre, [curr_dur + rf.delay + rf.t, rf.signal*np.exp(1j*(rf.phase_offset+2*np.pi*rf.freq_offset*rf.t))], post)
-                    )
+                    shape_pieces[-1, block_counter] = rf_piece
+
 
             if block.adc is not None:  # ADC
                 t_adc.extend(
