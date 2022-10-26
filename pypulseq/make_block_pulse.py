@@ -6,7 +6,7 @@ import numpy as np
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_delay import make_delay
 from pypulseq.opts import Opts
-
+from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 def make_block_pulse(
     flip_angle: float,
@@ -60,7 +60,7 @@ def make_block_pulse(
         If neither `bandwidth` nor `duration` are passed.
         If `return_gz=True`, and `slice_thickness` is not passed.
     """
-    valid_use_pulses = ["excitation", "refocusing", "inversion"]
+    valid_use_pulses = get_supported_rf_uses()
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
             f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
