@@ -629,9 +629,9 @@ class Sequence:
         ty_s, ty_e = (0,0) if ty.size==0 else (ty[0], ty[-1])
         tz_s, tz_e = (0,0) if tz.size==0 else (tz[0], tz[-1])
 
-        maxt_i = int(np.max((tx_e, ty_e, tz_e))/dt)
+        maxt_i = int(np.rint(np.max((tx_e, ty_e, tz_e))/dt))
 
-        gx_i, gy_i, gz_i = (int(tx_s/dt), int(ty_s/dt), int(tz_s/dt))
+        gx_i, gy_i, gz_i = (int(np.rint(tx_s/dt)), int(np.rint(ty_s/dt)), int(np.rint(tz_s/dt)))
 
         # Create array for waveforms and insert into respective axes
         grad_waveforms = np.zeros((3, maxt_i))
