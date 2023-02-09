@@ -216,7 +216,7 @@ class Sequence:
         i_refocusing = np.round(t_refocusing / self.grad_raster_time)
         i_periods = np.sort(
             [1, *(i_excitation + 1), *(i_refocusing + 1), gw.shape[1] + 1]
-        ).astype(np.int)
+        ).astype(np.int32)
         # i_periods -= 1  # Python is 0-indexed
         ii_next_excitation = np.min((len(i_excitation), 1))
         ii_next_refocusing = np.min((len(i_refocusing), 1))
