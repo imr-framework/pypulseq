@@ -33,6 +33,10 @@ def align(
     ValueError
         If first parameter is not of type `str`.
         If invalid alignment spec is passed. Must be one of `left`, `center` or `right`.
+
+    Examples
+    --------
+    al_grad1, al_grad2, al_grad3 = align(right=[grad1, grad2, grad3])
     """
     alignment_specs = list(kwargs.keys())
     if not isinstance(alignment_specs[0], str):
@@ -46,14 +50,14 @@ def align(
 
     alignments = []
     objects = []
-    for a in alignment_specs:
-        objects_to_align = kwargs[a]
-        a = alignment_options.index(a)
+    for curr_align in alignment_specs:
+        objects_to_align = kwargs[curr_align]
+        curr_align = alignment_options.index(curr_align)
         if isinstance(objects_to_align, (list, np.ndarray, tuple)):
-            alignments.extend([a] * len(objects_to_align))
+            alignments.extend([curr_align] * len(objects_to_align))
             objects.extend(objects_to_align)
         elif isinstance(objects_to_align, SimpleNamespace):
-            alignments.extend([a])
+            alignments.extend([curr_align])
             objects.append(objects_to_align)
 
     dur = calc_duration(*objects)

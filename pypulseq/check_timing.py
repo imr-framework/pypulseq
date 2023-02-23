@@ -10,7 +10,7 @@ from pypulseq.opts import Opts
 
 def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, float]:
     """
-    Checks if timings of `events` are aligned with gradient raster time `system.grad_raster_time`.
+    Checks if timings of `events` are aligned with the corresponding raster time.
 
     Parameters
     ----------
@@ -41,11 +41,10 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
         return is_ok, text_err, total_duration
 
     total_duration = calc_duration(*events)
-    is_ok = __div_check(total_duration, system.grad_raster_time)
+    is_ok = __div_check(total_duration, system.block_duration_raster)
     text_err = "" if is_ok else f"Total duration: {total_duration * 1e6} us"
 
-    for i in range(len(events)):
-        e = events[i]
+    for e in events:
         if isinstance(e, (float, int)):  # Special handling for block_duration
             continue
         elif not isinstance(e, (dict, SimpleNamespace)):
@@ -72,7 +71,14 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
                 ok = False
 
         if hasattr(e, "dwell"):
-            if e.dwell < raster:
+            if (
+                e.dwell < system.adc_raster_time
+                or np.abs(
+                    np.round(e.dwell / system.adc_raster_time) * system.adc_raster_time
+                    - e.dwell
+                )
+                > 1e-10
+            ):
                 ok = False
 
         if hasattr(e, "type") and e.type == "trap":

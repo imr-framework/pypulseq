@@ -16,7 +16,9 @@ def block_to_events(*args: SimpleNamespace) -> Tuple[SimpleNamespace, ...]:
     events : list[SimpleNamespace]
         List of events comprising `args` if it was a block, otherwise `args` unmodified.
     """
-    if len(args) == 1:  # args is a tuple consisting a block of events or a single event
+    if (
+        len(args) == 1
+    ):  # args is a tuple consisting a block of events, or a single event
         x = args[0]
 
         if isinstance(x, (float, int)):  # args is block duration

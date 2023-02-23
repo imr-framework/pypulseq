@@ -32,12 +32,11 @@ def calc_rf_bandwidth(
         Bandwidth of the RF pulse.
 
     """
-    # TODO CHECK
     time_center, _ = calc_rf_center(rf)
 
     # Resample the pulse to a reasonable time array
     dw = 10  # Hz
-    dt = 1e-6  # For now, 1 Mhz
+    dt = 1e-6  # For now, 1 MHz
     nn = np.round(1 / dw / dt)
     tt = np.arange(-np.floor(nn / 2), np.ceil(nn / 2) - 1) * dt
 

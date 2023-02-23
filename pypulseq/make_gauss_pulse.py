@@ -153,7 +153,7 @@ def make_gauss_pulse(
 
         if rf.delay > gz.rise_time:
             gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
                 * system.grad_raster_time
             )
 
@@ -167,9 +167,9 @@ def make_gauss_pulse(
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    if return_gz:
-        if return_delay:
-            return rf, gz, gzr, delay
+    if return_gz and return_delay:
+        return rf, gz, gzr, delay
+    elif return_gz:
         return rf, gz, gzr
     else:
         return rf

@@ -16,7 +16,7 @@ def make_arbitrary_grad(
     """
     Creates a gradient event with arbitrary waveform.
 
-    See also pypulseq.Sequence.sequence.Sequence.add_block()`.
+    See also `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
     Parameters
     ----------
@@ -68,10 +68,10 @@ def make_arbitrary_grad(
     grad.channel = channel
     grad.waveform = g
     grad.delay = delay
-    grad.t = np.arange(len(g)) * system.grad_raster_time
     # True timing and aux shape data
     grad.tt = (np.arange(1, len(g) + 1) - 0.5) * system.grad_raster_time
-    grad.first = (3 * g[0] - g[1]) * 0.5  # Extrapolate by 1/2 gradient rasters
-    grad.last = (g[-1] * 3 - g[-2]) * 0.5  # Extrapolate by 1/2 gradient rasters
+    grad.shape_dur = len(g) * system.grad_raster_time
+    grad.first = (3 * g[0] - g[1]) * 0.5  # Extrapolate by 1/2 gradient raster
+    grad.last = (g[-1] * 3 - g[-2]) * 0.5  # Extrapolate by 1/2 gradient raster
 
     return grad

@@ -147,9 +147,8 @@ def make_adiabatic_pulse(
         dwell = system.rf_raster_time
 
     n_raw = np.round(duration / dwell + eps)
-    N = (
-        np.floor(n_raw / 4) * 4
-    )  # Number of points must be divisible by 4 - requirement of sigpy.mri
+    # Number of points must be divisible by 4 - requirement of sigpy.mri
+    N = np.floor(n_raw / 4) * 4
 
     if pulse_type == "hypsec":
         am, fm = hypsec(n=N, beta=beta, mu=mu, dur=duration)
@@ -163,6 +162,7 @@ def make_adiabatic_pulse(
     ifm = np.argmin(np.abs(fm))
     dfm = np.abs(fm)[ifm]
 
+    # Find rate of change of frequency at the center of the pulse
     if dfm == 0:
         pm0 = pm[ifm]
         am0 = am[ifm]
@@ -211,7 +211,7 @@ def make_adiabatic_pulse(
         rf.delay = rf.dead_time
 
     if return_gz:
-        if slice_thickness == 0:
+        if slice_thickness <= 0:
             raise ValueError("Slice thickness must be provided")
 
         if max_grad > 0:
@@ -252,9 +252,9 @@ def make_adiabatic_pulse(
     if rf.ringdown_time > 0 and return_delay:
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
 
-    if return_gz:
-        if return_delay:
-            return rf, gz, gzr, delay
+    if return_gz and return_delay:
+        return rf, gz, gzr, delay
+    elif return_gz:
         return rf, gz, gzr
     else:
         return rf

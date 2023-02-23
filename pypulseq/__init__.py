@@ -45,6 +45,7 @@ from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 from pypulseq.make_trigger import make_trigger
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
+from pypulseq.rotate import rotate
 from pypulseq.scale_grad import scale_grad
 from pypulseq.split_gradient import split_gradient
 from pypulseq.split_gradient_at import split_gradient_at
