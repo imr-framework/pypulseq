@@ -134,6 +134,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "gre_pypulseq.seq"):
     if plot:
         seq.plot()
 
+    seq.calculate_kspacePP()
+
     # Very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within
     # slew-rate limits
     rep = seq.test_report()
@@ -151,4 +153,4 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "gre_pypulseq.seq"):
 
 
 if __name__ == "__main__":
-    main(plot=True, write_seq=True)
+    main(plot=False, write_seq=True)

@@ -159,8 +159,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "ute_pypulseq.seq"):
         seq.plot()
 
         # Plot gradients to check for gaps and optimality of the timing
-        gw = seq.gradient_waveforms()
-        plt.plot(gw.T)  # Plot the entire gradient shape
+        gw = seq.waveforms_and_times()[0]
+        # Plot the entire gradient shape
+        plt.figure()
+        plt.plot(gw[0][0], gw[0][1], gw[1][0], gw[1][1], gw[2][0], gw[2][1])
+        plt.show()
 
     # =========
     # WRITE .SEQ
