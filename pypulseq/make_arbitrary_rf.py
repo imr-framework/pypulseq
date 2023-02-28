@@ -23,7 +23,6 @@ def make_arbitrary_rf(
     phase_offset: float = 0,
     return_delay: bool = False,
     return_gz: bool = False,
-    return_delay: bool = False,
     slice_thickness: float = 0,
     system: Opts = Opts(),
     time_bw_product: float = 0,

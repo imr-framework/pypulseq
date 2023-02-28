@@ -875,6 +875,7 @@ class Sequence:
         time_range=(0, np.inf),
         time_disp: str = "s",
         grad_disp: str = "kHz/m",
+        plot_now: bool = True
     ) -> None:
         """
         Plot `Sequence`.
