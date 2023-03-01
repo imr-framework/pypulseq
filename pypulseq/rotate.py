@@ -56,9 +56,8 @@ def rotate(
     for i in range(len(args)):
         event = args[i]
 
-        if event.type != "grad" and event.type != "trap" or event.channel == axis:
+        if (event.type != "grad" and event.type != "trap") or event.channel == axis:
             i_bypass.append(i)
-
         else:
             if event.channel == axes_to_rotate[0]:
                 i_rotate1.append(i)
@@ -81,11 +80,10 @@ def rotate(
         g.channel = axes_to_rotate[1]
         rotated2.append(g)
 
-    o = len(i_rotate1)
     for i in range(len(i_rotate2)):
         g = args[i_rotate2[i]]
         max_mag = np.max((max_mag, __get_grad_abs_mag(g)))
-        rotated2.append(scale_grad(grad=g, scale=np.cos(angle)))  # TODO
+        rotated2.append(scale_grad(grad=g, scale=np.cos(angle)))
         g = scale_grad(grad=g, scale=-np.sin(angle))
         g.channel = axes_to_rotate[1]
         rotated1.append(g)

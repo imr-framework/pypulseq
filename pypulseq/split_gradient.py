@@ -45,16 +45,16 @@ def split_gradient(
     total_length = calc_duration(grad)
 
     if grad.type == "trap":
-        ch = grad.channel
-        grad.delay = round(grad.delay / grad_raster_time) * grad_raster_time
-        grad.rise_time = round(grad.rise_time / grad_raster_time) * grad_raster_time
-        grad.flat_time = round(grad.flat_time / grad_raster_time) * grad_raster_time
-        grad.fall_time = round(grad.fall_time / grad_raster_time) * grad_raster_time
+        channel = grad.channel
+        grad.delay = np.round(grad.delay / grad_raster_time) * grad_raster_time
+        grad.rise_time = np.round(grad.rise_time / grad_raster_time) * grad_raster_time
+        grad.flat_time = np.round(grad.flat_time / grad_raster_time) * grad_raster_time
+        grad.fall_time = np.round(grad.fall_time / grad_raster_time) * grad_raster_time
 
         times = np.array([0, grad.rise_time])
         amplitudes = np.array([0, grad.amplitude])
         ramp_up = make_extended_trapezoid(
-            channel=ch,
+            channel=channel,
             system=system,
             times=times,
             amplitudes=amplitudes,
@@ -65,7 +65,7 @@ def split_gradient(
         times = np.array([0, grad.fall_time])
         amplitudes = np.array([grad.amplitude, 0])
         ramp_down = make_extended_trapezoid(
-            channel=ch,
+            channel=channel,
             system=system,
             times=times,
             amplitudes=amplitudes,
@@ -76,7 +76,7 @@ def split_gradient(
 
         flat_top = SimpleNamespace()
         flat_top.type = "grad"
-        flat_top.channel = ch
+        flat_top.channel = channel
         flat_top.delay = grad.delay + grad.rise_time
         flat_top.t = np.arange(
             step=grad_raster_time,

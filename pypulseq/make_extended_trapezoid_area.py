@@ -13,7 +13,7 @@ def make_extended_trapezoid_area(
     area: float, channel: str, grad_end: float, grad_start: float, system: Opts
 ) -> Tuple[SimpleNamespace, np.array, np.array]:
     """
-    Makes shortest possible extended trapezoid with a given area which starts and ends (optionally) as non-zero
+    Makes the shortest possible extended trapezoid with a given area which starts and ends (optionally) as non-zero
     gradient values.
 
     Parameters
@@ -56,7 +56,7 @@ def make_extended_trapezoid_area(
     Gp = Gp[i_min]
     obj1val = obj1val[i_min]
 
-    if obj1val > 1e-3 or abs(Gp) > system.max_grad:  # Search did not converge
+    if obj1val > 1e-3 or np.abs(Gp) > system.max_grad:  # Search did not converge
         Gp = system.max_grad * np.sign(Gp)
         obj2 = (
             lambda x: (
@@ -69,15 +69,15 @@ def make_extended_trapezoid_area(
         T, obj2val = *res2.x, res2.fun
         assert obj2val < 1e-2
 
-        Tp = math.ceil(T / system.grad_raster_time) * system.grad_raster_time
+        Tp = np.ceil(T / system.grad_raster_time) * system.grad_raster_time
 
         # Fix the ramps
         Tru = (
-            math.ceil(abs(Gp - grad_start) / SR / system.grad_raster_time)
+            np.ceil(np.abs(Gp - grad_start) / SR / system.grad_raster_time)
             * system.grad_raster_time
         )
         Trd = (
-            math.ceil(abs(Gp - grad_end) / SR / system.grad_raster_time)
+            np.ceil(np.abs(Gp - grad_end) / SR / system.grad_raster_time)
             * system.grad_raster_time
         )
         obj3 = lambda x: (area - __testGA1(x, Tru, Tp, Trd, grad_start, grad_end)) ** 2
@@ -93,11 +93,11 @@ def make_extended_trapezoid_area(
         amplitudes = [grad_start, Gp, Gp, grad_end]
     else:
         Tru = (
-            math.ceil(abs(Gp - grad_start) / SR / system.grad_raster_time)
+            np.ceil(np.abs(Gp - grad_start) / SR / system.grad_raster_time)
             * system.grad_raster_time
         )
         Trd = (
-            math.ceil(abs(Gp - grad_end) / SR / system.grad_raster_time)
+            np.ceil(np.abs(Gp - grad_end) / SR / system.grad_raster_time)
             * system.grad_raster_time
         )
 
@@ -123,8 +123,8 @@ def make_extended_trapezoid_area(
 
 
 def __testGA(Gp, Tp, SR, dT, Gs, Ge):
-    Tru = math.ceil(abs(Gp - Gs) / SR / dT) * dT
-    Trd = math.ceil(abs(Gp - Ge) / SR / dT) * dT
+    Tru = np.ceil(np.abs(Gp - Gs) / SR / dT) * dT
+    Trd = np.ceil(np.abs(Gp - Ge) / SR / dT) * dT
     ga = __testGA1(Gp, Tru, Tp, Trd, Gs, Ge)
     return ga
 

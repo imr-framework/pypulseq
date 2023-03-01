@@ -60,4 +60,7 @@ def make_adc(
     if dwell > 0:
         adc.duration = dwell * num_samples
 
+    if adc.dead_time > adc.delay:
+        adc.delay = adc.dead_time
+
     return adc

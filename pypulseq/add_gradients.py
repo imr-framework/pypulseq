@@ -40,8 +40,10 @@ def add_gradients(
     # copy() to emulate pass-by-value; otherwise passed grad events are modified
     grads = deepcopy(grads)
 
-    max_grad = max_grad if max_grad > 0 else system.max_grad
-    max_slew = max_slew if max_slew > 0 else system.max_slew
+    if max_grad <= 0:
+        max_grad = system.max_grad
+    if max_slew <= 0:
+        max_slew = system.max_slew
 
     if len(grads) < 2:
         raise ValueError("Cannot add less than two gradients")
@@ -148,7 +150,14 @@ def add_gradients(
     for ii in range(len(grads)):
         g = grads[ii]
         if g.type == "grad":
-            waveforms[ii] = g.waveform
+            if is_arb[ii]:
+                waveforms[ii] = g.waveform
+            else:
+                waveforms[ii] = points_to_waveform(
+                    amplitudes=g.waveform,
+                    times=g.tt,
+                    grad_raster_time=system.grad_raster_time,
+                )
         elif g.type == "trap":
             if g.flat_time > 0:  # Triangle or trapezoid
                 times = np.array(
@@ -169,13 +178,13 @@ def add_gradients(
                     [
                         g.delay - common_delay,
                         g.delay - common_delay + g.rise_time,
-                        g.delay - common_delay + g.rise_time + g.flat_time,
+                        g.delay - common_delay + g.rise_time + g.fall_time,
                     ]
                 )
                 amplitudes = np.array([0, g.amplitude, 0])
             waveforms[ii] = points_to_waveform(
-                times=times,
                 amplitudes=amplitudes,
+                times=times,
                 grad_raster_time=system.grad_raster_time,
             )
         else:
@@ -204,6 +213,9 @@ def add_gradients(
         max_grad=max_grad,
         delay=common_delay,
     )
+    # Fix the first and the last values
+    # First is defined by the sum of firsts with the minimal delay (common_delay)
+    # Last is defined by the sum of lasts with the maximum duration (total_duration)
     grad.first = np.sum(firsts[np.array(delays) == common_delay])
     grad.last = np.sum(lasts[np.where(durs == total_duration)])
 

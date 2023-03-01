@@ -25,8 +25,12 @@ def traj_to_grad(
     sr : numpy.ndarray
         Slew rate.
     """
+    # Compute finite difference for gradients in Hz/m
     g = (k[1:] - k[:-1]) / raster_time
+    # Compute the slew rate
     sr0 = (g[1:] - g[:-1]) / raster_time
+
+    # Gradient is now sampled between k-space points whilst the slew rate is between gradient points
     sr = np.zeros(len(sr0) + 1)
     sr[0] = sr0[0]
     sr[1:-1] = 0.5 * (sr0[-1] + sr0[1:])

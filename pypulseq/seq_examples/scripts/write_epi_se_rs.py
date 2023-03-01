@@ -9,7 +9,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
+def main(plot: bool, write_seq: bool, seq_filename: str = "epi_se_rs_pypulseq.seq"):
     # ======
     # SETUP
     # ======
@@ -52,7 +52,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_pypulseq.seq"):
         flip_angle=110 * np.pi / 180,
         system=system,
         duration=8e-3,
-        bandwidth=abs(sat_freq),
+        bandwidth=np.abs(sat_freq),
         freq_offset=sat_freq,
     )
     gz_fs = pp.make_trapezoid(

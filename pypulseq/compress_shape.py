@@ -12,7 +12,7 @@ def compress_shape(
     - num_samples - the number of samples in the uncompressed waveform
     - data - containing the compressed waveform
 
-    See also `decompress_shape.py`.
+    See also `pypulseq.decompress_shape.py`.
 
     Parameters
     ----------
@@ -37,6 +37,7 @@ def compress_shape(
         compressed_shape.data = decompressed_shape
         return compressed_shape
 
+    # Single precision floating point has ~7.25 decimal places
     quant_factor = 1e-7
     decompressed_shape_scaled = decompressed_shape / quant_factor
     datq = np.round(
@@ -45,10 +46,14 @@ def compress_shape(
     qerr = decompressed_shape_scaled - np.cumsum(datq)
     qcor = np.insert(np.diff(np.round(qerr)), 0, 0)
     datd = datq + qcor
+
     mask_changes = np.insert(np.asarray(np.diff(datd) != 0, dtype=np.int32), 0, 1)
+    # Elements without repetitions
     vals = datd[mask_changes.nonzero()[0]] * quant_factor
 
+    # Indices of changes
     k = np.append(mask_changes, 1).nonzero()[0]
+    # Number of repetitions
     n = np.diff(k)
 
     n_extra = (n - 2).astype(np.float32)  # Cast as float for nan assignment to work

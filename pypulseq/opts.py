@@ -84,7 +84,7 @@ class Opts:
             )
 
         if rise_time != 0:
-            max_slew = 0
+            max_slew = max_grad / rise_time
 
         self.max_grad = max_grad
         self.max_slew = max_slew

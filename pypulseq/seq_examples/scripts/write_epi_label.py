@@ -7,6 +7,7 @@ combination with integrated image reconstruction or to guide the off-line recons
 import numpy as np
 
 import pypulseq as pp
+from pypulseq import calc_rf_center
 
 
 def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.seq"):
@@ -93,6 +94,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "epi_lable_pypulseq.se
         seq.add_block(trig, pp.make_label(type="SET", label="SLC", value=0))
         for s in range(n_slices):
             rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            # Compensate for the slide-offset induced phase
+            rf.phase_offset = -rf.freq_offset * calc_rf_center(rf)[0]
             seq.add_block(rf, gz)
             seq.add_block(
                 gx_pre,

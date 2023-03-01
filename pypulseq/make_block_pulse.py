@@ -8,6 +8,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
+
 def make_block_pulse(
     flip_angle: float,
     bandwidth: float = 0,
@@ -74,9 +75,10 @@ def make_block_pulse(
         else:
             raise ValueError("Either bandwidth or duration must be defined")
 
-    N = np.round(duration / 1e-6)
+    BW = 1 / (4 * duration)
+    N = np.round(duration / system.rf_raster_time)
     t = np.array([0, N]) * system.rf_raster_time
-    signal = flip_angle / (2 * np.pi) / duration * np.ones(len(t))
+    signal = flip_angle / (2 * np.pi) / duration * np.ones_like(t)
 
     rf = SimpleNamespace()
     rf.type = "rf"
@@ -97,6 +99,8 @@ def make_block_pulse(
 
     if rf.ringdown_time > 0 and return_delay:
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
+
+    if return_delay:
         return rf, delay
     else:
         return rf

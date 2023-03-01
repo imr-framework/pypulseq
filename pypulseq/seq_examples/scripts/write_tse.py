@@ -134,7 +134,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     n_ex = math.floor(Ny / n_echo)
     pe_steps = np.arange(1, n_echo * n_ex + 1) - 0.5 * n_echo * n_ex - 1
     if divmod(n_echo, 2)[1] == 0:
-        pe_steps = np.roll(pe_steps, -np.round(n_ex / 2))
+        pe_steps = np.roll(pe_steps, [0, int(-np.round(n_ex / 2))])
     pe_order = pe_steps.reshape((n_ex, n_echo), order="F").T
     phase_areas = pe_order * delta_k
 

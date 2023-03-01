@@ -59,16 +59,20 @@ def add_ramps(
 
     k = np.vstack(k)
     num_channels = k.shape[0]
-    k = np.vstack((k, np.zeros((3 - num_channels, k.shape[1]))))
+    k = np.vstack(
+        (k, np.zeros((3 - num_channels, k.shape[1])))
+    )  # Pad with zeros if needed
 
     k_up, ok1 = calc_ramp(k0=np.zeros((3, 2)), k_end=k[:, :2], system=system)
     k_down, ok2 = calc_ramp(k0=k[:, -2:], k_end=np.zeros((3, 2)), system=system)
     if not (ok1 and ok2):
         raise RuntimeError("Failed to calculate gradient ramps")
 
+    # Add start and end points to ramps
     k_up = np.hstack((np.zeros((3, 2)), k_up))
     k_down = np.hstack((k_down, np.zeros((3, 1))))
 
+    # Add ramps to trajectory
     k = np.hstack((k_up, k, k_down))
 
     result = []
