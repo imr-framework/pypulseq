@@ -6,7 +6,6 @@ from sigpy.mri.rf import hypsec, wurst
 
 from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
-from pypulseq.calc_rf_bandwidth import calc_rf_bandwidth
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
@@ -221,7 +220,7 @@ def make_adiabatic_pulse(
             system.max_slew = max_slew
 
         if pulse_type == "hypsec":
-            bandwidth = calc_rf_bandwidth(rf, 0.1)
+            bandwidth = mu * beta / np.pi
         elif pulse_type == "wurst":
             bandwidth = bandwidth
         else:
