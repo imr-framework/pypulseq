@@ -46,7 +46,8 @@ def compress_shape(
     qerr = decompressed_shape_scaled - np.cumsum(datq)
     qcor = np.insert(np.diff(np.round(qerr)), 0, 0)
     datd = datq + qcor
-    mask_changes = np.insert(np.asarray(np.diff(datd) != 0, dtype=np.int), 0, 1)
+
+    mask_changes = np.insert(np.asarray(np.diff(datd) != 0, dtype=np.int32), 0, 1)
     # Elements without repetitions
     vals = datd[mask_changes.nonzero()[0]] * quant_factor
 

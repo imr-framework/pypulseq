@@ -38,7 +38,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If a gradient that doesn't end at zero is not aligned to the block boundary.
     """
     events = block_to_events(*args)
-    self.block_events[block_index] = np.zeros(7, dtype=np.int)
+    self.block_events[block_index] = np.zeros(7, dtype=np.int32)
     duration = 0
 
     check_g = {}  # Key-value mapping of index and  pairs of gradients/times
