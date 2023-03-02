@@ -44,35 +44,38 @@ def make_adiabatic_pulse(
     type='hypsec'.
 
     hypsec(n=512, beta=800, mu=4.9, dur=0.012)
-        Design a hyperbolic secant adiabatic pulse.
-        mu * beta becomes the amplitude of the frequency sweep
+        Design a hyperbolic secant adiabatic pulse. `mu` * `beta` becomes the amplitude of the frequency sweep.
+
         Args:
-            n (int): number of samples (should be a multiple of 4).
-            beta (float): AM waveform parameter.
-            mu (float): a constant, determines amplitude of frequency sweep.
-            dur (float): pulse time (s).
+            - n (int): number of samples (should be a multiple of 4).
+            - beta (float): AM waveform parameter.
+            - mu (float): a constant, determines amplitude of frequency sweep.
+            - dur (float): pulse time (s).
+
         Returns:
             2-element tuple containing
             - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
+
         References:
             Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
             inversion of a two-level system by phase-modulated pulses'.
             Phys. Rev. A., 32:3435-3447.
 
     wurst(n=512, n_fac=40, bw=40000.0, dur=0.002)
-        Design a WURST (wideband, uniform rate, smooth truncation) adiabatic
-         inversion pulse
+        Design a WURST (wideband, uniform rate, smooth truncation) adiabatic inversion pulse
+
         Args:
-            n (int): number of samples (should be a multiple of 4).
-            n_fac (int): power to exponentiate to within AM term. ~20 or greater is
-             typical.
-            bw (float): pulse bandwidth.
-            dur (float): pulse time (s).
+            - n (int): number of samples (should be a multiple of 4).
+            - n_fac (int): power to exponentiate to within AM term. ~20 or greater is typical.
+            - bw (float): pulse bandwidth.
+            - dur (float): pulse time (s).
+
         Returns:
             2-element tuple containing
-           - **a** (*array*): AM waveform.
+            - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
+
         References:
             Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
             Broadband Spin Inversion'.

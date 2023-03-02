@@ -6,3 +6,4 @@ pypulseq
 
    pypulseq
    setup
+   version
