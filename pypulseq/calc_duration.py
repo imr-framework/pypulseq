@@ -1,41 +1,61 @@
 from types import SimpleNamespace
 
+import numpy as np
+
 from pypulseq.block_to_events import block_to_events
 
 
 def calc_duration(*args: SimpleNamespace) -> float:
     """
-    Calculate the cumulative duration of Events.
+    Calculate the duration of an event or block.
 
     Parameters
     ----------
-    args : list[SimpleNamespace]
-        List of `SimpleNamespace` objects. Can also be a list containing a single block (see
-        `pypulseq.Sequence.sequence.plot()`).
+    args : SimpleNamespace
+        Block or events.
 
     Returns
     -------
     duration : float
-        The cumulative duration of the pulse events in `events`.
+        Cumulative duration of `args`.
     """
-    events = block_to_events(args)
+    events = block_to_events(*args)
 
     duration = 0
     for event in events:
-        if not isinstance(event, (dict, SimpleNamespace)):
-            raise TypeError("input(s) should be of type SimpleNamespace or a dict() in case of LABELINC or LABELSET")
+        if isinstance(event, (float, int)):  # block_duration field
+            assert duration <= event
+            duration = event
+            continue
 
-        if event.type == 'delay':
-            duration = max(duration, event.delay)
-        elif event.type == 'rf':
-            duration = max(duration, event.delay + event.t[-1])
-        elif event.type == 'grad':
-            duration = max(duration, event.t[-1] + event.t[1] - event.t[0] + event.delay)
-        elif event.type == 'adc':
-            duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
-        elif event.type == 'trap':
-            duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
-        elif event.type == 'output' or event.type == 'trigger':
-            duration = max(duration, event.delay + event.duration)
+        if not isinstance(event, (dict, SimpleNamespace)):
+            raise TypeError(
+                "input(s) should be of type SimpleNamespace or a dict() in case of LABELINC or LABELSET"
+            )
+
+        if event.type == "delay":
+            duration = np.max([duration, event.delay])
+        elif event.type == "rf":
+            duration = np.max(
+                [duration, event.delay + event.shape_dur + event.ringdown_time]
+            )
+        elif event.type == "grad":
+            duration = np.max([duration, event.delay + event.shape_dur])
+        elif event.type == "adc":
+            duration = np.max(
+                [
+                    duration,
+                    event.delay + event.num_samples * event.dwell + event.dead_time,
+                ]
+            )
+        elif event.type == "trap":
+            duration = np.max(
+                [
+                    duration,
+                    event.delay + event.rise_time + event.flat_time + event.fall_time,
+                ]
+            )
+        elif event.type == "output" or event.type == "trigger":
+            duration = np.max([duration, event.delay + event.duration])
 
     return duration

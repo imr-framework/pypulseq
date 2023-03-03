@@ -12,6 +12,14 @@ pypulseq.Sequence.block module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.Sequence.ext\_test\_report module
+------------------------------------------
+
+.. automodule:: pypulseq.Sequence.ext_test_report
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.Sequence.parula module
 -------------------------------
 
@@ -32,14 +40,6 @@ pypulseq.Sequence.sequence module
 ---------------------------------
 
 .. automodule:: pypulseq.Sequence.sequence
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pypulseq.Sequence.test\_report module
--------------------------------------
-
-.. automodule:: pypulseq.Sequence.test_report
    :members:
    :undoc-members:
    :show-inheritance:

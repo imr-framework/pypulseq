@@ -9,6 +9,7 @@ Subpackages
 
    pypulseq.SAR
    pypulseq.Sequence
+   pypulseq.tests
 
 Submodules
 ----------
@@ -57,6 +58,14 @@ pypulseq.calc\_ramp module
 --------------------------
 
 .. automodule:: pypulseq.calc_ramp
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.calc\_rf\_bandwidth module
+-----------------------------------
+
+.. automodule:: pypulseq.calc_rf_bandwidth
    :members:
    :undoc-members:
    :show-inheritance:
@@ -113,6 +122,14 @@ pypulseq.make\_adc module
 -------------------------
 
 .. automodule:: pypulseq.make_adc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.make\_adiabatic\_pulse module
+--------------------------------------
+
+.. automodule:: pypulseq.make_adiabatic_pulse
    :members:
    :undoc-members:
    :show-inheritance:
@@ -189,6 +206,14 @@ pypulseq.make\_label module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.make\_sigpy\_pulse module
+----------------------------------
+
+.. automodule:: pypulseq.make_sigpy_pulse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.make\_sinc\_pulse module
 ---------------------------------
 
@@ -197,10 +222,10 @@ pypulseq.make\_sinc\_pulse module
    :undoc-members:
    :show-inheritance:
 
-pypulseq.make\_trap\_pulse module
----------------------------------
+pypulseq.make\_trapezoid module
+-------------------------------
 
-.. automodule:: pypulseq.make_trap_pulse
+.. automodule:: pypulseq.make_trapezoid
    :members:
    :undoc-members:
    :show-inheritance:
@@ -229,6 +254,30 @@ pypulseq.points\_to\_waveform module
    :undoc-members:
    :show-inheritance:
 
+pypulseq.rotate module
+----------------------
+
+.. automodule:: pypulseq.rotate
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.scale\_grad module
+---------------------------
+
+.. automodule:: pypulseq.scale_grad
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pypulseq.sigpy\_pulse\_opts module
+----------------------------------
+
+.. automodule:: pypulseq.sigpy_pulse_opts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pypulseq.split\_gradient module
 -------------------------------
 
@@ -245,10 +294,10 @@ pypulseq.split\_gradient\_at module
    :undoc-members:
    :show-inheritance:
 
-pypulseq.supported\_labels module
----------------------------------
+pypulseq.supported\_labels\_rf\_use module
+------------------------------------------
 
-.. automodule:: pypulseq.supported_labels
+.. automodule:: pypulseq.supported_labels_rf_use
    :members:
    :undoc-members:
    :show-inheritance:

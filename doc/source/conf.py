@@ -18,11 +18,11 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'pypulseq'
-copyright = '2021, Keerthi Sravan Ravi'
+copyright = '2023, Keerthi Sravan Ravi'
 author = 'Keerthi Sravan Ravi'
 
 # The full version, including alpha/beta/rc tags
-release = '1.3.1'
+release = '1.4.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,9 +48,9 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['setup*']
+exclude_patterns = ['setup*', 'version*']
 
-autodoc_mock_imports = ['numpy', 'matplotlib', 'scipy']
+autodoc_mock_imports = ['numpy', 'matplotlib', 'scipy', 'sigpy']
 
 # -- Options for HTML output -------------------------------------------------
 
