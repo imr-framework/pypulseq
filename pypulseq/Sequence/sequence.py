@@ -1473,8 +1473,8 @@ class Sequence:
 
             if block.adc is not None:  # ADC
                 t_adc.extend(
-                    np.arange(block.adc.num_samples)
-                    + 0.5 * block.adc.dwell
+                    np.arange(block.adc.num_samples) * block.adc.dwell
+                    + block.adc.dwell * 0.5
                     + block.adc.delay
                     + curr_dur
                 )
