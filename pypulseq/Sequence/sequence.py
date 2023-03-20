@@ -23,6 +23,7 @@ from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
+from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.block_to_events import block_to_events
@@ -275,7 +276,8 @@ class Sequence:
         gradient_offset: int = 0,
     ) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
         """
-        Calculates the k-space trajectory of the entire pulse sequence.
+        Calculates the k-space trajectory of the entire pulse sequence 
+        using a piecewise-polynomial gradient wave representation.
 
         Parameters
         ----------
@@ -1553,6 +1555,45 @@ class Sequence:
         fp_adc = np.array(fp_adc)
 
         return wave_data, tfp_excitation, tfp_refocusing, t_adc, fp_adc
+
+    def gradient_waveforms(self) -> np.ndarray:
+        """
+        Decompress the entire gradient waveform. Returns an array of shape `gradient_axes x timepoints`.
+        `gradient_axes` is typically 3.
+        Returns
+        -------
+        grad_waveforms : np.ndarray
+            Decompressed gradient waveform.
+        """
+
+        ws,_,_,_,_ = self.waveforms_and_times()
+
+        dt = self.system.grad_raster_time
+
+        tx = ws[0][0]
+        ty = ws[1][0]
+        tz = ws[2][0]
+
+        gx = points_to_waveform(times=tx, amplitudes=ws[0][1], grad_raster_time=dt)
+        gy = points_to_waveform(times=ty, amplitudes=ws[1][1], grad_raster_time=dt)
+        gz = points_to_waveform(times=tz, amplitudes=ws[2][1], grad_raster_time=dt)
+
+        # Check for empty arrays, set end and starting times
+        tx_s, tx_e = (0,0) if tx.size==0 else (tx[0], tx[-1])
+        ty_s, ty_e = (0,0) if ty.size==0 else (ty[0], ty[-1])
+        tz_s, tz_e = (0,0) if tz.size==0 else (tz[0], tz[-1])
+
+        maxt_i = int(np.rint(np.max((tx_e, ty_e, tz_e))/dt))
+
+        gx_i, gy_i, gz_i = (int(np.rint(tx_s/dt)), int(np.rint(ty_s/dt)), int(np.rint(tz_s/dt)))
+
+        # Create array for waveforms and insert into respective axes
+        grad_waveforms = np.zeros((3, maxt_i))
+        grad_waveforms[0, gx_i:(gx_i+gx.shape[0])] = gx
+        grad_waveforms[1, gy_i:(gy_i+gy.shape[0])] = gy
+        grad_waveforms[2, gz_i:(gz_i+gz.shape[0])] = gz
+        
+        return grad_waveforms
 
     def waveforms_export(self, time_range=(0, np.inf)) -> dict:
         """
