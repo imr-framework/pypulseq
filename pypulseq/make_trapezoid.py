@@ -70,10 +70,12 @@ def make_trapezoid(
         )
 
     if max_grad <= 0:
-        max_grad = system.max_grad
+        max_grad = abs(system.max_grad)
+        # Add abs() because max_grad (Hz/m/s) is negative if gyromagnetic ratio is negative (e.g., 129mXe)
 
     if max_slew <= 0:
-        max_slew = system.max_slew
+        max_slew = abs(system.max_slew) 
+        # Add abs() because max_slew (Hz/m/s) is negative if gyromagnetic ratio is negative (e.g., 129mXe)
 
     if rise_time <= 0:
         rise_time = 0.0

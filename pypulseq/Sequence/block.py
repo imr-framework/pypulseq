@@ -191,7 +191,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
         if (
             abs(grad_to_check.start[1])
-            > self.system.max_slew * self.system.grad_raster_time
+            > abs(self.system.max_slew) * self.system.grad_raster_time
+            # Add abs() because max_slew (Hz/m/s) is negative if gyromagnetic ratio is negative (e.g., 129mXe)
         ):
             if grad_to_check.start[0] != 0:
                 raise ValueError(
