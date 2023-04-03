@@ -142,7 +142,7 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
     delta_k = fov / Nx
 
     # RF sinc pulse with a 90 degree flip angle
-    rf90, _, _ = pp.make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,
+    rf90 = pp.make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,
        time_bw_product=4)
 
     # Frequency encode, trapezoidal event
