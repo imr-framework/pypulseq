@@ -15,7 +15,7 @@ def round_half_up(n, decimals=0):
 # =========
 # NP.FLOAT EPSILON
 # =========
-eps = np.finfo(np.float).eps
+eps = np.finfo(np.float64).eps
 
 # =========
 # PACKAGE-LEVEL IMPORTS
