@@ -300,7 +300,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
 
                 # Bookkeeping
                 grad_prev_last[j] = grad.last
-                eps = np.finfo(np.float).eps
+                eps = np.finfo(np.float64).eps
                 if grad_duration + eps < block_duration:
                     grad_prev_last[j] = 0
 
