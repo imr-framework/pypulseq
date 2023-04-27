@@ -132,7 +132,7 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
     ```python
     import pypulseq as pp
 
-    system = pp.Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/s')
+    system = pp.Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/ms')
     seq = pp.Sequence(system=system)
     ```
 3. Then, design gradient, RF or ADC pulse sequence events:
