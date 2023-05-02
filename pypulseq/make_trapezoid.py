@@ -119,7 +119,7 @@ def make_trapezoid(
                 dC = 1 / np.abs(2 * max_slew) + 1 / np.abs(2 * max_slew)
                 possible = duration**2 > 4 * np.abs(area) * dC
                 assert possible, (
-                    f"Requested area is too large for this gradient. Minimum required duration is "
+                    f"Requested area is too large for this gradient. Minimum required duration (assuming triangle gradient can be realized) is "
                     f"{np.round(np.sqrt(4 * np.abs(area) * dC) * 1e6)} uss"
                 )
                 amplitude2 = (

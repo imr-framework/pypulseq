@@ -61,6 +61,6 @@ def make_adc(
         adc.duration = dwell * num_samples
 
     if adc.dead_time > adc.delay:
-        adc.delay = adc.dead_time
+        adc.delay = adc.dead_time # dead_time is added before the actual sampling (and also second time after the sampling period)
 
     return adc

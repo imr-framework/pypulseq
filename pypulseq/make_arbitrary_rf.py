@@ -7,6 +7,7 @@ from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.make_delay import make_delay
 from pypulseq.calc_duration import calc_duration
+from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
@@ -17,6 +18,7 @@ def make_arbitrary_rf(
     bandwidth: float = 0,
     delay: float = 0,
     dwell: float = 0,
+    center: float = np.NAN,
     freq_offset: float = 0,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -27,7 +29,7 @@ def make_arbitrary_rf(
     system: Opts = Opts(),
     time_bw_product: float = 0,
     use: str = str(),
-) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
+) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
     """
     Create an RF pulse with the given pulse shape.
 
@@ -112,6 +114,20 @@ def make_arbitrary_rf(
     if rf.dead_time > rf.delay:
         rf.delay = rf.dead_time
 
+    if np.isnan(center):
+        rf.center = center
+        if rf.center < 0: 
+            rf.center = 0
+        if rf.center > rf.shape_dur:
+            rf.center = rf.shape_dur
+
+    if time_bw_product > 0:
+        if bandwidth > 0:
+            raise ValueError("Both 'bandwidth' and 'time_bw_product' cannot be specified at the same time")
+    else:
+        bandwidth = time_bw_product/duration
+
+
     if return_gz:
         if slice_thickness <= 0:
             raise ValueError("Slice thickness must be provided.")
@@ -133,6 +149,10 @@ def make_arbitrary_rf(
             channel="z", system=system, flat_time=duration, flat_area=area
         )
 
+        gzr = make_trapezoid(
+            channel="z", system=system, area=-area*(1-calc_rf_center(rf)/rf.shape_dur)-0.5*(gz.area-area)
+        )
+
         if rf.delay > gz.rise_time:
             # Round-up to gradient raster
             gz.delay = (
@@ -147,8 +167,8 @@ def make_arbitrary_rf(
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
 
     if return_gz and return_delay:
-        return rf, gz, delay
+        return rf, gz, gzr, delay
     elif return_gz:
-        return rf, gz
+        return rf, gz, gzr
     else:
         return rf
