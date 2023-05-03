@@ -66,7 +66,7 @@ def add_gradients(
             is_arb.append(False)
         else:
             tt_rast = grads[ii].tt / system.grad_raster_time + 0.5
-            is_arb.append(np.all(np.abs(tt_rast - np.arange(len(tt_rast)))) < eps)
+            is_arb.append(np.all(np.abs(tt_rast - np.arange(len(tt_rast)))) < 1e-6)
 
     # Convert to numpy.ndarray for fancy-indexing later on
     firsts, lasts = np.array(firsts), np.array(lasts)
@@ -94,7 +94,7 @@ def add_gradients(
         times = []
         for ii in range(len(grads)):
             g = grads[ii]
-            if g.type == "trap":
+            if is_trap[ii]:
                 times.extend(
                     np.cumsum([g.delay, g.rise_time, g.flat_time, g.fall_time])
                 )
@@ -149,7 +149,7 @@ def add_gradients(
     max_length = 0
     for ii in range(len(grads)):
         g = grads[ii]
-        if g.type == "grad":
+        if not is_trap[ii]:
             if is_arb[ii]:
                 waveforms[ii] = g.waveform
             else:
@@ -158,7 +158,7 @@ def add_gradients(
                     times=g.tt,
                     grad_raster_time=system.grad_raster_time,
                 )
-        elif g.type == "trap":
+        else:
             if g.flat_time > 0:  # Triangle or trapezoid
                 times = np.array(
                     [
@@ -187,8 +187,6 @@ def add_gradients(
                 times=times,
                 grad_raster_time=system.grad_raster_time,
             )
-        else:
-            raise ValueError("Unknown gradient type")
 
         if g.delay - common_delay > 0:
             # Stop for numpy.arange is not g.delay - common_delay - system.grad_raster_time like in Matlab
@@ -196,18 +194,21 @@ def add_gradients(
             t_delay = np.arange(0, g.delay - common_delay, step=system.grad_raster_time)
             waveforms[ii] = np.insert(waveforms[ii], 0, t_delay)
 
-        num_points = len(waveforms[ii])
-        max_length = num_points if num_points > max_length else max_length
+        max_length = np.max(max_length, len(waveforms[ii]))
 
     w = np.zeros(max_length)
     for ii in range(len(grads)):
-        wt = np.zeros(max_length)
-        wt[0 : len(waveforms[ii])] = waveforms[ii]
-        w += wt
+        # wt = np.zeros(max_length)
+        # wt[0 : len(waveforms[ii])] = waveforms[ii]
+        # w += wt
+        
+        w[:len(waveforms[ii])] = w[:len(waveforms[ii])] + waveforms[ii]
 
     grad = make_arbitrary_grad(
         channel=channel,
         waveform=w,
+        first=np.sum(firsts[delays==common_delay]),
+        last=np.sum(lasts[delays==common_delay]),
         system=system,
         max_slew=max_slew,
         max_grad=max_grad,
@@ -216,7 +217,7 @@ def add_gradients(
     # Fix the first and the last values
     # First is defined by the sum of firsts with the minimal delay (common_delay)
     # Last is defined by the sum of lasts with the maximum duration (total_duration)
-    grad.first = np.sum(firsts[np.array(delays) == common_delay])
-    grad.last = np.sum(lasts[np.where(durs == total_duration)])
+    # grad.first = np.sum(firsts[np.array(delays) == common_delay])
+    # grad.last = np.sum(lasts[np.where(durs == total_duration)])
 
     return grad

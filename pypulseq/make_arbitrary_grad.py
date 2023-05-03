@@ -8,6 +8,8 @@ from pypulseq.opts import Opts
 def make_arbitrary_grad(
     channel: str,
     waveform: np.ndarray,
+    first: float = np.NAN,
+    last: float = np.NAN,
     delay: float = 0,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -68,10 +70,19 @@ def make_arbitrary_grad(
     grad.channel = channel
     grad.waveform = g
     grad.delay = delay
+    grad.area = np.sum(grad.waveform)
     # True timing and aux shape data
     grad.tt = (np.arange(1, len(g) + 1) - 0.5) * system.grad_raster_time
     grad.shape_dur = len(g) * system.grad_raster_time
-    grad.first = (3 * g[0] - g[1]) * 0.5  # Extrapolate by 1/2 gradient raster
-    grad.last = (g[-1] * 3 - g[-2]) * 0.5  # Extrapolate by 1/2 gradient raster
+    
+    if np.isfinite(first):
+        grad.first = first
+    else:
+        grad.first = (3 * g[0] - g[1]) * 0.5  # Extrapolate by 1/2 gradient of the raster
+    
+    if np.isfinite(last):
+        grad.last = last
+    else:
+        grad.last = (g[-1] * 3 - g[-2]) * 0.5  # Extrapolate by 1/2 gradient of the raster
 
     return grad
