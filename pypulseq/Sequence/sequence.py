@@ -1461,12 +1461,12 @@ class Sequence:
                     out_len[-1] += len(rf.t)
 
                     if np.abs(rf.signal[0]) > 0:
-                        pre = np.array([[rf_piece[0, 0] - 50*eps], [0]], dtype=np.complex128)
+                        pre = np.array([[rf_piece[0, 0] - 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((pre, rf_piece))
                         out_len[-1] += pre.shape[1]
 
                     if np.abs(rf.signal[-1]) > 0:
-                        post = np.array([[rf_piece[0, -1] + 50*eps], [0]], dtype=np.complex128)
+                        post = np.array([[rf_piece[0, -1] + 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]
 
