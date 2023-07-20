@@ -44,7 +44,7 @@ def ext_test_report(self) -> str:
             i2check.append(index_echo + 1)
 
         for a in range(len(i2check)):
-            v_i_to_0 = k_traj_adc[:, index_echo]
+            v_i_to_0 = -k_traj_adc[:, index_echo]
             v_i_to_t = k_traj_adc[:, i2check[a]] - k_traj_adc[:, index_echo]
             # Project v_i_to_0 to v_i_to_t
             p_vit = np.matmul(v_i_to_0, v_i_to_t) / np.square(np.linalg.norm(v_i_to_t))
@@ -112,10 +112,11 @@ def ext_test_report(self) -> str:
 
         k_counters = np.zeros_like(k_traj_rep1)
         dims = k_traj_rep1.shape[0]
-        k_map = dict()
+        
         for j in range(dims):
+            k_map = dict()
             k_storage = np.zeros(k_len)
-            k_storage_next = 1
+            k_storage_next = 0
 
             for i in range(k_traj_rep1.shape[1]):
                 key = np.round(k_traj_rep1[j, i] / k_threshold).astype(np.int32)
@@ -131,7 +132,7 @@ def ext_test_report(self) -> str:
                     k_storage[k_storage_ind] = k_traj_rep1[j, i]
                 k_counters[j, i] = k_storage_ind
 
-        unique_k_positions = np.max(k_counters, axis=1)
+        unique_k_positions = np.max(k_counters, axis=1) + 1
         is_cartesian = np.prod(unique_k_positions) == k_traj_rep1.shape[1]
     else:
         unique_k_positions = 1
@@ -162,8 +163,10 @@ def ext_test_report(self) -> str:
                 right=0,
             )
 
+            # Sometimes there are very small steps in common_time:
+            #   add 1e-10 to resolve instability (adding eps is too small)
             gs_ct[gc] = (gw_ct[gc][1:] - gw_ct[gc][:-1]) / (
-                common_time[1:] - common_time[:-1]
+                common_time[1:] - common_time[:-1] + 1e-10
             )
 
             # Max grad/slew per channel

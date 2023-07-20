@@ -323,6 +323,8 @@ class Sequence:
             wave_cnt = gw_data[j].shape[1]
             if wave_cnt == 0:
                 if np.abs(gradient_offset[j]) <= eps:
+                    gw_pp.append(None)
+                    gw_pp_MATLAB.append(None)
                     continue
                 else:
                     gw = np.array(([0, total_duration], [0, 0]))
@@ -331,12 +333,12 @@ class Sequence:
 
             # Now gw contains the waveform from the current axis
             if np.abs(gradient_delays[j]) > eps:
-                gw[1] = gw[1] - gradient_delays[j]  # Anisotropic gradient delay support
+                gw[0] = gw[0] - gradient_delays[j]  # Anisotropic gradient delay support
             if not np.all(np.isfinite(gw)):
                 raise Warning("Not all elements of the generated waveform are finite.")
 
             teps = 1e-12
-            if gw[0, 0] > 0 and gw[1, -1] < total_duration:
+            if gw[0, 0] > 0 and gw[0, -1] < total_duration:
                 # teps terms to avoid integration errors over extended periods of time
                 _temp1 = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
                 _temp2 = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
@@ -349,19 +351,20 @@ class Sequence:
                 gw = np.hstack((gw, _temp))
 
             if np.abs(gradient_offset[j]) > eps:
-                gw[1:] += gradient_offset[j]
+                gw[1,:] += gradient_offset[j]
 
             gw[1][gw[1] == -0.0] = 0.0
             # Specify window to be same as domain prevent numpy from remapping to [-1, 1]
             polyfit = [
-                np.polynomial.Polynomial.fit(
+                np.polynomial.Polynomial(
+                    [gw[1,i] - (gw[1, i] - gw[1, i+1]) / (gw[0,i] - gw[0,i+1]) * gw[0,i],
+                     (gw[1, i] - gw[1, i+1]) / (gw[0,i] - gw[0,i+1])],
                     gw[0, i : (i + 2)],
-                    gw[1, i : (i + 2)],
-                    deg=1,
-                    window=gw[0, i : (i + 2)],
+                    gw[0, i : (i + 2)]
                 )
                 for i in range(len(gw[0]) - 1)
-            ]
+                ]
+            
             polyfit = np.stack(polyfit)
             gw_pp.append(polyfit)
 
@@ -399,11 +402,13 @@ class Sequence:
             slice_pos = np.zeros((len(gw_data), tfp_excitation.shape[1]))
             for j in range(len(gw_data)):
                 if gw_pp[j] is None:
-                    slice_pos[j] = np.empty_like((1, slice_pos.shape[1]))
+                    slice_pos[j] = np.nan
                 else:
-                    slice_pos[j] = np.divide(
-                        tfp_excitation[1], self.ppval_numpy(gw_pp[j], tfp_excitation[0])
-                    )
+                    # Check for divisions by zero to avoid numpy warning
+                    divisor = np.array(self.ppval_numpy(gw_pp[j], tfp_excitation[0]))
+                    slice_pos[j, divisor != 0.0] = tfp_excitation[1, divisor != 0.0] / divisor[divisor != 0.0]
+                    slice_pos[j, divisor == 0.0] = np.nan
+                    
             slice_pos[~np.isfinite(slice_pos)] = 0  # Reset undefined to 0
             t_slice_pos = tfp_excitation[0]
         else:
@@ -488,7 +493,7 @@ class Sequence:
                     [
                         *tc,
                         0,
-                        *np.array(t_excitation) * 2 - self.rf_raster_time,
+                        *np.array(t_excitation) - 2 * self.rf_raster_time,
                         *np.array(t_excitation) - self.rf_raster_time,
                         *t_excitation,
                         *np.array(t_refocusing) - self.rf_raster_time,
@@ -506,25 +511,25 @@ class Sequence:
         i_adc = np.isin(t_ktraj, t_acc * np.round(t_acc_inv * t_adc))
         i_adc = np.nonzero(i_adc)[0]  # Convert boolean array into indices
 
-        i_periods = np.unique([1, *i_excitation, *i_refocusing, len(t_ktraj) - 1])
+        i_periods = np.unique([0, *i_excitation, *i_refocusing, len(t_ktraj) - 1])
         if len(i_excitation) > 0:
-            ii_next_excitation = 1
-        else:
             ii_next_excitation = 0
-        if len(i_refocusing) > 0:
-            ii_next_refocusing = 1
         else:
+            ii_next_excitation = -1
+        if len(i_refocusing) > 0:
             ii_next_refocusing = 0
+        else:
+            ii_next_refocusing = -1
 
         k_traj = np.zeros((3, len(t_ktraj)))
         for i in range(ng):
             if gw_pp_MATLAB[i] is None:
                 continue
 
-            it = np.logical_and(
+            it = np.where(np.logical_and(
                 t_ktraj >= t_acc * np.round(t_acc_inv * res_breaks[0]),
                 t_ktraj <= t_acc * np.round(t_acc_inv * res_breaks[-1]),
-            )
+            ))[0]
             k_traj[i, it] = self.ppval_MATLAB(gm_pp[i], t_ktraj[it])
             if t_ktraj[it[-1]] < t_ktraj[-1]:
                 k_traj[i, it[-1] + 1 :] = k_traj[i, it[-1]]
@@ -534,13 +539,13 @@ class Sequence:
         for i in range(len(i_periods) - 1):
             i_period = i_periods[i]
             i_period_end = i_periods[i + 1]
-            if ii_next_excitation > 0 and i_excitation[ii_next_excitation] == i_period:
+            if ii_next_excitation >= 0 and i_excitation[ii_next_excitation] == i_period:
                 if np.abs(t_ktraj[i_period] - t_excitation[ii_next_excitation]) > t_acc:
                     raise Warning(
                         f"np.abs(t_ktraj[i_period]-t_excitation[ii_next_excitation]) < {t_acc} failed for ii_next_excitation={ii_next_excitation} error={t_ktraj(i_period) - t_excitation(ii_next_excitation)}"
                     )
                 dk = -k_traj[:, i_period]
-                if i_period > 1:
+                if i_period > 0:
                     # Use nans to mark the excitation points since they interrupt the plots
                     k_traj[:, i_period - 1] = np.NaN
                 # -1 on len(i_excitation) for 0-based indexing
@@ -548,9 +553,9 @@ class Sequence:
                     len(i_excitation) - 1, ii_next_excitation + 1
                 )
             elif (
-                ii_next_refocusing > 0 and i_refocusing[ii_next_refocusing] == i_period
+                ii_next_refocusing >= 0 and i_refocusing[ii_next_refocusing] == i_period
             ):
-                dk = -k_traj[:, i_period]
+                # dk = -k_traj[:, i_period]
                 dk = -2 * k_traj[:, i_period] - dk
                 # -1 on len(i_excitation) for 0-based indexing
                 ii_next_refocusing = np.minimum(
@@ -1422,16 +1427,21 @@ class Sequence:
                             )
                             shape_pieces[j, block_counter] = _temp
                         else:
-                            out_len[j] += 3
-                            _temp = np.vstack(
-                                (
-                                    curr_dur
-                                    + grad.delay
-                                    + np.cumsum([0, grad.rise_time, grad.fall_time]),
-                                    grad.amplitude * np.array([0, 1, 0]),
+                            if np.abs(grad.rise_time) > eps and np.abs(grad.fall_time) > eps:
+                                out_len[j] += 3
+                                _temp = np.vstack(
+                                    (
+                                        curr_dur
+                                        + grad.delay
+                                        + np.cumsum([0, grad.rise_time, grad.fall_time]),
+                                        grad.amplitude * np.array([0, 1, 0]),
+                                    )
                                 )
-                            )
-                            shape_pieces[j, block_counter] = _temp
+                                shape_pieces[j, block_counter] = _temp
+                            else:
+                                if np.abs(grad.amplitude) > eps:
+                                    print('Warning: "empty" gradient with non-zero magnitude detected in block {}'.format(block_counter))
+
             if block.rf is not None:  # RF
                 rf = block.rf
                 t = rf.delay + calc_rf_center(rf)[0]
@@ -1473,8 +1483,7 @@ class Sequence:
 
             if block.adc is not None:  # ADC
                 t_adc.extend(
-                    np.arange(block.adc.num_samples) * block.adc.dwell
-                    + 0.5 * block.adc.dwell
+                    (np.arange(block.adc.num_samples) + 0.5) * block.adc.dwell
                     + block.adc.delay
                     + curr_dur
                 )
@@ -1521,7 +1530,7 @@ class Sequence:
                 wave_data[j] = wave_data[j][:, : wave_cnt[j]]
 
         tfp_excitation = np.array(tfp_excitation).transpose()
-        tfp_refocusing = np.array(tfp_refocusing)
+        tfp_refocusing = np.array(tfp_refocusing).transpose()
         t_adc = np.array(t_adc)
         fp_adc = np.array(fp_adc)
 
