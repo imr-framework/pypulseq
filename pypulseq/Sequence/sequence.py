@@ -882,7 +882,7 @@ class Sequence:
 
         Parameters
         ----------
-        label : str, defualt=str()
+        label : str, default=str()
             Plot label values for ADC events: in this example for LIN and REP labels; other valid labes are accepted as
             a comma-separated list.
         save : bool, default=False
