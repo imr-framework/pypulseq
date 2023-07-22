@@ -6,7 +6,7 @@ import numpy as np
 
 class EventLibrary:
     """
-    Defines an event library ot maintain a list of events. Provides methods to insert new data and find existing data.
+    Defines an event library to maintain a list of events. Provides methods to insert new data and find existing data.
 
     Sequence Properties:
     - keys - A list of event IDs
