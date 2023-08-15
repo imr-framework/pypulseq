@@ -1457,6 +1457,7 @@ class Sequence:
                         [curr_dur + t, block.rf.freq_offset, block.rf.phase_offset]
                     )
                 if append_RF:
+
                     rf_piece = np.array(
                         [
                             curr_dur + rf.delay + rf.t,
@@ -1470,12 +1471,12 @@ class Sequence:
                     out_len[-1] += len(rf.t)
 
                     if np.abs(rf.signal[0]) > 0:
-                        pre = np.array([[curr_dur + rf.delay + rf.t[0] - eps], [0]])
+                        pre = np.array([[rf_piece[0, 0] - 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((pre, rf_piece))
                         out_len[-1] += pre.shape[1]
 
                     if np.abs(rf.signal[-1]) > 0:
-                        post = np.array([[curr_dur + rf.delay + rf.t[-1] + eps], [0]])
+                        post = np.array([[rf_piece[0, -1] + 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]
 
@@ -1519,10 +1520,14 @@ class Sequence:
                             :, wave_cnt[j] + np.arange(length - 1)
                         ] = wave_data_local[:, 1:]
                         wave_cnt[j] += length - 1
-                    if wave_cnt[j] != len(np.unique(wave_data[j][0, : wave_cnt[j]])):
+
+                    rftdiff = np.diff(wave_data[j][0, : wave_cnt[j]])
+                    if np.any(rftdiff < eps):
                         raise Warning(
-                            "Not all elements of the generated time vector are unique."
+                            "Time vector elements are not monotonically increasing."
                         )
+
+
 
         # Trim output data
         for j in range(shape_channels):
