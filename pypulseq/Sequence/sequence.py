@@ -956,7 +956,8 @@ class Sequence:
         if len(label_idx_to_plot) != 0:
             p = parula.main(len(label_idx_to_plot) + 1)
             label_colors_to_plot = p(np.arange(len(label_idx_to_plot)))
-            label_colors_to_plot = np.roll(label_colors_to_plot, -1, axis=0).tolist()
+            cycler = mpl.cycler(color=label_colors_to_plot)
+            sp11.set_prop_cycle(cycler)
 
         # Block timings
         block_edges = np.cumsum([0, *self.block_durations])
@@ -970,7 +971,8 @@ class Sequence:
 
         for block_counter in range(len(self.block_events)):
             block = self.get_block(block_counter + 1)
-            is_valid = time_range[0] <= t0 <= time_range[1]
+            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter] and
+                        t0 <= time_range[1])
             if is_valid:
                 if getattr(block, "label", None) is not None:
                     for i in range(len(block.label)):
@@ -997,11 +999,6 @@ class Sequence:
                     )
 
                     if label_defined and len(label_idx_to_plot) != 0:
-                        cycler = mpl.cycler(color=label_colors_to_plot)
-                        sp11.set_prop_cycle(cycler)
-                        label_colors_to_plot = np.roll(
-                            label_colors_to_plot, -1, axis=0
-                        ).tolist()
                         arr_label_store = list(label_store.values())
                         lbl_vals = np.take(arr_label_store, label_idx_to_plot)
                         t = t0 + adc.delay + (adc.num_samples - 1) / 2 * adc.dwell
@@ -1512,7 +1509,7 @@ class Sequence:
                     length = wave_data_local.shape[1]
                     if (
                         wave_cnt[j] == 0
-                        or wave_data[j][0, wave_cnt[j] - 1] < wave_data_local[0, 0]
+                        or wave_data[j][0, wave_cnt[j] - 1]+eps < wave_data_local[0, 0]
                     ):
                         wave_data[j][
                             :, wave_cnt[j] + np.arange(length)
@@ -1524,7 +1521,7 @@ class Sequence:
                         ] = wave_data_local[:, 1:]
                         wave_cnt[j] += length - 1
 
-            rftdiff = np.diff(wave_data[j][0])
+            rftdiff = np.diff(wave_data[j][0,:wave_cnt[j]])
             if np.any(rftdiff < eps):
                 raise Warning(
                     "Time vector elements are not monotonically increasing."
