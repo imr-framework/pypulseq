@@ -1391,13 +1391,16 @@ class Sequence:
                             but first we have to restore samples on the edges of the gradient raster intervals for that
                             we need the first sample.
                             """
-                            max_abs = np.max(np.abs(grad.waveform))
-                            odd_step1 = np.array([grad.first, *(2 * grad.waveform)])
-                            odd_step2 = odd_step1 * (
-                                np.mod(np.arange(1, len(odd_step1) + 1), 2) * 2 - 1
-                            )
-                            waveform_odd_rest = np.cumsum(odd_step2) * (
-                                np.mod(np.arange(1, len(odd_step2)), 2) * 2 - 1
+                            
+                            # TODO: Implement restoreAdditionalShapeSamples
+                            #       https://github.com/pulseq/pulseq/blob/master/matlab/%2Bmr/restoreAdditionalShapeSamples.m
+                            
+                            out_len[j] += len(grad.tt)
+                            shape_pieces[j, block_counter] = np.array(
+                                [
+                                    curr_dur + grad.delay + grad.tt,
+                                    grad.waveform,
+                                ]
                             )
                         else:  # Extended trapezoid
                             out_len[j] += len(grad.tt)
@@ -1502,14 +1505,14 @@ class Sequence:
             wave_data[j] = np.zeros((2, int(out_len[j])), dtype=np.complex128)
 
         wave_cnt = np.zeros(shape_channels, dtype=int)
-        for block_counter in range(num_blocks):
-            for j in range(shape_channels):
+        for j in range(shape_channels):
+            for block_counter in range(num_blocks):
                 if shape_pieces[j, block_counter] is not None:
                     wave_data_local = shape_pieces[j, block_counter]
                     length = wave_data_local.shape[1]
                     if (
                         wave_cnt[j] == 0
-                        or wave_data[j][0, wave_cnt[j] - 1] != wave_data_local[0, 0]
+                        or wave_data[j][0, wave_cnt[j] - 1] < wave_data_local[0, 0]
                     ):
                         wave_data[j][
                             :, wave_cnt[j] + np.arange(length)
@@ -1521,11 +1524,11 @@ class Sequence:
                         ] = wave_data_local[:, 1:]
                         wave_cnt[j] += length - 1
 
-                    rftdiff = np.diff(wave_data[j][0, : wave_cnt[j]])
-                    if np.any(rftdiff < eps):
-                        raise Warning(
-                            "Time vector elements are not monotonically increasing."
-                        )
+            rftdiff = np.diff(wave_data[j][0])
+            if np.any(rftdiff < eps):
+                raise Warning(
+                    "Time vector elements are not monotonically increasing."
+                )
 
 
 

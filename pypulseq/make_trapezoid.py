@@ -130,7 +130,7 @@ def make_trapezoid(
                     fall_time = rise_time
                 amplitude2 = area / (duration - 0.5 * rise_time - 0.5 * fall_time)
                 possible = (
-                    duration > (rise_time + fall_time) and np.abs(amplitude2) < max_grad
+                    duration >= (rise_time + fall_time) and np.abs(amplitude2) <= max_grad
                 )
                 assert possible, (
                     f"Requested area is too large for this gradient. Probably amplitude is violated "
@@ -153,7 +153,7 @@ def make_trapezoid(
             # Adjust amplitude (after rounding) to match area
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
     else:
-        if area == 0:
+        if area == None:
             raise ValueError("Must supply area or duration.")
         else:
             # Find the shortest possible duration. First check if the area can be realized as a triangle.
