@@ -1460,7 +1460,7 @@ class Sequence:
 
                     rf_piece = np.array(
                         [
-                            curr_dur + rf.delay + rf.t,
+                            np.rint((curr_dur + rf.delay + rf.t)*1e9), # [s] -> [ns]
                             rf.signal
                             * np.exp(
                                 1j
@@ -1470,13 +1470,14 @@ class Sequence:
                     )
                     out_len[-1] += len(rf.t)
 
+                    # If waveform does not start and end with 0, force it to 0 by adding 1ns shifted 0 on both sides.
                     if np.abs(rf.signal[0]) > 0:
-                        pre = np.array([[rf_piece[0, 0] - 0.1*self.system.rf_raster_time], [0]])
+                        pre = np.array([[rf_piece[0, 0] - 1], [0]])
                         rf_piece = np.hstack((pre, rf_piece))
                         out_len[-1] += pre.shape[1]
 
                     if np.abs(rf.signal[-1]) > 0:
-                        post = np.array([[rf_piece[0, -1] + 0.1*self.system.rf_raster_time], [0]])
+                        post = np.array([[rf_piece[0, -1] + 1], [0]])
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]
 
@@ -1534,6 +1535,9 @@ class Sequence:
             if wave_cnt[j] < wave_data[j].shape[1]:
                 wave_data[j] = wave_data[j][:, : wave_cnt[j]]
 
+        # TMP: Convert RF time units [ns] -> [s]. 
+        # This will potentially cause repeating time points for long sequences due to floating-point precision issues.
+        wave_data[-1][0,:] = wave_data[-1][0,:]*1e-9
         tfp_excitation = np.array(tfp_excitation).transpose()
         tfp_refocusing = np.array(tfp_refocusing).transpose()
         t_adc = np.array(t_adc)
