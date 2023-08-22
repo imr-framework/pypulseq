@@ -1360,7 +1360,7 @@ class Sequence:
         else:
             shape_channels = len(grad_channels)
 
-        shape_pieces = np.empty((shape_channels, num_blocks), dtype="object")
+        shape_pieces = [[] for _ in range(shape_channels)]
         # Also collect RF and ADC timing data
         # t_excitation, t_refocusing, t_adc
         tfp_excitation = []
@@ -1393,20 +1393,20 @@ class Sequence:
                             #       https://github.com/pulseq/pulseq/blob/master/matlab/%2Bmr/restoreAdditionalShapeSamples.m
                             
                             out_len[j] += len(grad.tt)
-                            shape_pieces[j, block_counter] = np.array(
+                            shape_pieces[j].append(np.array(
                                 [
                                     curr_dur + grad.delay + grad.tt,
                                     grad.waveform,
                                 ]
-                            )
+                            ))
                         else:  # Extended trapezoid
                             out_len[j] += len(grad.tt)
-                            shape_pieces[j, block_counter] = np.array(
+                            shape_pieces[j].append(np.array(
                                 [
                                     curr_dur + grad.delay + grad.tt,
                                     grad.waveform,
                                 ]
-                            )
+                            ))
                     else:
                         if np.abs(grad.flat_time) > eps:
                             out_len[j] += 4
@@ -1425,7 +1425,7 @@ class Sequence:
                                     grad.amplitude * np.array([0, 1, 1, 0]),
                                 )
                             )
-                            shape_pieces[j, block_counter] = _temp
+                            shape_pieces[j].append(_temp)
                         else:
                             if np.abs(grad.rise_time) > eps and np.abs(grad.fall_time) > eps:
                                 out_len[j] += 3
@@ -1437,7 +1437,7 @@ class Sequence:
                                         grad.amplitude * np.array([0, 1, 0]),
                                     )
                                 )
-                                shape_pieces[j, block_counter] = _temp
+                                shape_pieces[j].append(_temp)
                             else:
                                 if np.abs(grad.amplitude) > eps:
                                     print('Warning: "empty" gradient with non-zero magnitude detected in block {}'.format(block_counter))
@@ -1480,7 +1480,7 @@ class Sequence:
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]
 
-                    shape_pieces[-1, block_counter] = rf_piece
+                    shape_pieces[-1].append(rf_piece)
 
             if block.adc is not None:  # ADC
                 t_adc.extend(
@@ -1493,46 +1493,28 @@ class Sequence:
             curr_dur += self.block_durations[block_counter]
 
         # Collect wave data
-        wave_data = np.empty(shape_channels, dtype="object")
+        wave_data = []
+
         for j in range(shape_channels):
-            wave_data[j] = np.zeros((2, int(out_len[j])))
+            if shape_pieces[j] == []:
+                wave_data.append(np.zeros((2,0)))
+                continue
+            
+            # If the first element of the next shape has the same time as
+            # the last element of the previous shape, drop the first
+            # element of the next shape.
+            shape_pieces[j] = ([shape_pieces[j][0]] +
+                               [cur if prev[0,-1]+eps < cur[0,0] else cur[:,1:]
+                                for prev,cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:])])
 
-        # TODO: This is weird, and needs to be fixed. Time points are also complex this way, and spends 4 times more memory than necessary.
-        if append_RF:
-            wave_data[j] = np.zeros((2, int(out_len[j])), dtype=np.complex128)
+            wave_data.append(np.concatenate(shape_pieces[j], axis=1))
 
-        wave_cnt = np.zeros(shape_channels, dtype=int)
         for j in range(shape_channels):
-            for block_counter in range(num_blocks):
-                if shape_pieces[j, block_counter] is not None:
-                    wave_data_local = shape_pieces[j, block_counter]
-                    length = wave_data_local.shape[1]
-                    if (
-                        wave_cnt[j] == 0
-                        or wave_data[j][0, wave_cnt[j] - 1]+eps < wave_data_local[0, 0]
-                    ):
-                        wave_data[j][
-                            :, wave_cnt[j] + np.arange(length)
-                        ] = wave_data_local
-                        wave_cnt[j] += length
-                    else:
-                        wave_data[j][
-                            :, wave_cnt[j] + np.arange(length - 1)
-                        ] = wave_data_local[:, 1:]
-                        wave_cnt[j] += length - 1
-
-            rftdiff = np.diff(wave_data[j][0,:wave_cnt[j]])
+            rftdiff = np.diff(wave_data[j][0])
             if np.any(rftdiff < eps):
                 raise Warning(
                     "Time vector elements are not monotonically increasing."
                 )
-
-
-
-        # Trim output data
-        for j in range(shape_channels):
-            if wave_cnt[j] < wave_data[j].shape[1]:
-                wave_data[j] = wave_data[j][:, : wave_cnt[j]]
 
         tfp_excitation = np.array(tfp_excitation).transpose()
         tfp_refocusing = np.array(tfp_refocusing).transpose()
