@@ -17,6 +17,7 @@ from pypulseq.Sequence import block, parula
 from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
+from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.decompress_shape import decompress_shape
@@ -570,6 +571,40 @@ class Sequence:
         k_traj_adc = k_traj[:, i_adc]
 
         return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
+    
+    def calculate_pns(
+            self, hardware: SimpleNamespace, do_plots: bool = True
+            ) -> Tuple[bool, np.array, np.ndarray, np.array]:
+        """
+        Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
+        See http://github.com/filip-szczepankiewicz/safe_pns_prediction
+        
+        Returns pns levels due to respective axes (normalized to 1 and not to 100#)
+        
+        Parameters
+        ----------
+        hardware : SimpleNamespace
+            Hardware specifications. See safe_example_hw() from
+            the safe_pns_prediction package. Alternatively a text file
+            in the .asc format (Siemens) can be passed, e.g. for Prisma
+            it is MP_GPA_K2309_2250V_951A_AS82.asc (we leave it as an
+            exercise to the interested user to find were these files
+            can be acquired from)
+        do_plots : bool, optional
+            Plot the results from the PNS calculations. The default is True.
+
+        Returns
+        -------
+        ok : bool
+            Boolean flag indicating whether peak PNS is within acceptable limits
+        pns_norm : numpy.array [N]
+            PNS norm over all gradient channels, normalized to 1
+        pns_components : numpy.array [Nx3]
+            PNS levels per gradient channel
+        t_pns : np.array [N]
+            Time axis for the pns_norm and pns_components arrays
+        """
+        return calc_pns(self, hardware, do_plots=do_plots)
 
     def check_timing(self) -> Tuple[bool, List[str]]:
         """
