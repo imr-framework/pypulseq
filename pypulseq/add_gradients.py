@@ -45,9 +45,11 @@ def add_gradients(
     if max_slew <= 0:
         max_slew = system.max_slew
 
-    if len(grads) < 2:
-        raise ValueError("Cannot add less than two gradients")
-
+    if len(grads) == 0:
+        raise ValueError("No gradients specified")
+    if len(grads) == 1:
+        return grads[0]
+    
     # First gradient defines channel
     channel = grads[0].channel
 
@@ -65,7 +67,7 @@ def add_gradients(
         if is_trap[-1]:
             is_arb.append(False)
         else:
-            tt_rast = grads[ii].tt / system.grad_raster_time + 0.5
+            tt_rast = grads[ii].tt / system.grad_raster_time - 0.5
             is_arb.append(np.all(np.abs(tt_rast - np.arange(len(tt_rast)))) < eps)
 
     # Convert to numpy.ndarray for fancy-indexing later on
@@ -103,13 +105,13 @@ def add_gradients(
 
         times = np.sort(np.unique(times))
         dt = times[1:] - times[:-1]
-        ieps = dt < eps
+        ieps = np.flatnonzero(dt < eps)
         if np.any(ieps):
-            dtx = [times[0], *dt]
+            dtx = np.array([times[0], *dt])
             dtx[ieps] = (
                 dtx[ieps] + dtx[ieps + 1]
             )  # Assumes that no more than two too similar values can occur
-            dtx[ieps + 1] = []
+            dtx = np.delete(dtx, ieps + 1)
             times = np.cumsum(dtx)
 
         amplitudes = np.zeros_like(times)

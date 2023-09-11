@@ -5,6 +5,7 @@ import numpy as np
 
 from pypulseq.add_gradients import add_gradients
 from pypulseq.scale_grad import scale_grad
+from pypulseq.opts import Opts
 
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:
@@ -17,6 +18,7 @@ def rotate(
     *args: SimpleNamespace,
     angle: float,
     axis: str,
+    system=Opts()
 ) -> List[SimpleNamespace]:
     """
     Rotates the corresponding gradient(s) about the given axis by the specified amount. Gradients parallel to the
@@ -85,7 +87,7 @@ def rotate(
         max_mag = np.max((max_mag, __get_grad_abs_mag(g)))
         rotated2.append(scale_grad(grad=g, scale=np.cos(angle)))
         g = scale_grad(grad=g, scale=-np.sin(angle))
-        g.channel = axes_to_rotate[1]
+        g.channel = axes_to_rotate[0]
         rotated1.append(g)
 
     # Eliminate zero-amplitude gradients
@@ -99,17 +101,11 @@ def rotate(
 
     # Add gradients on the corresponding axis together
     g = []
-    if len(rotated1) > 1:
-        g.append(add_gradients(grads=rotated1))
-    else:
-        if len(rotated1) != 0:
-            g.append(rotated1[0])
+    if len(rotated1) != 0:
+        g.append(add_gradients(grads=rotated1, system=system))
 
-    if len(rotated2) > 1:
-        g.append(add_gradients(grads=rotated2))
-    else:
-        if len(rotated2) != 0:
-            g.append(rotated2[0])
+    if len(rotated2) != 0:
+        g.append(add_gradients(grads=rotated2, system=system))
 
     # Eliminate zero amplitude gradients
     for i in range(len(g) - 1, -1, -1):
