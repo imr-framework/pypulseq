@@ -1392,11 +1392,11 @@ class Sequence:
                             # TODO: Implement restoreAdditionalShapeSamples
                             #       https://github.com/pulseq/pulseq/blob/master/matlab/%2Bmr/restoreAdditionalShapeSamples.m
                             
-                            out_len[j] += len(grad.tt)
+                            out_len[j] += len(grad.tt)+2
                             shape_pieces[j].append(np.array(
                                 [
-                                    curr_dur + grad.delay + grad.tt,
-                                    grad.waveform,
+                                    curr_dur + grad.delay + np.concatenate(([0], grad.tt, [grad.tt[-1] + self.grad_raster_time/2])),
+                                    np.concatenate(([grad.first], grad.waveform, [grad.last]))
                                 ]
                             ))
                         else:  # Extended trapezoid
@@ -1509,7 +1509,6 @@ class Sequence:
 
             wave_data.append(np.concatenate(shape_pieces[j], axis=1))
 
-        for j in range(shape_channels):
             rftdiff = np.diff(wave_data[j][0])
             if np.any(rftdiff < eps):
                 raise Warning(
