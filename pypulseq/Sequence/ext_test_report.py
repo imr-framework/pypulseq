@@ -140,7 +140,7 @@ def ext_test_report(self) -> str:
     # gw_data = self.gradient_waveforms()
     waveforms_and_times = self.waveforms_and_times()
     gw_data = waveforms_and_times[0]
-    gws = np.zeros_like(gw_data)
+    gws = [np.zeros_like(x) for x in gw_data]
     ga = np.zeros(len(gw_data))
     gs = np.zeros(len(gw_data))
 
