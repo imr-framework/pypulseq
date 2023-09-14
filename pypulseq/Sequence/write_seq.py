@@ -67,9 +67,9 @@ def write(self, file_name: str, create_signature) -> None:
             block_duration = (
                 self.block_durations[block_counter] / self.block_duration_raster
             )
-            block_duration_rounded = int(np.round(block_duration))
+            block_duration_rounded = round(block_duration)
 
-            assert np.abs(block_duration_rounded - block_duration) < 1e-6
+            assert abs(block_duration_rounded - block_duration) < 1e-6
 
             s = id_format_str.format(
                 *(
@@ -96,7 +96,7 @@ def write(self, file_name: str, create_signature) -> None:
                 lib_data1 = self.rf_library.data[k][0:4]
                 lib_data2 = self.rf_library.data[k][5:7]
                 delay = (
-                    np.round(self.rf_library.data[k][4] / self.rf_raster_time)
+                    round(self.rf_library.data[k][4] / self.rf_raster_time)
                     * self.rf_raster_time
                     * 1e6
                 )
@@ -122,7 +122,7 @@ def write(self, file_name: str, create_signature) -> None:
                 s = id_format_str.format(
                     k,
                     *self.grad_library.data[k][:3],
-                    np.round(self.grad_library.data[k][3] * 1e6),
+                    round(self.grad_library.data[k][3] * 1e6),
                 )
                 output_file.write(s)
             output_file.write("\n")

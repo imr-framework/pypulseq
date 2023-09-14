@@ -34,28 +34,24 @@ def calc_duration(*args: SimpleNamespace) -> float:
             )
 
         if event.type == "delay":
-            duration = np.max([duration, event.delay])
+            duration = max(duration, event.delay)
         elif event.type == "rf":
-            duration = np.max(
-                [duration, event.delay + event.shape_dur + event.ringdown_time]
+            duration = max(
+                duration, event.delay + event.shape_dur + event.ringdown_time
             )
         elif event.type == "grad":
-            duration = np.max([duration, event.delay + event.shape_dur])
+            duration = max(duration, event.delay + event.shape_dur)
         elif event.type == "adc":
-            duration = np.max(
-                [
+            duration = max(
                     duration,
                     event.delay + event.num_samples * event.dwell + event.dead_time,
-                ]
             )
         elif event.type == "trap":
-            duration = np.max(
-                [
+            duration = max(
                     duration,
                     event.delay + event.rise_time + event.flat_time + event.fall_time,
-                ]
             )
         elif event.type == "output" or event.type == "trigger":
-            duration = np.max([duration, event.delay + event.duration])
+            duration = max(duration, event.delay + event.duration)
 
     return duration

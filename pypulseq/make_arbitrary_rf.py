@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from typing import Tuple, Union
 
 import numpy as np
+import math
 
 from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
@@ -136,7 +137,7 @@ def make_arbitrary_rf(
         if rf.delay > gz.rise_time:
             # Round-up to gradient raster
             gz.delay = (
-                np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
                 * system.grad_raster_time
             )
 

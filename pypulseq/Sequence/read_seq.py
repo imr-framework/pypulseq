@@ -225,7 +225,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             if self.grad_library.type[i] == "t":
                 if self.grad_library.data[i][1] == 0:
                     if (
-                        np.abs(self.grad_library.data[i][0]) == 0
+                        abs(self.grad_library.data[i][0]) == 0
                         and self.grad_library.data[i][2] > 0
                     ):
                         self.grad_library.data[i][2] -= self.grad_raster_time
@@ -233,7 +233,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
 
                 if self.grad_library.data[i][3] == 0:
                     if (
-                        np.abs(self.grad_library.data[i][0]) == 0
+                        abs(self.grad_library.data[i][0]) == 0
                         and self.grad_library.data[i][2] > 0
                     ):
                         self.grad_library.data[i][2] -= self.grad_raster_time

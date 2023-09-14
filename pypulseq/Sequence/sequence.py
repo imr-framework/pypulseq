@@ -323,7 +323,7 @@ class Sequence:
         for j in range(ng):
             wave_cnt = gw_data[j].shape[1]
             if wave_cnt == 0:
-                if np.abs(gradient_offset[j]) <= eps:
+                if abs(gradient_offset[j]) <= eps:
                     gw_pp.append(None)
                     gw_pp_MATLAB.append(None)
                     continue
@@ -333,7 +333,7 @@ class Sequence:
                 gw = gw_data[j]
 
             # Now gw contains the waveform from the current axis
-            if np.abs(gradient_delays[j]) > eps:
+            if abs(gradient_delays[j]) > eps:
                 gw[0] = gw[0] - gradient_delays[j]  # Anisotropic gradient delay support
             if not np.all(np.isfinite(gw)):
                 raise Warning("Not all elements of the generated waveform are finite.")
@@ -351,7 +351,7 @@ class Sequence:
                 _temp = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
                 gw = np.hstack((gw, _temp))
 
-            if np.abs(gradient_offset[j]) > eps:
+            if abs(gradient_offset[j]) > eps:
                 gw[1,:] += gradient_offset[j]
 
             gw[1][gw[1] == -0.0] = 0.0
@@ -463,8 +463,8 @@ class Sequence:
                 for j in range(len(ii)):
                     res = (
                         np.arange(
-                            np.floor(float(res_breaks[ii[j]] / self.grad_raster_time)),
-                            np.ceil(
+                            math.floor(float(res_breaks[ii[j]] / self.grad_raster_time)),
+                            math.ceil(
                                 (res_breaks[ii[j] + 1] / self.grad_raster_time) + 1
                             ),
                         )
@@ -528,8 +528,8 @@ class Sequence:
                 continue
 
             it = np.where(np.logical_and(
-                t_ktraj >= t_acc * np.round(t_acc_inv * res_breaks[0]),
-                t_ktraj <= t_acc * np.round(t_acc_inv * res_breaks[-1]),
+                t_ktraj >= t_acc * round(t_acc_inv * res_breaks[0]),
+                t_ktraj <= t_acc * round(t_acc_inv * res_breaks[-1]),
             ))[0]
             k_traj[i, it] = self.ppval_MATLAB(gm_pp[i], t_ktraj[it])
             if t_ktraj[it[-1]] < t_ktraj[-1]:
@@ -541,9 +541,9 @@ class Sequence:
             i_period = i_periods[i]
             i_period_end = i_periods[i + 1]
             if ii_next_excitation >= 0 and i_excitation[ii_next_excitation] == i_period:
-                if np.abs(t_ktraj[i_period] - t_excitation[ii_next_excitation]) > t_acc:
+                if abs(t_ktraj[i_period] - t_excitation[ii_next_excitation]) > t_acc:
                     raise Warning(
-                        f"np.abs(t_ktraj[i_period]-t_excitation[ii_next_excitation]) < {t_acc} failed for ii_next_excitation={ii_next_excitation} error={t_ktraj(i_period) - t_excitation(ii_next_excitation)}"
+                        f"abs(t_ktraj[i_period]-t_excitation[ii_next_excitation]) < {t_acc} failed for ii_next_excitation={ii_next_excitation} error={t_ktraj(i_period) - t_excitation(ii_next_excitation)}"
                     )
                 dk = -k_traj[:, i_period]
                 if i_period > 0:
@@ -630,7 +630,7 @@ class Sequence:
             is_ok = is_ok and res
 
             # Check the stored total block duration
-            if np.abs(duration - self.block_durations[block_counter]) > eps:
+            if abs(duration - self.block_durations[block_counter]) > eps:
                 rep += "Inconsistency between the stored block duration and the duration of the block content"
                 is_ok = False
                 duration = self.block_durations[block_counter]
@@ -1054,12 +1054,12 @@ class Sequence:
                     tc, ic = calc_rf_center(rf)
                     time = rf.t
                     signal = rf.signal
-                    if np.abs(signal[0]) != 0:
+                    if abs(signal[0]) != 0:
                         signal = np.insert(signal, obj=0, values=0)
                         time = np.insert(time, obj=0, values=time[0])
                         ic += 1
 
-                    if np.abs(signal[-1]) != 0:
+                    if abs(signal[-1]) != 0:
                         signal = np.append(signal, 0)
                         time = np.append(time, time[-1])
 
@@ -1259,7 +1259,7 @@ class Sequence:
             compressed.data = shape_data[1:]
             rf.t = decompress_shape(compressed) * self.rf_raster_time
             rf.shape_dur = (
-                np.ceil((rf.t[-1] - eps) / self.rf_raster_time) * self.rf_raster_time
+                math.ceil((rf.t[-1] - eps) / self.rf_raster_time) * self.rf_raster_time
             )
         else:  # Generate default time raster on the fly
             rf.t = (np.arange(1, len(rf.signal) + 1) - 0.5) * self.rf_raster_time
@@ -1443,7 +1443,7 @@ class Sequence:
                                 ]
                             ))
                     else:
-                        if np.abs(grad.flat_time) > eps:
+                        if abs(grad.flat_time) > eps:
                             out_len[j] += 4
                             _temp = np.vstack(
                                 (
@@ -1462,7 +1462,7 @@ class Sequence:
                             )
                             shape_pieces[j].append(_temp)
                         else:
-                            if np.abs(grad.rise_time) > eps and np.abs(grad.fall_time) > eps:
+                            if abs(grad.rise_time) > eps and abs(grad.fall_time) > eps:
                                 out_len[j] += 3
                                 _temp = np.vstack(
                                     (
@@ -1474,7 +1474,7 @@ class Sequence:
                                 )
                                 shape_pieces[j].append(_temp)
                             else:
-                                if np.abs(grad.amplitude) > eps:
+                                if abs(grad.amplitude) > eps:
                                     print('Warning: "empty" gradient with non-zero magnitude detected in block {}'.format(block_counter))
 
             if block.rf is not None:  # RF
@@ -1505,12 +1505,12 @@ class Sequence:
                     )
                     out_len[-1] += len(rf.t)
 
-                    if np.abs(rf.signal[0]) > 0:
+                    if abs(rf.signal[0]) > 0:
                         pre = np.array([[rf_piece[0, 0] - 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((pre, rf_piece))
                         out_len[-1] += pre.shape[1]
 
-                    if np.abs(rf.signal[-1]) > 0:
+                    if abs(rf.signal[-1]) > 0:
                         post = np.array([[rf_piece[0, -1] + 0.1*self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]

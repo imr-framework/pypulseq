@@ -1,3 +1,4 @@
+import math
 from types import SimpleNamespace
 from typing import Tuple, List, Union
 
@@ -62,12 +63,12 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 grad_start = (
                     event.delay
-                    + np.floor(event.tt[0] / self.grad_raster_time + 1e-10)
+                    + math.floor(event.tt[0] / self.grad_raster_time + 1e-10)
                     * self.grad_raster_time
                 )
                 grad_duration = (
                     event.delay
-                    + np.ceil(event.tt[-1] / self.grad_raster_time - 1e-10)
+                    + math.ceil(event.tt[-1] / self.grad_raster_time - 1e-10)
                     * self.grad_raster_time
                 )
 
@@ -82,7 +83,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     grad_id, _ = register_grad_event(self, event)
 
                 self.block_events[block_index][idx] = grad_id
-                duration = np.max([duration, grad_duration])
+                duration = max(duration, grad_duration)
             elif event.type == "trap":
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
@@ -106,14 +107,12 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     trap_id = register_grad_event(self, event)
 
                 self.block_events[block_index][idx] = trap_id
-                duration = np.max(
-                    [
+                duration = max(
                         duration,
                         event.delay
                         + event.rise_time
                         + event.flat_time
-                        + event.fall_time,
-                    ]
+                        + event.fall_time
                 )
             elif event.type == "adc":
                 if hasattr(event, "id"):
@@ -122,14 +121,12 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     adc_id = register_adc_event(self, event)
 
                 self.block_events[block_index][5] = adc_id
-                duration = np.max(
-                    [
+                duration = max(
                         duration,
-                        event.delay + event.num_samples * event.dwell + event.dead_time,
-                    ]
+                        event.delay + event.num_samples * event.dwell + event.dead_time
                 )
             elif event.type == "delay":
-                duration = np.max([duration, event.delay])
+                duration = max(duration, event.delay)
             elif event.type in ["output", "trigger"]:
                 if hasattr(event, "id"):
                     event_id = event.id
@@ -138,7 +135,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 ext = {"type": self.get_extension_type_ID("TRIGGERS"), "ref": event_id}
                 extensions.append(ext)
-                duration = np.max([duration, event.delay + event.duration])
+                duration = max(duration, event.delay + event.duration)
             elif event.type in ["labelset", "labelinc"]:
                 if hasattr(event, "id"):
                     label_id = event.id

@@ -49,15 +49,15 @@ def split_gradient_at(
 
     grad_raster_time = system.grad_raster_time
 
-    time_index = np.round(time_point / grad_raster_time)
+    time_index = round(time_point / grad_raster_time)
     # Work around floating-point arithmetic limitation
-    time_point = np.round(time_index * grad_raster_time, 6)
+    time_point = round(time_index * grad_raster_time, 6)
     channel = grad.channel
 
     if grad.type == "grad":
         # Check if we have an arbitrary gradient or an extended trapezoid
-        if np.abs(grad.tt[-1] - 0.5 * grad_raster_time) < 1e-10 and np.all(
-            np.abs(grad.tt[1:] - grad.tt[:-1] - grad_raster_time) < 1e-10
+        if abs(grad.tt[-1] - 0.5 * grad_raster_time) < 1e-10 and np.all(
+            abs(grad.tt[1:] - grad.tt[:-1] - grad_raster_time) < 1e-10
         ):
             # Arbitrary gradient -- trivial conversion
             # If time point is out of range we have nothing to do
@@ -81,10 +81,10 @@ def split_gradient_at(
             times = grad.tt
             amplitudes = grad.waveform
     elif grad.type == "trap":
-        grad.delay = np.round(grad.delay / grad_raster_time) * grad_raster_time
-        grad.rise_time = np.round(grad.rise_time / grad_raster_time) * grad_raster_time
-        grad.flat_time = np.round(grad.flat_time / grad_raster_time) * grad_raster_time
-        grad.fall_time = np.round(grad.fall_time / grad_raster_time) * grad_raster_time
+        grad.delay = round(grad.delay / grad_raster_time) * grad_raster_time
+        grad.rise_time = round(grad.rise_time / grad_raster_time) * grad_raster_time
+        grad.flat_time = round(grad.flat_time / grad_raster_time) * grad_raster_time
+        grad.fall_time = round(grad.fall_time / grad_raster_time) * grad_raster_time
 
         # Prepare the extended trapezoid structure
         if grad.flat_time == 0:

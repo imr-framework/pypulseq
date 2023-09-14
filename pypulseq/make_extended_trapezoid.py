@@ -80,8 +80,8 @@ def make_extended_trapezoid(
         )
 
     if (
-        np.abs(
-            np.round(times[-1] / system.grad_raster_time) * system.grad_raster_time
+        abs(
+            round(times[-1] / system.grad_raster_time) * system.grad_raster_time
             - times[-1]
         )
         > eps
@@ -130,11 +130,11 @@ def make_extended_trapezoid(
         grad.channel = channel
         grad.waveform = amplitudes
         grad.delay = (
-            np.round(times[0] / system.grad_raster_time) * system.grad_raster_time
+            round(times[0] / system.grad_raster_time) * system.grad_raster_time
         )
         grad.tt = times - grad.delay
         grad.shape_dur = (
-            np.round(times[-1] / system.grad_raster_time) * system.grad_raster_time
+            round(times[-1] / system.grad_raster_time) * system.grad_raster_time
         )
 
     grad.first = amplitudes[0]

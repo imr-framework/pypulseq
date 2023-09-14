@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 
@@ -9,7 +10,7 @@ def round_half_up(n, decimals=0):
     Avoid banker's rounding inconsistencies; from https://realpython.com/python-rounding/#rounding-half-up
     """
     multiplier = 10**decimals
-    return np.floor(np.abs(n) * multiplier + 0.5) / multiplier
+    return math.floor(abs(n) * multiplier + 0.5) / multiplier
 
 
 # =========

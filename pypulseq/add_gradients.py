@@ -136,7 +136,7 @@ def add_gradients(
             if t_min < eps:
                 tt[-1] = times[i_min]
 
-            if np.abs(g.waveform[0]) > eps and tt[0] > eps:
+            if abs(g.waveform[0]) > eps and tt[0] > eps:
                 tt[0] += eps
 
             amplitudes += np.interp(xp=tt, fp=g.waveform, x=times)
