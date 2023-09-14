@@ -7,6 +7,7 @@ from scipy.optimize import minimize
 
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.utils.cumsum import cumsum
 
 
 def make_extended_trapezoid_area(
@@ -89,7 +90,7 @@ def make_extended_trapezoid_area(
     assert Tp >= 0
 
     if Tp > 0:
-        times = np.cumsum([0, Tru, Tp, Trd])
+        times = cumsum(0, Tru, Tp, Trd)
         amplitudes = [grad_start, Gp, Gp, grad_end]
     else:
         Tru = (
@@ -103,13 +104,13 @@ def make_extended_trapezoid_area(
 
         if Trd > 0:
             if Tru > 0:
-                times = np.cumsum([0, Tru, Trd])
+                times = cumsum(0, Tru, Trd)
                 amplitudes = np.array([grad_start, Gp, grad_end])
             else:
-                times = np.cumsum([0, Trd])
+                times = cumsum(0, Trd)
                 amplitudes = np.array([grad_start, grad_end])
         else:
-            times = np.cumsum([0, Tru])
+            times = cumsum(0, Tru)
             amplitudes = np.array([grad_start, grad_end])
 
     grad = make_extended_trapezoid(
@@ -119,7 +120,7 @@ def make_extended_trapezoid_area(
 
     assert abs(grad.area - area) < 1e-3
 
-    return grad, times, amplitudes
+    return grad, np.array(times), amplitudes
 
 
 def __testGA(Gp, Tp, SR, dT, Gs, Ge):

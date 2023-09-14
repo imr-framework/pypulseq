@@ -24,6 +24,8 @@ from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_labels
+from pypulseq.utils.cumsum import cumsum
+
 from version import major, minor, revision
 
 
@@ -1094,15 +1096,13 @@ class Sequence:
                                 (grad.first, *grad.waveform, grad.last)
                             )
                         else:
-                            time = np.cumsum(
-                                [
+                            time = np.array(cumsum(
                                     0,
                                     grad.delay,
                                     grad.rise_time,
                                     grad.flat_time,
                                     grad.fall_time,
-                                ]
-                            )
+                            ))
                             waveform = (
                                 g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                             )
@@ -1449,15 +1449,11 @@ class Sequence:
                             out_len[j] += 4
                             _temp = np.vstack(
                                 (
-                                    curr_dur
-                                    + grad.delay
-                                    + np.cumsum(
-                                        [
-                                            0,
+                                    cumsum(
+                                            curr_dur + grad.delay,
                                             grad.rise_time,
                                             grad.flat_time,
                                             grad.fall_time,
-                                        ]
                                     ),
                                     grad.amplitude * np.array([0, 1, 1, 0]),
                                 )
@@ -1468,9 +1464,7 @@ class Sequence:
                                 out_len[j] += 3
                                 _temp = np.vstack(
                                     (
-                                        curr_dur
-                                        + grad.delay
-                                        + np.cumsum([0, grad.rise_time, grad.fall_time]),
+                                        cumsum(curr_dur + grad.delay, grad.rise_time, grad.fall_time),
                                         grad.amplitude * np.array([0, 1, 0]),
                                     )
                                 )
@@ -1674,14 +1668,12 @@ class Sequence:
                             )
                             g = 1e-3 * np.array((grad.first, *grad.waveform, grad.last))
                         else:  # Trapezoid gradient option
-                            g_t = t0 + np.cumsum(
-                                [
-                                    0,
+                            g_t = cumsum(
+                                    t0,
                                     grad.delay,
                                     grad.rise_time,
                                     grad.flat_time,
                                     grad.fall_time,
-                                ]
                             )
                             g = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
 
