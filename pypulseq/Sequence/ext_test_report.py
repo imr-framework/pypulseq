@@ -87,7 +87,7 @@ def ext_test_report(self) -> str:
         k_storage_next = 0
         k_map = dict()
         for i in range(k_len):
-            key_string = str(
+            key_string = tuple(
                 (k_bins + np.round(k_traj_adc[:, i] / k_threshold)).astype(np.int32)
             )
             k_storage_ind = k_map.get(key_string)

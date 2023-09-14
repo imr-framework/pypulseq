@@ -66,17 +66,13 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
-        new_data = np.array(new_data)
-        data_string = np.array2string(
-            new_data, formatter={"float": lambda x: f"{x:.6g}"}
-        )
-        data_string = data_string.replace("[", "")
-        data_string = data_string.replace("]", "")
-        try:
-            key_id = self.keymap[data_string]
+        key = tuple(new_data)
+
+        if key in self.keymap:
+            key_id = self.keymap[key]
             found = True
-        except KeyError:
-            key_id = 1 if len(self.keys) == 0 else max(self.keys) + 1
+        else:
+            key_id = 1 if len(self.keys) == 0 else self.next_free_ID
             found = False
 
         return key_id, found
@@ -106,10 +102,10 @@ class EventLibrary:
         """
         if not isinstance(new_data, np.ndarray):
             new_data = np.array(new_data)
-        data_string = new_data.tobytes()
+        key = tuple(new_data)
 
-        if data_string in self.keymap:
-            key_id = self.keymap[data_string]
+        if key in self.keymap:
+            key_id = self.keymap[key]
             found = True
         else:
             key_id = self.next_free_ID
@@ -118,12 +114,12 @@ class EventLibrary:
             # Insert
             self.keys[key_id] = key_id
             self.data[key_id] = new_data
-            self.lengths[key_id] = np.max(new_data.shape)
+            self.lengths[key_id] = max(new_data.shape)
 
             if data_type != str():
                 self.type[key_id] = data_type
 
-            self.keymap[data_string] = key_id
+            self.keymap[key] = key_id
             self.next_free_ID = key_id + 1  # Update next_free_id
 
         return key_id, found
@@ -161,15 +157,11 @@ class EventLibrary:
         if data_type != str():
             self.type[key_id] = data_type
 
-        data_string = np.array2string(
-            new_data, formatter={"float_kind": lambda x: "%.6g" % x}
-        )
-        data_string = data_string.replace("[", "")
-        data_string = data_string.replace("]", "")
-        self.keymap[data_string] = key_id
+        key = tuple(new_data)
+        self.keymap[key] = key_id
 
         if key_id >= self.next_free_ID:
-            self.next_free_ID += 1  # Update next_free_id
+            self.next_free_ID = key_id + 1  # Update next_free_id
 
         return key_id
 
@@ -229,12 +221,8 @@ class EventLibrary:
         data_type : str, default=str()
         """
         if len(self.keys) >= key_id:
-            data_string = np.array2string(
-                old_data, formatter={"float_kind": lambda x: "%.6g" % x}
-            )
-            data_string = data_string.replace("[", "")
-            data_string = data_string.replace("]", "")
-            del self.keymap[data_string]
+            key = tuple(old_data)
+            del self.keymap[key]
 
         self.insert(key_id, new_data, data_type)
 
