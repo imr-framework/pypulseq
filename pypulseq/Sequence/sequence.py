@@ -40,7 +40,7 @@ class Sequence:
     version_minor = minor
     version_revision = revision
 
-    def __init__(self, system=Opts()):
+    def __init__(self, system=Opts(), use_block_cache=True):
         # =========
         # EVENT LIBRARIES
         # =========
@@ -65,6 +65,8 @@ class Sequence:
         self.system = system
 
         self.block_events = OrderedDict()  # Event table
+        self.use_block_cache = use_block_cache
+        self.block_cache = dict()  # Block cache
         self.definitions = dict()  # Optional sequence definitions
 
         self.rf_raster_time = (
