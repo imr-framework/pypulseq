@@ -424,7 +424,7 @@ class Sequence:
         def fnint(arr_poly):
             pieces = len(arr_poly)
             breaks = np.stack([pp.domain for pp in arr_poly])
-            breaks = np.append(breaks[:, 0], breaks[-1, 1])
+            breaks = np.concatenate((breaks[:, 0], [breaks[-1, 1]]))
             coefs = np.stack([pp.coef for pp in arr_poly])
             order = len(arr_poly[1].coef)
             dim = 1
@@ -434,7 +434,7 @@ class Sequence:
             vv = xs * coefs[index, 0]
             for i in range(1, order):
                 vv = xs * (vv + coefs[index, i])
-            last = np.cumsum(np.insert(vv, 0, 0)).reshape((-1, 1))
+            last = np.cumsum(np.concatenate(([0], vv))).reshape((-1, 1))
 
             coefs = np.hstack((coefs[:, :order], last))
             arr_poly_integ = []
@@ -1059,13 +1059,13 @@ class Sequence:
                     time = rf.t
                     signal = rf.signal
                     if abs(signal[0]) != 0:
-                        signal = np.insert(signal, obj=0, values=0)
-                        time = np.insert(time, obj=0, values=time[0])
+                        signal = np.concatenate(([0], signal))
+                        time = np.concatenate(([time[0]], time))
                         ic += 1
 
                     if abs(signal[-1]) != 0:
-                        signal = np.append(signal, 0)
-                        time = np.append(time, time[-1])
+                        signal = np.concatenate((signal, [0]))
+                        time = np.concatenate((time, [time[-1]]))
 
                     sp12.plot(t_factor * (t0 + time + rf.delay), np.abs(signal))
                     sp13.plot(
@@ -1619,8 +1619,8 @@ class Sequence:
                     adc_signal = np.exp(1j * adc.phase_offset) * np.exp(
                         1j * 2 * np.pi * t * adc.freq_offset
                     )
-                    adc_t_all = np.append(adc_t_all, adc_t)
-                    adc_signal_all = np.append(adc_signal_all, adc_signal)
+                    adc_t_all = np.concatenate((adc_t_all, adc_t))
+                    adc_signal_all = np.concatenate((adc_signal_all, adc_signal))
 
                 if hasattr(block, "rf"):
                     rf = block.rf
@@ -1642,10 +1642,10 @@ class Sequence:
                         * np.exp(1j * rf.phase_offset)
                         * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)
                     )
-                    rf_t_all = np.append(rf_t_all, rf_t)
-                    rf_signal_all = np.append(rf_signal_all, rf)
-                    rf_t_centers = np.append(rf_t_centers, rf_t[ic])
-                    rf_signal_centers = np.append(rf_signal_centers, rf[ic])
+                    rf_t_all = np.concatenate((rf_t_all, rf_t))
+                    rf_signal_all = np.concatenate((rf_signal_all, rf))
+                    rf_t_centers = np.concatenate((rf_t_centers, [rf_t[ic]]))
+                    rf_signal_centers = np.concatenate((rf_signal_centers, [rf[ic]]))
 
                 grad_channels = ["gx", "gy", "gz"]
                 for x in range(
@@ -1678,14 +1678,14 @@ class Sequence:
                             g = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
 
                         if grad.channel == "x":
-                            gx_t_all = np.append(gx_t_all, g_t)
-                            gx_all = np.append(gx_all, g)
+                            gx_t_all = np.concatenate((gx_t_all, g_t))
+                            gx_all = np.concatenate((gx_all, g))
                         elif grad.channel == "y":
-                            gy_t_all = np.append(gy_t_all, g_t)
-                            gy_all = np.append(gy_all, g)
+                            gy_t_all = np.concatenate((gy_t_all, g_t))
+                            gy_all = np.concatenate((gy_all, g))
                         elif grad.channel == "z":
-                            gz_t_all = np.append(gz_t_all, g_t)
-                            gz_all = np.append(gz_all, g)
+                            gz_t_all = np.concatenate((gz_t_all, g_t))
+                            gz_all = np.concatenate((gz_all, g))
 
             t0 += self.arr_block_durations[
                 block_counter
