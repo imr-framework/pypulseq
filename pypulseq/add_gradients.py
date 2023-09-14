@@ -11,7 +11,7 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
-
+from pypulseq.utils.cumsum import cumsum
 
 def add_gradients(
     grads: Iterable[SimpleNamespace],
@@ -96,7 +96,7 @@ def add_gradients(
             g = grads[ii]
             if g.type == "trap":
                 times.extend(
-                    np.cumsum([g.delay, g.rise_time, g.flat_time, g.fall_time])
+                    cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time)
                 )
             else:
                 times.extend(g.delay + g.tt)
@@ -117,10 +117,10 @@ def add_gradients(
             g = grads[ii]
             if g.type == "trap":
                 if g.flat_time > 0:  # Trapezoid or triangle
-                    tt = np.cumsum([g.delay, g.rise_time, g.flat_time, g.fall_time])
+                    tt = list(cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time))
                     waveform = [0, g.amplitude, g.amplitude, 0]
                 else:
-                    tt = np.cumsum([g.delay, g.rise_time, g.fall_time])
+                    tt = list(cumsum(g.delay, g.rise_time, g.fall_time))
                     waveform = [0, g.amplitude, 0]
             else:
                 tt = g.delay + g.tt
