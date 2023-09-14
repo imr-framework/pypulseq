@@ -73,8 +73,8 @@ def check_timing(system: Opts, *events: SimpleNamespace) -> Tuple[bool, str, flo
         if hasattr(e, "dwell"):
             if (
                 e.dwell < system.adc_raster_time
-                or np.abs(
-                    np.round(e.dwell / system.adc_raster_time) * system.adc_raster_time
+                or abs(
+                    round(e.dwell / system.adc_raster_time) * system.adc_raster_time
                     - e.dwell
                 )
                 > 1e-10
@@ -116,4 +116,4 @@ def __div_check(a: float, b: float) -> bool:
     Checks whether `a` can be divided by `b` to an accuracy of 1e-9.
     """
     c = a / b
-    return abs(c - np.round(c)) < 1e-9
+    return abs(c - round(c)) < 1e-9

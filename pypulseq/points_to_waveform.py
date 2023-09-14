@@ -31,8 +31,8 @@ def points_to_waveform(
 
     grd = (
         np.arange(
-            start=np.round(np.min(times) / grad_raster_time),
-            stop=np.round(np.max(times) / grad_raster_time),
+            start=round(np.min(times) / grad_raster_time),
+            stop=round(np.max(times) / grad_raster_time),
         )
         * grad_raster_time
     )

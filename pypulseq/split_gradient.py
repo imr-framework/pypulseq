@@ -46,10 +46,10 @@ def split_gradient(
 
     if grad.type == "trap":
         channel = grad.channel
-        grad.delay = np.round(grad.delay / grad_raster_time) * grad_raster_time
-        grad.rise_time = np.round(grad.rise_time / grad_raster_time) * grad_raster_time
-        grad.flat_time = np.round(grad.flat_time / grad_raster_time) * grad_raster_time
-        grad.fall_time = np.round(grad.fall_time / grad_raster_time) * grad_raster_time
+        grad.delay = round(grad.delay / grad_raster_time) * grad_raster_time
+        grad.rise_time = round(grad.rise_time / grad_raster_time) * grad_raster_time
+        grad.flat_time = round(grad.flat_time / grad_raster_time) * grad_raster_time
+        grad.fall_time = round(grad.fall_time / grad_raster_time) * grad_raster_time
 
         times = np.array([0, grad.rise_time])
         amplitudes = np.array([0, grad.amplitude])

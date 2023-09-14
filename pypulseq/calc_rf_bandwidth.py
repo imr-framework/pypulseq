@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from typing import Union, Tuple
 
 import numpy as np
+import math
 
 from pypulseq.calc_rf_center import calc_rf_center
 
@@ -37,12 +38,12 @@ def calc_rf_bandwidth(
     # Resample the pulse to a reasonable time array
     dw = 10  # Hz
     dt = 1e-6  # For now, 1 MHz
-    nn = np.round(1 / dw / dt)
-    tt = np.arange(-np.floor(nn / 2), np.ceil(nn / 2) - 1) * dt
+    nn = round(1 / dw / dt)
+    tt = np.arange(-math.floor(nn / 2), math.ceil(nn / 2) - 1) * dt
 
     rfs = np.interp(xp=rf.t - time_center, fp=rf.signal, x=tt)
     spectrum = np.fft.fftshift(np.fft.fft(np.fft.fftshift(rfs)))
-    w = np.arange(-np.floor(nn / 2), np.ceil(nn / 2) - 1) * dw
+    w = np.arange(-math.floor(nn / 2), math.ceil(nn / 2) - 1) * dw
 
     w1 = __find_flank(w, spectrum, cutoff)
     w2 = __find_flank(w[::-1], spectrum[::-1], cutoff)

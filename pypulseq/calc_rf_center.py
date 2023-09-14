@@ -26,6 +26,6 @@ def calc_rf_center(rf: SimpleNamespace) -> Tuple[float, float]:
     rf_max = np.max(np.abs(rf.signal))
     i_peak = np.where(np.abs(rf.signal) >= rf_max * 0.99999)[0]
     time_center = (rf.t[i_peak[0]] + rf.t[i_peak[-1]]) / 2
-    id_center = i_peak[int(np.round((len(i_peak) - 1) / 2))]
+    id_center = i_peak[round((len(i_peak) - 1) / 2)]
 
     return time_center, id_center

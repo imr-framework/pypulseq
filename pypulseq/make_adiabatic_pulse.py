@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from typing import Tuple, Union
 
 import numpy as np
+import math
 from sigpy.mri.rf import hypsec, wurst
 
 from pypulseq import eps
@@ -148,9 +149,9 @@ def make_adiabatic_pulse(
     if dwell == 0:
         dwell = system.rf_raster_time
 
-    n_raw = np.round(duration / dwell + eps)
+    n_raw = round(duration / dwell + eps)
     # Number of points must be divisible by 4 - requirement of sigpy.mri
-    N = np.floor(n_raw / 4) * 4
+    N = math.floor(n_raw / 4) * 4
 
     if pulse_type == "hypsec":
         am, fm = hypsec(n=N, beta=beta, mu=mu, dur=duration)
@@ -162,13 +163,13 @@ def make_adiabatic_pulse(
     pm = np.cumsum(fm) * dwell
 
     ifm = np.argmin(np.abs(fm))
-    dfm = np.abs(fm)[ifm]
+    dfm = abs(fm[ifm])
 
     # Find rate of change of frequency at the center of the pulse
     if dfm == 0:
         pm0 = pm[ifm]
         am0 = am[ifm]
-        roc_fm0 = np.abs(fm[ifm + 1] - fm[ifm - 1]) / 2 / dwell
+        roc_fm0 = abs(fm[ifm + 1] - fm[ifm - 1]) / 2 / dwell
     else:  # We need to bracket the zero-crossing
         if fm[ifm] * fm[ifm + 1] < 0:
             b = 1
@@ -177,7 +178,7 @@ def make_adiabatic_pulse(
 
         pm0 = (pm[ifm] * fm[ifm + b] - pm[ifm + b] * fm[ifm]) / (fm[ifm + b] - fm[ifm])
         am0 = (am[ifm] * fm[ifm + b] - am[ifm + b] * fm[ifm]) / (fm[ifm + b] - fm[ifm])
-        roc_fm0 = np.abs(fm[ifm] - fm[ifm + b]) / dwell
+        roc_fm0 = abs(fm[ifm] - fm[ifm + b]) / dwell
 
     pm -= pm0
     a = (roc_fm0 * adiabaticity) ** 0.5 / 2 / np.pi / am0
@@ -187,9 +188,9 @@ def make_adiabatic_pulse(
     if N != n_raw:
         n_pad = n_raw - N
         signal = [
-            np.zeros(1, n_pad - np.floor(n_pad / 2)),
+            np.zeros(1, n_pad - math.floor(n_pad / 2)),
             signal,
-            np.zeros(1, np.floor(n_pad / 2)),
+            np.zeros(1, math.floor(n_pad / 2)),
         ]
         N = n_raw
 
@@ -244,7 +245,7 @@ def make_adiabatic_pulse(
 
         if rf.delay > gz.rise_time:  # Round-up to gradient raster
             gz.delay = (
-                np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
                 * system.grad_raster_time
             )
 

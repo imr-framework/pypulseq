@@ -106,7 +106,7 @@ def make_gauss_pulse(
     else:
         BW = bandwidth
     alpha = apodization
-    N = int(np.round(duration / dwell))
+    N = round(duration / dwell)
     t = (np.arange(1, N + 1) - 0.5) * dwell
     tt = t - (duration * center_pos)
     window = 1 - alpha + alpha * np.cos(2 * np.pi * tt / duration)
@@ -153,7 +153,7 @@ def make_gauss_pulse(
 
         if rf.delay > gz.rise_time:
             gz.delay = (
-                np.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
+                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
                 * system.grad_raster_time
             )
 

@@ -1,5 +1,7 @@
+import math
 from types import SimpleNamespace
 from typing import Tuple
+
 import matplotlib.pyplot as plt
 import pypulseq as pp
 import numpy as np
@@ -59,8 +61,8 @@ def calc_pns(
             tf.append(gw[i][0,0])
             tl.append(gw[i][0,-1])
 
-    nt_min = np.floor(min(tf) / obj.grad_raster_time + pp.eps) 
-    nt_max = np.ceil(max(tl) / obj.grad_raster_time - pp.eps)
+    nt_min = math.floor(min(tf) / obj.grad_raster_time + pp.eps) 
+    nt_max = math.ceil(max(tl) / obj.grad_raster_time - pp.eps)
     
     # shift raster positions to the centers of the raster periods
     nt_min = nt_min + 0.5
@@ -68,7 +70,7 @@ def calc_pns(
     if nt_min < 0.5:
         nt_min = 0.5
 
-    t_axis = (np.arange(0,np.floor(nt_max-nt_min) + 1) + nt_min) * obj.grad_raster_time
+    t_axis = (np.arange(0, math.floor(nt_max-nt_min) + 1) + nt_min) * obj.grad_raster_time
 
     gwr = np.zeros((t_axis.shape[0],3))
     for i in range(3):

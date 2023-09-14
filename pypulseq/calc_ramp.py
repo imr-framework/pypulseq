@@ -345,7 +345,7 @@ def calc_ramp(
                 k0=k0, k_end=k_end, G0=G0, G_end=G_end, use_points=use_points
             )
         else:
-            if np.abs(G0) > np.abs(max_grad) or np.abs(G_end) > np.abs(max_grad):
+            if abs(G0) > abs(max_grad) or abs(G_end) > abs(max_grad):
                 break
             success, k_out = __joinleft1(
                 k0=k0, k_end=k_end, use_points=use_points, G0=G0, G_end=G_end

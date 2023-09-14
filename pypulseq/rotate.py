@@ -10,7 +10,7 @@ from pypulseq.opts import Opts
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:
     if grad.type == "trap":
-        return np.abs(grad.amplitude)
+        return abs(grad.amplitude)
     return np.max(np.abs(grad.waveform))
 
 
@@ -76,7 +76,7 @@ def rotate(
     max_mag = 0  # Measure of relevant amplitude
     for i in range(len(i_rotate1)):
         g = args[i_rotate1[i]]
-        max_mag = np.max((max_mag, __get_grad_abs_mag(g)))
+        max_mag = max(max_mag, __get_grad_abs_mag(g))
         rotated1.append(scale_grad(grad=g, scale=np.cos(angle)))
         g = scale_grad(grad=g, scale=np.sin(angle))
         g.channel = axes_to_rotate[1]
@@ -84,7 +84,7 @@ def rotate(
 
     for i in range(len(i_rotate2)):
         g = args[i_rotate2[i]]
-        max_mag = np.max((max_mag, __get_grad_abs_mag(g)))
+        max_mag = max(max_mag, __get_grad_abs_mag(g))
         rotated2.append(scale_grad(grad=g, scale=np.cos(angle)))
         g = scale_grad(grad=g, scale=-np.sin(angle))
         g.channel = axes_to_rotate[0]
