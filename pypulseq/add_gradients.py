@@ -201,7 +201,7 @@ def add_gradients(
             # Stop for numpy.arange is not g.delay - common_delay - system.grad_raster_time like in Matlab
             # so as to include the endpoint
             t_delay = np.arange(0, g.delay - common_delay, step=system.grad_raster_time)
-            waveforms[ii] = np.insert(waveforms[ii], 0, t_delay)
+            waveforms[ii] = np.concatenate(([t_delay], waveforms[ii]))
 
         num_points = len(waveforms[ii])
         max_length = max(num_points, max_length)

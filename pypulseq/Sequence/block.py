@@ -336,7 +336,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
         if len(lib_data) < 6:
-            lib_data = np.append(lib_data, 0)
+            lib_data = np.concatenate((lib_data, [0]))
 
         adc = SimpleNamespace()
         (
@@ -513,7 +513,7 @@ def register_grad_event(
             else:
                 g = event.waveform
             c_shape = compress_shape(g)
-            s_data = np.insert(c_shape.data, 0, c_shape.num_samples)
+            s_data = np.concatenate(([c_shape.num_samples], c_shape.data))
             shape_IDs[0], found = self.shape_library.find_or_insert(s_data)
             may_exist = may_exist & found
             any_changed = any_changed or found
@@ -524,7 +524,7 @@ def register_grad_event(
                 len(c_time.data) == 4
                 and np.all(c_time.data == [0.5, 1, 1, c_time.num_samples - 3])
             ):
-                t_data = np.insert(c_time.data, 0, c_time.num_samples)
+                t_data = np.concatenate(([c_time.num_samples], c_time.data))
                 shape_IDs[1], found = self.shape_library.find_or_insert(t_data)
                 may_exist = may_exist & found
                 any_changed = any_changed or found
@@ -621,12 +621,12 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         shape_IDs = [0, 0, 0]
 
         mag_shape = compress_shape(mag)
-        data = np.insert(mag_shape.data, 0, mag_shape.num_samples)
+        data = np.concatenate(([mag_shape.num_samples], mag_shape.data))
         shape_IDs[0], found = self.shape_library.find_or_insert(data)
         may_exist = may_exist & found
 
         phase_shape = compress_shape(phase)
-        data = np.insert(phase_shape.data, 0, phase_shape.num_samples)
+        data = np.concatenate(([phase_shape.num_samples], phase_shape.data))
         shape_IDs[1], found = self.shape_library.find_or_insert(data)
         may_exist = may_exist & found
 
