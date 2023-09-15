@@ -86,10 +86,9 @@ def ext_test_report(self) -> str:
         k_storage = np.zeros(k_len)
         k_storage_next = 0
         k_map = dict()
+        keys = np.round(k_traj_adc / k_threshold).astype(np.int32)
         for i in range(k_len):
-            key_string = tuple(
-                (k_bins + np.round(k_traj_adc[:, i] / k_threshold)).astype(np.int32)
-            )
+            key_string = tuple(keys[:,i])
             k_storage_ind = k_map.get(key_string)
             if k_storage_ind is None:
                 k_storage_ind = k_storage_next
@@ -113,13 +112,14 @@ def ext_test_report(self) -> str:
         k_counters = np.zeros_like(k_traj_rep1)
         dims = k_traj_rep1.shape[0]
         
+        keys = keys[:, k_repeat == 1]
         for j in range(dims):
             k_map = dict()
             k_storage = np.zeros(k_len)
             k_storage_next = 0
 
             for i in range(k_traj_rep1.shape[1]):
-                key = np.round(k_traj_rep1[j, i] / k_threshold).astype(np.int32)
+                key = keys[j,i]
                 k_storage_ind = k_map.get(key)
                 if k_storage_ind is None:
                     k_storage_ind = k_map.get(key + 1)
