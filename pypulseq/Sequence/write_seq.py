@@ -190,7 +190,7 @@ def write(self, file_name: str, create_signature) -> None:
             id_format_str = "{:.0f} {:.0f} {:.0f} {:.0f} {:.0f}\n"  # Refer lines 20-21
             for k in keys.values():
                 s = id_format_str.format(
-                    k, *np.round(self.trigger_library.data[k] * [1, 1, 1e6, 1e6])
+                    k, *np.round(self.trigger_library.data[k] * np.array([1, 1, 1e6, 1e6]))
                 )
                 output_file.write(s)
             output_file.write("\n")
