@@ -627,14 +627,15 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         shape_IDs[1], found = self.shape_library.find_or_insert(data)
         may_exist = may_exist & found
 
-        time_shape = compress_shape(
-            event.t / self.rf_raster_time
-        )  # Time shape is stored in units of RF raster
-        if len(time_shape.data) == 4 and np.all(
-            time_shape.data == [0.5, 1, 1, time_shape.num_samples - 3]
-        ):
+
+        t_regular = (np.floor(event.t/self.rf_raster_time) == np.arange(len(event.t))).all()
+
+        if t_regular:
             shape_IDs[2] = 0
         else:
+            time_shape = compress_shape(
+                event.t / self.rf_raster_time
+            )
             data = [time_shape.num_samples, *time_shape.data]
             shape_IDs[2], found = self.shape_library.find_or_insert(data)
             may_exist = may_exist & found
