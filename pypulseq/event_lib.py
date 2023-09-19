@@ -66,7 +66,9 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
-        key = tuple(new_data)
+        if not isinstance(new_data, np.ndarray):
+            new_data = np.array(new_data)
+        key = new_data.tobytes()
 
         if key in self.keymap:
             key_id = self.keymap[key]
@@ -102,7 +104,7 @@ class EventLibrary:
         """
         if not isinstance(new_data, np.ndarray):
             new_data = np.array(new_data)
-        key = tuple(new_data)
+        key = new_data.tobytes()
 
         if key in self.keymap:
             key_id = self.keymap[key]
@@ -157,7 +159,7 @@ class EventLibrary:
         if data_type != str():
             self.type[key_id] = data_type
 
-        key = tuple(new_data)
+        key = new_data.tobytes()
         self.keymap[key] = key_id
 
         if key_id >= self.next_free_ID:
@@ -221,7 +223,9 @@ class EventLibrary:
         data_type : str, default=str()
         """
         if len(self.keys) >= key_id:
-            key = tuple(old_data)
+            if not isinstance(old_data, np.ndarray):
+                old_data = np.array(old_data)
+            key = old_data.tobytes()
             del self.keymap[key]
 
         self.insert(key_id, new_data, data_type)
