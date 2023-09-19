@@ -161,7 +161,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         all_found = True
         extension_id = 0
         for i in range(len(extensions)):
-            data = [extensions[i]["type"], extensions[i]["ref"], extension_id]
+            data = (extensions[i]["type"], extensions[i]["ref"], extension_id)
             extension_id, found = self.extensions_library.find(data)
             all_found = all_found and found
             if not found:
@@ -171,7 +171,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             # Add the list
             extension_id = 0
             for i in range(len(extensions)):
-                data = [extensions[i]["type"], extensions[i]["ref"], extension_id]
+                data = (extensions[i]["type"], extensions[i]["ref"], extension_id)
                 extension_id, found = self.extensions_library.find(data)
                 if not found:
                     self.extensions_library.insert(extension_id, data)
@@ -422,16 +422,14 @@ def register_adc_event(self, event: EventLibrary) -> int:
     int
         ID of registered ADC event.
     """
-    data = np.array(
-        [
+    data = (
             event.num_samples,
             event.dwell,
             max(event.delay, event.dead_time),
             event.freq_offset,
             event.phase_offset,
             event.dead_time,
-        ]
-    )
+        )
     adc_id, found = self.adc_library.find_or_insert(new_data=data)
 
     # Clear block cache because ADC was overwritten
@@ -465,7 +463,7 @@ def register_control_event(self, event: SimpleNamespace) -> int:
     else:
         raise ValueError("Unsupported control event type")
 
-    data = [event_type + 1, event_channel + 1, event.delay, event.duration]
+    data = (event_type + 1, event_channel + 1, event.delay, event.duration)
     control_id, found = self.trigger_library.find_or_insert(new_data=data)
 
     # Clear block cache because trigger was overwritten
@@ -526,17 +524,15 @@ def register_grad_event(
                 may_exist = may_exist & found
                 any_changed = any_changed or found
 
-        data = [amplitude, *shape_IDs, event.delay, event.first, event.last]
+        data = (amplitude, *shape_IDs, event.delay, event.first, event.last)
     elif event.type == "trap":
-        data = np.array(
-            [
+        data = (
                 event.amplitude,
                 event.rise_time,
                 event.flat_time,
                 event.fall_time,
                 event.delay,
-            ]
-        )
+            )
     else:
         raise ValueError("Unknown gradient type passed to register_grad_event()")
 
@@ -573,7 +569,7 @@ def register_label_event(self, event: SimpleNamespace) -> int:
     """
 
     label_id = get_supported_labels().index(event.label) + 1
-    data = [event.value, label_id]
+    data = (event.value, label_id)
     if event.type == "labelset":
         label_id, found = self.label_set_library.find_or_insert(new_data=data)
     elif event.type == "labelinc":
@@ -653,9 +649,7 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         else:
             use = "u"
 
-    data = np.array(
-        [amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset]
-    )
+    data = (amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset)
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)

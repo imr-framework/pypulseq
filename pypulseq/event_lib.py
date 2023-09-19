@@ -34,19 +34,18 @@ class EventLibrary:
         Key-value pairs of data values and corresponding event keys.
     """
 
-    def __init__(self):
+    def __init__(self, numpy_data=False):
         self.keys = dict()
         self.data = dict()
-        self.lengths = dict()
         self.type = dict()
         self.keymap = dict()
         self.next_free_ID = 1
+        self.numpy_data = numpy_data
 
     def __str__(self) -> str:
         s = "EventLibrary:"
         s += "\nkeys: " + str(len(self.keys))
         s += "\ndata: " + str(len(self.data))
-        s += "\nlengths: " + str(len(self.lengths))
         s += "\ntype: " + str(len(self.type))
         return s
 
@@ -66,9 +65,11 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
-        if not isinstance(new_data, np.ndarray):
-            new_data = np.array(new_data)
-        key = new_data.tobytes()
+        if self.numpy_data:
+            new_data = np.asarray(new_data)
+            key = new_data.tobytes()
+        else:
+            key = tuple(new_data)
 
         if key in self.keymap:
             key_id = self.keymap[key]
@@ -102,9 +103,13 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
-        if not isinstance(new_data, np.ndarray):
-            new_data = np.array(new_data)
-        key = new_data.tobytes()
+        
+        if self.numpy_data:
+            new_data = np.asarray(new_data)
+            new_data.flags.writeable = False
+            key = new_data.tobytes()
+        else:
+            key = tuple(new_data)
 
         if key in self.keymap:
             key_id = self.keymap[key]
@@ -116,7 +121,6 @@ class EventLibrary:
             # Insert
             self.keys[key_id] = key_id
             self.data[key_id] = new_data
-            self.lengths[key_id] = max(new_data.shape)
 
             if data_type != str():
                 self.type[key_id] = data_type
@@ -152,14 +156,18 @@ class EventLibrary:
         if key_id == 0:
             key_id = self.next_free_ID
 
-        new_data = np.array(new_data)
+        if self.numpy_data:
+            new_data = np.asarray(new_data)
+            new_data.flags.writeable = False
+            key = new_data.tobytes()
+        else:
+            key = tuple(new_data)
+        
         self.keys[key_id] = key_id
         self.data[key_id] = new_data
-        self.lengths[key_id] = max(new_data.shape)
         if data_type != str():
             self.type[key_id] = data_type
-
-        key = new_data.tobytes()
+        
         self.keymap[key] = key_id
 
         if key_id >= self.next_free_ID:
@@ -181,7 +189,6 @@ class EventLibrary:
         return {
             "key": self.keys[key_id],
             "data": self.data[key_id],
-            "length": self.lengths[key_id],
             "type": self.type[key_id],
         }
 
@@ -202,7 +209,6 @@ class EventLibrary:
         out = SimpleNamespace()
         out.key = self.keys[key_id]
         out.data = self.data[key_id]
-        out.length = self.lengths[key_id]
         out.type = self.type[key_id]
 
         return out
@@ -223,9 +229,11 @@ class EventLibrary:
         data_type : str, default=str()
         """
         if len(self.keys) >= key_id:
-            if not isinstance(old_data, np.ndarray):
-                old_data = np.array(old_data)
-            key = old_data.tobytes()
+            if self.numpy_data:
+                old_data = np.asarray(old_data)
+                key = old_data.tobytes()
+            else:
+                key = tuple(old_data)
             del self.keymap[key]
 
         self.insert(key_id, new_data, data_type)
