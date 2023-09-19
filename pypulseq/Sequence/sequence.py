@@ -1091,7 +1091,7 @@ class Sequence:
                         if grad.type == "grad":
                             # We extend the shape by adding the first and the last points in an effort of making the
                             # display a bit less confusing...
-                            time = grad.delay + [0, *grad.tt, grad.shape_dur]
+                            time = grad.delay + np.array([0, *grad.tt, grad.shape_dur])
                             waveform = g_factor * np.array(
                                 (grad.first, *grad.waveform, grad.last)
                             )
