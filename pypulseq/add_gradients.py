@@ -56,20 +56,18 @@ def add_gradients(
     channel = grads[0].channel
 
     # Check if we have a set of traps with the same timing
-    if all(g.type == 'trap' for g in grads):
-        cond1 = all(g.delay == grads[0].delay for g in grads)
-        cond2 = all(g.rise_time == grads[0].rise_time for g in grads)
-        cond3 = all(g.flat_time == grads[0].flat_time for g in grads)
-        cond4 = all(g.fall_time == grads[0].fall_time for g in grads)
-        
-        if cond1 and cond2 and cond3 and cond4:
-            return make_trapezoid(grads[0].channel,
-                                  amplitude=sum(g.amplitude for g in grads)+eps,
-                                  rise_time=grads[0].rise_time,
-                                  flat_time=grads[0].flat_time,
-                                  fall_time=grads[0].fall_time,
-                                  delay=grads[0].delay,
-                                  system=system)
+    if (all(g.type == 'trap' for g in grads)
+            and all(g.rise_time == grads[0].rise_time for g in grads)
+            and all(g.flat_time == grads[0].flat_time for g in grads)
+            and all(g.fall_time == grads[0].fall_time for g in grads)
+            and all(g.delay == grads[0].delay for g in grads)):
+        return make_trapezoid(grads[0].channel,
+                              amplitude=sum(g.amplitude for g in grads)+eps,
+                              rise_time=grads[0].rise_time,
+                              flat_time=grads[0].flat_time,
+                              fall_time=grads[0].fall_time,
+                              delay=grads[0].delay,
+                              system=system)
     
     # Find out the general delay of all gradients and other statistics
     delays, firsts, lasts, durs, is_trap, is_arb = [], [], [], [], [], []
