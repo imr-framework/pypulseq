@@ -74,8 +74,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 check_g[channel_num] = SimpleNamespace()
                 check_g[channel_num].idx = idx
-                check_g[channel_num].start = np.array((grad_start, event.first))
-                check_g[channel_num].stop = np.array((grad_duration, event.last))
+                check_g[channel_num].start = (grad_start, event.first)
+                check_g[channel_num].stop = (grad_duration, event.last)
 
                 if hasattr(event, "id"):
                     grad_id = event.id
@@ -90,16 +90,14 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 check_g[channel_num] = SimpleNamespace()
                 check_g[channel_num].idx = idx
-                check_g[channel_num].start = np.array((0, 0))
-                check_g[channel_num].stop = np.array(
-                    (
+                check_g[channel_num].start = (0, 0)
+                check_g[channel_num].stop = (
                         event.delay
                         + event.rise_time
                         + event.fall_time
                         + event.flat_time,
                         0,
                     )
-                )
 
                 if hasattr(event, "id"):
                     trap_id = event.id
