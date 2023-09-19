@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from typing import Tuple, Union
 
 import numpy as np
-from sigpy.mri.rf import hypsec, wurst
+from pypulseq.utils.sigpy.adiabatic import hypsec, wurst
 
 from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
