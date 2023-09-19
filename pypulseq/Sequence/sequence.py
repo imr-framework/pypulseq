@@ -58,7 +58,7 @@ class Sequence:
             EventLibrary()
         )  # Library of Label(set) events (reference from the extensions library)
         self.rf_library = EventLibrary()  # Library of RF events
-        self.shape_library = EventLibrary()  # Library of compressed shapes
+        self.shape_library = EventLibrary(numpy_data=True)  # Library of compressed shapes
         self.trigger_library = EventLibrary()  # Library of trigger events
 
         # =========
