@@ -36,7 +36,7 @@ setuptools.setup(
         "matplotlib>=3.5.2",
         "numpy>=1.19.5",
         "scipy>=1.8.1",
-        "sigpy==0.1.23",
+        "sigpy@git+https://github.com/mikgroup/sigpy",  # change before release to PyPI
     ],
     license="License :: OSI Approved :: GNU Affero General Public License v3",
     long_description=_get_long_description(),
