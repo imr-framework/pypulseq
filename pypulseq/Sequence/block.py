@@ -333,8 +333,6 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     # ADC
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
-        if len(lib_data) < 6:
-            lib_data = np.concatenate((lib_data, [0]))
 
         adc = SimpleNamespace()
         (
