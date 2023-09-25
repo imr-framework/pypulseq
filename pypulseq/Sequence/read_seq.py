@@ -165,7 +165,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 )
         elif section == "[ADC]":
             self.adc_library = __read_events(
-                input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library
+                input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
             )
         elif section == "[DELAYS]":
             if version_combined >= 1004000:
@@ -469,6 +469,7 @@ def __read_events(
     scale: tuple = (1,),
     event_type: str = str(),
     event_library: EventLibrary = EventLibrary(),
+    append=None
 ) -> EventLibrary:
     """
     Read an event section of a sequence file and return a library of events.
@@ -494,7 +495,9 @@ def __read_events(
     while line != "" and line != "#":
         data = np.fromstring(line, dtype=float, sep=" ")
         event_id = data[0]
-        data = data[1:] * scale
+        data = tuple(data[1:] * scale)
+        if append != None:
+            data = data + (append,)
         if event_type == "":
             event_library.insert(key_id=event_id, new_data=data)
         else:
