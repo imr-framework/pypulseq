@@ -248,17 +248,17 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 self.grad_library.lengths[i] += 1
 
         # For versions prior to 1.4.0 block_durations have not been initialized
-        self.block_durations = np.zeros(len(self.block_events))
+        self.block_durations = dict()
         # Scan through blocks and calculate durations
         for block_counter in range(len(self.block_events)):
             block = self.get_block(block_counter + 1)
-            if delay_ind_temp[block_counter] > 0:
+            if delay_ind_temp[block_counter + 1] > 0:
                 block.delay = SimpleNamespace()
                 block.delay.type = "delay"
                 block.delay.delay = temp_delay_library.data[
-                    delay_ind_temp[block_counter]
+                    delay_ind_temp[block_counter + 1]
                 ]
-            self.block_durations[block_counter] = calc_duration(block)
+            self.block_durations[block_counter + 1] = calc_duration(block)
 
     grad_channels = ["gx", "gy", "gz"]
     grad_prev_last = np.zeros(len(grad_channels))
@@ -435,8 +435,8 @@ def __read_blocks(
         Delay IDs.
     """
     event_table = dict()
-    block_durations = []
-    delay_idx = []
+    block_durations = dict()
+    delay_idx = dict()
     line = __strip_line(input_file)
 
     while line != "" and line != "#":
@@ -449,15 +449,9 @@ def __read_blocks(
 
         delay_id = block_events[0]
         if version_combined >= 1004000:
-            if delay_id > len(block_durations):
-                block_durations.append(block_events[1] * block_duration_raster)
-            else:
-                block_durations[delay_id] = block_events[1] * block_duration_raster
+            block_durations[delay_id] = block_events[1] * block_duration_raster
         else:
-            if delay_id > len(delay_idx):
-                delay_idx.append(block_events[1])
-            else:
-                delay_idx[delay_id] = block_events[1]
+            delay_idx[delay_id] = block_events[1]
 
         line = __strip_line(input_file)
 

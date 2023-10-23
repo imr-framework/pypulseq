@@ -91,7 +91,7 @@ class Sequence:
         self.signature_file = ""
         self.signature_value = ""
 
-        self.block_durations = []  # Cache of block durations
+        self.block_durations = dict()  # Cache of block durations
         self.extension_numeric_idx = []  # numeric IDs of the used extensions
         self.extension_string_idx = []  # string IDs of the used extensions
 
@@ -139,10 +139,11 @@ class Sequence:
             if len(time_range) != 2:
                 raise ValueError('Time range must be list of two elements')
             
-            t = np.cumsum(self.block_durations)
+            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            t = np.cumsum(bd)
             begin_block = np.searchsorted(t, time_range[0])
-            end_block = np.searchsorted(t - self.block_durations, time_range[1], side='right')
-
+            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            
         for block_counter in range(begin_block, end_block):
             block = self.get_block(block_counter + 1)
             
@@ -154,7 +155,7 @@ class Sequence:
                 )
                 fp_adc.append([block.adc.freq_offset, block.adc.phase_offset])
 
-            curr_dur += self.block_durations[block_counter]
+            curr_dur += self.block_durations[block_counter + 1]
 
         t_adc = np.concatenate(t_adc)
         fp_adc = np.array(fp_adc)
@@ -211,7 +212,7 @@ class Sequence:
                 f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high"
             )
 
-        total_duration = sum(self.block_durations)
+        total_duration = sum(self.block_durations.values())
 
         t_excitation, fp_excitation, t_refocusing, _ = self.rf_times()
         t_adc, _ = self.adc_times()
@@ -416,10 +417,10 @@ class Sequence:
             is_ok = is_ok and res
 
             # Check the stored total block duration
-            if abs(duration - self.block_durations[block_counter]) > eps:
+            if abs(duration - self.block_durations[block_counter + 1]) > eps:
                 rep += "Inconsistency between the stored block duration and the duration of the block content"
                 is_ok = False
-                duration = self.block_durations[block_counter]
+                duration = self.block_durations[block_counter + 1]
 
             # Check RF dead times
             if block.rf is not None:
@@ -492,7 +493,7 @@ class Sequence:
         duration = 0
         for block_counter in range(num_blocks):
             event_count += self.block_events[block_counter + 1] > 0
-            duration += self.block_durations[block_counter]
+            duration += self.block_durations[block_counter + 1]
 
         return duration, num_blocks, event_count
 
@@ -638,7 +639,7 @@ class Sequence:
                 f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high"
             )
 
-        total_duration = sum(self.block_durations)
+        total_duration = sum(self.block_durations.values())
         
         gw_data = self.waveforms()
         ng = len(gw_data)
@@ -834,8 +835,9 @@ class Sequence:
             cycler = mpl.cycler(color=label_colors_to_plot)
             sp11.set_prop_cycle(cycler)
 
+
         # Block timings
-        block_edges = np.cumsum([0, *self.block_durations])
+        block_edges = np.cumsum([0] + [x[1] for x in sorted(self.block_durations.items())])
         block_edges_in_range = block_edges[
             (block_edges >= time_range[0]) * (block_edges <= time_range[1])
         ]
@@ -846,8 +848,8 @@ class Sequence:
 
         for block_counter in range(len(self.block_events)):
             block = self.get_block(block_counter + 1)
-            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter] and
-                        t0 <= time_range[1])
+            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter + 1]
+                        and t0 <= time_range[1])
             if is_valid:
                 if getattr(block, "label", None) is not None:
                     for i in range(len(block.label)):
@@ -943,7 +945,7 @@ class Sequence:
                                 g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                             )
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
-            t0 += self.block_durations[block_counter]
+            t0 += self.block_durations[block_counter + 1]
 
         grad_plot_labels = ["x", "y", "z"]
         sp11.set_ylabel("ADC")
@@ -1095,10 +1097,11 @@ class Sequence:
             if len(time_range) != 2:
                 raise ValueError('Time range must be list of two elements')
             
-            t = np.cumsum(self.block_durations)
+            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            t = np.cumsum(bd)
             begin_block = np.searchsorted(t, time_range[0])
-            end_block = np.searchsorted(t - self.block_durations, time_range[1], side='right')
-
+            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            
         for block_counter in range(begin_block, end_block):
             block = self.get_block(block_counter + 1)
             
@@ -1115,7 +1118,7 @@ class Sequence:
                     t_refocusing.append(curr_dur + t)
                     fp_refocusing.append([block.rf.freq_offset, block.rf.phase_offset])
 
-            curr_dur += self.block_durations[block_counter]
+            curr_dur += self.block_durations[block_counter + 1]
 
 
         if len(t_excitation) != 0:
@@ -1245,10 +1248,11 @@ class Sequence:
             if len(time_range) != 2:
                 raise ValueError('Time range must be list or tuple of two elements')
             
-            t = np.cumsum(self.block_durations)
+            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            t = np.cumsum(bd)
             begin_block = np.searchsorted(t, time_range[0])
-            end_block = np.searchsorted(t - self.block_durations, time_range[1], side='right')
-
+            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            
         for block_counter in range(begin_block, end_block):
             block = self.get_block(block_counter + 1)
             
@@ -1342,7 +1346,7 @@ class Sequence:
 
                     shape_pieces[-1].append(rf_piece)
 
-            curr_dur += self.block_durations[block_counter]
+            curr_dur += self.block_durations[block_counter + 1]
 
         # Collect wave data
         wave_data = []
@@ -1540,8 +1544,8 @@ class Sequence:
                             gz_t_all = np.concatenate((gz_t_all, g_t))
                             gz_all = np.concatenate((gz_all, g))
 
-            t0 += self.arr_block_durations[
-                block_counter
+            t0 += self.block_durations[
+                block_counter + 1
             ]  # "Current time" gets updated to end of block just examined
 
         all_waveforms = {

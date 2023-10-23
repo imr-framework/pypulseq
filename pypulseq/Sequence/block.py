@@ -225,7 +225,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 "A gradient that doesn't end at zero needs to be aligned to the block boundary."
             )
 
-    self.block_durations.append(float(duration))
+    self.block_durations[block_index] = float(duration)
 
 
 def get_block(self, block_index: int) -> SimpleNamespace:
@@ -398,7 +398,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
 
             next_ext_id = ext_data[2]
 
-    block.block_duration = self.block_durations[block_index - 1]
+    block.block_duration = self.block_durations[block_index]
 
     # Enter block into the block cache
     if self.use_block_cache:
