@@ -48,6 +48,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     for event in events:
         if not isinstance(event, float):  # If event is not a block duration
             if event.type == "rf":
+                if self.block_events[block_index][1] != 0:
+                    raise ValueError('Multiple RF events were specified in set_block')
+                
                 if hasattr(event, "id"):
                     rf_id = event.id
                 else:
@@ -61,6 +64,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
 
+                if self.block_events[block_index][idx] != 0:
+                    raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
+                
                 grad_start = (
                     event.delay
                     + math.floor(event.tt[0] / self.grad_raster_time + 1e-10)
@@ -88,6 +94,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
 
+                if self.block_events[block_index][idx] != 0:
+                    raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
+
                 check_g[channel_num] = SimpleNamespace()
                 check_g[channel_num].idx = idx
                 check_g[channel_num].start = (0, 0)
@@ -113,6 +122,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                         + event.fall_time
                 )
             elif event.type == "adc":
+                if self.block_events[block_index][5] != 0:
+                    raise ValueError('Multiple ADC events were specified in set_block')
+                
                 if hasattr(event, "id"):
                     adc_id = event.id
                 else:
