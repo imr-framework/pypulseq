@@ -30,7 +30,8 @@ def ext_test_report(self) -> str:
     # Calculate TE, TR
     duration, num_blocks, event_count = self.duration()
 
-    k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc = self.calculate_kspacePP()
+    k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc = self.calculate_kspace()
+    t_excitation = np.asarray(t_excitation)
 
     k_abs_adc = np.sqrt(np.sum(np.square(k_traj_adc), axis=0))
     k_abs_echo, index_echo = np.min(k_abs_adc), np.argmin(k_abs_adc)
@@ -137,9 +138,7 @@ def ext_test_report(self) -> str:
     else:
         unique_k_positions = 1
 
-    # gw_data = self.gradient_waveforms()
-    waveforms_and_times = self.waveforms_and_times()
-    gw_data = waveforms_and_times[0]
+    gw_data = self.waveforms()
     gws = [np.zeros_like(x) for x in gw_data]
     ga = np.zeros(len(gw_data))
     gs = np.zeros(len(gw_data))

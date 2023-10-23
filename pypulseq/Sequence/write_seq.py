@@ -65,7 +65,7 @@ def write(self, file_name: str, create_signature) -> None:
         id_format_str = id_format_width + " {:3d} {:3d} {:3d} {:3d} {:3d} {:2d} {:2d}\n"
         for block_counter in range(len(self.block_events)):
             block_duration = (
-                self.block_durations[block_counter] / self.block_duration_raster
+                self.block_durations[block_counter + 1] / self.block_duration_raster
             )
             block_duration_rounded = round(block_duration)
 
