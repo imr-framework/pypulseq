@@ -19,6 +19,7 @@ def make_arbitrary_rf(
     delay: float = 0,
     dwell: float = 0,
     freq_offset: float = 0,
+    no_signal_scaling: bool = False,
     max_grad: float = 0,
     max_slew: float = 0,
     phase_offset: float = 0,
@@ -42,8 +43,12 @@ def make_arbitrary_rf(
         Bandwidth in Hertz (Hz).
     delay : float, default=0
         Delay in seconds (s) of accompanying slice select trapezoidal event.
+    dwell : float, default=0
+        Temporal sampling step of waveform. If set to 0, will use `system.rf_raster_time`.
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
+    no_signal_scaling : bool, default=False
+        If set to True no rescaling of the RF amplitude will happen. E.g. for adiabatic pulses.
     max_grad : float, default=system.max_grad
         Maximum gradient strength of accompanying slice select trapezoidal event.
     max_slew : float, default=system.max_slew
@@ -55,7 +60,7 @@ def make_arbitrary_rf(
     return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, default=0
-        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
+        Slice thickness (m) of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
     system : Opts, default=Opts()
         System limits.
@@ -90,7 +95,9 @@ def make_arbitrary_rf(
     signal = np.squeeze(signal)
     if signal.ndim > 1:
         raise ValueError(f"signal should have ndim=1. Passed ndim={signal.ndim}")
-    signal = signal / np.abs(np.sum(signal * dwell)) * flip_angle / (2 * np.pi)
+
+    if not no_signal_scaling:
+        signal = signal / np.abs(np.sum(signal * dwell)) * flip_angle / (2 * np.pi)
 
     N = len(signal)
     duration = N * dwell
