@@ -152,7 +152,7 @@ def make_trapezoid(
                     f"Requested area is too large for this gradient. Minimum required duration is "
                     f"{round(min_duration * 1e6)} uss"
                 )
-                
+
                 dC = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
                 amplitude2 = (
                     duration - math.sqrt(duration**2 - 4 * abs(area) * dC)
@@ -168,6 +168,8 @@ def make_trapezoid(
                     f"Requested area is too large for this gradient. Probably amplitude is violated "
                     f"{round(abs(amplitude) / max_grad * 100)}"
                 )
+        else:
+            amplitude2 = amplitude
 
         if rise_time == 0:
             rise_time = (
@@ -185,7 +187,7 @@ def make_trapezoid(
             # Adjust amplitude (after rounding) to match area
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
     else:
-        if area == None:
+        if area is None:
             raise ValueError("Must supply area or duration.")
         else:
             # Find the shortest possible duration.           
