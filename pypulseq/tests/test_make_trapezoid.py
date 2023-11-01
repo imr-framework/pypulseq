@@ -68,14 +68,14 @@ def test_no_area_no_duration_error():
             match=errstr):
         make_trapezoid(channel='x',  amplitude=1)
 
-# Currently seemingly unreachable.
-# def test_amplitude_too_large_error():
-#     errstr = "Amplitude violation."
 
-    # with pytest.raises(
-    #         ValueError,
-    #         match=errstr):
-    #     make_trapezoid(channel='x',  amplitude=1E10, duration=1)
+def test_amplitude_too_large_error():
+    errstr = "Amplitude violation."
+
+    with pytest.raises(
+            ValueError,
+            match=errstr):
+        make_trapezoid(channel='x',  amplitude=1E10, duration=1)
 
 
 def test_generation_methods():
@@ -92,7 +92,6 @@ def test_generation_methods():
         make_trapezoid(channel='x', flat_area=0.5, duration=1, area=1),
         SimpleNamespace)
 
-    # Currently doesn't work
-    # assert isinstance(
-    #     make_trapezoid(channel='x',  amplitude=1, duration=1),
-    #     SimpleNamespace)
+    assert isinstance(
+        make_trapezoid(channel='x',  amplitude=1, duration=1),
+        SimpleNamespace)
