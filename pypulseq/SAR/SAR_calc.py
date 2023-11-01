@@ -5,7 +5,6 @@ from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.matlib
 import scipy.io as sio
 from scipy import interpolate
 
