@@ -33,8 +33,8 @@ def test_area_flatarea_amplitude_error():
 
 
 def test_flat_time_error():
-    errstr = "When `flat_time` is provided, either `flat_area` or `amplitude` must be provided as well; you may "\
-             "consider providing `duration`, `area` and optionally ramp times instead."
+    errstr = "When `flat_time` is provided, either `flat_area`, "\
+             "or `amplitude`, or `rise_time` and `area` must be provided as well."
 
     with pytest.raises(
             ValueError,
@@ -70,28 +70,40 @@ def test_no_area_no_duration_error():
 
 
 def test_amplitude_too_large_error():
-    errstr = "Amplitude violation."
+    errstr = r"Refined amplitude \(\d+ Hz/m\) is larger than max \(\d+ Hz/m\)."
 
     with pytest.raises(
-            ValueError,
+            AssertionError,
             match=errstr):
         make_trapezoid(channel='x',  amplitude=1E10, duration=1)
 
 
 def test_generation_methods():
+    """Test minimum input cases
+    Cover:
+        - area
+        - amplitude and duration
+        - flat_time and flat_area
+        - flat_time and amplitude
+        - flat_time, area and rise_time
+    """
 
     assert isinstance(
         make_trapezoid(channel='x',  area=1),
         SimpleNamespace)
 
     assert isinstance(
-        make_trapezoid(channel='x', flat_area=1, flat_time=1),
-        SimpleNamespace)
-
-    assert isinstance(
-        make_trapezoid(channel='x', flat_area=0.5, duration=1, area=1),
-        SimpleNamespace)
-
-    assert isinstance(
         make_trapezoid(channel='x',  amplitude=1, duration=1),
+        SimpleNamespace)
+
+    assert isinstance(
+        make_trapezoid(channel='x', flat_time=1, flat_area=1),
+        SimpleNamespace)
+
+    assert isinstance(
+        make_trapezoid(channel='x', flat_time=1, amplitude=1),
+        SimpleNamespace)
+
+    assert isinstance(
+        make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1),
         SimpleNamespace)
