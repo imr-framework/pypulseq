@@ -844,7 +844,7 @@ class Sequence:
         if show_blocks:
             for sp in [sp11, sp12, sp13, *fig2_subplots]:
                 sp.set_xticks(t_factor * block_edges_in_range)
-                sp.set_xticklabels(rotation=90)
+                sp.set_xticklabels(sp.get_xticklabels(), rotation=90)
 
         for block_counter in range(len(self.block_events)):
             block = self.get_block(block_counter + 1)

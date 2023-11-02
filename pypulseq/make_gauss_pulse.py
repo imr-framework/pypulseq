@@ -8,6 +8,7 @@ from pypulseq.calc_duration import calc_duration
 from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 
 def make_gauss_pulse(
@@ -73,7 +74,7 @@ def make_gauss_pulse(
     time_bw_product : int, default=4
         Time-bandwidth product.
     use : str, default=str()
-        Use of radio-frequency gauss pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        Use of radio-frequency gauss pulse event. Must be one defined in pypulseq.supported_labels_rf_use.get_supported_rf_uses.
 
     Returns
     -------
@@ -89,13 +90,12 @@ def make_gauss_pulse(
     Raises
     ------
     ValueError
-        If invalid `use` is passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        If invalid `use` is passed.
         If `return_gz=True` and `slice_thickness` was not passed.
     """
-    valid_use_pulses = ["excitation", "refocusing", "inversion"]
-    if use != "" and use not in valid_use_pulses:
+    if use != "" and use not in get_supported_rf_uses():
         raise ValueError(
-            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
+            f"Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}"
         )
 
     if dwell == 0:
