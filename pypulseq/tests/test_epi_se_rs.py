@@ -3,7 +3,10 @@ import unittest
 from pypulseq.seq_examples.scripts import write_epi_se_rs
 from pypulseq.tests import base
 
+import pytest
 
+
+@pytest.mark.matlab_seq_comp
 class TestEPISpinEchoRS(unittest.TestCase):
     def test_write_epi(self):
         matlab_seq_filename = "epi_se_rs_matlab.seq"

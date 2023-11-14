@@ -46,6 +46,7 @@ class TestSigpyPulseMethods(unittest.TestCase):
             time_bw_product=4,
             return_gz=True,
             pulse_cfg=pulse_cfg,
+            plot=False,
         )
 
         [a, b] = rf.sim.abrm(
@@ -97,6 +98,7 @@ class TestSigpyPulseMethods(unittest.TestCase):
             time_bw_product=4,
             return_gz=True,
             pulse_cfg=pulse_cfg,
+            plot=False
         )
 
         [a, b] = rf.sim.abrm(
