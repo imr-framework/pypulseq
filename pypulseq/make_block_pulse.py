@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import Tuple, Union
+from warnings import warn
 
 import numpy as np
 
@@ -11,29 +12,36 @@ from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 def make_block_pulse(
     flip_angle: float,
-    bandwidth: float = 0,
     delay: float = 0,
-    duration: float = 4e-3,
+    duration: float = None,
+    bandwidth: float = None,
+    time_bw_product: float = None,
     freq_offset: float = 0,
     phase_offset: float = 0,
     return_delay: bool = False,
     system: Opts = Opts(),
-    time_bw_product: float = 0,
     use: str = str(),
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
-    Create a block pulse with optional slice selectiveness.
+    Create a block (RECT or hard) pulse.
+
+    Define duration, or bandwidth, or bandwidth and time_bw_product.
+    If none are provided a default 4 ms pulse will be generated.
 
     Parameters
     ----------
     flip_angle : float
         Flip angle in radians.
-    bandwidth : float, default=0
-        Bandwidth in Hertz (hz).
     delay : float, default=0
-        Delay in seconds (s) of accompanying slice select trapezoidal event.
-    duration : float, default=4e-3
+        Delay in seconds (s).
+    duration : float, default=None
         Duration in seconds (s).
+    bandwidth : float, default=None
+        Bandwidth in Hertz (Hz).
+        If supplied without time_bw_product duration = 1 / (4 * bandwidth)
+    time_bw_product : float, default=None
+        Time-bandwidth product.
+        If supplied with bandwidth, duration = time_bw_product / bandwidth
     freq_offset : float, default=0
         Frequency offset in Hertz (Hz).
     phase_offset : float, default=0
@@ -42,40 +50,57 @@ def make_block_pulse(
         Boolean flag to indicate if the delay event has to be returned.
     system : Opts, default=Opts()
         System limits.
-    time_bw_product : float, default=0
-        Time-bandwidth product.
     use : str, default=str()
-        Use of radio-frequency block pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        Use of radio-frequency block pulse event.
 
     Returns
     -------
     rf : SimpleNamespace
         Radio-frequency block pulse event.
     delay : SimpleNamespace, optional
-        Slice select trapezoidal gradient event accompanying the radio-frequency block pulse event.
+        Delay event.
 
     Raises
     ------
     ValueError
-        If invalid `use` parameter is passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
-        If neither `bandwidth` nor `duration` are passed.
-        If `return_gz=True`, and `slice_thickness` is not passed.
+        If invalid `use` parameter is passed.
+        One of bandwidth or duration must be defined, but not both.
+        One of bandwidth or duration must be defined and be > 0.
     """
     valid_use_pulses = get_supported_rf_uses()
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
-            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
+            "Invalid use parameter. "
+            f"Must be one of {valid_use_pulses}. Passed: {use}"
         )
 
-    if duration == 0:
-        if time_bw_product > 0:
+    if duration is None and bandwidth is None:
+        warn('Using default 4 ms duration for block pulse.')
+        duration = 4E-3
+    elif duration is not None and bandwidth is not None\
+            and duration > 0:
+        # Multiple arguments
+        raise ValueError(
+            "One of bandwidth or duration must be defined, but not both.")
+    elif duration is not None\
+            and duration > 0:
+        # Explicitly handle this most expected case.
+        # There is probably a better way of writing this if block
+        pass
+    elif duration is None\
+            and bandwidth is not None\
+            and bandwidth > 0:
+        if time_bw_product is not None\
+                and time_bw_product > 0:
             duration = time_bw_product / bandwidth
-        elif bandwidth > 0:
-            duration = 1 / (4 * bandwidth)
         else:
-            raise ValueError("Either bandwidth or duration must be defined")
+            duration = 1 / (4 * bandwidth)
+    else:
+        # Invalid arguments
+        raise ValueError(
+            "One of bandwidth or duration must be defined and be > 0. "
+            f"duration = {duration} s, bandwidth = {bandwidth} Hz.")
 
-    BW = 1 / (4 * duration)
     N = round(duration / system.rf_raster_time)
     t = np.array([0, N]) * system.rf_raster_time
     signal = flip_angle / (2 * np.pi) / duration * np.ones_like(t)
