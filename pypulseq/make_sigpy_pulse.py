@@ -26,6 +26,7 @@ def sigpy_n_seq(
     time_bw_product: float = 4,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     use: str = str(),
+    plot: bool = True,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
     """
     Creates a radio-frequency sinc pulse event using the sigpy rf pulse library and optionally accompanying slice select, slice select rephasing
@@ -62,6 +63,8 @@ def sigpy_n_seq(
         Time-bandwidth product.
     use : str, optional, default=str()
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
+    plot: bool, optional, default=True
+        Show sigpy plot outputs
 
     Returns
     -------
@@ -92,7 +95,7 @@ def sigpy_n_seq(
             duration=duration,
             system=system,
             pulse_cfg=pulse_cfg,
-            disp=True,
+            disp=plot,
         )
     if pulse_cfg.pulse_type == "sms":
         [signal, t, pulse] = make_sms(
@@ -101,7 +104,7 @@ def sigpy_n_seq(
             duration=duration,
             system=system,
             pulse_cfg=pulse_cfg,
-            disp=True,
+            disp=plot,
         )
 
     rfp = SimpleNamespace()

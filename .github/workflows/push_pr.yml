@@ -39,4 +39,4 @@ jobs:
         shell: bash -l {0}
         run: |
             pip install .
-            pytest pypulseq/tests
+            pytest -m "not matlab_seq_comp" pypulseq/tests

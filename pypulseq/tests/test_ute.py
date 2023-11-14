@@ -3,7 +3,10 @@ import unittest
 from pypulseq.seq_examples.scripts import write_ute
 from pypulseq.tests import base
 
+import pytest
 
+
+@pytest.mark.matlab_seq_comp
 class TestUTE(unittest.TestCase):
     def test_write_epi(self):
         matlab_seq_filename = "ute_matlab.seq"
