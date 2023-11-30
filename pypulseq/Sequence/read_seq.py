@@ -282,6 +282,10 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 if hasattr(grad, "first"):
                     continue
 
+                amplitude_ID = event_idx[j + 2]
+                if amplitude_ID in event_idx[:(j+2)]: # We did this update for the previous channels, don't do it again.
+                    continue
+
                 grad.first = grad_prev_last[j]
                 if grad.time_id != 0:
                     grad.last = grad.waveform[-1]
@@ -304,7 +308,6 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 if grad_duration + eps < block_duration:
                     grad_prev_last[j] = 0
 
-                amplitude_ID = event_idx[j + 2]
                 amplitude = self.grad_library.data[amplitude_ID][0]
                 if version_combined >= 1004000:
                     old_data = np.array(
