@@ -23,7 +23,11 @@ def get_supported_labels() -> Tuple[
         "NAV",
         "REV",
         "SMS",
-        "PMC",
+        "REF", "IMA",               # For parallel imaging
+        "NOISE",                    # noise adjust scan, for iPAT acceleration
+        "PMC",                      # for MoCo/PMC Pulseq version to recognize blocks that can be prospectively corrected for motion
+        "NOROT", "NOPOS", "NOSCL",  # instruct the interpreter to ignore the position, rotation or scaling of the FOV specified on the UI 
+        "ONCE",                     # a 3-state flag that instructs the interpreter to alter the sequence when executing multiple repeats as follows: blocks with ONCE==0 are executed on every repetition; ONCE==1: only the first repetition; ONCE==2: only the last repetition
     )
 
 
