@@ -283,7 +283,13 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     continue
 
                 amplitude_ID = event_idx[j + 2]
-                if amplitude_ID in event_idx[:(j+2)]: # We did this update for the previous channels, don't do it again.
+                if amplitude_ID in event_idx[2:(j+2)]: # We did this update for the previous channels, don't do it again.
+                    
+                    # Remove the block from the cache and re-add it, otherwise, the other grad with same id in the block will not be updated.
+                    if self.use_block_cache:
+                        del self.block_cache[block_counter + 1] # TODO: I feel like the update_data function should be responsible for this.
+                        block = self.get_block(block_counter + 1)
+
                     continue
 
                 grad.first = grad_prev_last[j]
@@ -326,6 +332,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     ]
                 )
                 self.grad_library.update_data(amplitude_ID, old_data, new_data, "g")
+
             else:
                 grad_prev_last[j] = 0
 
