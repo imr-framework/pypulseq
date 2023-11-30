@@ -1,4 +1,5 @@
 import re
+import warnings
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, Tuple, List
@@ -82,8 +83,10 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 self.adc_raster_time = self.definitions["AdcRasterTime"]
 
             # Block duration raster
-            if "BlockDurationRaster" in self.block_events:
-                self.block_duration_raster = self.block_events["BlockDurationRaster"]
+            if "BlockDurationRaster" in self.definitions:
+                self.block_duration_raster = self.definitions["BlockDurationRaster"]
+            else:
+                warnings.warn(f"No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.")
 
         elif section == "[JEMRIS]":
             jemris_generated = True
