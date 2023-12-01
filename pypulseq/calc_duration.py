@@ -7,7 +7,7 @@ from pypulseq.block_to_events import block_to_events
 
 def calc_duration(*args: SimpleNamespace) -> float:
     """
-    Calculate the duration of an event or block.
+    Calculate the duration of an event or block. The duration of a block is given by the maximum duration of its events.
 
     Parameters
     ----------
@@ -17,7 +17,7 @@ def calc_duration(*args: SimpleNamespace) -> float:
     Returns
     -------
     duration : float
-        Cumulative duration of `args`.
+        Maximum duration of `args`.
     """
     events = block_to_events(*args)
 
