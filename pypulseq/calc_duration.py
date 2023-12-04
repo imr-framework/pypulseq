@@ -7,7 +7,14 @@ from pypulseq.block_to_events import block_to_events
 
 def calc_duration(*args: SimpleNamespace) -> float:
     """
-    Calculate the duration of an event or block. The duration of a block is given by the maximum duration of its events.
+    Calculate the duration of an event or block.
+    The duration of an event is the
+    time taken by the actual event itself plus its delay.
+    If multiple events are provided, the calculated duration is for a block
+    comprised of these events, which is given by the maximum duration of the events.
+
+    Although it is possible to provide events that can't be actually be combined into a block
+    (e.g. multiple events of the same type), the result is still the maximum duration of all events.
 
     Parameters
     ----------
