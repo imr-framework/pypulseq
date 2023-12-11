@@ -1,10 +1,8 @@
 import itertools
 import math
 from collections import OrderedDict
-from copy import copy
-from itertools import chain
 from types import SimpleNamespace
-from typing import Tuple, List, Iterable
+from typing import Tuple, List
 from typing import Union
 from warnings import warn
 
@@ -117,7 +115,7 @@ class Sequence:
 
     def adc_times(
         self, time_range: List[float] = None
-    ) -> Tuple[List[float], np.ndarray, List[float], np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Return time points of ADC sampling points.
 
@@ -165,9 +163,13 @@ class Sequence:
 
             curr_dur += self.block_durations[block_counter]
         
-
-        t_adc = np.concatenate(t_adc)
-        fp_adc = np.array(fp_adc)
+        if t_adc == []:
+            # If there are no ADCs, make sure the output is the right shape
+            t_adc = np.zeros(0)
+            fp_adc = np.zeros((0,2))
+        else:
+            t_adc = np.concatenate(t_adc)
+            fp_adc = np.array(fp_adc)
 
         return t_adc, fp_adc
 
@@ -993,6 +995,9 @@ class Sequence:
         file_path : str
             Path to `.seq` file to be read.
         """
+        if self.use_block_cache:
+            self.block_cache.clear()
+
         read(self, path=file_path, detect_rf_use=detect_rf_use)
 
         # Initialize next free block ID
