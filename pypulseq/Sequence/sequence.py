@@ -372,7 +372,10 @@ class Sequence:
         return self.calculate_kspace(trajectory_delay, gradient_offset)
 
     def calculate_pns(
-            self, hardware: SimpleNamespace, do_plots: bool = True
+            self,
+            hardware: SimpleNamespace,
+            time_range: List[float] = None,
+            do_plots: bool = True
             ) -> Tuple[bool, np.array, np.ndarray, np.array]:
         """
         Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
@@ -403,7 +406,7 @@ class Sequence:
         t_pns : np.array [N]
             Time axis for the pns_norm and pns_components arrays
         """
-        return calc_pns(self, hardware, do_plots=do_plots)
+        return calc_pns(self, hardware, time_range=time_range, do_plots=do_plots)
 
     def check_timing(self) -> Tuple[bool, List[str]]:
         """
@@ -624,7 +627,8 @@ class Sequence:
 
     def get_gradients(self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
-        gradient_offset: Union[float, List[float], np.ndarray] = 0) -> List[PPoly]:
+        gradient_offset: Union[float, List[float], np.ndarray] = 0,
+        time_range: List[float] = None) -> List[PPoly]:
         """
         Get all gradient waveforms of the sequence in a piecewise-polynomial
         format (scipy PPoly). Gradient values can be accessed easily at one or
@@ -652,7 +656,7 @@ class Sequence:
 
         total_duration = sum(self.block_durations.values())
         
-        gw_data = self.waveforms()
+        gw_data = self.waveforms(time_range=time_range)
         ng = len(gw_data)
         
         # Gradient delay handling
