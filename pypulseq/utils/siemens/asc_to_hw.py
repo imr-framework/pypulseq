@@ -2,7 +2,7 @@ from types import SimpleNamespace
 import numpy as np
 
 
-def asc_to_hw(asc : dict) -> SimpleNamespace:
+def asc_to_hw(asc : dict, cardiac_model : bool = False) -> SimpleNamespace:
     """
     Convert ASC dictionary from readasc to SAFE hardware description.
 
@@ -10,6 +10,9 @@ def asc_to_hw(asc : dict) -> SimpleNamespace:
     ----------
     asc : dict
         ASC dictionary, see readasc
+    cardiac_model : bool
+        Whether or not to read the cardiac stimulation model instead of the
+        default PNS model (returns None if not available)
 
     Returns
     -------
@@ -27,8 +30,13 @@ def asc_to_hw(asc : dict) -> SimpleNamespace:
         asc_pns = asc['GradPatSup']['Phys']['PNS']
     else:
         asc_pns = asc
+    
+    if cardiac_model:
+        if 'GradPatSup' in asc and 'CarNS' in asc['GradPatSup']['Phys']:
+            asc_pns = asc['GradPatSup']['Phys']['CarNS']
+        else:
+            return None
 
-    #hw.look_ahead    =  1.0 # MZ: this is not a real hardware parameter but a coefficient, with which the final result is multiplied
     hw.x = SimpleNamespace()
     hw.x.tau1        = asc_pns['flGSWDTauX'][0]  # ms
     hw.x.tau2        = asc_pns['flGSWDTauX'][1]  # ms
