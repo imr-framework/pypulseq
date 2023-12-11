@@ -1,6 +1,7 @@
 import math
 from types import SimpleNamespace
 from typing import Tuple, Union
+from copy import copy
 
 import numpy as np
 
@@ -24,7 +25,7 @@ def make_sinc_pulse(
     return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
@@ -88,6 +89,9 @@ def make_sinc_pulse(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
+    if system == None:
+        system = Opts.default
+        
     valid_pulse_uses = get_supported_rf_uses()
     if use != "" and use not in valid_pulse_uses:
         raise ValueError(
@@ -132,9 +136,11 @@ def make_sinc_pulse(
             raise ValueError("Slice thickness must be provided")
 
         if max_grad > 0:
+            system = copy(system)
             system.max_grad = max_grad
 
         if max_slew > 0:
+            system = copy(system)
             system.max_slew = max_slew
 
         amplitude = BW / slice_thickness

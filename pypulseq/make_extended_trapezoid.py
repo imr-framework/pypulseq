@@ -15,7 +15,7 @@ def make_extended_trapezoid(
     max_grad: float = 0,
     max_slew: float = 0,
     skip_check: bool = False,
-    system: Opts = Opts(),
+    system: Opts = None,
     times: np.ndarray = np.zeros(1),
 ) -> SimpleNamespace:
     """
@@ -60,6 +60,9 @@ def make_extended_trapezoid(
         If all elements in `amplitudes` are zero.
         If first amplitude of a gradient is non-ero and does not connect to a previous block.
     """
+    if system == None:
+        system = Opts.default
+        
     if channel not in ["x", "y", "z"]:
         raise ValueError(
             f"Invalid channel. Must be one of 'x', 'y' or 'z'. Passed: {channel}"

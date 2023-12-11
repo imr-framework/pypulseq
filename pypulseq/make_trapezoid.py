@@ -47,7 +47,7 @@ def make_trapezoid(
     max_grad: float = 0,
     max_slew: float = 0,
     rise_time: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
 ) -> SimpleNamespace:
     """
     Create a trapezoidal gradient event.
@@ -104,6 +104,9 @@ def make_trapezoid(
         If `flat_time`, `duration` and `area` are not supplied.
         Amplitude violation
     """
+    if system == None:
+        system = Opts.default
+        
     if channel not in ["x", "y", "z"]:
         raise ValueError(
             f"Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}"

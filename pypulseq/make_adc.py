@@ -10,7 +10,7 @@ def make_adc(
     dwell: float = 0,
     freq_offset: float = 0,
     phase_offset: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
 ) -> SimpleNamespace:
     """
     Create an ADC readout event.
@@ -42,6 +42,9 @@ def make_adc(
     ValueError
         If neither `dwell` nor `duration` are defined.
     """
+    if system == None:
+        system = Opts.default
+        
     adc = SimpleNamespace()
     adc.type = "adc"
     adc.num_samples = num_samples

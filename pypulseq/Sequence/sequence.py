@@ -44,7 +44,10 @@ class Sequence:
     version_minor = minor
     version_revision = revision
 
-    def __init__(self, system=Opts(), use_block_cache=True):
+    def __init__(self, system=None, use_block_cache=True):
+        if system == None:
+            system = Opts()
+            
         # =========
         # EVENT LIBRARIES
         # =========

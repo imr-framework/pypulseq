@@ -18,7 +18,7 @@ def rotate(
     *args: SimpleNamespace,
     angle: float,
     axis: str,
-    system=Opts()
+    system=None
 ) -> List[SimpleNamespace]:
     """
     Rotates the corresponding gradient(s) about the given axis by the specified amount. Gradients parallel to the
@@ -40,6 +40,9 @@ def rotate(
     rotated_grads : [SimpleNamespace]
         Rotated gradient(s).
     """
+    if system == None:
+        system = Opts.default
+        
     axes = ["x", "y", "z"]
 
     # Cycle through the objects and rotate gradients non-parallel to the given rotation axis. Rotated gradients

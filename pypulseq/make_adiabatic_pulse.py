@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import Tuple, Union
+from copy import copy
 
 import numpy as np
 import math
@@ -31,7 +32,7 @@ def make_adiabatic_pulse(
     return_gz: bool = False,
     return_delay: bool = False,
     slice_thickness: float = 0,
-    system=Opts(),
+    system=None,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
@@ -135,6 +136,9 @@ def make_adiabatic_pulse(
         If invalid pulse use is encountered.
         If slice thickness is not provided but slice-selective trapezoid event is expected.
     """
+    if system == None:
+        system = Opts.default
+        
     valid_pulse_types = ["hypsec", "wurst"]
     if pulse_type != "" and pulse_type not in valid_pulse_types:
         raise ValueError(
@@ -218,9 +222,11 @@ def make_adiabatic_pulse(
             raise ValueError("Slice thickness must be provided")
 
         if max_grad > 0:
+            system = copy(system)
             system.max_grad = max_grad
 
         if max_slew > 0:
+            system = copy(system)
             system.max_slew = max_slew
 
         if pulse_type == "hypsec":

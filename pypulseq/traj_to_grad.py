@@ -6,7 +6,7 @@ from pypulseq.opts import Opts
 
 
 def traj_to_grad(
-    k: np.ndarray, raster_time: float = Opts().grad_raster_time
+    k: np.ndarray, raster_time: float = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Convert k-space trajectory `k` into gradient waveform in compliance with `raster_time` gradient raster time.
@@ -25,6 +25,9 @@ def traj_to_grad(
     sr : numpy.ndarray
         Slew rate.
     """
+    if raster_time == None:
+        raster_time = Opts.default.grad_raster_time
+    
     # Compute finite difference for gradients in Hz/m
     g = (k[1:] - k[:-1]) / raster_time
     # Compute the slew rate

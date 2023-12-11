@@ -9,7 +9,7 @@ from pypulseq.opts import Opts
 
 
 def split_gradient(
-    grad: SimpleNamespace, system: Opts = Opts()
+    grad: SimpleNamespace, system: Opts = None
 ) -> Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]:
     """
     Splits a trapezoidal gradient into slew up, flat top and slew down. Returns the individual gradient parts (slew up,
@@ -41,6 +41,9 @@ def split_gradient(
          If arbitrary gradients are passed.
          If non-gradient event is passed.
     """
+    if system == None:
+        system = Opts.default
+        
     grad_raster_time = system.grad_raster_time
     total_length = calc_duration(grad)
 

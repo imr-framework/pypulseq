@@ -1,6 +1,7 @@
 import math
 from types import SimpleNamespace
 from typing import Tuple, Union
+from copy import copy
 
 import numpy as np
 import sigpy.mri.rf as rf
@@ -22,7 +23,7 @@ def sigpy_n_seq(
     phase_offset: float = 0,
     return_gz: bool = True,
     slice_thickness: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
     time_bw_product: float = 4,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     use: str = str(),
@@ -81,7 +82,9 @@ def sigpy_n_seq(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-
+    if system == None:
+        system = Opts.default
+        
     valid_use_pulses = ["excitation", "refocusing", "inversion"]
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
@@ -128,9 +131,11 @@ def sigpy_n_seq(
             raise ValueError("Slice thickness must be provided")
 
         if max_grad > 0:
+            system = copy(system)
             system.max_grad = max_grad
 
         if max_slew > 0:
+            system = copy(system)
             system.max_slew = max_slew
         BW = time_bw_product / duration
         amplitude = BW / slice_thickness
@@ -172,10 +177,13 @@ def make_slr(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
+    if system == None:
+        system = Opts.default
+        
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time
 
@@ -220,10 +228,13 @@ def make_sms(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
+    if system == None:
+        system = Opts.default
+        
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time
 

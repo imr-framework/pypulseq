@@ -11,7 +11,7 @@ def calc_ramp(
     max_grad: np.ndarray = np.zeros(0),
     max_points: int = 500,
     max_slew: np.ndarray = np.zeros(0),
-    system: Opts = Opts(),
+    system: Opts = None,
 ) -> Tuple[np.ndarray, bool]:
     """
     Join the points `k0` and `k_end` in three-dimensional  k-space in minimal time, observing the gradient and slew
@@ -42,6 +42,8 @@ def calc_ramp(
     success : bool
         Boolean flag indicating if `k0` and `k_end` were successfully joined.
     """
+    if system == None:
+        system = Opts.default
 
     def __inside_limits(grad, slew):
         if mode == 0:
