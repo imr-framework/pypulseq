@@ -253,24 +253,24 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
         # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = dict()
         # Scan through blocks and calculate durations
-        for block_counter in range(len(self.block_events)):
-            block = self.get_block(block_counter + 1)
-            if delay_ind_temp[block_counter + 1] > 0:
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            if delay_ind_temp[block_counter] > 0:
                 block.delay = SimpleNamespace()
                 block.delay.type = "delay"
                 block.delay.delay = temp_delay_library.data[
-                    delay_ind_temp[block_counter + 1]
+                    delay_ind_temp[block_counter]
                 ]
-            self.block_durations[block_counter + 1] = calc_duration(block)
+            self.block_durations[block_counter] = calc_duration(block)
 
     grad_channels = ["gx", "gy", "gz"]
     grad_prev_last = np.zeros(len(grad_channels))
-    for block_counter in range(len(self.block_events)):
-        block = self.get_block(block_counter + 1)
+    for block_counter in self.block_events:
+        block = self.get_block(block_counter)
         block_duration = block.block_duration
         # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
         # repeated entries so searching by content will fail
-        event_idx = self.block_events[block_counter + 1]
+        event_idx = self.block_events[block_counter]
         # Update the objects by filling in the fields not contained in the PyPulseq file
         for j in range(len(grad_channels)):
             grad = getattr(block, grad_channels[j])

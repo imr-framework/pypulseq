@@ -194,6 +194,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 )
 
             if block_index > 1:
+                # TODO: block_index - 1 assumes linear ordering of blocks.
+                #       However, searching for the previous block index in block_events is a big performance hit
+                #       For newly inserted blocks (block_index not in self.block_events), we can just use the last block as previous
                 prev_id = self.block_events[block_index - 1][grad_to_check.idx]
                 if prev_id != 0:
                     prev_lib = self.grad_library.get(prev_id)

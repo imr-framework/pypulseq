@@ -74,6 +74,8 @@ class Sequence:
         self.block_events = OrderedDict()  # Event table
         self.use_block_cache = use_block_cache
         self.block_cache = dict()  # Block cache
+        self.next_free_block_ID = 1
+        
         self.definitions = dict()  # Optional sequence definitions
 
         self.rf_raster_time = (
@@ -127,28 +129,31 @@ class Sequence:
             Contains frequency and phase offsets of each ADC object (not samples).
         """
 
-        num_blocks = len(self.block_events)
-
         # Collect ADC timing data
         t_adc = []
         fp_adc = []
 
         curr_dur = 0
-
         if time_range == None:
-            begin_block = 0
-            end_block = num_blocks
+            blocks = self.block_events
         else:
             if len(time_range) != 2:
                 raise ValueError('Time range must be list of two elements')
+            if time_range[0] > time_range[1]:
+                raise ValueError('End time of time_range must be after begin time')
             
-            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            # Calculate end times of each block
+            bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
+            # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
+            # Search block begin times for end of time range
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            blocks = list(self.block_durations.keys())[begin_block:end_block]
+            curr_dur = t[begin_block] - bd[begin_block]
             
-        for block_counter in range(begin_block, end_block):
-            block = self.get_block(block_counter + 1)
+        for block_counter in blocks:
+            block = self.get_block(block_counter)
             
             if block.adc is not None:  # ADC
                 t_adc.append(
@@ -158,7 +163,8 @@ class Sequence:
                 )
                 fp_adc.append([block.adc.freq_offset, block.adc.phase_offset])
 
-            curr_dur += self.block_durations[block_counter + 1]
+            curr_dur += self.block_durations[block_counter]
+        
 
         t_adc = np.concatenate(t_adc)
         fp_adc = np.array(fp_adc)
@@ -180,7 +186,8 @@ class Sequence:
         args : SimpleNamespace
             Block structure or events to be added as a block to `Sequence`.
         """
-        block.set_block(self, len(self.block_events) + 1, *args)
+        block.set_block(self, self.next_free_block_ID, *args)
+        self.next_free_block_ID += 1
             
     def calculate_kspace(
         self,
@@ -410,20 +417,19 @@ class Sequence:
         """
         error_report = []
         is_ok = True
-        num_blocks = len(self.block_events)
         total_duration = 0
 
-        for block_counter in range(num_blocks):
-            block = self.get_block(block_counter + 1)
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
             events = block_to_events(block)
             res, rep, duration = ext_check_timing(self.system, *events)
             is_ok = is_ok and res
 
             # Check the stored total block duration
-            if abs(duration - self.block_durations[block_counter + 1]) > eps:
+            if abs(duration - self.block_durations[block_counter]) > eps:
                 rep += "Inconsistency between the stored block duration and the duration of the block content"
                 is_ok = False
-                duration = self.block_durations[block_counter + 1]
+                duration = self.block_durations[block_counter]
 
             # Check RF dead times
             if block.rf is not None:
@@ -471,7 +477,7 @@ class Sequence:
                 if not isinstance(events[e], list) and events[e].type == "grad":
                     if events[e].last != 0:
                         error_report.append(
-                            f"Event {num_blocks - 1} gradients do not ramp to 0 at the end of the sequence"
+                            f"Event: {list(self.block_events)[-1]} - Gradients do not ramp to 0 at the end of the sequence"
                         )
 
         self.set_definition("TotalDuration", total_duration)
@@ -492,11 +498,11 @@ class Sequence:
             Number of events in this sequence.
         """
         num_blocks = len(self.block_events)
-        event_count = np.zeros(len(self.block_events[1]))
+        event_count = np.zeros(len(next(iter(self.block_events.values()))))
         duration = 0
-        for block_counter in range(num_blocks):
-            event_count += self.block_events[block_counter + 1] > 0
-            duration += self.block_durations[block_counter + 1]
+        for block_counter in self.block_events:
+            event_count += self.block_events[block_counter] > 0
+            duration += self.block_durations[block_counter]
 
         return duration, num_blocks, event_count
 
@@ -849,9 +855,9 @@ class Sequence:
                 sp.set_xticks(t_factor * block_edges_in_range)
                 sp.set_xticklabels(sp.get_xticklabels(), rotation=90)
 
-        for block_counter in range(len(self.block_events)):
-            block = self.get_block(block_counter + 1)
-            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter + 1]
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter]
                         and t0 <= time_range[1])
             if is_valid:
                 if getattr(block, "label", None) is not None:
@@ -948,7 +954,7 @@ class Sequence:
                                 g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                             )
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
-            t0 += self.block_durations[block_counter + 1]
+            t0 += self.block_durations[block_counter]
 
         grad_plot_labels = ["x", "y", "z"]
         sp11.set_ylabel("ADC")
@@ -988,6 +994,9 @@ class Sequence:
             Path to `.seq` file to be read.
         """
         read(self, path=file_path, detect_rf_use=detect_rf_use)
+
+        # Initialize next free block ID
+        self.next_free_block_ID = max(self.block_events) + 1
 
     def register_adc_event(self, event: EventLibrary) -> int:
         return block.register_adc_event(self, event)
@@ -1083,8 +1092,6 @@ class Sequence:
             Contains frequency and phase offsets of the excitation RF pulses
         """
 
-        num_blocks = len(self.block_events)
-
         # Collect RF timing data
         t_excitation = []
         fp_excitation = []
@@ -1092,21 +1099,26 @@ class Sequence:
         fp_refocusing = []
 
         curr_dur = 0
-
         if time_range == None:
-            begin_block = 0
-            end_block = num_blocks
+            blocks = self.block_events
         else:
             if len(time_range) != 2:
                 raise ValueError('Time range must be list of two elements')
+            if time_range[0] > time_range[1]:
+                raise ValueError('End time of time_range must be after begin time')
             
-            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            # Calculate end times of each block
+            bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
+            # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
+            # Search block begin times for end of time range
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            blocks = list(self.block_durations.keys())[begin_block:end_block]
+            curr_dur = t[begin_block] - bd[begin_block]
             
-        for block_counter in range(begin_block, end_block):
-            block = self.get_block(block_counter + 1)
+        for block_counter in blocks:
+            block = self.get_block(block_counter)
             
             if block.rf is not None:  # RF
                 rf = block.rf
@@ -1121,7 +1133,7 @@ class Sequence:
                     t_refocusing.append(curr_dur + t)
                     fp_refocusing.append([block.rf.freq_offset, block.rf.phase_offset])
 
-            curr_dur += self.block_durations[block_counter + 1]
+            curr_dur += self.block_durations[block_counter]
 
 
         if len(t_excitation) != 0:
@@ -1154,6 +1166,9 @@ class Sequence:
             Block or events to be replaced/added or created at `block_index`.
         """
         block.set_block(self, block_index, *args)
+
+        if block_index >= self.next_free_block_ID:
+            self.next_free_block_ID = block_index + 1
 
     def set_definition(
         self, key: str, value: Union[float, int, list, np.ndarray, str, tuple]
@@ -1231,8 +1246,6 @@ class Sequence:
         """
         grad_channels = ["gx", "gy", "gz"]
 
-        num_blocks = len(self.block_events)
-
         # Collect shape pieces
         if append_RF:
             shape_channels = len(grad_channels) + 1  # Last 'channel' is RF
@@ -1240,24 +1253,29 @@ class Sequence:
             shape_channels = len(grad_channels)
 
         shape_pieces = [[] for _ in range(shape_channels)]
-
-        curr_dur = 0
         out_len = np.zeros(shape_channels)  # Last 'channel' is RF
 
+        curr_dur = 0
         if time_range == None:
-            begin_block = 0
-            end_block = num_blocks
+            blocks = self.block_events
         else:
             if len(time_range) != 2:
-                raise ValueError('Time range must be list or tuple of two elements')
+                raise ValueError('Time range must be list of two elements')
+            if time_range[0] > time_range[1]:
+                raise ValueError('End time of time_range must be after begin time')
             
-            bd = np.array([x[1] for x in sorted(self.block_durations.items())])
+            # Calculate end times of each block
+            bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
+            # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
+            # Search block begin times for end of time range
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            blocks = list(self.block_durations.keys())[begin_block:end_block]
+            curr_dur = t[begin_block] - bd[begin_block]
             
-        for block_counter in range(begin_block, end_block):
-            block = self.get_block(block_counter + 1)
+        for block_counter in blocks:
+            block = self.get_block(block_counter)
             
             for j in range(len(grad_channels)):
                 grad = getattr(block, grad_channels[j])
@@ -1349,7 +1367,7 @@ class Sequence:
 
                     shape_pieces[-1].append(rf_piece)
 
-            curr_dur += self.block_durations[block_counter + 1]
+            curr_dur += self.block_durations[block_counter]
 
         # Collect wave data
         wave_data = []
@@ -1464,8 +1482,8 @@ class Sequence:
         gy_all = np.array([])
         gz_all = np.array([])
 
-        for block_counter in range(len(self.block_events)):  # For each block
-            block = self.get_block(block_counter + 1)  # Retrieve it
+        for block_counter in self.block_events:  # For each block
+            block = self.get_block(block_counter)  # Retrieve it
             is_valid = (
                 time_range[0] <= t0 <= time_range[1]
             )  # Check if "current time" is within requested range.
@@ -1548,7 +1566,7 @@ class Sequence:
                             gz_all = np.concatenate((gz_all, g))
 
             t0 += self.block_durations[
-                block_counter + 1
+                block_counter
             ]  # "Current time" gets updated to end of block just examined
 
         all_waveforms = {
