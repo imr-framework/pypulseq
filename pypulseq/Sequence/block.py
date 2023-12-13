@@ -88,17 +88,6 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
 
-                check_g[channel_num] = SimpleNamespace()
-                check_g[channel_num].idx = idx
-                check_g[channel_num].start = (0, 0)
-                check_g[channel_num].stop = (
-                        event.delay
-                        + event.rise_time
-                        + event.fall_time
-                        + event.flat_time,
-                        0,
-                    )
-
                 if hasattr(event, "id"):
                     trap_id = event.id
                 else:
