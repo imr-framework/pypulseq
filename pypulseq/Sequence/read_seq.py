@@ -263,6 +263,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 ]
             self.block_durations[block_counter] = calc_duration(block)
 
+    # TODO: Is it possible to avoid expensive get_block calls here? 
     grad_channels = ["gx", "gy", "gz"]
     grad_prev_last = np.zeros(len(grad_channels))
     for block_counter in self.block_events:
@@ -283,16 +284,11 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_prev_last[j] = 0
 
                 if hasattr(grad, "first"):
+                    grad_prev_last[j] = grad.last
                     continue
 
                 amplitude_ID = event_idx[j + 2]
                 if amplitude_ID in event_idx[2:(j+2)]: # We did this update for the previous channels, don't do it again.
-                    
-                    # Remove the block from the cache and re-add it, otherwise, the other grad with same id in the block will not be updated.
-                    if self.use_block_cache:
-                        del self.block_cache[block_counter + 1] # TODO: I feel like the update_data function should be responsible for this.
-                        block = self.get_block(block_counter + 1)
-
                     continue
 
                 grad.first = grad_prev_last[j]
@@ -301,6 +297,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_duration = grad.delay + grad.tt[-1]
                 else:
                     # Restore samples on the edges of the gradient raster intervals for that we need the first sample
+                    # TODO: This code does not always restore reasonable values for grad.last
                     odd_step1 = [grad.first, *2 * grad.waveform]
                     odd_step2 = odd_step1 * (np.mod(range(len(odd_step1)), 2) * 2 - 1)
                     waveform_odd_rest = np.cumsum(odd_step2) * (
@@ -318,23 +315,20 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_prev_last[j] = 0
 
                 amplitude = self.grad_library.data[amplitude_ID][0]
-                if version_combined >= 1004000:
-                    old_data = np.array(
-                        [amplitude, grad.shape_id, grad.time_id, grad.delay]
-                    )
-                else:
-                    old_data = np.array([amplitude, grad.shape_id, grad.delay])
-                new_data = np.array(
-                    [
+                new_data = (
                         amplitude,
                         grad.shape_id,
                         grad.time_id,
                         grad.delay,
                         grad.first,
                         grad.last,
-                    ]
                 )
-                self.grad_library.update_data(amplitude_ID, old_data, new_data, "g")
+                self.grad_library.update_data(amplitude_ID, None, new_data, "g")
+
+                # Remove the block from the cache and re-add it
+                if self.use_block_cache:
+                    del self.block_cache[block_counter] # TODO: I feel like the update_data function should be responsible for this.
+                    block = self.get_block(block_counter)
 
             else:
                 grad_prev_last[j] = 0
@@ -359,7 +353,12 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 else:
                     self.rf_library.type[k] = "r"
             self.rf_library.data[k] = lib_data
-
+            
+            # Clear block cache for all blocks that contain the modified RF event
+            for block_counter,events in self.block_events.items():
+                if events[1] == k:
+                    del self.block_cache[block_counter]
+                    
 
 def __read_definitions(input_file) -> Dict[str, str]:
     """
