@@ -9,7 +9,6 @@ class EventLibrary:
     Defines an event library ot maintain a list of events. Provides methods to insert new data and find existing data.
 
     Sequence Properties:
-    - keys - A list of event IDs
     - data - A struct array with field 'array' to store data of varying lengths, remaining compatible with codegen.
     - lengths - Corresponding lengths of the data arrays
     - type - Type to distinguish events in the same class (e.g. trapezoids and arbitrary gradients)
@@ -22,12 +21,8 @@ class EventLibrary:
 
     Attributes
     ----------
-    keys : dict{str, int}
-        Key-value pairs of event keys and corresponding... event keys.
     data : dict{str: numpy.array}
         Key-value pairs of event keys and corresponding data.
-    lengths : dict{str, int}
-        Key-value pairs of event keys and corresponding length of data values in `self.data`.
     type : dict{str, str}
         Key-value pairs of event keys and corresponding event types.
     keymap : dict{str, int}
@@ -35,7 +30,6 @@ class EventLibrary:
     """
 
     def __init__(self, numpy_data=False):
-        self.keys = dict()
         self.data = dict()
         self.type = dict()
         self.keymap = dict()
@@ -44,7 +38,6 @@ class EventLibrary:
 
     def __str__(self) -> str:
         s = "EventLibrary:"
-        s += "\nkeys: " + str(len(self.keys))
         s += "\ndata: " + str(len(self.data))
         s += "\ntype: " + str(len(self.type))
         return s
@@ -75,7 +68,7 @@ class EventLibrary:
             key_id = self.keymap[key]
             found = True
         else:
-            key_id = 1 if len(self.keys) == 0 else self.next_free_ID
+            key_id = self.next_free_ID
             found = False
 
         return key_id, found
@@ -119,7 +112,6 @@ class EventLibrary:
             found = False
 
             # Insert
-            self.keys[key_id] = key_id
             self.data[key_id] = new_data
 
             if data_type != str():
@@ -163,7 +155,6 @@ class EventLibrary:
         else:
             key = tuple(new_data)
         
-        self.keys[key_id] = key_id
         self.data[key_id] = new_data
         if data_type != str():
             self.type[key_id] = data_type
@@ -187,7 +178,7 @@ class EventLibrary:
         dict
         """
         return {
-            "key": self.keys[key_id],
+            "key": key_id,
             "data": self.data[key_id],
             "type": self.type[key_id],
         }
@@ -207,7 +198,7 @@ class EventLibrary:
         out : SimpleNamespace
         """
         out = SimpleNamespace()
-        out.key = self.keys[key_id]
+        out.key = key_id
         out.data = self.data[key_id]
         out.type = self.type[key_id]
 
@@ -224,17 +215,12 @@ class EventLibrary:
         Parameters
         ----------
         key_id : int
-        old_data : numpy.ndarray
+        old_data : numpy.ndarray (Ignored!)
         new_data : numpy.ndarray
         data_type : str, default=str()
         """
-        if len(self.keys) >= key_id:
-            if self.numpy_data:
-                old_data = np.asarray(old_data)
-                key = old_data.tobytes()
-            else:
-                key = tuple(old_data)
-            del self.keymap[key]
+        if key_id in self.data:
+            del self.keymap[self.data[key_id]]
 
         self.insert(key_id, new_data, data_type)
 
@@ -249,7 +235,7 @@ class EventLibrary:
         Parameters
         ----------
         key_id : int
-        old_data : np.ndarray
+        old_data : np.ndarray (Ignored!)
         new_data : np.ndarray
         data_type : str
         """

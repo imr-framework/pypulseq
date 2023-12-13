@@ -215,7 +215,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     # Fix blocks, gradients and RF objects imported from older versions
     if version_combined < 1004000:
         # Scan through RF objects
-        for i in self.rf_library.data.keys():
+        for i in self.rf_library.data:
             self.rf_library.data[i] = [
                 *self.rf_library.data[i][:3],
                 0,
@@ -224,7 +224,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             self.rf_library.lengths[i] += 1
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
-        for i in self.grad_library.data.keys():
+        for i in self.grad_library.data:
             if self.grad_library.type[i] == "t":
                 if self.grad_library.data[i][1] == 0:
                     if (
@@ -342,7 +342,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     if detect_rf_use:
         # Find the RF pulses, list flip angles, and work around the current (rev 1.2.0) Pulseq file format limitation
         # that the RF pulse use is not stored in the file
-        for k in self.rf_library.keys.keys():
+        for k in self.rf_library.data:
             lib_data = self.rf_library.data[k]
             rf = self.rf_from_lib_data(lib_data)
             flip_deg = np.abs(np.sum(rf.signal[:-1] * (rf.t[1:] - rf.t[:-1]))) * 360
