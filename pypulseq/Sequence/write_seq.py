@@ -1,11 +1,13 @@
 import hashlib
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def write(self, file_name: str, create_signature) -> None:
+def write(self, file_name: Union[str, Path], create_signature) -> None:
     """
     Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -13,7 +15,7 @@ def write(self, file_name: str, create_signature) -> None:
 
     Parameters
     ----------
-    file_name : str
+    file_name : str or Path
         File name of `.seq` file to be written to disk.
     create_signature : bool
 
@@ -24,7 +26,11 @@ def write(self, file_name: str, create_signature) -> None:
     """
     # `>.0f` for decimals.
     # `>g` to truncate insignificant zeros.
-    file_name += ".seq" if file_name[-4:] != ".seq" not in file_name else ""
+    file_name = Path(file_name)
+    if file_name.suffix != '.seq':
+        # Append .seq suffix
+        file_name = file_name.with_suffix(file_name.suffix + '.seq')
+        
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
         output_file.write("# Created by PyPulseq\n\n")
