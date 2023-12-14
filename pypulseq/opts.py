@@ -131,6 +131,20 @@ class Opts:
     def set_as_default(self):
         Opts.default = self
     
+    @classmethod
+    def reset_default(cls):
+        cls.default = Opts(max_grad=convert(from_value=40, from_unit="mT/m"),
+                           max_slew=convert(from_value=170, from_unit="T/m/s"),
+                           rf_dead_time=0,
+                           rf_ringdown_time=0,
+                           adc_dead_time=0,
+                           adc_raster_time=100e-9,
+                           rf_raster_time=1e-6,
+                           grad_raster_time=10e-6,
+                           block_duration_raster=10e-6,
+                           gamma=42576000,
+                           B0=1.5)
+
     def __str__(self) -> str:
         """
         Print a string representation of the system limits objects.
@@ -141,14 +155,4 @@ class Opts:
         s = "System limits:\n" + s
         return s
 
-Opts.default = Opts(max_grad=convert(from_value=40, from_unit="mT/m"),
-                    max_slew=convert(from_value=170, from_unit="T/m/s"),
-                    rf_dead_time=0,
-                    rf_ringdown_time=0,
-                    adc_dead_time=0,
-                    adc_raster_time=100e-9,
-                    rf_raster_time=1e-6,
-                    grad_raster_time=10e-6,
-                    block_duration_raster=10e-6,
-                    gamma=42576000,
-                    B0=1.5)
+Opts.reset_default()
