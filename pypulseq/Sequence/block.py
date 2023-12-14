@@ -261,13 +261,13 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         block.delay = delay
 
     if event_ind[1] > 0:  # RF
-        if len(self.rf_library.type) >= event_ind[1]:
+        if event_ind[1] in self.rf_library.type:
             block.rf = self.rf_from_lib_data(
                 self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]]
             )
         else:
             block.rf = self.rf_from_lib_data(
-                self.rf_library.data[event_ind[1]]
+                self.rf_library.data[event_ind[1]] , 'u'
             )  # Undefined type/use
 
     # Gradients
