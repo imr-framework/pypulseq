@@ -215,7 +215,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     # Fix blocks, gradients and RF objects imported from older versions
     if version_combined < 1004000:
         # Scan through RF objects
-        for i in self.rf_library.data.keys():
+        for i in self.rf_library.data:
             self.rf_library.data[i] = [
                 *self.rf_library.data[i][:3],
                 0,
@@ -224,7 +224,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             self.rf_library.lengths[i] += 1
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
-        for i in self.grad_library.data.keys():
+        for i in self.grad_library.data:
             if self.grad_library.type[i] == "t":
                 if self.grad_library.data[i][1] == 0:
                     if (
@@ -253,24 +253,25 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
         # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = dict()
         # Scan through blocks and calculate durations
-        for block_counter in range(len(self.block_events)):
-            block = self.get_block(block_counter + 1)
-            if delay_ind_temp[block_counter + 1] > 0:
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            if delay_ind_temp[block_counter] > 0:
                 block.delay = SimpleNamespace()
                 block.delay.type = "delay"
                 block.delay.delay = temp_delay_library.data[
-                    delay_ind_temp[block_counter + 1]
+                    delay_ind_temp[block_counter]
                 ]
-            self.block_durations[block_counter + 1] = calc_duration(block)
+            self.block_durations[block_counter] = calc_duration(block)
 
+    # TODO: Is it possible to avoid expensive get_block calls here? 
     grad_channels = ["gx", "gy", "gz"]
     grad_prev_last = np.zeros(len(grad_channels))
-    for block_counter in range(len(self.block_events)):
-        block = self.get_block(block_counter + 1)
+    for block_counter in self.block_events:
+        block = self.get_block(block_counter)
         block_duration = block.block_duration
         # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
         # repeated entries so searching by content will fail
-        event_idx = self.block_events[block_counter + 1]
+        event_idx = self.block_events[block_counter]
         # Update the objects by filling in the fields not contained in the PyPulseq file
         for j in range(len(grad_channels)):
             grad = getattr(block, grad_channels[j])
@@ -283,16 +284,15 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_prev_last[j] = 0
 
                 if hasattr(grad, "first"):
+                    grad_prev_last[j] = grad.last
                     continue
 
                 amplitude_ID = event_idx[j + 2]
                 if amplitude_ID in event_idx[2:(j+2)]: # We did this update for the previous channels, don't do it again.
-                    
-                    # Remove the block from the cache and re-add it, otherwise, the other grad with same id in the block will not be updated.
                     if self.use_block_cache:
-                        del self.block_cache[block_counter + 1] # TODO: I feel like the update_data function should be responsible for this.
-                        block = self.get_block(block_counter + 1)
-
+                        # Update block cache in-place using the first/last values that should now be in the grad_library
+                        grad.first = self.grad_library.data[amplitude_ID][4]
+                        grad.last = self.grad_library.data[amplitude_ID][5]
                     continue
 
                 grad.first = grad_prev_last[j]
@@ -301,6 +301,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_duration = grad.delay + grad.tt[-1]
                 else:
                     # Restore samples on the edges of the gradient raster intervals for that we need the first sample
+                    # TODO: This code does not always restore reasonable values for grad.last
                     odd_step1 = [grad.first, *2 * grad.waveform]
                     odd_step2 = odd_step1 * (np.mod(range(len(odd_step1)), 2) * 2 - 1)
                     waveform_odd_rest = np.cumsum(odd_step2) * (
@@ -318,23 +319,15 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     grad_prev_last[j] = 0
 
                 amplitude = self.grad_library.data[amplitude_ID][0]
-                if version_combined >= 1004000:
-                    old_data = np.array(
-                        [amplitude, grad.shape_id, grad.time_id, grad.delay]
-                    )
-                else:
-                    old_data = np.array([amplitude, grad.shape_id, grad.delay])
-                new_data = np.array(
-                    [
+                new_data = (
                         amplitude,
                         grad.shape_id,
                         grad.time_id,
                         grad.delay,
                         grad.first,
                         grad.last,
-                    ]
                 )
-                self.grad_library.update_data(amplitude_ID, old_data, new_data, "g")
+                self.grad_library.update_data(amplitude_ID, None, new_data, "g")
 
             else:
                 grad_prev_last[j] = 0
@@ -342,7 +335,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     if detect_rf_use:
         # Find the RF pulses, list flip angles, and work around the current (rev 1.2.0) Pulseq file format limitation
         # that the RF pulse use is not stored in the file
-        for k in self.rf_library.keys.keys():
+        for k in self.rf_library.data:
             lib_data = self.rf_library.data[k]
             rf = self.rf_from_lib_data(lib_data)
             flip_deg = np.abs(np.sum(rf.signal[:-1] * (rf.t[1:] - rf.t[:-1]))) * 360
@@ -359,7 +352,12 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 else:
                     self.rf_library.type[k] = "r"
             self.rf_library.data[k] = lib_data
-
+            
+            # Clear block cache for all blocks that contain the modified RF event
+            for block_counter,events in self.block_events.items():
+                if events[1] == k:
+                    del self.block_cache[block_counter]
+                    
 
 def __read_definitions(input_file) -> Dict[str, str]:
     """

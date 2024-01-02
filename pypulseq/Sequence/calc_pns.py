@@ -1,6 +1,6 @@
 import math
 from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, List
 
 import matplotlib.pyplot as plt
 import pypulseq as pp
@@ -14,7 +14,10 @@ from pypulseq.utils.siemens.asc_to_hw import asc_to_hw
 
 
 def calc_pns(
-        obj : Sequence, hardware : SimpleNamespace, do_plots: bool = True
+        obj: Sequence,
+        hardware: SimpleNamespace,
+        time_range: List[float] = None,
+        do_plots: bool = True
         ) -> Tuple[bool, np.array, np.ndarray, np.array]:
     """
     Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
@@ -46,44 +49,42 @@ def calc_pns(
         Time axis for the pns_norm and pns_components arrays
     """
     
-    # acquire the entire gradient wave form
-    gw = obj.waveforms_and_times()[0]
+    dt = obj.grad_raster_time
+    # Get gradients as piecewise-polynomials
+    gw_pp = obj.get_gradients(time_range=time_range)
+    ng = len(gw_pp)
+    max_t = max(g.x[-1] for g in gw_pp if g != None)
+    
+    # Determine sampling points
+    if time_range == None:
+        nt = int(np.ceil(max_t/dt))
+        t = (np.arange(nt) + 0.5)*dt
+    else:
+        tmax = min(time_range[1], max_t) - max(time_range[0], 0)
+        nt = int(np.ceil(tmax/dt))
+        t = max(time_range[0], 0) + (np.arange(nt) + 0.5)*dt
+    
+    # Sample gradients
+    gw = np.zeros((t.shape[0], ng))
+    for i in range(ng):
+        if gw_pp[i] != None:
+            gw[:,i] = gw_pp[i](t)
+            
+    
     if do_plots:
         plt.figure()
-        plt.plot(gw[0][0], gw[0][1], gw[1][0], gw[1][1], gw[2][0], gw[2][1]) # plot the entire gradient shape
-        plt.title('gradient wave form, in T/m')
+        for i in range(ng):
+            if gw_pp[i] != None:
+                plt.plot(gw_pp[i].x[1:-1], gw_pp[i].c[1,:-1])
+        plt.title('gradient wave form, in Hz/m')
     
-    # find beginning and end times and resample GWs to a regular sampling raster
-    tf = []
-    tl = []
-    for i in range(3):
-        if gw[i].shape[1] > 0:
-            tf.append(gw[i][0,0])
-            tl.append(gw[i][0,-1])
-
-    nt_min = math.floor(min(tf) / obj.grad_raster_time + pp.eps) 
-    nt_max = math.ceil(max(tl) / obj.grad_raster_time - pp.eps)
-    
-    # shift raster positions to the centers of the raster periods
-    nt_min = nt_min + 0.5
-    nt_max = nt_max - 0.5
-    if nt_min < 0.5:
-        nt_min = 0.5
-
-    t_axis = (np.arange(0, math.floor(nt_max-nt_min) + 1) + nt_min) * obj.grad_raster_time
-
-    gwr = np.zeros((t_axis.shape[0],3))
-    for i in range(3):
-        if gw[i].shape[1] > 0:
-            gwr[:,i] = np.interp(t_axis, gw[i][0], gw[i][1])
-
     if type(hardware) == str:
         # this loads the parameters from the provided text file
         asc, _ = readasc(hardware)
         hardware = asc_to_hw(asc)
 
     # use the Szczepankiewicz' and Witzel's implementation
-    [pns_comp,res] = safe_gwf_to_pns(gwr/obj.system.gamma, np.nan*np.ones(t_axis.shape[0]), obj.grad_raster_time, hardware) # the RF vector is unused in the code inside but it is zeropaded and exported ... 
+    [pns_comp,res] = safe_gwf_to_pns(gw/obj.system.gamma, np.nan*np.ones(t.shape[0]), obj.grad_raster_time, hardware) # the RF vector is unused in the code inside but it is zeropaded and exported ... 
     
     # use the exported RF vector to detect and undo zero-padding
     pns_comp = 0.01 * pns_comp[~np.isfinite(res.rf[1:]),:]
@@ -98,4 +99,4 @@ def calc_pns(
         plt.figure()
         safe_plot(pns_comp*100, obj.grad_raster_time)
 
-    return ok, pns_norm, pns_comp, t_axis
+    return ok, pns_norm, pns_comp, t

@@ -15,7 +15,7 @@ def ext_test_report(self) -> str:
     """
     # Find RF pulses and list flip angles
     flip_angles_deg = []
-    for k in self.rf_library.keys:
+    for k in self.rf_library.data:
         lib_data = self.rf_library.data[k]
         if len(self.rf_library.type) >= k:
             rf = self.rf_from_lib_data(lib_data, self.rf_library.type[k])

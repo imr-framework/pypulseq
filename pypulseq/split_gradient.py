@@ -9,7 +9,7 @@ from pypulseq.opts import Opts
 
 
 def split_gradient(
-    grad: SimpleNamespace, system: Opts = Opts()
+    grad: SimpleNamespace, system: Opts = None
 ) -> Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]:
     """
     Splits a trapezoidal gradient into slew up, flat top and slew down. Returns the individual gradient parts (slew up,
@@ -41,6 +41,9 @@ def split_gradient(
          If arbitrary gradients are passed.
          If non-gradient event is passed.
     """
+    if system == None:
+        system = Opts.default
+        
     grad_raster_time = system.grad_raster_time
     total_length = calc_duration(grad)
 
@@ -72,19 +75,19 @@ def split_gradient(
             skip_check=True,
         )
         ramp_down.delay = total_length - grad.fall_time
-        ramp_down.t = ramp_down.t * grad_raster_time
 
-        flat_top = SimpleNamespace()
-        flat_top.type = "grad"
-        flat_top.channel = channel
-        flat_top.delay = grad.delay + grad.rise_time
-        flat_top.t = np.arange(
-            step=grad_raster_time,
-            stop=ramp_down.delay - grad_raster_time - grad.delay - grad.rise_time,
+
+        times = np.array([0, grad.flat_time])
+        amplitudes = np.array([grad.amplitude, grad.amplitude])
+        
+        flat_top = make_extended_trapezoid(
+            channel=channel,
+            system=system,
+            times=times,
+            amplitudes=amplitudes,
+            skip_check=True,
         )
-        flat_top.waveform = grad.amplitude * np.ones(len(flat_top.t))
-        flat_top.first = grad.amplitude
-        flat_top.last = grad.amplitude
+        flat_top.delay = grad.delay + grad.rise_time
 
         return ramp_up, flat_top, ramp_down
     elif grad.type == "grad":

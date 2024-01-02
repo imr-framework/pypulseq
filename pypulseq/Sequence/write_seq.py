@@ -1,11 +1,13 @@
 import hashlib
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def write(self, file_name: str, create_signature) -> None:
+def write(self, file_name: Union[str, Path], create_signature) -> None:
     """
     Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -13,7 +15,7 @@ def write(self, file_name: str, create_signature) -> None:
 
     Parameters
     ----------
-    file_name : str
+    file_name : str or Path
         File name of `.seq` file to be written to disk.
     create_signature : bool
 
@@ -24,7 +26,11 @@ def write(self, file_name: str, create_signature) -> None:
     """
     # `>.0f` for decimals.
     # `>g` to truncate insignificant zeros.
-    file_name += ".seq" if file_name[-4:] != ".seq" not in file_name else ""
+    file_name = Path(file_name)
+    if file_name.suffix != '.seq':
+        # Append .seq suffix
+        file_name = file_name.with_suffix(file_name.suffix + '.seq')
+        
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
         output_file.write("# Created by PyPulseq\n\n")
@@ -63,9 +69,9 @@ def write(self, file_name: str, create_signature) -> None:
         output_file.write("[BLOCKS]\n")
         id_format_width = "{:" + str(len(str(len(self.block_events)))) + "d}"
         id_format_str = id_format_width + " {:3d} {:3d} {:3d} {:3d} {:3d} {:2d} {:2d}\n"
-        for block_counter in range(len(self.block_events)):
+        for block_counter in self.block_events:
             block_duration = (
-                self.block_durations[block_counter + 1] / self.block_duration_raster
+                self.block_durations[block_counter] / self.block_duration_raster
             )
             block_duration_rounded = round(block_duration)
 
@@ -73,15 +79,15 @@ def write(self, file_name: str, create_signature) -> None:
 
             s = id_format_str.format(
                 *(
-                    block_counter + 1,
+                    block_counter,
                     block_duration_rounded,
-                    *self.block_events[block_counter + 1][1:],
+                    *self.block_events[block_counter][1:],
                 )
             )
             output_file.write(s)
         output_file.write("\n")
 
-        if len(self.rf_library.keys) != 0:
+        if len(self.rf_library.data) != 0:
             output_file.write("# Format of RF events:\n")
             output_file.write(
                 "# id amplitude mag_id phase_id time_shape_id delay freq phase\n"
@@ -90,9 +96,8 @@ def write(self, file_name: str, create_signature) -> None:
                 "# ..        Hz   ....     ....          ....    us   Hz   rad\n"
             )
             output_file.write("[RF]\n")
-            rf_lib_keys = self.rf_library.keys
             id_format_str = "{:.0f} {:12g} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g}\n"  # Refer lines 20-21
-            for k in rf_lib_keys.keys():
+            for k in self.rf_library.data:
                 lib_data1 = self.rf_library.data[k][0:4]
                 lib_data2 = self.rf_library.data[k][5:7]
                 delay = (
@@ -117,7 +122,7 @@ def write(self, file_name: str, create_signature) -> None:
             output_file.write("# ..      Hz/m       ..         ..          us\n")
             output_file.write("[GRADIENTS]\n")
             id_format_str = "{:.0f} {:12g} {:.0f} {:.0f} {:.0f}\n"  # Refer lines 20-21
-            keys = np.array(list(self.grad_library.keys.keys()))
+            keys = np.array(list(self.grad_library.data.keys()))
             for k in keys[arb_grad_mask]:
                 s = id_format_str.format(
                     k,
@@ -132,7 +137,7 @@ def write(self, file_name: str, create_signature) -> None:
             output_file.write("# id amplitude rise flat fall delay\n")
             output_file.write("# ..      Hz/m   us   us   us    us\n")
             output_file.write("[TRAP]\n")
-            keys = np.array(list(self.grad_library.keys.keys()))
+            keys = np.array(list(self.grad_library.data.keys()))
             id_format_str = "{:2g} {:12g} {:3g} {:4g} {:3g} {:3g}\n"
             for k in keys[trap_grad_mask]:
                 data = np.copy(
@@ -148,22 +153,21 @@ def write(self, file_name: str, create_signature) -> None:
                 output_file.write(s)
             output_file.write("\n")
 
-        if len(self.adc_library.keys) != 0:
+        if len(self.adc_library.data) != 0:
             output_file.write("# Format of ADC events:\n")
             output_file.write("# id num dwell delay freq phase\n")
             output_file.write("# ..  ..    ns    us   Hz   rad\n")
             output_file.write("[ADC]\n")
-            keys = self.adc_library.keys
             id_format_str = (
                 "{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g}\n"  # Refer lines 20-21
             )
-            for k in keys.values():
+            for k in self.adc_library.data:
                 data = np.multiply(self.adc_library.data[k][0:5], [1, 1e9, 1e6, 1, 1])
                 s = id_format_str.format(k, *data)
                 output_file.write(s)
             output_file.write("\n")
 
-        if len(self.extensions_library.keys) != 0:
+        if len(self.extensions_library.data) != 0:
             output_file.write("# Format of extension lists:\n")
             output_file.write("# id type ref next_id\n")
             output_file.write("# next_id of 0 terminates the list\n")
@@ -171,14 +175,13 @@ def write(self, file_name: str, create_signature) -> None:
                 "# Extension list is followed by extension specifications\n"
             )
             output_file.write("[EXTENSIONS]\n")
-            keys = self.extensions_library.keys
             id_format_str = "{:.0f} {:.0f} {:.0f} {:.0f}\n"  # Refer lines 20-21
-            for k in keys.values():
+            for k in self.extensions_library.data:
                 s = id_format_str.format(k, *np.round(self.extensions_library.data[k]))
                 output_file.write(s)
             output_file.write("\n")
 
-        if len(self.trigger_library.keys) != 0:
+        if len(self.trigger_library.data) != 0:
             output_file.write(
                 "# Extension specification for digital output and input triggers:\n"
             )
@@ -186,25 +189,23 @@ def write(self, file_name: str, create_signature) -> None:
             output_file.write(
                 f'extension TRIGGERS {self.get_extension_type_ID("TRIGGERS")}\n'
             )
-            keys = self.trigger_library.keys
             id_format_str = "{:.0f} {:.0f} {:.0f} {:.0f} {:.0f}\n"  # Refer lines 20-21
-            for k in keys.values():
+            for k in self.trigger_library.data:
                 s = id_format_str.format(
                     k, *np.round(self.trigger_library.data[k] * np.array([1, 1, 1e6, 1e6]))
                 )
                 output_file.write(s)
             output_file.write("\n")
 
-        if len(self.label_set_library.keys) != 0:
+        if len(self.label_set_library.data) != 0:
             labels = get_supported_labels()
 
             output_file.write("# Extension specification for setting labels:\n")
             output_file.write("# id set labelstring\n")
             tid = self.get_extension_type_ID("LABELSET")
             output_file.write(f"extension LABELSET {tid}\n")
-            keys = self.label_set_library.keys
             id_format_str = "{:.0f} {:.0f} {}\n"  # Refer lines 20-21
-            for k in keys.values():
+            for k in self.label_set_library.data:
                 value = self.label_set_library.data[k][0]
                 label_id = labels[
                     int(self.label_set_library.data[k][1]) - 1
@@ -217,9 +218,8 @@ def write(self, file_name: str, create_signature) -> None:
             output_file.write("# id set labelstring\n")
             tid = self.get_extension_type_ID("LABELINC")
             output_file.write(f"extension LABELINC {tid}\n")
-            keys = self.label_inc_library.keys
             id_format_str = "{:.0f} {:.0f} {}\n"  # See comment at the beginning of this method definition
-            for k in keys.values():
+            for k in self.label_inc_library.data:
                 value = self.label_inc_library.data[k][0]
                 label_id = labels[
                     self.label_inc_library.data[k][1] - 1
@@ -228,11 +228,10 @@ def write(self, file_name: str, create_signature) -> None:
                 output_file.write(s)
             output_file.write("\n")
 
-        if len(self.shape_library.keys) != 0:
+        if len(self.shape_library.data) != 0:
             output_file.write("# Sequence Shapes\n")
             output_file.write("[SHAPES]\n\n")
-            keys = self.shape_library.keys
-            for k in keys.values():
+            for k in self.shape_library.data:
                 shape_data = self.shape_library.data[k]
                 s = "shape_id {:.0f}\n".format(k)
                 output_file.write(s)

@@ -11,7 +11,7 @@ def make_arbitrary_grad(
     delay: float = 0,
     max_grad: float = 0,
     max_slew: float = 0,
-    system: Opts = Opts(),
+    system: Opts = None,
 ) -> SimpleNamespace:
     """
     Creates a gradient event with arbitrary waveform.
@@ -45,6 +45,9 @@ def make_arbitrary_grad(
         If slew rate is violated.
         If gradient amplitude is violated.
     """
+    if system == None:
+        system = Opts.default
+        
     if channel not in ["x", "y", "z"]:
         raise ValueError(
             f"Invalid channel. Must be one of x, y or z. Passed: {channel}"

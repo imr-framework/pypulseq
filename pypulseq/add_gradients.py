@@ -17,7 +17,7 @@ def add_gradients(
     grads: Iterable[SimpleNamespace],
     max_grad: int = 0,
     max_slew: int = 0,
-    system=Opts(),
+    system=None,
 ) -> SimpleNamespace:
     """
     Returns the superposition of several gradients.
@@ -38,6 +38,9 @@ def add_gradients(
     grad : SimpleNamespace
         Superimposition of gradient events from `grads`.
     """
+    if system == None:
+        system = Opts.default
+        
     if max_grad <= 0:
         max_grad = system.max_grad
     if max_slew <= 0:

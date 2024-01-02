@@ -97,17 +97,6 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 if self.block_events[block_index][idx] != 0:
                     raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
 
-                check_g[channel_num] = SimpleNamespace()
-                check_g[channel_num].idx = idx
-                check_g[channel_num].start = (0, 0)
-                check_g[channel_num].stop = (
-                        event.delay
-                        + event.rise_time
-                        + event.fall_time
-                        + event.flat_time,
-                        0,
-                    )
-
                 if hasattr(event, "id"):
                     trap_id = event.id
                 else:
@@ -206,6 +195,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 )
 
             if block_index > 1:
+                # TODO: block_index - 1 assumes linear ordering of blocks.
+                #       However, searching for the previous block index in block_events is a big performance hit
+                #       For newly inserted blocks (block_index not in self.block_events), we can just use the last block as previous
                 prev_id = self.block_events[block_index - 1][grad_to_check.idx]
                 if prev_id != 0:
                     prev_lib = self.grad_library.get(prev_id)
@@ -281,13 +273,13 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         block.delay = delay
 
     if event_ind[1] > 0:  # RF
-        if len(self.rf_library.type) >= event_ind[1]:
+        if event_ind[1] in self.rf_library.type:
             block.rf = self.rf_from_lib_data(
                 self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]]
             )
         else:
             block.rf = self.rf_from_lib_data(
-                self.rf_library.data[event_ind[1]]
+                self.rf_library.data[event_ind[1]] , 'u'
             )  # Undefined type/use
 
     # Gradients
