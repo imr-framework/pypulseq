@@ -17,6 +17,8 @@ from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.Sequence.calc_pns import calc_pns
+from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
+
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.decompress_shape import decompress_shape
@@ -190,7 +192,69 @@ class Sequence:
         """
         block.set_block(self, self.next_free_block_ID, *args)
         self.next_free_block_ID += 1
-            
+    
+    def calculate_gradient_spectrum(
+            self, max_frequency: float = 2000,
+            window_width: float = 0.05,
+            frequency_oversampling: float = 3,
+            time_range: List[float] = None,
+            plot: bool = True,
+            combine_mode: str = 'max',
+            acoustic_resonances: List[dict] = []
+    ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Calculates the gradient spectrum of the sequence. Returns a spectrogram
+        for each gradient channel, as well as a root-sum-squares combined
+        spectrogram.
+        
+        Works by splitting the sequence into windows that are 'window_width'
+        long and calculating the fourier transform of each window. Windows
+        overlap 50% with the previous and next window. When 'combine_mode' is
+        not 'none', all windows are combined into one spectrogram.
+
+        Parameters
+        ----------
+        max_frequency : float, optional
+            Maximum frequency to include in spectrograms. The default is 2000.
+        window_width : float, optional
+            Window width (in seconds). The default is 0.05.
+        frequency_oversampling : float, optional
+            Oversampling in the frequency dimension, higher values make
+            smoother spectrograms. The default is 3.
+        time_range : List[float], optional
+            Time range over which to calculate the spectrograms as a list of
+            two timepoints (in seconds) (e.g. [1, 1.5])
+            The default is None.
+        plot : bool, optional
+            Whether to plot the spectograms. The default is True.
+        combine_mode : str, optional
+            How to combine all windows into one spectrogram, options:
+                'max', 'mean', 'sos' (root-sum-of-squares), 'none' (no combination)
+            The default is 'max'.
+        acoustic_resonances : List[dict], optional
+            Acoustic resonances as a list of dictionaries with 'frequency' and
+            'bandwidth' elements. Only used when plot==True. The default is [].
+
+        Returns
+        -------
+        spectrograms : List[np.ndarray]
+            List of spectrograms per gradient channel.
+        spectrogram_sos : np.ndarray
+            Root-sum-of-squares combined spectrogram over all gradient channels.
+        frequencies : np.ndarray
+            Frequency axis of the spectrograms.
+        times : np.ndarray
+            Time axis of the spectrograms (only relevant when combine_mode == 'none').
+
+        """
+        return calculate_gradient_spectrum(self, max_frequency=max_frequency,
+                                           window_width=window_width,
+                                           frequency_oversampling=frequency_oversampling,
+                                           time_range=time_range,
+                                           plot=plot,
+                                           combine_mode=combine_mode,
+                                           acoustic_resonances=acoustic_resonances)
+    
     def calculate_kspace(
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
