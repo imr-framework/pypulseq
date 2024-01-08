@@ -1,6 +1,31 @@
 from types import SimpleNamespace
+from typing import List
 import numpy as np
 
+
+def asc_to_acoustic_resonances(asc : dict) -> List[dict]:
+    """
+    Convert ASC dictionary from readasc to list of acoustic resonances
+
+    Parameters
+    ----------
+    asc : dict
+        ASC dictionary, see readasc
+
+    Returns
+    -------
+    List[dict]
+        List of acoustic resonances (specified by frequency and bandwidth fields).
+    """
+    
+    if 'aflGCAcousticResonanceFrequency' in asc:
+        freqs = asc['aflGCAcousticResonanceFrequency']
+        bw = asc['aflGCAcousticResonanceBandwidth']
+    else:
+        freqs = asc['asGPAParameters'][0]['sGCParameters']['aflAcousticResonanceFrequency']
+        bw = asc['asGPAParameters'][0]['sGCParameters']['aflAcousticResonanceBandwidth']
+    
+    return [dict(frequency=f, bandwidth=b) for f,b in zip(freqs.values(), bw.values()) if f != 0]
 
 def asc_to_hw(asc : dict, cardiac_model : bool = False) -> SimpleNamespace:
     """
