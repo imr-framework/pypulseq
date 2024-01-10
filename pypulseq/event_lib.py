@@ -10,7 +10,6 @@ class EventLibrary:
 
     Sequence Properties:
     - data - A struct array with field 'array' to store data of varying lengths, remaining compatible with codegen.
-    - lengths - Corresponding lengths of the data arrays
     - type - Type to distinguish events in the same class (e.g. trapezoids and arbitrary gradients)
 
     Sequence Methods:

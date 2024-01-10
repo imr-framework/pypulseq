@@ -221,7 +221,6 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 0,
                 *self.rf_library.data[i][3:],
             ]
-            self.rf_library.lengths[i] += 1
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
@@ -248,7 +247,6 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                     0,
                     self.grad_library.data[i][2:],
                 ]
-                self.grad_library.lengths[i] += 1
 
         # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = dict()
