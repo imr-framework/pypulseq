@@ -216,12 +216,11 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     if version_combined < 1004000:
         # Scan through RF objects
         for i in self.rf_library.data:
-            self.rf_library.data[i] = [
-                *self.rf_library.data[i][:3],
-                0,
-                *self.rf_library.data[i][3:],
-            ]
-            self.rf_library.lengths[i] += 1
+            self.rf_library.update(i, None, (
+                            *self.rf_library.data[i][:3],
+                            0,
+                            *self.rf_library.data[i][3:]
+                        ))
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
@@ -231,36 +230,37 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                         abs(self.grad_library.data[i][0]) == 0
                         and self.grad_library.data[i][2] > 0
                     ):
-                        self.grad_library.data[i][2] -= self.grad_raster_time
-                        self.grad_library.data[i][1] = self.grad_raster_time
+                        d = self.grad_library.data[i]
+                        self.grad_library.update(i, None, (d[0], self.grad_raster_time, d[2] - self.grad_raster_time) + d[3:], self.grad_library.type[i])
 
                 if self.grad_library.data[i][3] == 0:
                     if (
                         abs(self.grad_library.data[i][0]) == 0
                         and self.grad_library.data[i][2] > 0
                     ):
-                        self.grad_library.data[i][2] -= self.grad_raster_time
-                        self.grad_library.data[i][3] = self.grad_raster_time
+                        d = self.grad_library.data[i]
+                        self.grad_library.update(i, None, d[:2] + (d[2] - self.grad_raster_time, self.grad_raster_time) + d[4:], self.grad_library.type[i])
 
             if self.grad_library.type[i] == "g":
-                self.grad_library.data[i] = [
+                self.grad_library.update(i, None, (
                     self.grad_library.data[i][:2],
                     0,
                     self.grad_library.data[i][2:],
-                ]
-                self.grad_library.lengths[i] += 1
+                ), self.grad_library.type[i])
 
         # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = dict()
         # Scan through blocks and calculate durations
         for block_counter in self.block_events:
-            block = self.get_block(block_counter)
+            # Insert delay as temporary block_duration
+            self.block_durations[block_counter] = 0
             if delay_ind_temp[block_counter] > 0:
-                block.delay = SimpleNamespace()
-                block.delay.type = "delay"
-                block.delay.delay = temp_delay_library.data[
-                    delay_ind_temp[block_counter]
-                ]
+                self.block_durations[block_counter] = temp_delay_library.data[
+                        delay_ind_temp[block_counter]
+                    ][0]
+                
+            block = self.get_block(block_counter)
+            # Calculate actual block duration
             self.block_durations[block_counter] = calc_duration(block)
 
     # TODO: Is it possible to avoid expensive get_block calls here? 
@@ -473,7 +473,7 @@ def __read_events(
     input_file,
     scale: tuple = (1,),
     event_type: str = str(),
-    event_library: EventLibrary = EventLibrary(),
+    event_library: EventLibrary = None,
     append=None
 ) -> EventLibrary:
     """
@@ -495,6 +495,9 @@ def __read_events(
     event_library : EventLibrary
         Event library containing Pulseq events.
     """
+    
+    if event_library is None:
+        event_library = EventLibrary()
     line = __strip_line(input_file)
 
     while line != "" and line != "#":
