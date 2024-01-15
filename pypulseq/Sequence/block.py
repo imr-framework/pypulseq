@@ -260,7 +260,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         return self.block_cache[block_index]
 
     block = SimpleNamespace()
-    attrs = ["block_duration", "rf", "gx", "gy", "gz", "adc"]
+    attrs = ["block_duration", "rf", "gx", "gy", "gz", "adc", "label"]
     values = [None] * len(attrs)
     for att, val in zip(attrs, values):
         setattr(block, att, val)
@@ -393,7 +393,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 label.label = supported_labels[int(data[1] - 1)]
                 label.value = data[0]
                 # Allow for multiple labels per block
-                if hasattr(block, "label"):
+                if block.label is not None:
                     block.label[len(block.label)] = label
                 else:
                     block.label = {0: label}
