@@ -511,6 +511,87 @@ class Sequence:
 
         return duration, num_blocks, event_count
 
+    def evaluate_labels(
+            self,
+            init: dict = None,
+            evolution: str = 'none'
+            ) -> dict:
+        """
+        Evaluate label values of the entire sequence.
+        
+        When no evolution is given, returns the label values at the end of the
+        sequence. Returns a dictionary with keys named after the labels used
+        in the sequence. Only the keys corresponding to the labels actually
+        used are created.
+        E.g. labels['LIN'] == 4
+        
+        When evolution is given, labels are tracked through the sequence. See
+        below for options for different types of evolutions. The resulting
+        dictionary will contain arrays of the label values.
+        E.g. labels['LIN'] == np.array([0,1,2,3,4])
+        
+        Initial values for the labels can be given with the 'init' parameter.
+        Useful if evaluating labels block-by-block.
+
+        Parameters
+        ----------
+        init : dict, optional
+            Dictionary containing initial label values. The default is None.
+        evolution : str, optional
+            Flag to specify tracking of label evolutions.
+            Must be one of: 'none', 'adc', 'label', 'blocks' (default = 'none')
+            'blocks': Return label values for all blocks.
+            'adc':    Return label values only for blocks containing ADC events.
+            'label':  Return label values only for blocks where labels are
+                      manipulated.
+
+        Returns
+        -------
+        labels : dict
+            Dictionary containing label values.
+            If evolution == 'none', the dictionary values only contains the
+            final label value.
+            Otherwise, the dictionary values are arrays of label evolutions.
+            Only the labels that are used in the sequence are created in the
+            dictionary.
+
+        """
+        labels = init or dict()
+        label_evolution = []
+        
+        # TODO: MATLAB implementation includes block_range parameter. But in
+        #       general we cannot assume linear block ordering. Could include
+        #       time_range like in other sequence functions. Or a blocks
+        #       parameter to specify which blocks to loop over?
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            
+            if block.label is not None:
+                # Current block has labels
+                for lab in block.label.values():
+                    if lab.type == 'labelinc':
+                        # Increment label
+                        if lab.label not in labels:
+                            labels[lab.label] = 0
+                        
+                        labels[lab.label] += lab.value
+                    else:
+                        # Set label
+                        labels[lab.label] = lab.value
+                
+                if evolution == 'label':
+                    label_evolution.append(dict(labels))
+
+            if evolution == 'blocks' or (evolution == 'adc' and block.adc is not None):
+                label_evolution.append(dict(labels))
+        
+        # Convert evolutions into label dictionary
+        if len(label_evolution) > 0:
+            for lab in labels:
+                labels[lab] = np.array([e[lab] for e in label_evolution])
+        
+        return labels
+
     def flip_grad_axis(self, axis: str) -> None:
         """
         Invert all gradients along the corresponding axis/channel. The function acts on all gradient objects already
