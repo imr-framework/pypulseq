@@ -384,7 +384,7 @@ def __read_definitions(input_file) -> Dict[str, str]:
                 value = value[0]
             definitions[tok[0]] = value
         except ValueError:  # Try clause did not work!
-            definitions[tok[0]] = tok[1:]
+            definitions[tok[0]] = line[len(tok[0])+1:].strip()
         line = __strip_line(input_file)
 
     return definitions
