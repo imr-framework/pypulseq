@@ -265,8 +265,8 @@ class Sequence:
             # "Sample" ramps for display purposes otherwise piecewise-linear display (plot) fails
             ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
             
-            starts = np.int64(np.floor(gm_pp[i].x[ii] / self.grad_raster_time))
-            ends = np.int64(np.ceil(gm_pp[i].x[ii+1] / self.grad_raster_time))
+            starts = np.int64(np.floor((gm_pp[i].x[ii] + eps) / self.grad_raster_time))
+            ends = np.int64(np.ceil((gm_pp[i].x[ii+1] - eps) / self.grad_raster_time))
             
             # Create all ranges starts[0]:ends[0], starts[1]:ends[1], etc.
             lengths = ends-starts+1
@@ -278,7 +278,8 @@ class Sequence:
             inds[start_inds] = np.concatenate(([starts[0]], np.diff(starts) - lengths[:-1] + 1))
 
             tc.append(np.cumsum(inds) * self.grad_raster_time)
-        tc = np.concatenate(tc)
+        if tc != []:
+            tc = np.concatenate(tc)
         
             
         t_acc = 1e-10  # Temporal accuracy
@@ -773,15 +774,15 @@ class Sequence:
                 raise Warning("Not all elements of the generated waveform are finite.")
 
             teps = 1e-12
-            if gw[0, 0] > 0 and gw[0, -1] < total_duration:
+            if gw[0, 0] > 0 and gw[0, -1] < total_duration - teps:
                 # teps terms to avoid integration errors over extended periods of time
                 _temp1 = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
                 _temp2 = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
                 gw = np.hstack((_temp1, gw, _temp2))
-            elif gw[0, 0] > 0:
+            elif gw[0, 0] > teps:
                 _temp = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
                 gw = np.hstack((_temp, gw))
-            elif gw[0, -1] < total_duration:
+            elif gw[0, -1] < total_duration - teps:
                 _temp = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
                 gw = np.hstack((gw, _temp))
 
