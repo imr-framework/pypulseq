@@ -535,7 +535,7 @@ def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
     line = __strip_line(input_file)
 
     while line != "" and line != "#":
-        datas = re.split("(\s+)", line)
+        datas = re.split(r"(\s+)", line)
         datas = [d for d in datas if d != " "]
         data = np.zeros(len(datas) - 1, dtype=np.int32)
         event_id = int(datas[0])

@@ -40,7 +40,7 @@ def readasc(filename : str) -> Tuple[dict, dict]:
             # regex wizardry: Matches lines like 'a[0].b[2][3].c = "string" # comment'
             # Note this assumes correct formatting, e.g. does not check whether
             # brackets match.
-            match = re.match('^\s*([a-zA-Z0-9\[\]\._]+)\s*\=\s*((\"[^\"]*\"|\\\'[^\\\']\\\')|(\d+)|([0-9\.e\-]+))\s*((#|\/\/)(.*))?$', next_line)
+            match = re.match(r'^\s*([a-zA-Z0-9\[\]\._]+)\s*\=\s*(("[^"]*"|\'[^\']\')|(\d+)|([0-9\.e\-]+))\s*((#|\/\/)(.*))?$', next_line)
     
             if match:
                 field_name = match[1]
