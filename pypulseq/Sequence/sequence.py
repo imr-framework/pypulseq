@@ -265,6 +265,10 @@ class Sequence:
             # "Sample" ramps for display purposes otherwise piecewise-linear display (plot) fails
             ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
             
+            # Do nothing if there are no ramps
+            if ii.shape[0] == 0:
+                continue
+            
             starts = np.int64(np.floor((gm_pp[i].x[ii] + eps) / self.grad_raster_time))
             ends = np.int64(np.ceil((gm_pp[i].x[ii+1] - eps) / self.grad_raster_time))
             
