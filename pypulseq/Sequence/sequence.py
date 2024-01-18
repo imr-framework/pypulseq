@@ -1091,7 +1091,7 @@ class Sequence:
         read(self, path=file_path, detect_rf_use=detect_rf_use)
 
         # Initialize next free block ID
-        self.next_free_block_ID = max(self.block_events) + 1
+        self.next_free_block_ID = (max(self.block_events) + 1) if self.block_events else 1
 
     def register_adc_event(self, event: EventLibrary) -> int:
         return block.register_adc_event(self, event)
