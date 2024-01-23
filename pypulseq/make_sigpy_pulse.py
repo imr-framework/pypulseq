@@ -114,6 +114,7 @@ def sigpy_n_seq(
     rfp.type = "rf"
     rfp.signal = signal
     rfp.t = t
+    rfp.shape_dur = t[-1]
     rfp.freq_offset = freq_offset
     rfp.phase_offset = phase_offset
     rfp.dead_time = system.rf_dead_time

@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 import sigpy.mri.rf as rf
 
+import pypulseq as pp
 from pypulseq.make_sigpy_pulse import sigpy_n_seq
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
@@ -48,6 +49,9 @@ class TestSigpyPulseMethods(unittest.TestCase):
             pulse_cfg=pulse_cfg,
             plot=False,
         )
+        
+        seq = pp.Sequence()
+        seq.add_block(rfp)
 
         [a, b] = rf.sim.abrm(
             pulse,
@@ -100,6 +104,9 @@ class TestSigpyPulseMethods(unittest.TestCase):
             pulse_cfg=pulse_cfg,
             plot=False
         )
+       
+        seq = pp.Sequence()
+        seq.add_block(rfp)
 
         [a, b] = rf.sim.abrm(
             pulse,
