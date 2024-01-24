@@ -42,7 +42,7 @@ def make_trapezoid(
     delay: float = 0,
     duration: float = 0,
     fall_time: float = 0,
-    flat_area: float = 0,
+    flat_area: float = None,
     flat_time: float = -1,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -129,7 +129,7 @@ def make_trapezoid(
     else:
         fall_time = 0.0
 
-    if area is None and flat_area == 0 and amplitude == 0:
+    if area is None and flat_area is None and amplitude == 0:
         raise ValueError("Must supply either 'area', 'flat_area' or 'amplitude'.")
 
     if flat_time != -1:
@@ -139,7 +139,7 @@ def make_trapezoid(
                 and rise_time > 0:
             # We have rise_time, flat_time and area.
             amplitude2 = area / (rise_time + flat_time)
-        elif flat_area > 0:
+        elif flat_area is not None:
             amplitude2 = flat_area / flat_time
         else:
             raise ValueError(
