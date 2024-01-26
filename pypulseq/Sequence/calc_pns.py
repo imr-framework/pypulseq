@@ -53,7 +53,7 @@ def calc_pns(
     # Get gradients as piecewise-polynomials
     gw_pp = obj.get_gradients(time_range=time_range)
     ng = len(gw_pp)
-    max_t = max(g.x[-1] for g in gw_pp if g != None)
+    max_t = max(g.x[-1] for g in gw_pp if g != None) - 1e-10
     
     # Determine sampling points
     if time_range == None:
