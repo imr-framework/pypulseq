@@ -146,6 +146,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     "ref": label_id,
                 }
                 extensions.append(ext)
+        else:
+            # Floating point number given as delay
+            duration = max(duration, event)
 
     # =========
     # ADD EXTENSIONS
