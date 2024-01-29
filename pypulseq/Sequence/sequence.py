@@ -593,7 +593,7 @@ class Sequence:
         # Convert evolutions into label dictionary
         if len(label_evolution) > 0:
             for lab in labels:
-                labels[lab] = np.array([e[lab] for e in label_evolution])
+                labels[lab] = np.array([e[lab] if lab in e else 0 for e in label_evolution])
         
         return labels
 
