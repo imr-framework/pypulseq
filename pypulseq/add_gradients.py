@@ -102,7 +102,7 @@ def add_gradients(
             else:
                 times.extend(g.delay + g.tt)
 
-        times = np.sort(np.unique(times))
+        times = np.unique(times)
         dt = times[1:] - times[:-1]
         ieps = np.flatnonzero(dt < eps)
         if np.any(ieps):
@@ -140,7 +140,7 @@ def add_gradients(
             if abs(waveform[0]) > eps and tt[0] > eps:
                 tt[0] += eps
 
-            amplitudes += np.interp(xp=tt, fp=waveform, x=times)
+            amplitudes += np.interp(xp=tt, fp=waveform, x=times, left=0, right=0)
 
         grad = make_extended_trapezoid(
             channel=channel, amplitudes=amplitudes, times=times, system=system

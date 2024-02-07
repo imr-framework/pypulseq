@@ -219,7 +219,12 @@ class EventLibrary:
         data_type : str, default=str()
         """
         if key_id in self.data:
-            del self.keymap[self.data[key_id]]
+            # TODO: When reading a sequence file we can end up with duplicate
+            #       events due to rounding to 6 digits. update() calls to both
+            #       duplicates would give a key error here on the second
+            #       duplicate. Ideally no duplicates should exist though...
+            if self.data[key_id] in self.keymap:
+                del self.keymap[self.data[key_id]]
 
         self.insert(key_id, new_data, data_type)
 

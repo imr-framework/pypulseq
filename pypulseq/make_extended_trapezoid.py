@@ -136,9 +136,8 @@ def make_extended_trapezoid(
             round(times[0] / system.grad_raster_time) * system.grad_raster_time
         )
         grad.tt = times - grad.delay
-        grad.shape_dur = (
-            round(times[-1] / system.grad_raster_time) * system.grad_raster_time
-        )
+        grad.shape_dur = grad.tt[-1]
+        grad.area = 0.5 * ((grad.tt[1:] - grad.tt[:-1]) * (grad.waveform[1:] + grad.waveform[:-1])).sum()
 
     grad.first = amplitudes[0]
     grad.last = amplitudes[-1]

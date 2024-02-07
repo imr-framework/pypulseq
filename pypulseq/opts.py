@@ -82,14 +82,14 @@ class Opts:
 
         if max_grad != None:
             max_grad = convert(
-                from_value=max_grad, from_unit=grad_unit, to_unit="Hz/m", gamma=gamma
+                from_value=max_grad, from_unit=grad_unit, to_unit="Hz/m", gamma=abs(gamma)
             )
         else:
             max_grad = Opts.default.max_grad
 
         if max_slew != None:
             max_slew = convert(
-                from_value=max_slew, from_unit=slew_unit, to_unit="Hz/m", gamma=gamma
+                from_value=max_slew, from_unit=slew_unit, to_unit="Hz/m", gamma=abs(gamma)
             )
         else:
             max_slew = Opts.default.max_slew
