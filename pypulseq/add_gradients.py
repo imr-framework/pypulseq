@@ -118,10 +118,10 @@ def add_gradients(
             g = grads[ii]
             if g.type == "trap":
                 if g.flat_time > 0:  # Trapezoid or triangle
-                    tt = cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time)
+                    tt = list(cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time))
                     waveform = [0, g.amplitude, g.amplitude, 0]
                 else:
-                    tt = cumsum(g.delay, g.rise_time, g.fall_time)
+                    tt = list(cumsum(g.delay, g.rise_time, g.fall_time))
                     waveform = [0, g.amplitude, 0]
             else:
                 tt = g.delay + g.tt
