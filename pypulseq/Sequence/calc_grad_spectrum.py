@@ -6,13 +6,15 @@ from matplotlib import pyplot as plt
 
 
 def calculate_gradient_spectrum(
-        obj, max_frequency: float = 2000,
+        obj,
+        max_frequency: float = 2000,
         window_width: float = 0.05,
         frequency_oversampling: float = 3,
         time_range: List[float] = None,
         plot: bool = True,
         combine_mode: str = 'max',
-        acoustic_resonances: List[dict] = []
+        use_derivative: bool = False,
+        acoustic_resonances: List[dict] = [],
 ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
     """
     Calculates the gradient spectrum of the sequence. Returns a spectrogram
@@ -43,6 +45,10 @@ def calculate_gradient_spectrum(
         How to combine all windows into one spectrogram, options:
             'max', 'mean', 'sos' (root-sum-of-squares), 'none' (no combination)
         The default is 'max'.
+    use_derivative : bool, optional
+        Whether the use the derivative of the gradient waveforms instead of the
+        gradient waveforms for the gradient spectrum calculations. The default
+        is False
     acoustic_resonances : List[dict], optional
         Acoustic resonances as a list of dictionaries with 'frequency' and
         'bandwidth' elements. Only used when plot==True. The default is [].
@@ -82,6 +88,9 @@ def calculate_gradient_spectrum(
     for i in range(ng):
         if gw_pp[i] != None:
             gw[i] = gw_pp[i](t)
+    
+    if use_derivative:
+        gw = np.diff(gw, axis=1)
     
     # Calculate spectrogram for each gradient channel
     spectrograms = []
