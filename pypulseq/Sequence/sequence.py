@@ -200,6 +200,7 @@ class Sequence:
             time_range: List[float] = None,
             plot: bool = True,
             combine_mode: str = 'max',
+            use_derivative: bool = False,
             acoustic_resonances: List[dict] = []
     ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -231,6 +232,10 @@ class Sequence:
             How to combine all windows into one spectrogram, options:
                 'max', 'mean', 'sos' (root-sum-of-squares), 'none' (no combination)
             The default is 'max'.
+        use_derivative : bool, optional
+            Whether the use the derivative of the gradient waveforms instead of the
+            gradient waveforms for the gradient spectrum calculations. The default
+            is False
         acoustic_resonances : List[dict], optional
             Acoustic resonances as a list of dictionaries with 'frequency' and
             'bandwidth' elements. Only used when plot==True. The default is [].
@@ -253,6 +258,7 @@ class Sequence:
                                            time_range=time_range,
                                            plot=plot,
                                            combine_mode=combine_mode,
+                                           use_derivative=use_derivative,
                                            acoustic_resonances=acoustic_resonances)
     
     def calculate_kspace(
