@@ -10,7 +10,7 @@ def calculate_gradient_spectrum(
         max_frequency: float = 2000,
         window_width: float = 0.05,
         frequency_oversampling: float = 3,
-        time_range: List[float] = None,
+        time_range: List[float] | None = None,
         plot: bool = True,
         combine_mode: str = 'max',
         use_derivative: bool = False,
@@ -43,7 +43,7 @@ def calculate_gradient_spectrum(
         Whether to plot the spectograms. The default is True.
     combine_mode : str, optional
         How to combine all windows into one spectrogram, options:
-            'max', 'mean', 'sos' (root-sum-of-squares), 'none' (no combination)
+            'max', 'mean', 'rss' (root-sum-of-squares), 'none' (no combination)
         The default is 'max'.
     use_derivative : bool, optional
         Whether the use the derivative of the gradient waveforms instead of the
@@ -57,7 +57,7 @@ def calculate_gradient_spectrum(
     -------
     spectrograms : List[np.ndarray]
         List of spectrograms per gradient channel.
-    spectrogram_sos : np.ndarray
+    spectrogram_rss : np.ndarray
         Root-sum-of-squares combined spectrogram over all gradient channels.
     frequencies : np.ndarray
         Frequency axis of the spectrograms.
@@ -72,7 +72,7 @@ def calculate_gradient_spectrum(
     # Get gradients as piecewise-polynomials
     gw_pp = obj.get_gradients(time_range=time_range)
     ng = len(gw_pp)
-    max_t = max(g.x[-1] for g in gw_pp if g != None)
+    max_t = max(g.x[-1] for g in gw_pp if g is not None)
     
     # Determine sampling points
     if time_range == None:
@@ -93,13 +93,12 @@ def calculate_gradient_spectrum(
         gw = np.diff(gw, axis=1)
     
     # Calculate spectrogram for each gradient channel
-    spectrograms = []
-    frequencies = None
-    spectrogram_sos = 0
+    spectrograms: List[np.ndarray] = []
+    spectrogram_rss = 0
     
     for i in range(ng):
         # Use scipy to calculate the spectrograms
-        freq, times, Sxx = spectrogram(gw[i],
+        freq, times, sxx = spectrogram(gw[i],
                                        fs=1/dt,
                                        mode='magnitude',
                                        nperseg=nwin,
@@ -110,31 +109,31 @@ def calculate_gradient_spectrum(
         mask = freq<max_frequency
         
         # Accumulate spectrum for all gradient channels
-        spectrogram_sos += Sxx[mask]**2
+        spectrogram_rss += sxx[mask]**2
         
         # Combine spectrogram over time axis
         if combine_mode == 'max':
-            s = Sxx[mask].max(axis=1)
+            s = sxx[mask].max(axis=1)
         elif combine_mode == 'mean':
-            s = Sxx[mask].mean(axis=1)
-        elif combine_mode == 'sos':
-            s = np.sqrt((Sxx[mask]**2).sum(axis=1))
+            s = sxx[mask].mean(axis=1)
+        elif combine_mode == 'rss':
+            s = np.sqrt((sxx[mask]**2).sum(axis=1))
         elif combine_mode == 'none':
-            s = Sxx[mask]
+            s = sxx[mask]
         else:
-            raise ValueError(f'Unknown value for combine_mode: {combine_mode}, must be one of [max, mean, sos, none]')
+            raise ValueError(f'Unknown value for combine_mode: {combine_mode}, must be one of [max, mean, rss, none]')
         
         frequencies = freq[mask]
         spectrograms.append(s)
     
     # Root-sum-of-squares combined spectrogram for all gradient channels
-    spectrogram_sos = np.sqrt(spectrogram_sos)
+    spectrogram_rss = np.sqrt(spectrogram_rss)
     if combine_mode == 'max':
-        spectrogram_sos = spectrogram_sos.max(axis=1)
+        spectrogram_rss = spectrogram_rss.max(axis=1)
     elif combine_mode == 'mean':
-        spectrogram_sos = spectrogram_sos.mean(axis=1)
-    elif combine_mode == 'sos':
-        spectrogram_sos = np.sqrt((spectrogram_sos**2).sum(axis=1))
+        spectrogram_rss = spectrogram_rss.mean(axis=1)
+    elif combine_mode == 'rss':
+        spectrogram_rss = np.sqrt((spectrogram_rss**2).sum(axis=1))
     
     # Plot spectrograms and acoustic resonances if specified
     if plot:
@@ -144,8 +143,8 @@ def calculate_gradient_spectrum(
             # According to spectrogram documentation y unit is (Hz/m)^2 / Hz = Hz/m^2, is this meaningful?
             for s in spectrograms:
                 plt.plot(frequencies, s)
-            plt.plot(frequencies, spectrogram_sos)
-            plt.legend(['x', 'y', 'z', 'sos'])
+            plt.plot(frequencies, spectrogram_rss)
+            plt.legend(['x', 'y', 'z', 'rss'])
     
             for res in acoustic_resonances:
                 plt.axvline(res['frequency'], color='k', linestyle='-')
@@ -169,7 +168,7 @@ def calculate_gradient_spectrum(
             plt.title('Total spectrum')
             plt.xlabel('Time (s)')
             plt.ylabel('Frequency (Hz)')
-            plt.imshow(abs(spectrogram_sos[::-1]), extent=(times[0], times[-1], frequencies[0], frequencies[-1]),
+            plt.imshow(abs(spectrogram_rss[::-1]), extent=(times[0], times[-1], frequencies[0], frequencies[-1]),
                        aspect=(times[-1]-times[0])/(frequencies[-1]-frequencies[0]))
             
             for res in acoustic_resonances:
@@ -177,4 +176,4 @@ def calculate_gradient_spectrum(
                 plt.axhline(res['frequency'] - res['bandwidth']/2, color='r', linestyle='--')
                 plt.axhline(res['frequency'] + res['bandwidth']/2, color='r', linestyle='--')
                 
-    return spectrograms, spectrogram_sos, frequencies, times
+    return spectrograms, spectrogram_rss, frequencies, times
