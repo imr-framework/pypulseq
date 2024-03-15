@@ -94,7 +94,7 @@ def calculate_gradient_spectrum(
     
     # Calculate spectrogram for each gradient channel
     spectrograms: List[np.ndarray] = []
-    spectrogram_rss = np.array(0)
+    spectrogram_rss = 0
     
     for i in range(ng):
         # Use scipy to calculate the spectrograms
