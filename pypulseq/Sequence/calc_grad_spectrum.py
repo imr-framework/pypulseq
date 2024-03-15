@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 import numpy as np
 from scipy.signal import spectrogram
@@ -10,7 +10,7 @@ def calculate_gradient_spectrum(
         max_frequency: float = 2000,
         window_width: float = 0.05,
         frequency_oversampling: float = 3,
-        time_range: List[float] | None = None,
+        time_range: Union[List[float], None] = None,
         plot: bool = True,
         combine_mode: str = 'max',
         use_derivative: bool = False,
@@ -94,7 +94,7 @@ def calculate_gradient_spectrum(
     
     # Calculate spectrogram for each gradient channel
     spectrograms: List[np.ndarray] = []
-    spectrogram_rss = 0
+    spectrogram_rss = np.array(0)
     
     for i in range(ng):
         # Use scipy to calculate the spectrograms
