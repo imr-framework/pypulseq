@@ -1,6 +1,6 @@
 import math
 from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 from scipy.optimize import minimize
@@ -11,9 +11,13 @@ from pypulseq.utils.cumsum import cumsum
 
 
 def make_extended_trapezoid_area(
-    area: float, channel: str, grad_end: float, grad_start: float, system: Opts
-) -> Tuple[SimpleNamespace, np.array, np.array]:
-    """Makes the shortest possible extended trapezoid for given area and gradient start and end point.
+    area: float,
+    channel: str,
+    grad_start: float,
+    grad_end: float,
+    system: Union[Opts, None] = None,
+) -> Tuple[SimpleNamespace, np.ndarray, np.ndarray]:
+    """Make (shortest possible) extended trapezoid for given area and gradient start and end point.
 
     Parameters
     ----------
@@ -25,7 +29,7 @@ def make_extended_trapezoid_area(
         Starting non-zero gradient value.
     grad_end : float
         Ending non-zero gradient value.
-    system: Opts
+    system: Opts, optional
         System limits.
 
     Returns
@@ -37,6 +41,9 @@ def make_extended_trapezoid_area(
     amplitude : numpy.ndarray
         Amplitude values of the extended trapezoid.
     """
+    if not system:
+        system = Opts()
+
     slew_rate = system.max_slew * 0.99
     max_grad = system.max_grad * 0.99
     raster_time = system.grad_raster_time
@@ -45,8 +52,8 @@ def make_extended_trapezoid_area(
         return np.ceil(time / raster_time) * raster_time
 
     def _calc_area_and_times(grad_amp, flat_time, slew_rate, grad_start, grad_end):
-        time_ramp_up = _calc_ramp_up_time(grad_amp, slew_rate, grad_start)
-        time_ramp_down = _calc_ramp_down_time(grad_amp, slew_rate, grad_end)
+        time_ramp_up = _calc_ramp_time(grad_amp, grad_start, slew_rate)
+        time_ramp_down = _calc_ramp_time(grad_amp, grad_end, slew_rate)
         area = _calc_area(grad_amp, time_ramp_up, flat_time, time_ramp_down, grad_start, grad_end)
         return area
 
@@ -57,17 +64,17 @@ def make_extended_trapezoid_area(
             + 0.5 * (grad_amp + grad_end) * time_ramp_down
         )
 
-    def _calc_ramp_up_time(grad_amp, slew_rate, grad_start):
-        return abs(grad_amp - grad_start) / slew_rate
-
-    def _calc_ramp_down_time(grad_amp, slew_rate, grad_end):
-        return abs(grad_amp - grad_end) / slew_rate
+    def _calc_ramp_time(grad_1, grad_2, slew_rate):
+        return abs(grad_1 - grad_2) / slew_rate
 
     # first try to find grad_amp without a flat time.
     # for better convergence, we ignore the raster effect here and use a very small time step
     # we will take care of raster effect later on
     flat_time = 0
-    obj1 = lambda x: (area - _calc_area_and_times(x, flat_time, slew_rate, grad_start, grad_end)) ** 2
+
+    def obj1(x):
+        return (area - _calc_area_and_times(x, flat_time, slew_rate, grad_start, grad_end)) ** 2
+
     # try different starting points for the optimization
     optimization_results = [
         minimize(fun=obj1, x0=-max_grad, method="Nelder-Mead"),
@@ -87,7 +94,10 @@ def make_extended_trapezoid_area(
     if obj1_value**0.5 > 1e-3 or abs(grad_amp) > max_grad:
         # Optimization without flat_time did not converge. Try to find flat_time.
         grad_amp = math.copysign(max_grad, grad_amp)
-        obj2 = lambda x: (area - _calc_area_and_times(grad_amp, x, slew_rate, grad_start, grad_end)) ** 2
+
+        def obj2(x):
+            return (area - _calc_area_and_times(grad_amp, x, slew_rate, grad_start, grad_end)) ** 2
+
         res2 = minimize(fun=obj2, x0=system.grad_raster_time, method="Nelder-Mead")
         flat_time = res2.x[0]
         # assert flat_time is larger than 0 and that the objective function is small
@@ -95,17 +105,27 @@ def make_extended_trapezoid_area(
 
     # ensure times are on raster
     flat_time = _to_raster(flat_time)
-    time_ramp_up = _to_raster(_calc_ramp_up_time(grad_amp, slew_rate, grad_start))
-    time_ramp_down = _to_raster(_calc_ramp_down_time(grad_amp, slew_rate, grad_end))
+    time_ramp_up = _to_raster(_calc_ramp_time(grad_amp, grad_start, slew_rate))
+    time_ramp_down = _to_raster(_calc_ramp_time(grad_amp, grad_end, slew_rate))
 
     # recalculate grad_amp while taking raster effect into account
-    obj3 = lambda x: (area - _calc_area(x, time_ramp_up, flat_time, time_ramp_down, grad_start, grad_end)) ** 2
+    def obj3(x):
+        return (area - _calc_area(x, time_ramp_up, flat_time, time_ramp_down, grad_start, grad_end)) ** 2
+
     res = minimize(fun=obj3, x0=grad_amp, method="Nelder-Mead")
     grad_amp = res.x[0]
 
     if flat_time > 0:
-        times = cumsum(0, time_ramp_up, flat_time, time_ramp_down)
-        amplitudes = [grad_start, grad_amp, grad_amp, grad_end]
+        if time_ramp_down > 0:
+            if time_ramp_up > 0:
+                times = cumsum(0, time_ramp_up, flat_time, time_ramp_down)
+                amplitudes = [grad_start, grad_amp, grad_amp, grad_end]
+            else:
+                times = cumsum(0, flat_time, time_ramp_down)
+                amplitudes = [grad_amp, grad_amp, grad_end]
+        else:
+            times = cumsum(0, time_ramp_up, flat_time)
+            amplitudes = [grad_start, grad_amp, grad_end]
     else:
         if time_ramp_down > 0:
             if time_ramp_up > 0:
