@@ -38,6 +38,10 @@ def make_extended_trapezoid_area(
         Time points of the extended trapezoid.
     amplitude : numpy.ndarray
         Amplitude values of the extended trapezoid.
+
+    Raises
+    ------
+        ValueError if no solution was found that satisfies the constraints and the desired area.
     """
     if not system:
         system = Opts()
@@ -66,10 +70,6 @@ def make_extended_trapezoid_area(
         Returns
         -------
             Tuple of ramp-up time, flat time, ramp-down time, gradient amplitude or None if no solution was found
-
-        Raises
-        ------
-            ValueError if no solution was found that satisfies the constraints and the desired area.
         """
 
         # Calculate possible ramp-up times for given duration
