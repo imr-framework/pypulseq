@@ -76,23 +76,23 @@ def make_extended_trapezoid_area(
         ramp_time_pos_start = round(_calc_ramp_time(max_grad, grad_start) / raster_time)
         ramp_time_neg_start = round(_calc_ramp_time(-max_grad, grad_start) / raster_time)
         max_ramp_time_start = max(ramp_time_pos_start, ramp_time_neg_start)
-        min_time_start = min(max_ramp_time_start, duration - 1)
-        time_ramp_up = np.arange(1, min_time_start + 1)
+        max_time_start = min(max_ramp_time_start, duration - 1)
+        time_ramp_up = np.arange(1, max_time_start + 1)
 
         # Calculate possible ramp-down times for given duration
         ramp_time_pos_end = round(_calc_ramp_time(max_grad, grad_end) / raster_time)
         ramp_time_neg_end = round(_calc_ramp_time(-max_grad, grad_end) / raster_time)
         max_ramp_time_end = max(ramp_time_pos_end, ramp_time_neg_end)
-        min_time_end = min(max_ramp_time_end, duration - 1)
-        time_ramp_down = np.arange(1, min_time_end + 1)
+        max_time_end = min(max_ramp_time_end, duration - 1)
+        time_ramp_down = np.arange(1, max_time_end + 1)
 
         # Create meshgrid of possible ramp-up and ramp-down times
         time_ramp_up, time_ramp_down = np.meshgrid(time_ramp_up, time_ramp_down)
 
-        # calculate corresponding flat times
+        # Calculate corresponding flat times
         flat_time = duration - time_ramp_up - time_ramp_down
 
-        # filter search space for valid timings (flat time >= 0)
+        # Filter search space for valid timings (flat time >= 0)
         valid_indices = flat_time >= 0
         time_ramp_up = time_ramp_up[valid_indices]
         time_ramp_down = time_ramp_down[valid_indices]
@@ -128,27 +128,25 @@ def make_extended_trapezoid_area(
     # binary search below fails to find the optimum in those cases.
     # TODO: Check if range is sufficient, try to calculate the dead space.
     min_duration = max(round(_calc_ramp_time(grad_end, grad_start) / raster_time), 2)
-    max_duration = (
-        max(
-            round(_calc_ramp_time(max_grad, grad_start) / raster_time),
-            round(_calc_ramp_time(-max_grad, grad_start) / raster_time),
-            round(_calc_ramp_time(max_grad, grad_end) / raster_time),
-            round(_calc_ramp_time(-max_grad, grad_end) / raster_time),
-            min_duration,
-        )
-        + 1
-    )
 
+    # Calculate duration needed to ramp down gradient to zero.
+    # From this point onwards, solutions can always be found by extending
+    # the duration and doing a binary search.
+    max_duration = max(
+                       round(_calc_ramp_time(0, grad_start) / raster_time),
+                       round(_calc_ramp_time(0, grad_end) / raster_time),
+                       min_duration,
+                   )
+
+    # Linear search
     solution = None
-    for duration in range(min_duration, max_duration):
+    for duration in range(min_duration, max_duration + 1):
         solution = _find_solution(duration)
         if solution:
             break
 
-    # Perform a binary search if no solution was found
+    # Perform a binary search for duration > max_duration if no solution was found
     if not solution:
-        max_duration = duration
-
         # First, find the upper limit on duration where a solution exists by
         # exponentially expanding the duration.
         while not solution:
