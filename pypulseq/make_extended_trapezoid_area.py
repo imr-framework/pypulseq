@@ -72,22 +72,64 @@ def make_extended_trapezoid_area(
             Tuple of ramp-up time, flat time, ramp-down time, gradient amplitude or None if no solution was found
         """
 
-        # Calculate possible ramp-up times for given duration
-        ramp_time_pos_start = round(_calc_ramp_time(max_grad, grad_start) / raster_time)
-        ramp_time_neg_start = round(_calc_ramp_time(-max_grad, grad_start) / raster_time)
-        max_ramp_time_start = max(ramp_time_pos_start, ramp_time_neg_start)
-        max_time_start = min(max_ramp_time_start, duration - 1)
-        time_ramp_up = np.arange(1, max_time_start + 1)
+        # Determine timings to check for possible solutions
+        ramp_up_times = []
+        ramp_down_times = []
 
-        # Calculate possible ramp-down times for given duration
-        ramp_time_pos_end = round(_calc_ramp_time(max_grad, grad_end) / raster_time)
-        ramp_time_neg_end = round(_calc_ramp_time(-max_grad, grad_end) / raster_time)
-        max_ramp_time_end = max(ramp_time_pos_end, ramp_time_neg_end)
-        max_time_end = min(max_ramp_time_end, duration - 1)
-        time_ramp_down = np.arange(1, max_time_end + 1)
+        # First, consider solutions that use maximum slew rate:
+        # Analytically calculate calculate the point where:
+        #   grad_start + ramp_up_time * max_slew == grad_end + ramp_down_time * max_slew
+        ramp_up_time = (duration * max_slew * raster_time - grad_start + grad_end) / (
+                           2*max_slew*raster_time
+                       )
+        ramp_up_time = round(ramp_up_time)
 
-        # Create meshgrid of possible ramp-up and ramp-down times
-        time_ramp_up, time_ramp_down = np.meshgrid(time_ramp_up, time_ramp_down)
+        # Check if gradient amplitude exceeds max_grad, if so, adjust ramp
+        # times for a trapezoidal gradient with maximum slew rate.
+        if grad_start + ramp_up_time * max_slew * raster_time > max_grad:
+            ramp_up_time = round(_calc_ramp_time(grad_start, max_grad) / raster_time)
+            ramp_down_time = round(_calc_ramp_time(grad_end, max_grad) / raster_time)
+        else:
+            ramp_down_time = duration - ramp_up_time
+
+        # Add possible solution if timing is valid
+        if (ramp_up_time > 0
+                and ramp_down_time > 0
+                and ramp_up_time + ramp_down_time <= duration):
+            ramp_up_times.append(ramp_up_time)
+            ramp_down_times.append(ramp_down_time)
+
+        # Analytically calculate calculate the point where:
+        #   grad_start - ramp_up_time * max_slew == grad_end - ramp_down_time * max_slew
+        ramp_up_time = (duration * max_slew * raster_time + grad_start - grad_end) / (
+                           2*max_slew*raster_time
+                       )
+        ramp_up_time = round(ramp_up_time)
+
+        # Check if gradient amplitude exceeds -max_grad, if so, adjust ramp
+        # times for a trapezoidal gradient with maximum slew rate.
+        if grad_start - ramp_up_time * max_slew * raster_time < -max_grad:
+            ramp_up_time = round(_calc_ramp_time(grad_start, -max_grad) / raster_time)
+            ramp_down_time = round(_calc_ramp_time(grad_end, -max_grad) / raster_time)
+        else:
+            ramp_down_time = duration - ramp_up_time
+
+        # Add possible solution if timing is valid
+        if (ramp_up_time > 0
+                and ramp_down_time > 0
+                and ramp_up_time + ramp_down_time <= duration):
+            ramp_up_times.append(ramp_up_time)
+            ramp_down_times.append(ramp_down_time)
+
+        # Second, try any solution with flat_time == 0
+        # This appears to be necessary for many cases, but going through all
+        # timings here is probably too conservative still.
+        for ramp_up_time in range(1, duration):
+            ramp_up_times.append(ramp_up_time)
+            ramp_down_times.append(duration - ramp_up_time)
+
+        time_ramp_up = np.array(ramp_up_times)
+        time_ramp_down = np.array(ramp_down_times)
 
         # Calculate corresponding flat times
         flat_time = duration - time_ramp_up - time_ramp_down
