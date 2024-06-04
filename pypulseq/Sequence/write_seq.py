@@ -7,7 +7,7 @@ import numpy as np
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def write(self, file_name: Union[str, Path], create_signature) -> None:
+def write(self, file_name: Union[str, Path], create_signature, remove_duplicates=True) -> None:
     """
     Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -18,6 +18,9 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
     file_name : str or Path
         File name of `.seq` file to be written to disk.
     create_signature : bool
+    remove_duplicates : bool
+        Before writing, remove and remap events that would be duplicates after
+        the rounding done during writing
 
     Raises
     ------
@@ -30,7 +33,12 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
     if file_name.suffix != '.seq':
         # Append .seq suffix
         file_name = file_name.with_suffix(file_name.suffix + '.seq')
-        
+
+    # If removing duplicates, make a copy of the sequence with the duplicate
+    # events removed.
+    if remove_duplicates:
+        self = self.remove_duplicates()
+
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
         output_file.write("# Created by PyPulseq\n\n")
