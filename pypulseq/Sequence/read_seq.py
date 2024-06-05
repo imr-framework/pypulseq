@@ -570,7 +570,7 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
     shape_library : EventLibrary
         `EventLibrary` object containing shape definitions.
     """
-    shape_library = EventLibrary()
+    shape_library = EventLibrary(numpy_data=True)
 
     line = __skip_comments(input_file)
 
