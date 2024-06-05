@@ -855,17 +855,9 @@ class Sequence:
                 raise Warning("Not all elements of the generated waveform are finite.")
 
             teps = 1e-12
-            if gw[0, 0] > 0 and gw[0, -1] < total_duration - teps:
-                # teps terms to avoid integration errors over extended periods of time
-                _temp1 = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
-                _temp2 = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
-                gw = np.hstack((_temp1, gw, _temp2))
-            elif gw[0, 0] > teps:
-                _temp = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
-                gw = np.hstack((_temp, gw))
-            elif gw[0, -1] < total_duration - teps:
-                _temp = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
-                gw = np.hstack((gw, _temp))
+            _temp1 = np.array(([gw[0, 0] - 2*teps, gw[0, 0] - teps], [0, 0]))
+            _temp2 = np.array(([gw[0, -1] + teps, gw[0, -1] + 2*teps], [0, 0]))
+            gw = np.hstack((_temp1, gw, _temp2))
 
             if np.abs(gradient_offset[j]) > eps:
                 gw[1,:] += gradient_offset[j]
