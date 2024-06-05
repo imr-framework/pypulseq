@@ -118,8 +118,8 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             output_file.write("\n")
 
         grad_lib_values = np.array(list(self.grad_library.type.values()))
-        arb_grad_mask = grad_lib_values == "g"
-        trap_grad_mask = grad_lib_values == "t"
+        arb_grad_mask = grad_lib_values == "g" if self.grad_library.type else False
+        trap_grad_mask = grad_lib_values == "t" if self.grad_library.type else False
 
         if np.any(arb_grad_mask):
             output_file.write("# Format of arbitrary gradients:\n")
