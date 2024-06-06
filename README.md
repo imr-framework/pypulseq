@@ -8,11 +8,11 @@
 
 `Compatible with Pulseq 1.4.0`
 
-
 🚨🚨🚨 **NOTE:** This is the `dev` branch which hosts the bleeding edge version. For the most recent, stable release,
 switch to the `master` branch by clicking [here](https://github.com/imr-framework/pypulseq/tree/master). 🚨🚨🚨
 
 ## Table of contents 🧾
+
 1. [👥 Contributors][section-contributors]
 2. [📚 Citations][section-relevant-literature]
 3. [🔨 Installation][section-installation]
@@ -39,6 +39,7 @@ It is strongly recommended to first read the [Pulseq specification]  before proc
 document defines the concepts required for pulse sequence design using PyPulseq.
 
 If you use PyPulseq in your work, cite the following publications:
+
 ```
 Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." Journal
 of Open Source Software 4.42 (2019): 1725.
@@ -48,23 +49,33 @@ pulse sequences and integrated magnetic resonance imaging algorithm development.
 9-15.
 ```
 
-## 📢 Pulse sequence development in your browser!
+## 📢 Pulse sequence development in your browser
+
 Design pulse sequences using `pypulseq` in your browser! Check out the [⚡ Lightning-start][section-lightning-start] section to
 learn how!
 
 ## 1. 👥 Contributors (alphabetical)
+
+- @Andrew-Dupuis
 - @bilal-tasdelen
 - @calderds
+- @FrankZijlstra
+- @fzimmermann89
+- @gabuzi
 - @mavel101
 - @nnmurthy
 - @sairamgeethanath
 - @schuenke
 - @skarrea
+- @tblazey
 - @tonggehua
+- @wtclarke
+- @yupbank
 
 Please email me/submit PR/open an issue if any contributors are missing.
 
 ## 2. 📚 [Citations][scholar-citations] (reverse chronological)
+
 1. Hennig, J., Barghoorn, A., Zhang, S. and Zaitsev, M., 2022. Single shot spiral TSE with annulated segmentation.
 Magnetic Resonance in Medicine.
 2. Niso, G., Botvinik-Nezer, R., Appelhoff, S., De La Vega, A., Esteban, O., Etzel, J.A., Finc, K., Ganz, M., Gau, R.,
@@ -104,38 +115,49 @@ development for a reproducible research." ISMRM 27th Annual Meeting & Exhibition
 Magnetic Resonance in Medicine (ISMRM) (2019).
 19. Pizetta, Daniel Cosmo. PyMR: a framework for programming magnetic resonance systems. Diss. Universidade de São
 Paulo (2018).
+
 ---
 
 ## 3. 🔨 Installation
+
 \>=Python 3.6, virtual environment recommended:
 
 ```pip install pypulseq```
 
-## 4. ⚡ Lightning-start - PyPulseq in your browser!
+## 4. ⚡ Lightning-start - PyPulseq in your browser
+
 1. Create a new notebook on [Google Colab][google-colab]
 2. [Install][section-installation] PyPulseq
 3. Get going!
 
 Or, explore an example notebook:
+
 1. Copy URL of an example notebook from [here][section-notebook-examples]
 2. On [Google Colab][google-colab], insert the copied link to get started
 
 ## 5. 🏃‍♂ Quickstart - example scripts
+
 Every example script creates a pulse sequence, plots the pulse timing diagram and writes a `.seq` file to disk.
+
 1. [Install][section-installation] PyPulseq
 2. Download and run any of the [example][script-examples] scripts.
 
 ## 6. 🤿 Deep dive - custom pulse sequences
+
 Getting started with pulse sequence design using `PyPulseq` is simple:
+
 1. [Install][section-installation] PyPulseq
 2. First, define system limits in `Opts` and then create a `Sequence` object with it:
+
     ```python
     import pypulseq as pp
 
     system = pp.Opts(max_grad=32, grad_unit='mT/m', max_slew=130, slew_unit='mT/m/ms')
     seq = pp.Sequence(system=system)
     ```
+
 3. Then, design gradient, RF or ADC pulse sequence events:
+
     ```python
     Nx, Ny = 256, 256 # matrix size
     fov = 220e-3 # field of view
@@ -151,18 +173,24 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
     # ADC readout
     adc = pp.make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
     ```
+
 4. Add these pulse sequence events to the `Sequence` object from step 2. One or more events can be executed
 simultaneously, simply pass them all to the `add_block()` method. For example, the `gx` and `adc` pulse sequence events
 need to be executed simultaneously:
+
     ```python
     seq.add_block(rf90)
     seq.add_block(gx, adc)
     ```
+
 5. Visualize plots:
+
     ```python
     seq.plot()
     ```
+
 6. Generate a `.seq` file to be executed on a real MR scanner:
+
     ```python
     seq.write('demo.seq')
     ```
@@ -170,10 +198,12 @@ need to be executed simultaneously:
 **Get in touch regarding running the `.seq` files on your Siemens/[GE]/[Bruker] scanner.**
 
 ## 7. 👥 Contributing and Community guidelines
+
 `PyPulseq` adheres to a code of conduct adapted from the [Contributor Covenant] code of conduct.
 Contributing guidelines can be found [here][contrib-guidelines].
 
 ## 8. 📖 References
+
 1. Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design."
 Journal of Open Source Software 4.42 (2019): 1725.
 2. Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping
