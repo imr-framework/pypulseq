@@ -5,6 +5,13 @@ from types import SimpleNamespace
 from typing import Tuple, List
 from typing import Union
 from warnings import warn
+from copy import deepcopy
+
+try:
+    from typing import Self
+except ImportError:
+    from typing import TypeVar
+    Self = TypeVar('Self', bound='Sequence')
 
 import matplotlib as mpl
 import numpy as np
@@ -848,17 +855,9 @@ class Sequence:
                 raise Warning("Not all elements of the generated waveform are finite.")
 
             teps = 1e-12
-            if gw[0, 0] > 0 and gw[0, -1] < total_duration - teps:
-                # teps terms to avoid integration errors over extended periods of time
-                _temp1 = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
-                _temp2 = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
-                gw = np.hstack((_temp1, gw, _temp2))
-            elif gw[0, 0] > teps:
-                _temp = np.array(([-teps, gw[0, 0] - teps], [0, 0]))
-                gw = np.hstack((_temp, gw))
-            elif gw[0, -1] < total_duration - teps:
-                _temp = np.array(([gw[0, -1] + teps, total_duration + teps], [0, 0]))
-                gw = np.hstack((gw, _temp))
+            _temp1 = np.array(([gw[0, 0] - 2*teps, gw[0, 0] - teps], [0, 0]))
+            _temp2 = np.array(([gw[0, -1] + teps, gw[0, -1] + 2*teps], [0, 0]))
+            gw = np.hstack((_temp1, gw, _temp2))
 
             if np.abs(gradient_offset[j]) > eps:
                 gw[1,:] += gradient_offset[j]
@@ -1145,7 +1144,7 @@ class Sequence:
         if plot_now:
             plt.show()
 
-    def read(self, file_path: str, detect_rf_use: bool = False) -> None:
+    def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
         """
         Read `.seq` file from `file_path`.
 
@@ -1154,11 +1153,13 @@ class Sequence:
         detect_rf_use
         file_path : str
             Path to `.seq` file to be read.
+        remove_duplicates : bool, default=True
+            Remove duplicate events from the sequence after reading.
         """
         if self.use_block_cache:
             self.block_cache.clear()
 
-        read(self, path=file_path, detect_rf_use=detect_rf_use)
+        read(self, path=file_path, detect_rf_use=detect_rf_use, remove_duplicates=remove_duplicates)
 
         # Initialize next free block ID
         self.next_free_block_ID = (max(self.block_events) + 1) if self.block_events else 1
@@ -1176,6 +1177,76 @@ class Sequence:
 
     def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         return block.register_rf_event(self, event)
+
+    def remove_duplicates(self, in_place: bool = False) -> Self:
+        """
+        Removes duplicate events from the shape and event libraries contained
+        in this sequence.
+
+        Parameters
+        ----------
+        in_place : bool, optional
+            If true, removes the duplicates from the current sequence.
+            Otherwise, a copy is created. The default is False.
+
+        Returns
+        -------
+        seq_copy : Sequence
+            If `in_place`, returns self. Otherwise returns a copy of the
+            sequence.
+        """
+        if in_place:
+            seq_copy = self
+        else:
+            # Avoid copying block_cache for performance
+            tmp = self.block_cache
+            self.block_cache = {}
+            seq_copy = deepcopy(self)
+            self.block_cache = tmp
+
+        # Find duplicate in shape library
+        seq_copy.shape_library, mapping = seq_copy.shape_library.remove_duplicates(9)
+
+        # Remap shape IDs of arbitrary gradient events
+        for grad_id in seq_copy.grad_library.data:
+            if seq_copy.grad_library.type[grad_id] == 'g':
+                data = seq_copy.grad_library.data[grad_id]
+                new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
+                if data != new_data:
+                    seq_copy.grad_library.update(grad_id, None, new_data)
+
+        # Remap shape IDs of RF events
+        for rf_id in seq_copy.rf_library.data:
+            data = seq_copy.rf_library.data[rf_id]
+            new_data = (data[0],) + (mapping[data[1]], mapping[data[2]], mapping[data[3]]) + data[4:]
+            if data != new_data:
+                seq_copy.rf_library.update(rf_id, None, new_data)
+
+        # Filter duplicates in gradient library
+        seq_copy.grad_library, mapping = seq_copy.grad_library.remove_duplicates((6, -6, -6, -6, -6, -6))
+
+        # Remap gradient event IDs
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][2] = mapping[seq_copy.block_events[block_id][2]]
+            seq_copy.block_events[block_id][3] = mapping[seq_copy.block_events[block_id][3]]
+            seq_copy.block_events[block_id][4] = mapping[seq_copy.block_events[block_id][4]]
+
+        # Filter duplicates in RF library
+        seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((6, 0, 0, 0, 6, 6, 6))
+
+        # Remap RF event IDs
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][1] = mapping[seq_copy.block_events[block_id][1]]
+
+        # Filter duplicates in ADC library
+        seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, -9, -6, 6, 6, 6))
+
+        # Remap ADC event IDs
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][5] = mapping[seq_copy.block_events[block_id][5]]
+
+        return seq_copy
+
 
     def rf_from_lib_data(self, lib_data: list, use: str = str()) -> SimpleNamespace:
         """
@@ -1754,7 +1825,7 @@ class Sequence:
 
         return all_waveforms
 
-    def write(self, name: str, create_signature: bool = True) -> None:
+    def write(self, name: str, create_signature: bool = True, remove_duplicates: bool = True) -> None:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -1766,5 +1837,7 @@ class Sequence:
             Filename of `.seq` file to be written to disk.
         create_signature : bool, default=True
             Boolean flag to indicate if the file has to be signed.
+        remove_duplicates : bool, default=True
+            Remove duplicate events from the sequence before writing
         """
-        write_seq(self, name, create_signature)
+        write_seq(self, name, create_signature, remove_duplicates)

@@ -13,7 +13,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def read(self, path: str, detect_rf_use: bool = False) -> None:
+def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
     """
     Load sequence from file - read the given filename and load sequence data into sequence object.
 
@@ -26,6 +26,8 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     detect_rf_use : bool, default=False
         Boolean flag to let the function infer the currently missing flags concerning the intended use of the RF pulses
         (excitation, refocusing, etc). These are important for the k-space trajectory calculation.
+    remove_duplicates: bool, default=True
+        Remove duplicate events from the sequence after reading
 
     Raises
     ------
@@ -56,8 +58,8 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
 
     self.block_events = {}
     self.definitions = {}
-    self.extension_string_IDs = {}
-    self.extension_numeric_IDs = []
+    self.extension_string_idx = []
+    self.extension_numeric_idx = []
 
     jemris_generated = False
     version_combined = 0
@@ -357,7 +359,12 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             for block_counter,events in self.block_events.items():
                 if events[1] == k:
                     del self.block_cache[block_counter]
-                    
+
+    # When removing duplicates, remove and remap events in the sequence without
+    # creating a copy.
+    if remove_duplicates:
+        self.remove_duplicates(in_place=True)
+
 
 def __read_definitions(input_file) -> Dict[str, str]:
     """
@@ -563,7 +570,7 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
     shape_library : EventLibrary
         `EventLibrary` object containing shape definitions.
     """
-    shape_library = EventLibrary()
+    shape_library = EventLibrary(numpy_data=True)
 
     line = __skip_comments(input_file)
 
