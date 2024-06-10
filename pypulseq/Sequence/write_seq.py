@@ -222,6 +222,9 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
                 output_file.write(s)
             output_file.write("\n")
 
+        if len(self.label_inc_library.data) != 0:
+            labels = get_supported_labels()
+
             output_file.write("# Extension specification for setting labels:\n")
             output_file.write("# id set labelstring\n")
             tid = self.get_extension_type_ID("LABELINC")

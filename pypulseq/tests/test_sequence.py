@@ -51,12 +51,43 @@ def seq2():
 
     return seq
 
+# Basic GRE sequence with INC labels
+def seq3():
+    seq = Sequence()
+    
+    for i in range(10):
+        seq.add_block(pp.make_block_pulse(math.pi/8, duration=1e-3))
+        seq.add_block(pp.make_trapezoid('x', area=1000))
+        seq.add_block(pp.make_trapezoid('y', area=-500 + i*100))
+        seq.add_block(pp.make_trapezoid('x', area=-500))
+        seq.add_block(pp.make_trapezoid('x', area=1000, duration=10e-3),
+                      pp.make_adc(num_samples=100, duration=10e-3),
+                      pp.make_label(label='LIN', type='INC', value=1))
+
+    return seq
+
+# Basic GRE sequence with SET labels
+def seq4():
+    seq = Sequence()
+    
+    for i in range(10):
+        seq.add_block(pp.make_block_pulse(math.pi/8, duration=1e-3))
+        seq.add_block(pp.make_trapezoid('x', area=1000))
+        seq.add_block(pp.make_trapezoid('y', area=-500 + i*100))
+        seq.add_block(pp.make_trapezoid('x', area=-500))
+        seq.add_block(pp.make_trapezoid('x', area=1000, duration=10e-3),
+                      pp.make_adc(num_samples=100, duration=10e-3),
+                      pp.make_label(label='LIN', type='SET', value=i))
+
+    return seq
 
 # List of all sequence functions that will be tested with the test functions
 # below.
 sequence_zoo = [seq_make_gauss_pulse,
                 seq1,
-                seq2]
+                seq2,
+                seq3,
+                seq4]
 
 # This "test" rewrites the expected .seq output files when SAVE_EXPECTED is
 # set in the environment variables.
@@ -120,6 +151,15 @@ def test_sequence_writeread(seq_func, tmp_path):
 
     # Test for approximate equality of kspace calculation
     assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-2, nan_ok=True)
+    
+    # Test whether labels are the same
+    labels_seq = seq.evaluate_labels(evolution='blocks')
+    labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+    
+    assert labels_seq.keys() == labels_seq2.keys()
+    
+    for label in labels_seq:
+        assert (labels_seq[label] == labels_seq2[label]).all()
 
 # Test whether the sequence is approximately the same after recreating it by
 # getting all blocks with get_block and inserting them into a new sequence
@@ -151,3 +191,12 @@ def test_sequence_recreate(seq_func, tmp_path):
 
     # Test for approximate equality of kspace calculation
     assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-6, nan_ok=True)
+
+    # Test whether labels are the same
+    labels_seq = seq.evaluate_labels(evolution='blocks')
+    labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+    
+    assert labels_seq.keys() == labels_seq2.keys()
+    
+    for label in labels_seq:
+        assert (labels_seq[label] == labels_seq2[label]).all()

@@ -58,8 +58,8 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
     self.block_events = {}
     self.definitions = {}
-    self.extension_string_IDs = {}
-    self.extension_numeric_IDs = []
+    self.extension_string_idx = []
+    self.extension_numeric_idx = []
 
     jemris_generated = False
     version_combined = 0
