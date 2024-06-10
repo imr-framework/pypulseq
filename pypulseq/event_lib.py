@@ -278,7 +278,7 @@ class EventLibrary:
             specified by `digits`. Rounding behaviour is similar to the {.Ng}
             format specifier if N > 0, and similar to {.0f} otherwise.
             """
-            return tuple(round(d, dig - int(math.ceil(math.log10(abs(d) + 1e-12))) if dig > 0 else 0) for d, dig in zip(data, digits))
+            return tuple(round(d, dig - int(math.ceil(math.log10(abs(d) + 1e-12))) if dig > 0 else -dig) for d, dig in zip(data, digits))
 
         def round_data_numpy(data: np.ndarray, digits: int) -> np.ndarray:
             """
@@ -286,7 +286,7 @@ class EventLibrary:
             specified by `digits`. Rounding behaviour is similar to the {.Ng}
             format specifier if N > 0, and similar to {.0f} otherwise.
             """
-            mags = 10 ** (digits - (np.ceil(np.log10(abs(data) + 1e-12))) if digits > 0 else 0)
+            mags = 10 ** (digits - (np.ceil(np.log10(abs(data) + 1e-12))) if digits > 0 else -digits)
             result = np.round(data * mags) / mags
             result.flags.writeable = False
             return result
@@ -306,7 +306,7 @@ class EventLibrary:
         mapping = {0:0}
 
         # Recreate library using rounded values
-        for k,v in rounded_data.items():
+        for k,v in sorted(rounded_data.items()):
             mapping[k], _ = new_library.find_or_insert(v, self.type[k] if k in self.type else str())
 
         return new_library, mapping
