@@ -81,6 +81,7 @@ def seq4():
 
     return seq
 
+
 # List of all sequence functions that will be tested with the test functions
 # below.
 sequence_zoo = [seq_make_gauss_pulse,
@@ -156,10 +157,10 @@ def test_sequence_writeread(seq_func, tmp_path):
     labels_seq = seq.evaluate_labels(evolution='blocks')
     labels_seq2 = seq2.evaluate_labels(evolution='blocks')
     
-    assert labels_seq.keys() == labels_seq2.keys()
+    assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
     
     for label in labels_seq:
-        assert (labels_seq[label] == labels_seq2[label]).all()
+        assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
 
 # Test whether the sequence is approximately the same after recreating it by
 # getting all blocks with get_block and inserting them into a new sequence
@@ -196,7 +197,7 @@ def test_sequence_recreate(seq_func, tmp_path):
     labels_seq = seq.evaluate_labels(evolution='blocks')
     labels_seq2 = seq2.evaluate_labels(evolution='blocks')
     
-    assert labels_seq.keys() == labels_seq2.keys()
+    assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
     
     for label in labels_seq:
-        assert (labels_seq[label] == labels_seq2[label]).all()
+        assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
