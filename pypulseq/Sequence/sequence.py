@@ -1239,7 +1239,7 @@ class Sequence:
             seq_copy.block_events[block_id][1] = mapping[seq_copy.block_events[block_id][1]]
 
         # Filter duplicates in ADC library
-        seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, -9, -6, 6, 6))
+        seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, -9, -6, 6, 6, 6))
 
         # Remap ADC event IDs
         for block_id in seq_copy.block_events:
