@@ -146,7 +146,7 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             output_file.write("# ..      Hz/m   us   us   us    us\n")
             output_file.write("[TRAP]\n")
             keys = np.array(list(self.grad_library.data.keys()))
-            id_format_str = "{:2g} {:12g} {:3g} {:4g} {:3g} {:3g}\n"
+            id_format_str = "{:2.0f} {:12g} {:3.0f} {:4.0f} {:3.0f} {:3.0f}\n"
             for k in keys[trap_grad_mask]:
                 data = np.copy(
                     self.grad_library.data[k]
