@@ -13,12 +13,16 @@ import pypulseq as pp
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
+# Sequence which contains only a gauss pulse
+# TODO: Consider changing this to contain all types of RF pulses
 def seq_make_gauss_pulse():
     seq = Sequence()
     seq.add_block(pp.make_gauss_pulse(flip_angle=1))
 
     return seq
 
+# Basic sequence with gradients in all channels, some which are identical after
+# rounding.
 def seq1():
     seq = Sequence()
     seq.add_block(pp.make_block_pulse(math.pi/4, duration=1e-3))
@@ -34,6 +38,7 @@ def seq1():
 
     return seq
 
+# Basic spin-echo sequence structure
 def seq2():
     seq = Sequence()
     seq.add_block(pp.make_block_pulse(math.pi/2, duration=1e-3))
@@ -47,10 +52,15 @@ def seq2():
     return seq
 
 
+# List of all sequence functions that will be tested with the test functions
+# below.
 sequence_zoo = [seq_make_gauss_pulse,
                 seq1,
                 seq2]
 
+# This "test" rewrites the expected .seq output files when SAVE_EXPECTED is
+# set in the environment variables.
+# E.g. in a unix-based system, run: SAVE_EXPECTED=1 pytest test_sequence.py
 @pytest.mark.skipif(not os.environ.get('SAVE_EXPECTED'), reason='Only save sequence files when requested')
 @pytest.mark.parametrize("seq_func", sequence_zoo)
 def test_sequence_save_expected(seq_func):
@@ -61,6 +71,7 @@ def test_sequence_save_expected(seq_func):
     seq.write(expected_output_path / (seq_name + '.seq'))
 
 
+# Test whether a sequence can be plotted.
 @pytest.mark.parametrize("seq_func", sequence_zoo)
 @patch("matplotlib.pyplot.show")
 def test_plot(mock_show, seq_func):
@@ -69,7 +80,8 @@ def test_plot(mock_show, seq_func):
     seq.plot()
     seq.plot(show_blocks=True)
 
-
+# Test whether the sequence is the approximately the same after writing a .seq
+# file and reading it back in.
 @pytest.mark.parametrize("seq_func", sequence_zoo)
 def test_sequence_writeread(seq_func, tmp_path):
     seq_name = str(seq_func.__name__)
@@ -109,6 +121,9 @@ def test_sequence_writeread(seq_func, tmp_path):
     # Test for approximate equality of kspace calculation
     assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-2, nan_ok=True)
 
+# Test whether the sequence is approximately the same after recreating it by
+# getting all blocks with get_block and inserting them into a new sequence
+# with add_block.
 @pytest.mark.parametrize("seq_func", sequence_zoo)
 def test_sequence_recreate(seq_func, tmp_path):
     # Generate sequence

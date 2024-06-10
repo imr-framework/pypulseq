@@ -1208,42 +1208,42 @@ class Sequence:
         seq_copy.shape_library, mapping = seq_copy.shape_library.remove_duplicates(9)
 
         # Remap shape IDs of arbitrary gradient events
-        for x in seq_copy.grad_library.data:
-            if seq_copy.grad_library.type[x] == 'g':
-                data = seq_copy.grad_library.data[x]
+        for grad_id in seq_copy.grad_library.data:
+            if seq_copy.grad_library.type[grad_id] == 'g':
+                data = seq_copy.grad_library.data[grad_id]
                 new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
                 if data != new_data:
-                    seq_copy.grad_library.update(x, None, new_data)
+                    seq_copy.grad_library.update(grad_id, None, new_data)
 
         # Remap shape IDs of RF events
-        for x in seq_copy.rf_library.data:
-            data = seq_copy.rf_library.data[x]
+        for rf_id in seq_copy.rf_library.data:
+            data = seq_copy.rf_library.data[rf_id]
             new_data = (data[0],) + (mapping[data[1]], mapping[data[2]], mapping[data[3]]) + data[4:]
             if data != new_data:
-                seq_copy.rf_library.update(x, None, new_data)
+                seq_copy.rf_library.update(rf_id, None, new_data)
 
         # Filter duplicates in gradient library
         seq_copy.grad_library, mapping = seq_copy.grad_library.remove_duplicates((6, 6, 6, 6, 6, 6))
 
         # Remap gradient event IDs
-        for x in seq_copy.block_events:
-            seq_copy.block_events[x][2] = mapping[seq_copy.block_events[x][2]]
-            seq_copy.block_events[x][3] = mapping[seq_copy.block_events[x][3]]
-            seq_copy.block_events[x][4] = mapping[seq_copy.block_events[x][4]]
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][2] = mapping[seq_copy.block_events[block_id][2]]
+            seq_copy.block_events[block_id][3] = mapping[seq_copy.block_events[block_id][3]]
+            seq_copy.block_events[block_id][4] = mapping[seq_copy.block_events[block_id][4]]
 
         # Filter duplicates in RF library
         seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((12, 0, 0, 0, 6, 6, 6))
 
         # Remap RF event IDs
-        for x in seq_copy.block_events:
-            seq_copy.block_events[x][1] = mapping[seq_copy.block_events[x][1]]
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][1] = mapping[seq_copy.block_events[block_id][1]]
 
         # Filter duplicates in ADC library
         seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, 9, 6, 6, 6, 6))
 
         # Remap ADC event IDs
-        for x in seq_copy.block_events:
-            seq_copy.block_events[x][5] = mapping[seq_copy.block_events[x][5]]
+        for block_id in seq_copy.block_events:
+            seq_copy.block_events[block_id][5] = mapping[seq_copy.block_events[block_id][5]]
 
         return seq_copy
 

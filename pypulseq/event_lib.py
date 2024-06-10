@@ -291,7 +291,7 @@ class EventLibrary:
             result.flags.writeable = False
             return result
 
-        # Round library data bbased on `digits` specification
+        # Round library data based on `digits` specification
         if self.numpy_data:
             rounded_data = {x:round_data_numpy(self.data[x], digits) for x in self.data}
         else:
