@@ -1223,7 +1223,7 @@ class Sequence:
                 seq_copy.rf_library.update(rf_id, None, new_data)
 
         # Filter duplicates in gradient library
-        seq_copy.grad_library, mapping = seq_copy.grad_library.remove_duplicates((6, -6, -6, -6, -6))
+        seq_copy.grad_library, mapping = seq_copy.grad_library.remove_duplicates((6, -6, -6, -6, -6, -6))
 
         # Remap gradient event IDs
         for block_id in seq_copy.block_events:
