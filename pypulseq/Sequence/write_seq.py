@@ -7,7 +7,7 @@ import numpy as np
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def write(self, file_name: Union[str, Path], create_signature, remove_duplicates=True) -> None:
+def write(self, file_name: Union[str, Path], create_signature, remove_duplicates=True) -> Union[str, None]:
     """
     Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -37,7 +37,7 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
     # If removing duplicates, make a copy of the sequence with the duplicate
     # events removed.
     if remove_duplicates:
-        self = self.remove_duplicates(in_place=True)
+        self = self.remove_duplicates()
 
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
@@ -277,3 +277,5 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             )
             output_file.write("Type md5\n")
             output_file.write(f"Hash {md5}\n")
+
+        return md5
