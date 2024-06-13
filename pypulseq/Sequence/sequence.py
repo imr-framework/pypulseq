@@ -1839,5 +1839,19 @@ class Sequence:
             Boolean flag to indicate if the file has to be signed.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
+        
+        Returns
+        -------
+        signature or None : If create_signature is True, it returns the written .seq file's signature as a string, 
+        otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the 
+        deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
         """
-        return write_seq(self, name, create_signature, remove_duplicates)
+        signature = write_seq(self, name, create_signature, remove_duplicates)
+
+        if signature is not None:
+            self.signature_type = "md5"
+            self.signature_file = "text"
+            self.signature_value = signature
+            return signature
+        else:
+            return None
