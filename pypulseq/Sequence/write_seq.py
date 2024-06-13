@@ -21,6 +21,12 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
     remove_duplicates : bool
         Before writing, remove and remap events that would be duplicates after
         the rounding done during writing
+            
+    Returns
+    -------
+    md5 or None : If create_signature is True, it returns the written .seq file's signature as a string, 
+    otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the 
+    deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
 
     Raises
     ------
@@ -258,9 +264,6 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             buffer = output_file.read()
 
             md5 = hashlib.md5(buffer.encode("utf-8")).hexdigest()
-            self.signature_type = "md5"
-            self.signature_file = "text"
-            self.signature_value = md5
 
         # Write signature
         with open(file_name, "a") as output_file:
