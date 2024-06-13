@@ -1825,7 +1825,7 @@ class Sequence:
 
         return all_waveforms
 
-    def write(self, name: str, create_signature: bool = True, remove_duplicates: bool = True) -> None:
+    def write(self, name: str, create_signature: bool = True, remove_duplicates: bool = True) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -1840,4 +1840,4 @@ class Sequence:
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
         """
-        write_seq(self, name, create_signature, remove_duplicates)
+        return write_seq(self, name, create_signature, remove_duplicates)
