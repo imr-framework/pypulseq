@@ -37,7 +37,7 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
     # If removing duplicates, make a copy of the sequence with the duplicate
     # events removed.
     if remove_duplicates:
-        self = self.remove_duplicates()
+        self = self.remove_duplicates(in_place=True)
 
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
