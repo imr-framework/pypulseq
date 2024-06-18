@@ -865,7 +865,7 @@ class Sequence:
             gw[1][gw[1] == -0.0] = 0.0
 
             gw_pp.append(PPoly(np.stack((np.diff(gw[1]) / np.diff(gw[0]),
-                                         gw[1][:-1])), gw[0], extrapolate=False))
+                                         gw[1][:-1])), gw[0], extrapolate=True))
         return gw_pp
 
     def mod_grad_axis(self, axis: str, modifier: int) -> None:
