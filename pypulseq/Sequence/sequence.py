@@ -425,7 +425,7 @@ class Sequence:
                 dk = -k_traj[:, i_period]
                 if i_period > 0:
                     # Use nans to mark the excitation points since they interrupt the plots
-                    k_traj[:, i_period - 1] = np.NaN
+                    k_traj[:, i_period - 1] = np.nan
                 # -1 on len(i_excitation) for 0-based indexing
                 ii_next_excitation = min(len(i_excitation) - 1, ii_next_excitation + 1)
             elif (
