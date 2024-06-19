@@ -26,8 +26,7 @@ Pulse sequence design is a significant component of MRI research. However, multi
 be acquainted with each hardware platform's programming environment.
 
 PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]][section-references]. The pulse sequences can be
-exported as a `.seq` file to be run on  Siemens/[GE]/[Bruker] hardware by leveraging their respective
-Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
+exported as a `.seq` file to be run on Siemens, [GE], [Bruker] and now also Philips hardware by leveraging their respective Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
 users. It is a translation of the Pulseq framework originally written in Matlab [[3]][section-references].
 
 👉 Currently, PyPulseq is compatible with Pulseq >= 1.4.0. 👈
@@ -35,16 +34,7 @@ users. It is a translation of the Pulseq framework originally written in Matlab 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using PyPulseq.
 
-If you use PyPulseq in your work, please cite the following publications:
-
-```
-Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design." Journal
-of Open Source Software 4.42 (2019): 1725.
-
-Ravi, Keerthi Sravan, et al. "Pulseq-Graphical Programming Interface: Open source visual environment for prototyping
-pulse sequences and integrated magnetic resonance imaging algorithm development." Magnetic resonance imaging 52 (2018):
-9-15.
-```
+If you use PyPulseq in your work, please cite the publications listed under [References][section-references].
 
 ---
 
@@ -132,24 +122,6 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
 
 `PyPulseq` adheres to a code of conduct adapted from the [Contributor Covenant] code of conduct.
 Contributing guidelines can be found [here][contrib-guidelines].
-
-### List of contributors (alphabatic)
-
-- @Andrew-Dupuis
-- @bilal-tasdelen
-- @calderds
-- @FrankZijlstra
-- @fzimmermann89
-- @gabuzi
-- @mavel101
-- @nnmurthy
-- @sairamgeethanath
-- @schuenke
-- @skarrea
-- @tblazey
-- @tonggehua
-- @wtclarke
-- @yupbank
 
 ---
 
