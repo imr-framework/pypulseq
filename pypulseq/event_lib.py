@@ -1,6 +1,12 @@
 from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, Union
+try:
+    from typing import Self
+except ImportError:
+    from typing import TypeVar
+    Self = TypeVar('Self', bound='EventLibrary')
 
+import math
 import numpy as np
 
 
@@ -219,10 +225,6 @@ class EventLibrary:
         data_type : str, default=str()
         """
         if key_id in self.data:
-            # TODO: When reading a sequence file we can end up with duplicate
-            #       events due to rounding to 6 digits. update() calls to both
-            #       duplicates would give a key error here on the second
-            #       duplicate. Ideally no duplicates should exist though...
             if self.data[key_id] in self.keymap:
                 del self.keymap[self.data[key_id]]
 
@@ -244,3 +246,67 @@ class EventLibrary:
         data_type : str
         """
         self.update(key_id, old_data, new_data, data_type)
+
+    def remove_duplicates(self, digits: Union[int, Tuple[int]]) -> Tuple[Self, dict]:
+        """
+        Remove duplicate events from this event library by rounding the data
+        according to the significant `digits` specification, and then removing
+        duplicate events.
+        Returns a new event library, leaving the current one intact.
+
+        Parameters
+        ----------
+        digits : Union[int, List[int]]
+            For libraries with `numpy_data == True`:
+                A single number specifying the number of significant digits
+                after rounding.
+            Otherwise:
+                A tuple of numbers specifying the number of significant digits
+                after rounding for each entry in the event data tuple.
+
+        Returns
+        -------
+        new_library : EventLibrary
+            Event library with the duplicate events removed
+        mapping : dict
+            Dictionary containing a mapping of IDs in the old library to IDs
+            in the new library.
+        """
+        def round_data(data: Tuple[float], digits: Tuple[int]) -> Tuple[float]:
+            """
+            Round the data tuple to a specified number of significant digits,
+            specified by `digits`. Rounding behaviour is similar to the {.Ng}
+            format specifier if N > 0, and similar to {.0f} otherwise.
+            """
+            return tuple(round(d, dig - int(math.ceil(math.log10(abs(d) + 1e-12))) if dig > 0 else -dig) for d, dig in zip(data, digits))
+
+        def round_data_numpy(data: np.ndarray, digits: int) -> np.ndarray:
+            """
+            Round the data array to a specified number of significant digits,
+            specified by `digits`. Rounding behaviour is similar to the {.Ng}
+            format specifier if N > 0, and similar to {.0f} otherwise.
+            """
+            mags = 10 ** (digits - (np.ceil(np.log10(abs(data) + 1e-12))) if digits > 0 else -digits)
+            result = np.round(data * mags) / mags
+            result.flags.writeable = False
+            return result
+
+        # Round library data based on `digits` specification
+        if self.numpy_data:
+            rounded_data = {x:round_data_numpy(self.data[x], digits) for x in self.data}
+        else:
+            rounded_data = {x:round_data(self.data[x], digits) for x in self.data}
+
+        # Initialize filtered library
+        new_library = EventLibrary(numpy_data=self.numpy_data)
+
+        # Initialize ID mapping. Always include 0:0 to allow the mapping dict
+        # to be used for mapping block_events (which can contain 0, i.e. no
+        # event)
+        mapping = {0:0}
+
+        # Recreate library using rounded values
+        for k,v in sorted(rounded_data.items()):
+            mapping[k], _ = new_library.find_or_insert(v, self.type[k] if k in self.type else str())
+
+        return new_library, mapping

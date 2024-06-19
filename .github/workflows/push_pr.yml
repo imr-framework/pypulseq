@@ -10,9 +10,9 @@ jobs:
     name: Code tests (Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-        matrix:
-            os: ["ubuntu-latest"]
-            python-version: ["3.8", "3.9", "3.10", "3.11"]
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v4
@@ -38,5 +38,5 @@ jobs:
       - name: Run pytest
         shell: bash -l {0}
         run: |
-            pip install .
-            pytest -m "not matlab_seq_comp" pypulseq/tests
+          pip install .
+          pytest -m "not matlab_seq_comp" pypulseq/tests

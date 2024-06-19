@@ -7,7 +7,7 @@ import numpy as np
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def write(self, file_name: Union[str, Path], create_signature) -> None:
+def write(self, file_name: Union[str, Path], create_signature, remove_duplicates=True) -> Union[str, None]:
     """
     Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -18,6 +18,15 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
     file_name : str or Path
         File name of `.seq` file to be written to disk.
     create_signature : bool
+    remove_duplicates : bool
+        Before writing, remove and remap events that would be duplicates after
+        the rounding done during writing
+            
+    Returns
+    -------
+    md5 or None : If create_signature is True, it returns the written .seq file's signature as a string, 
+    otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the 
+    deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
 
     Raises
     ------
@@ -30,7 +39,12 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
     if file_name.suffix != '.seq':
         # Append .seq suffix
         file_name = file_name.with_suffix(file_name.suffix + '.seq')
-        
+
+    # If removing duplicates, make a copy of the sequence with the duplicate
+    # events removed.
+    if remove_duplicates:
+        self = self.remove_duplicates()
+
     with open(file_name, "w") as output_file:
         output_file.write("# Pulseq sequence file\n")
         output_file.write("# Created by PyPulseq\n\n")
@@ -110,8 +124,8 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
             output_file.write("\n")
 
         grad_lib_values = np.array(list(self.grad_library.type.values()))
-        arb_grad_mask = grad_lib_values == "g"
-        trap_grad_mask = grad_lib_values == "t"
+        arb_grad_mask = grad_lib_values == "g" if self.grad_library.type else False
+        trap_grad_mask = grad_lib_values == "t" if self.grad_library.type else False
 
         if np.any(arb_grad_mask):
             output_file.write("# Format of arbitrary gradients:\n")
@@ -138,7 +152,7 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
             output_file.write("# ..      Hz/m   us   us   us    us\n")
             output_file.write("[TRAP]\n")
             keys = np.array(list(self.grad_library.data.keys()))
-            id_format_str = "{:2g} {:12g} {:3g} {:4g} {:3g} {:3g}\n"
+            id_format_str = "{:2.0f} {:12g} {:3.0f} {:4.0f} {:3.0f} {:3.0f}\n"
             for k in keys[trap_grad_mask]:
                 data = np.copy(
                     self.grad_library.data[k]
@@ -214,6 +228,9 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
                 output_file.write(s)
             output_file.write("\n")
 
+        if len(self.label_inc_library.data) != 0:
+            labels = get_supported_labels()
+
             output_file.write("# Extension specification for setting labels:\n")
             output_file.write("# id set labelstring\n")
             tid = self.get_extension_type_ID("LABELINC")
@@ -247,9 +264,6 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
             buffer = output_file.read()
 
             md5 = hashlib.md5(buffer.encode("utf-8")).hexdigest()
-            self.signature_type = "md5"
-            self.signature_file = "text"
-            self.signature_value = md5
 
         # Write signature
         with open(file_name, "a") as output_file:
@@ -266,3 +280,5 @@ def write(self, file_name: Union[str, Path], create_signature) -> None:
             )
             output_file.write("Type md5\n")
             output_file.write(f"Hash {md5}\n")
+
+        return md5
