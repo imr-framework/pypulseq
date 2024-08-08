@@ -10,6 +10,23 @@ from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 
 
+def test_sigpy_import():
+    warn_str =\
+        r'Sigpy dependency not found, please install it to use '\
+        r'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '\
+        r'Use "pip install pypulse[sigpy]" to install.'
+    try:
+        from pypulseq.make_sigpy_pulse import sigpy_n_seq
+    except ImportError:
+        with pytest.raises(
+                ImportError):
+            from pypulseq.make_sigpy_pulse import sigpy_n_seq
+        with pytest.warns(
+                UserWarning,
+                match=warn_str):
+            from pypulseq.make_sigpy_pulse import sigpy_n_seq
+
+
 @pytest.mark.sigpy
 def test_slr():
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
