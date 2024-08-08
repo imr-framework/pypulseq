@@ -6,13 +6,13 @@ import pytest
 import numpy as np
 
 import pypulseq as pp
-from pypulseq.make_sigpy_pulse import sigpy_n_seq
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 
 
 @pytest.mark.sigpy
 def test_slr():
+    from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
 
     print("Testing SLR design")
@@ -71,6 +71,7 @@ def test_slr():
 
 @pytest.mark.sigpy
 def test_sms(self):
+    from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
 
     print("Testing SMS design")
