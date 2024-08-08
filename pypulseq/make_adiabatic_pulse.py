@@ -4,7 +4,6 @@ from copy import copy
 
 import numpy as np
 import math
-from sigpy.mri.rf import hypsec, wurst
 
 from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
@@ -136,7 +135,7 @@ def make_adiabatic_pulse(
         If invalid pulse use is encountered.
         If slice thickness is not provided but slice-selective trapezoid event is expected.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     valid_pulse_types = ["hypsec", "wurst"]
@@ -154,15 +153,13 @@ def make_adiabatic_pulse(
         dwell = system.rf_raster_time
 
     n_raw = round(duration / dwell + eps)
-    # Number of points must be divisible by 4 - requirement of sigpy.mri
+    # Number of points must be divisible by 4 - requirement of individual pulse functions
     N = math.floor(n_raw / 4) * 4
 
     if pulse_type == "hypsec":
-        am, fm = hypsec(n=N, beta=beta, mu=mu, dur=duration)
+        am, fm = _hypsec(n=N, beta=beta, mu=mu, dur=duration)
     elif pulse_type == "wurst":
-        am, fm = wurst(n=N, n_fac=n_fac, bw=bandwidth, dur=duration)
-    else:
-        raise ValueError("Unsupported adiabatic pulse type.")
+        am, fm = _wurst(n=N, n_fac=n_fac, bw=bandwidth, dur=duration)
 
     pm = np.cumsum(fm) * dwell
 
@@ -233,8 +230,6 @@ def make_adiabatic_pulse(
             bandwidth = mu * beta / np.pi
         elif pulse_type == "wurst":
             bandwidth = bandwidth
-        else:
-            raise ValueError("Unsupported adiabatic pulse type.")
 
         center_pos, _ = calc_rf_center(rf)
 
@@ -258,12 +253,241 @@ def make_adiabatic_pulse(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0 and return_delay:
+    if rf.ringdown_time > 0:
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
+    else:
+        delay = make_delay(calc_duration(rf))
 
     if return_gz and return_delay:
         return rf, gz, gzr, delay
+    elif return_delay:
+        return rf, delay
     elif return_gz:
         return rf, gz, gzr
     else:
         return rf
+
+
+"""Adiabatic Pulse Design functions.
+    The below functions are originally from ssigpy/sigpy/mri/rf/adiabatic.py
+    Used under the terms of the Sigpy BSD 3-clause licence.
+
+    Copyright (c) 2016, Frank Ong.
+    Copyright (c) 2016, The Regents of the University of California.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in
+       the documentation and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its
+       contributors may be used to endorse or promote products derived
+       from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+    OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+    OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+    USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
+
+def _bir4(n, beta, kappa, theta, dw0):
+    r"""Design a BIR-4 adiabatic pulse.
+
+    BIR-4 is equivalent to two BIR-1 pulses back-to-back.
+
+    Args:
+        n (int): number of samples (should be a multiple of 4).
+        beta (float): AM waveform parameter.
+        kappa (float): FM waveform parameter.
+        theta (float): flip angle in radians.
+        dw0: FM waveform scaling (radians/s).
+
+    Returns:
+        2-element tuple containing
+
+        - **a** (*array*): AM waveform.
+        - **om** (*array*): FM waveform (radians/s).
+
+    References:
+        Staewen, R.S. et al. (1990). '3-D FLASH Imaging using a single surface
+        coil and a new adiabatic pulse, BIR-4'.
+        Invest. Radiology, 25:559-567.
+    """
+
+    dphi = np.pi + theta / 2
+
+    t = np.arange(0, n) / n
+
+    a1 = np.tanh(beta * (1 - 4 * t[: n // 4]))
+    a2 = np.tanh(beta * (4 * t[n // 4 : n // 2] - 1))
+    a3 = np.tanh(beta * (3 - 4 * t[n // 2 : 3 * n // 4]))
+    a4 = np.tanh(beta * (4 * t[3 * n // 4 :] - 3))
+
+    a = np.concatenate((a1, a2, a3, a4)).astype(np.complex64)
+    a[n // 4 : 3 * n // 4] = a[n // 4 : 3 * n // 4] * np.exp(1j * dphi)
+
+    om1 = dw0 * np.tan(kappa * 4 * t[: n // 4]) / np.tan(kappa)
+    om2 = dw0 * np.tan(kappa * (4 * t[n // 4 : n // 2] - 2)) / np.tan(kappa)
+    om3 = (
+        dw0 * np.tan(kappa * (4 * t[n // 2 : 3 * n // 4] - 2)) / np.tan(kappa)
+    )
+    om4 = dw0 * np.tan(kappa * (4 * t[3 * n // 4 :] - 4)) / np.tan(kappa)
+
+    om = np.concatenate((om1, om2, om3, om4))
+
+    return a, om
+
+
+def _hypsec(n=512, beta=800, mu=4.9, dur=0.012):
+    r"""Design a hyperbolic secant adiabatic pulse.
+
+    mu * beta becomes the amplitude of the frequency sweep
+
+    Args:
+        n (int): number of samples (should be a multiple of 4).
+        beta (float): AM waveform parameter.
+        mu (float): a constant, determines amplitude of frequency sweep.
+        dur (float): pulse time (s).
+
+    Returns:
+        2-element tuple containing
+
+        - **a** (*array*): AM waveform.
+        - **om** (*array*): FM waveform (radians/s).
+
+    References:
+        Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
+        inversion of a two-level system by phase-modulated pulses'.
+        Phys. Rev. A., 32:3435-3447.
+    """
+
+    t = np.arange(-n // 2, n // 2) / n * dur
+
+    a = np.cosh(beta * t) ** -1
+    om = -mu * beta * np.tanh(beta * t)
+
+    return a, om
+
+
+def _wurst(n=512, n_fac=40, bw=40e3, dur=2e-3):
+    r"""Design a WURST (wideband, uniform rate, smooth truncation) adiabatic
+     inversion pulse
+
+    Args:
+        n (int): number of samples (should be a multiple of 4).
+        n_fac (int): power to exponentiate to within AM term. ~20 or greater is
+         typical.
+        bw (float): pulse bandwidth.
+        dur (float): pulse time (s).
+
+
+    Returns:
+        2-element tuple containing
+
+        - **a** (*array*): AM waveform.
+        - **om** (*array*): FM waveform (radians/s).
+
+    References:
+        Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
+        Broadband Spin Inversion'.
+        J. Magn. Reson. Ser. A., 117:246-256.
+    """
+
+    t = np.arange(0, n) * dur / n
+
+    a = 1 - np.power(np.abs(np.cos(np.pi * t / dur)), n_fac)
+    om = np.linspace(-bw / 2, bw / 2, n) * 2 * np.pi
+
+    return a, om
+
+
+def _goia_wurst(
+    n=512, dur=3.5e-3, f=0.9, n_b1=16, m_grad=4, b1_max=817, bw=20000
+):
+    r"""Design a GOIA (gradient offset independent adiabaticity) WURST
+     inversion pulse
+
+    Args:
+        n (int): number of samples.
+        dur (float): pulse duration (s).
+        f (float): [0,1] gradient modulation factor
+        n_b1 (int): order for B1 modulation
+        m_grad (int): order for gradient modulation
+        b1_max (float): maximum b1 (Hz)
+        bw (float): pulse bandwidth (Hz)
+
+    Returns:
+        3-element tuple containing:
+
+        - **a** (*array*): AM waveform (Hz)
+        - **om** (*array*): FM waveform (Hz)
+        - **g** (*array*): normalized gradient waveform
+
+    References:
+        O. C. Andronesi, S. Ramadan, E.-M. Ratai, D. Jennings, C. E. Mountford,
+        A. G. Sorenson.
+        J Magn Reson, 203:283-293, 2010.
+
+    """
+
+    t = np.arange(0, n) * dur / n
+
+    a = b1_max * (1 - np.abs(np.sin(np.pi / 2 * (2 * t / dur - 1))) ** n_b1)
+    g = (1 - f) + f * np.abs(np.sin(np.pi / 2 * (2 * t / dur - 1))) ** m_grad
+    om = np.cumsum((a**2) / g) * dur / n
+    om = om - om[n // 2 + 1]
+    om = g * om
+    om = om / np.max(np.abs(om)) * bw / 2
+
+    return a, om, g
+
+
+def _bloch_siegert_fm(
+    n=512, dur=2e-3, b1p=20.0, k=42.0, gamma=2 * np.pi * 42.58
+):
+    r"""
+    U-shaped FM waveform for adiabatic Bloch-Siegert :math:`B_1^{+}` mapping
+    and spatial encoding.
+
+    Args:
+        n (int): number of time points
+        dur (float): duration in seconds
+        b1p (float): nominal amplitude of constant AM waveform
+        k (float): design parameter that affects max in-band
+            perturbation
+        gamma (float): gyromagnetic ratio
+
+    Returns:
+        om (array): FM waveform (radians/s).
+
+    References:
+        M. M. Khalighi, B. K. Rutt, and A. B. Kerr.
+        Adiabatic RF pulse design for Bloch-Siegert B1+ mapping.
+        Magn Reson Med, 70(3):829–835, 2013.
+
+        M. Jankiewicz, J. C. Gore, and W. A. Grissom.
+        Improved encoding pulses for Bloch-Siegert B1+ mapping.
+        J Magn Reson, 226:79–87, 2013.
+
+    """
+
+    t = np.arange(1, n // 2) * dur / n
+
+    om = gamma * b1p / np.sqrt((1 - gamma * b1p / k * t) ** -2 - 1)
+    om = np.concatenate((om, om[::-1]))
+
+    return om
