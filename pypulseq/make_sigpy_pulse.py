@@ -7,12 +7,13 @@ import numpy as np
 try:
     import sigpy.mri.rf as rf
     import sigpy.plot as pl
-except ImportError as exc:
+except ModuleNotFoundError as exc:
     import warnings
     warnings.warn(
         'Sigpy dependency not found, please install it to use '
         'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '
-        'Use "pip install pypulse[sigpy]" to install.')
+        'Use "pip install pypulse[sigpy]" to install.',
+        UserWarning)
     raise exc
 
 from pypulseq.make_trapezoid import make_trapezoid
