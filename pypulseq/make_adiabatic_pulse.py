@@ -21,10 +21,10 @@ def make_adiabatic_pulse(
     beta: float = 800.0,
     delay: float = 0,
     duration: float = 10e-3,
-    dwell: float = 0,
+    dwell: float | None = None,
     freq_offset: float = 0,
-    max_grad: float = 0,
-    max_slew: float = 0,
+    max_grad: float | None = None,
+    max_slew: float | None = None,
     n_fac: int = 40,
     mu: float = 4.9,
     phase_offset: float = 0,
@@ -95,11 +95,11 @@ def make_adiabatic_pulse(
         Delay in seconds (s).
     duration : float, default=10e-3
         Pulse time (s).
-    dwell : float, default=0
+    dwell : float, default=None
     freq_offset : float, default=0
-    max_grad : float, default=0
+    max_grad : float, default=None
         Maximum gradient strength.
-    max_slew : float, default=0
+    max_slew : float, default=None
         Maximum slew rate.
     mu : float, default=4.9
         Constant determining amplitude of frequency sweep.
@@ -142,15 +142,16 @@ def make_adiabatic_pulse(
         raise ValueError("Slice thickness must be provided")
 
     valid_pulse_types = ["hypsec", "wurst"]
-    if pulse_type != "" and pulse_type not in valid_pulse_types:
+    if (not pulse_type) or (pulse_type not in valid_pulse_types):
         raise ValueError(f"Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}")
     valid_rf_use_labels = get_supported_rf_uses()
     if use != "" and use not in valid_rf_use_labels:
         raise ValueError(f"Invalid use parameter. Must be one of {valid_rf_use_labels}. Passed: {use}")
 
-    if dwell == 0:
+    if dwell is None:
         dwell = system.rf_raster_time
 
+    # WTC and PS - we have no idea why eps is added here. Leaving for now.
     n_raw = round(duration / dwell + eps)
     # Number of points must be divisible by 4 - requirement of individual pulse functions
     n_samples = math.floor(n_raw / 4) * 4
@@ -219,13 +220,17 @@ def make_adiabatic_pulse(
         rf.delay = rf.dead_time
 
     if return_gz:
-        if max_grad > 0:
-            system = copy(system)
-            system.max_grad = max_grad
+        if max_grad is not None:
+            max_grad_slice_select = max_grad
+        else:
+            # Set to zero, not None for compatibility with existing make_trapezoid
+            max_grad_slice_select = 0
 
-        if max_slew > 0:
-            system = copy(system)
-            system.max_slew = max_slew
+        if max_slew is not None:
+            max_slew_slice_select = max_slew
+        else:
+            # Set to zero, not None for compatibility with existing make_trapezoid
+            max_slew_slice_select = 0
 
         if pulse_type == "hypsec":
             bandwidth = mu * beta / np.pi
@@ -236,12 +241,19 @@ def make_adiabatic_pulse(
 
         amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(channel="z", system=system, flat_time=duration, flat_area=area)
+        gz = make_trapezoid(
+            channel="z",
+            system=system,
+            flat_time=duration,
+            flat_area=area,
+            max_grad=max_grad_slice_select,
+            max_slew=max_slew_slice_select)
         gzr = make_trapezoid(
             channel="z",
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
-        )
+            max_grad=max_grad_slice_select,
+            max_slew=max_slew_slice_select)
 
         if rf.delay > gz.rise_time:  # Round-up to gradient raster
             gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time

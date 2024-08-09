@@ -34,6 +34,11 @@ def test_pulse_select():
 
     with pytest.raises(
             ValueError,
+            match="Invalid type parameter. Must be one of "):
+        make_adiabatic_pulse(pulse_type="")
+
+    with pytest.raises(
+            ValueError,
             match="Invalid use parameter. Must be one of "):
         make_adiabatic_pulse(
             pulse_type="hypsec",
