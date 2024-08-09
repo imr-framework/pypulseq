@@ -4,8 +4,17 @@ from typing import Tuple, Union
 from copy import copy
 
 import numpy as np
-import sigpy.mri.rf as rf
-import sigpy.plot as pl
+try:
+    import sigpy.mri.rf as rf
+    import sigpy.plot as pl
+except ModuleNotFoundError as exc:
+    import warnings
+    warnings.warn(
+        'Sigpy dependency not found, please install it to use '
+        'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '
+        'Use "pip install pypulse[sigpy]" to install.',
+        UserWarning)
+    raise exc
 
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts

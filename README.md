@@ -44,6 +44,8 @@ PyPulseq is available on the python Package Index [PyPi](https://pypi.org/projec
 
 `pip install pypulseq`
 
+To use the [sigpy](https://sigpy.readthedocs.io/en/latest/) functionality of `make_sigpy_pulse.py` run `pip install pypulseq[sigpy]` to install the required dependencies and enable this functionality.
+
 The latest features and minor bug fixes might not be included in the latest release version. If you want to use the bleeding edge version of PyPulseq, you can install it directly from the development branch of this repository using the command
 
 `pip install git+https://github.com/imr-framework/pypulseq@dev`
