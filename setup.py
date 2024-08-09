@@ -36,8 +36,10 @@ setuptools.setup(
         "matplotlib>=3.5.2",
         "numpy>=1.19.5",
         "scipy>=1.8.1",
-        "sigpy>=0.1.26",
     ],
+    extras_require={
+        "sigpy": ["sigpy>=0.1.26", ],
+    },
     license="License :: OSI Approved :: GNU Affero General Public License v3",
     long_description=_get_long_description(),
     long_description_content_type="text/markdown",

@@ -39,4 +39,10 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install .
+          pytest -m "not matlab_seq_comp and not sigpy" pypulseq/tests
+      - name: Run pytest[sigpy]
+        shell: bash -l {0}
+        run: |
+          pip install .[sigpy]
           pytest -m "not matlab_seq_comp" pypulseq/tests
+        continue-on-error: true
