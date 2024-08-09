@@ -30,12 +30,15 @@ def make_arbitrary_grad(
         Orientation of gradient event of arbitrary shape. Must be one of `x`, `y` or `z`.
     waveform : numpy.ndarray
         Arbitrary waveform.
-    system : Opts, default=Opts()
+    system : Opts
         System limits.
-    max_grad : float, default=0
+        Will default to `pypulseq.opts.default` if not provided.
+    max_grad : float
         Maximum gradient strength.
-    max_slew : float, default=0
+        Will default to `system.max_grad` if not provided.
+    max_slew : float
         Maximum slew rate.
+        Will default to `system.max_slew` if not provided.
     delay : float, default=0
         Delay in seconds (s).
 
