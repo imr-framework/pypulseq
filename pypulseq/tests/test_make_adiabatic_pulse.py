@@ -13,18 +13,18 @@ from pypulseq import make_adiabatic_pulse
 
 
 def test_pulse_select():
-    uses = get_supported_rf_uses()
-    valid_pulses = ('hypsec', 'wurst')
+    valid_rf_use_labels = get_supported_rf_uses()
+    valid_pulse_types = ('hypsec', 'wurst')
 
     # Check all use and valid pulse combinations return a sensible object
     # with default parameters.
-    for pulse, use in itertools.product(valid_pulses, uses):
-        pobj = make_adiabatic_pulse(
-            pulse_type=pulse,
-            use=use
+    for pulse_type, use_label in itertools.product(valid_pulse_types, valid_rf_use_labels):
+        rf_obj = make_adiabatic_pulse(
+            pulse_type=pulse_type,
+            use=use_label
         )
-        assert pobj.type == 'rf'
-        assert pobj.use == use
+        assert rf_obj.type == 'rf'
+        assert rf_obj.use == use_label
 
     # Check the appropriate errors are raised if we specify nonsense
     with pytest.raises(
@@ -40,8 +40,8 @@ def test_pulse_select():
             use='not a use')
 
     # Default use case
-    pobj = make_adiabatic_pulse(pulse_type="hypsec")
-    assert pobj.use == "inversion"
+    rf_obj = make_adiabatic_pulse(pulse_type="hypsec")
+    assert rf_obj.use == "inversion"
 
 
 def test_option_requirements():

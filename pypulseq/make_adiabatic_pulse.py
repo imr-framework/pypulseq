@@ -18,7 +18,7 @@ def make_adiabatic_pulse(
     pulse_type: str,
     adiabaticity: int = 4,
     bandwidth: int = 40000,
-    beta: int = 800,
+    beta: float = 800.0,
     delay: float = 0,
     duration: float = 10e-3,
     dwell: float = 0,
@@ -137,87 +137,88 @@ def make_adiabatic_pulse(
     """
     if system is None:
         system = Opts.default
-        
+
+    if return_gz and slice_thickness <= 0:
+        raise ValueError("Slice thickness must be provided")
+
     valid_pulse_types = ["hypsec", "wurst"]
     if pulse_type != "" and pulse_type not in valid_pulse_types:
-        raise ValueError(
-            f"Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}"
-        )
-    valid_pulse_uses = get_supported_rf_uses()
-    if use != "" and use not in valid_pulse_uses:
-        raise ValueError(
-            f"Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}"
-        )
+        raise ValueError(f"Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}")
+    valid_rf_use_labels = get_supported_rf_uses()
+    if use != "" and use not in valid_rf_use_labels:
+        raise ValueError(f"Invalid use parameter. Must be one of {valid_rf_use_labels}. Passed: {use}")
 
     if dwell == 0:
         dwell = system.rf_raster_time
 
     n_raw = round(duration / dwell + eps)
     # Number of points must be divisible by 4 - requirement of individual pulse functions
-    N = math.floor(n_raw / 4) * 4
+    n_samples = math.floor(n_raw / 4) * 4
 
     if pulse_type == "hypsec":
-        am, fm = _hypsec(n=N, beta=beta, mu=mu, dur=duration)
+        amp_mod, freq_mod = _hypsec(n=n_samples, beta=beta, mu=mu, dur=duration)
     elif pulse_type == "wurst":
-        am, fm = _wurst(n=N, n_fac=n_fac, bw=bandwidth, dur=duration)
+        amp_mod, freq_mod = _wurst(n=n_samples, n_fac=n_fac, bw=bandwidth, dur=duration)
 
-    pm = np.cumsum(fm) * dwell
+    phase_mod = np.cumsum(freq_mod) * dwell
 
-    ifm = np.argmin(np.abs(fm))
-    dfm = abs(fm[ifm])
+    min_abs_freq_idx = np.argmin(np.abs(freq_mod))
+    min_abs_freq_value = abs(freq_mod[min_abs_freq_idx])
 
     # Find rate of change of frequency at the center of the pulse
-    if dfm == 0:
-        pm0 = pm[ifm]
-        am0 = am[ifm]
-        roc_fm0 = abs(fm[ifm + 1] - fm[ifm - 1]) / 2 / dwell
+    if min_abs_freq_value == 0:
+        phase_at_zero_freq = phase_mod[min_abs_freq_idx]
+        amp_at_zero_freq = amp_mod[min_abs_freq_idx]
+        rate_of_freq_change = abs(freq_mod[min_abs_freq_idx + 1] - freq_mod[min_abs_freq_idx - 1]) / (2 * dwell)
     else:  # We need to bracket the zero-crossing
-        if fm[ifm] * fm[ifm + 1] < 0:
-            b = 1
-        else:
-            b = -1
+        b = 1 if freq_mod[min_abs_freq_idx] * freq_mod[min_abs_freq_idx + 1] < 0 else -1
+        diff_freq = freq_mod[min_abs_freq_idx + b] - freq_mod[min_abs_freq_idx]
 
-        pm0 = (pm[ifm] * fm[ifm + b] - pm[ifm + b] * fm[ifm]) / (fm[ifm + b] - fm[ifm])
-        am0 = (am[ifm] * fm[ifm + b] - am[ifm + b] * fm[ifm]) / (fm[ifm + b] - fm[ifm])
-        roc_fm0 = abs(fm[ifm] - fm[ifm + b]) / dwell
+        phase_at_zero_freq = (
+            phase_mod[min_abs_freq_idx] * freq_mod[min_abs_freq_idx + b]
+            - phase_mod[min_abs_freq_idx + b] * freq_mod[min_abs_freq_idx]
+        ) / diff_freq
 
-    pm -= pm0
-    a = (roc_fm0 * adiabaticity) ** 0.5 / 2 / np.pi / am0
+        amp_at_zero_freq = (
+            amp_mod[min_abs_freq_idx] * freq_mod[min_abs_freq_idx + b]
+            - amp_mod[min_abs_freq_idx + b] * freq_mod[min_abs_freq_idx]
+        ) / diff_freq
 
-    signal = a * am * np.exp(1j * pm)
+        rate_of_freq_change = abs(freq_mod[min_abs_freq_idx] - freq_mod[min_abs_freq_idx + b]) / dwell
 
-    if N != n_raw:
-        n_pad = n_raw - N
-        signal = [
-            np.zeros(1, n_pad - math.floor(n_pad / 2)),
-            signal,
-            np.zeros(1, math.floor(n_pad / 2)),
-        ]
-        N = n_raw
+    # Adjust phase modulation and calculate amplitude
+    phase_mod -= phase_at_zero_freq
+    amp = np.sqrt(rate_of_freq_change * adiabaticity) / (2 * np.pi * amp_at_zero_freq)
 
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    # Create the modulated signal
+    signal = amp * amp_mod * np.exp(1j * phase_mod)
+
+    # Adjust the number of samples if needed
+    if n_samples != n_raw:
+        n_pad = n_raw - n_samples
+        pad_left = n_pad // 2
+        pad_right = n_pad - pad_left
+        signal = np.pad(signal, (pad_left, pad_right), mode="constant")
+        n_samples = n_raw
+
+    # Calculate time points
+    t = (np.arange(n_samples) + 0.5) * dwell
 
     rf = SimpleNamespace()
     rf.type = "rf"
     rf.signal = signal
     rf.t = t
-    rf.shape_dur = N * dwell
+    rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    if use != "":
-        rf.use = use
-    else:
-        rf.use = "inversion"
+    rf.use = use if use != "" else "inversion"
     if rf.dead_time > rf.delay:
         rf.delay = rf.dead_time
 
     if return_gz:
-        if slice_thickness <= 0:
-            raise ValueError("Slice thickness must be provided")
-
         if max_grad > 0:
             system = copy(system)
             system.max_grad = max_grad
@@ -235,9 +236,7 @@ def make_adiabatic_pulse(
 
         amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel="z", system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
             channel="z",
             system=system,
@@ -245,10 +244,7 @@ def make_adiabatic_pulse(
         )
 
         if rf.delay > gz.rise_time:  # Round-up to gradient raster
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
@@ -304,7 +300,7 @@ def make_adiabatic_pulse(
 """
 
 
-def _bir4(n, beta, kappa, theta, dw0):
+def _bir4(n: int, beta: float, kappa: float, theta: float, dw0: np.ndarray):
     r"""Design a BIR-4 adiabatic pulse.
 
     BIR-4 is equivalent to two BIR-1 pulses back-to-back.
@@ -342,9 +338,7 @@ def _bir4(n, beta, kappa, theta, dw0):
 
     om1 = dw0 * np.tan(kappa * 4 * t[: n // 4]) / np.tan(kappa)
     om2 = dw0 * np.tan(kappa * (4 * t[n // 4 : n // 2] - 2)) / np.tan(kappa)
-    om3 = (
-        dw0 * np.tan(kappa * (4 * t[n // 2 : 3 * n // 4] - 2)) / np.tan(kappa)
-    )
+    om3 = dw0 * np.tan(kappa * (4 * t[n // 2 : 3 * n // 4] - 2)) / np.tan(kappa)
     om4 = dw0 * np.tan(kappa * (4 * t[3 * n // 4 :] - 4)) / np.tan(kappa)
 
     om = np.concatenate((om1, om2, om3, om4))
@@ -352,7 +346,7 @@ def _bir4(n, beta, kappa, theta, dw0):
     return a, om
 
 
-def _hypsec(n=512, beta=800, mu=4.9, dur=0.012):
+def _hypsec(n: int = 512, beta: float = 800.0, mu: float = 4.9, dur: float = 0.012):
     r"""Design a hyperbolic secant adiabatic pulse.
 
     mu * beta becomes the amplitude of the frequency sweep
@@ -383,7 +377,7 @@ def _hypsec(n=512, beta=800, mu=4.9, dur=0.012):
     return a, om
 
 
-def _wurst(n=512, n_fac=40, bw=40e3, dur=2e-3):
+def _wurst(n: int = 512, n_fac: int = 40, bw: float = 40e3, dur: float = 2e-3):
     r"""Design a WURST (wideband, uniform rate, smooth truncation) adiabatic
      inversion pulse
 
@@ -416,7 +410,13 @@ def _wurst(n=512, n_fac=40, bw=40e3, dur=2e-3):
 
 
 def _goia_wurst(
-    n=512, dur=3.5e-3, f=0.9, n_b1=16, m_grad=4, b1_max=817, bw=20000
+    n: int = 512,
+    dur: float = 3.5e-3,
+    f: float = 0.9,
+    n_b1: int = 16,
+    m_grad: int = 4,
+    b1_max: float = 817,
+    bw: float = 20000,
 ):
     r"""Design a GOIA (gradient offset independent adiabaticity) WURST
      inversion pulse
@@ -457,7 +457,11 @@ def _goia_wurst(
 
 
 def _bloch_siegert_fm(
-    n=512, dur=2e-3, b1p=20.0, k=42.0, gamma=2 * np.pi * 42.58
+    n: int = 512,
+    dur: float = 2e-3,
+    b1p: float = 20.0,
+    k: float = 42.0,
+    gamma: Union[float, None] = None,
 ):
     r"""
     U-shaped FM waveform for adiabatic Bloch-Siegert :math:`B_1^{+}` mapping
@@ -484,6 +488,10 @@ def _bloch_siegert_fm(
         J Magn Reson, 226:79–87, 2013.
 
     """
+
+    # set gamma to PyPulseq default if not provided
+    if gamma is None:
+        gamma = 2 * np.pi * 42.576e6
 
     t = np.arange(1, n // 2) * dur / n
 
