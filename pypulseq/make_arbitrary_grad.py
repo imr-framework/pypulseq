@@ -57,16 +57,16 @@ def make_arbitrary_grad(
     if system is None:
         system = Opts.default
 
-    if max_grad is None:
+    if max_grad is None or max_grad == 0:
         max_grad = system.max_grad
 
-    if max_slew is None:
+    if max_slew is None or max_slew == 0:
         max_slew = system.max_slew
 
     if channel not in ["x", "y", "z"]:
         raise ValueError(f"Invalid channel. Must be one of x, y or z. Passed: {channel}")
 
-    slew_rate = np.squeeze(np.subtract(waveform[1:], waveform[:-1]) / system.grad_raster_time)
+    slew_rate = np.diff(waveform) / system.grad_raster_time
     if max(abs(slew_rate)) >= max_slew:
         raise ValueError(f"Slew rate violation {max(abs(slew_rate)) / max_slew * 100}")
     if max(abs(waveform)) >= max_grad:
@@ -77,7 +77,6 @@ def make_arbitrary_grad(
     grad.channel = channel
     grad.waveform = waveform
     grad.delay = delay
-    # True timing and aux shape data
     grad.tt = (np.arange(len(waveform)) + 0.5) * system.grad_raster_time
     grad.shape_dur = len(waveform) * system.grad_raster_time
     grad.first = (3 * waveform[0] - waveform[1]) * 0.5  # Extrapolate by 1/2 gradient raster
