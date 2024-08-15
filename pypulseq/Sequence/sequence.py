@@ -2,7 +2,7 @@ import itertools
 import math
 from collections import OrderedDict
 from types import SimpleNamespace
-from typing import Tuple, List
+from typing import Tuple, List, Any
 from typing import Union
 from warnings import warn
 from copy import deepcopy
@@ -25,6 +25,7 @@ from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
+from pypulseq.Sequence.install import detect_scanner
 
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
@@ -867,6 +868,46 @@ class Sequence:
             gw_pp.append(PPoly(np.stack((np.diff(gw[1]) / np.diff(gw[0]),
                                          gw[1][:-1])), gw[0], extrapolate=True))
         return gw_pp
+
+    def install(self, target: str = None, clear_cache: bool = False, **kwargs: Any) -> None:
+        """
+        Installs the sequence to a scanner specified by `target`. If `target`
+        is not specified, all known scanners will be attempted to be detected.
+
+        Targets supported by PyPulseq:
+            siemens: All siemens targets below
+            siemens_nx: Siemens Numaris X
+            siemens_n4: Siemens Numaris 4
+            siemens_n4_2: Siemens Numeris 4 on IP 192.168.2.2
+            siemens_n4_3: Siemens Numeris 4 on IP 192.168.2.3
+
+        Once a scanner is succesfully detected, this result will be cached so
+        `install` will operate more quickly on successive calls. The cache can
+        be cleared by specifiying `clear_cache=True`.
+
+        Parameters
+        ----------
+        target : str, optional
+            Target scanner. The default is None.
+        clear_cache : bool, optional
+            Clear the scanner detection cache. The default is False.
+        **kwargs : Any
+            Keyword arguments to be passed to the target's `install` function.
+
+        Raises
+        ------
+        RuntimeError
+            If the scanner could not be detected, or if the installation failed.
+        """
+        name, definition = detect_scanner(target, clear_cache=clear_cache)
+
+        if definition is None:
+            raise RuntimeError('Scanner could not be detected')
+
+        if not definition.install(self, **kwargs):
+            raise RuntimeError('Sequence install failed')
+
+        print(f'Sequence installed correctly on target `{name}`')
 
     def mod_grad_axis(self, axis: str, modifier: int) -> None:
         """
