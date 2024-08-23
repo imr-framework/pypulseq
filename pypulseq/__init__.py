@@ -14,9 +14,13 @@ def round_half_up(n, decimals=0):
 
 
 # =========
-# NP.FLOAT EPSILON
+# EPSILON (Precision of floating point numbers)
 # =========
-eps = np.finfo(np.float64).eps
+
+# Instead of np.finfo(np.float64).eps, which was used before, we now try to estimate our precision based on the largest
+# expected value for times, amplitudes etc (we choose 1E6) and consider another factor 10 for compounding of rounding errors.
+# We then round the value to the closest power of 10.
+eps = 10 ** np.floor(np.log10(np.spacing(1e6) * 10))  # this is 1e-9 for np.float64
 
 # =========
 # PACKAGE-LEVEL IMPORTS
