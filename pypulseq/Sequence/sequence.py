@@ -35,7 +35,7 @@ from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.block_to_events import block_to_events
 
-from version import major, minor, revision
+from pypulseq.version import major, minor, revision
 
 
 class Sequence:
