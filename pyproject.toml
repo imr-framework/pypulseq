@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pypulseq"
+# dynamic = ["version"]
+version = "1.4.2"
+authors = [
+  { name="Keerthi Sravan Ravi", email="ks3621@columbia.edu" },
+]
+description = "Pulseq in Python"
+readme = "README.md"
+requires-python = ">=3.6.3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "coverage>=6.2",
+    "matplotlib>=3.5.2",
+    "numpy>=1.19.5",
+    "scipy>=1.8.1",
+]
+
+[project.optional-dependencies]
+sigpy = ["sigpy>=0.1.26", ]
+
+[project.urls]
+Homepage = "https://github.com/imr-framework/pypulseq"
+Issues = "https://github.com/imr-framework/pypulseq/issues"
+Documentation = "https://pypulseq.readthedocs.io/en/latest/"
+
+[tool.setuptools.packages.find]
+where = ["pypulseq"]
+
+[tool.setuptools.package-data]
+SAR = ["QGlobal.mat"]
+
+#[tool.setuptools.dynamic]
+#version = {attr = "pypulseq.version"}
