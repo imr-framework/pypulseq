@@ -11,18 +11,11 @@ from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 
 
 def test_sigpy_import():
-    warn_str = r'Sigpy dependency not found, please install it to use '\
-        r'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '\
-        r'Use "pip install pypulse\[sigpy\]" to install.'
     try:
         from pypulseq.make_sigpy_pulse import sigpy_n_seq
     except (ImportError, ModuleNotFoundError):
-        with pytest.raises(
-                (ImportError, ModuleNotFoundError)):
-            with pytest.warns(
-                    UserWarning,
-                    match=warn_str):
-                from pypulseq.make_sigpy_pulse import sigpy_n_seq
+        with pytest.raises(ModuleNotFoundError, match="SigPy is not installed."):
+            from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
 
 @pytest.mark.sigpy
@@ -71,9 +64,7 @@ def test_slr():
 
     [a, b] = rf.sim.abrm(
         pulse,
-        np.arange(
-            -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-        ),
+        np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
         True,
     )
     Mxy = 2 * np.multiply(np.conj(a), b)
@@ -123,17 +114,15 @@ def test_sms():
         time_bw_product=4,
         return_gz=True,
         pulse_cfg=pulse_cfg,
-        plot=False
+        plot=False,
     )
-    
+
     seq = pp.Sequence()
     seq.add_block(rfp)
 
     [a, b] = rf.sim.abrm(
         pulse,
-        np.arange(
-            -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-        ),
+        np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
         True,
     )
     Mxy = 2 * np.multiply(np.conj(a), b)
@@ -143,4 +132,3 @@ def test_sms():
     plateau_widths = np.sum(np.abs(Mxy) > 0.8)
     # if slr has 29 > 0.8, then sms with MB = n_bands
     assert (29 * n_bands) == plateau_widths
-
