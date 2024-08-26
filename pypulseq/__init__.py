@@ -33,7 +33,7 @@ from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_ramp import calc_ramp
 from pypulseq.calc_rf_bandwidth import calc_rf_bandwidth
 from pypulseq.calc_rf_center import calc_rf_center
-from pypulseq.make_adc import make_adc
+from pypulseq.make_adc import make_adc, calc_adc_segments
 from pypulseq.make_adiabatic_pulse import make_adiabatic_pulse
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.make_arbitrary_rf import make_arbitrary_rf
