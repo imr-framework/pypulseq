@@ -1,3 +1,4 @@
+from typing import Optional
 from pypulseq.convert import convert
 
 
@@ -51,22 +52,22 @@ class Opts:
     """
     def __init__(
         self,
-        adc_dead_time: float = None,
-        adc_raster_time: float = None,
-        block_duration_raster: float = None,
-        gamma: float = None,
-        grad_raster_time: float = None,
+        adc_dead_time: Optional[float] = None,
+        adc_raster_time: Optional[float] = None,
+        block_duration_raster: Optional[float] = None,
+        gamma: Optional[float] = None,
+        grad_raster_time: Optional[float] = None,
         grad_unit: str = "Hz/m",
-        max_grad: float = None,
-        max_slew: float = None,
-        rf_dead_time: float = None,
-        rf_raster_time: float = None,
-        rf_ringdown_time: float = None,
-        adc_samples_limit: int = None,
-        adc_samples_divisor: int = None,
-        rise_time: float = None,
+        max_grad: Optional[float] = None,
+        max_slew: Optional[float] = None,
+        rf_dead_time: Optional[float] = None,
+        rf_raster_time: Optional[float] = None,
+        rf_ringdown_time: Optional[float] = None,
+        adc_samples_limit: Optional[int] = None,
+        adc_samples_divisor: Optional[int] = None,
+        rise_time: Optional[float] = None,
         slew_unit: str = "Hz/m/s",
-        B0: float = None,
+        B0: Optional[float] = None,
     ):
         valid_grad_units = ["Hz/m", "mT/m", "rad/ms/mm"]
         valid_slew_units = ["Hz/m/s", "mT/m/ms", "T/m/s", "rad/ms/mm/ms"]
@@ -83,46 +84,46 @@ class Opts:
                 f"Passed: {slew_unit}"
             )
 
-        if gamma == None:
+        if gamma is None:
             gamma = Opts.default.gamma
 
-        if max_grad != None:
+        if max_grad is not None:
             max_grad = convert(
                 from_value=max_grad, from_unit=grad_unit, to_unit="Hz/m", gamma=abs(gamma)
             )
         else:
             max_grad = Opts.default.max_grad
 
-        if max_slew != None:
+        if max_slew is not None:
             max_slew = convert(
                 from_value=max_slew, from_unit=slew_unit, to_unit="Hz/m", gamma=abs(gamma)
             )
         else:
             max_slew = Opts.default.max_slew
 
-        if rise_time != None:
+        if rise_time is not None:
             max_slew = max_grad / rise_time
         
-        if adc_dead_time == None:
+        if adc_dead_time is None:
             adc_dead_time = Opts.default.adc_dead_time
-        if adc_raster_time == None:
+        if adc_raster_time is None:
             adc_raster_time = Opts.default.adc_raster_time
-        if block_duration_raster == None:
+        if block_duration_raster is None:
             block_duration_raster = Opts.default.block_duration_raster
         
-        if rf_dead_time == None:
+        if rf_dead_time is None:
             rf_dead_time = Opts.default.rf_dead_time
-        if rf_raster_time == None:
+        if rf_raster_time is None:
             rf_raster_time = Opts.default.rf_raster_time
-        if grad_raster_time == None:
+        if grad_raster_time is None:
             grad_raster_time = Opts.default.grad_raster_time 
-        if rf_ringdown_time == None:
+        if rf_ringdown_time is None:
             rf_ringdown_time = Opts.default.rf_ringdown_time
         if adc_samples_limit is None:
             adc_samples_limit = Opts.default.adc_samples_limit
         if adc_samples_divisor is None:
             adc_samples_divisor = Opts.default.adc_samples_divisor
-        if B0 == None:
+        if B0 is None:
             B0 = Opts.default.B0
 
         self.max_grad = max_grad
