@@ -6,24 +6,24 @@ build-backend = "setuptools.build_meta"
 name = "pypulseq"
 dynamic = ["version"]
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
-maintainers = [ 
+maintainers = [
   { name = "Bilal Tasdelen" },
   { name = "Frank Ziljstra" },
   { name = "Patrick Schuenke" },
-  ]
+]
 description = "Pulseq in Python"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.6.3"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
-    "coverage>=6.2",
-    "matplotlib>=3.5.2",
-    "numpy>=1.19.5",
-    "scipy>=1.8.1",
+  "coverage>=6.2",
+  "matplotlib>=3.5.2",
+  "numpy>=1.19.5",
+  "scipy>=1.8.1",
 ]
 
 [project.optional-dependencies]
