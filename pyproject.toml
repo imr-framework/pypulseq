@@ -28,6 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
+test = ["pytest"]
 
 [project.urls]
 Homepage = "https://github.com/imr-framework/pypulseq"
@@ -43,3 +44,11 @@ SAR = ["QGlobal.mat"]
 [tool.setuptools.dynamic]
 version = { attr = "version.__version__" }
 
+# PyTest section
+[tool.pytest.ini_options]
+testpaths = ["pypulseq/tests"]
+filterwarnings = ["error"]
+markers = [
+  "matlab_seq_comp: comparison with matlab generated sequence",
+  "sigpy: tests that require sigpy",
+]
