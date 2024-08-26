@@ -32,6 +32,10 @@ class Opts:
         Raster time for radio-frequency pulses.
     rf_ringdown_time : float, default=0
         Ringdown time for radio-frequency pulses.
+    adc_samples_limit : int, default=0
+        Maximum number of samples for a single ADC object. If 0, no limit is set.
+    adc_samples_divisor : int, default=4
+        Samples of ADC must be divisible by 'adc_samples_divisor'.
     rise_time : float, default=0
         Rise time for gradients.
     slew_unit : str, default='Hz/m/s'
@@ -58,6 +62,8 @@ class Opts:
         rf_dead_time: float = None,
         rf_raster_time: float = None,
         rf_ringdown_time: float = None,
+        adc_samples_limit: int = None,
+        adc_samples_divisor: int = None,
         rise_time: float = None,
         slew_unit: str = "Hz/m/s",
         B0: float = None,
@@ -112,6 +118,10 @@ class Opts:
             grad_raster_time = Opts.default.grad_raster_time 
         if rf_ringdown_time == None:
             rf_ringdown_time = Opts.default.rf_ringdown_time
+        if adc_samples_limit is None:
+            adc_samples_limit = Opts.default.adc_samples_limit
+        if adc_samples_divisor is None:
+            adc_samples_divisor = Opts.default.adc_samples_divisor
         if B0 == None:
             B0 = Opts.default.B0
 
@@ -125,6 +135,8 @@ class Opts:
         self.rf_raster_time = rf_raster_time
         self.grad_raster_time = grad_raster_time
         self.block_duration_raster = block_duration_raster
+        self.adc_samples_limit = adc_samples_limit
+        self.adc_samples_divisor = adc_samples_divisor
         self.gamma = gamma
         self.B0 = B0
     
@@ -142,6 +154,8 @@ class Opts:
                            rf_raster_time=1e-6,
                            grad_raster_time=10e-6,
                            block_duration_raster=10e-6,
+                           adc_samples_limit=0,
+                           adc_samples_divisor=4,
                            gamma=42576000,
                            B0=1.5)
 
