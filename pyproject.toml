@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypulseq"
-dynamic = ["version"]
+version = "1.4.2"
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
 maintainers = [
   { name = "Bilal Tasdelen" },

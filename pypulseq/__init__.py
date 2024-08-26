@@ -1,5 +1,11 @@
+import importlib.metadata
 import math
 import numpy as np
+
+# =========
+# VERSION
+# =========
+__version__ = importlib.metadata.version("pypulseq")
 
 
 # =========
