@@ -13,10 +13,10 @@ maintainers = [
   ]
 description = "Pulseq in Python"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.6.3"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
 ]
 dependencies = [
