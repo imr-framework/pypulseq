@@ -19,6 +19,7 @@ from scipy.interpolate import PPoly
 from matplotlib import pyplot as plt
 
 from pypulseq import eps
+from pypulseq import __version__
 from pypulseq.Sequence import block, parula
 from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.read_seq import read
@@ -35,7 +36,7 @@ from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.block_to_events import block_to_events
 
-from version import major, minor, revision
+major, minor, revision = __version__.split(".")
 
 
 class Sequence:
@@ -47,8 +48,8 @@ class Sequence:
     See also `demo_read.py`, `demo_write.py`.
     """
 
-    version_major = major
-    version_minor = minor
+    version_major = int(major)
+    version_minor = int(minor)
     version_revision = revision
 
     def __init__(self, system=None, use_block_cache=True):

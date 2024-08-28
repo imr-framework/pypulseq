@@ -4,17 +4,14 @@ from typing import Tuple, Union
 from copy import copy
 
 import numpy as np
+
 try:
     import sigpy.mri.rf as rf
     import sigpy.plot as pl
-except ModuleNotFoundError as exc:
-    import warnings
-    warnings.warn(
-        'Sigpy dependency not found, please install it to use '
-        'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '
-        'Use "pip install pypulse[sigpy]" to install.',
-        UserWarning)
-    raise exc
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "SigPy is not installed. Install it using 'pip install sigpy' or 'pip install pypulseq[sigpy]'."
+    )
 
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
@@ -93,7 +90,7 @@ def sigpy_n_seq(
     """
     if system == None:
         system = Opts.default
-        
+
     valid_use_pulses = ["excitation", "refocusing", "inversion"]
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
@@ -150,9 +147,7 @@ def sigpy_n_seq(
         BW = time_bw_product / duration
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel="z", system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
             channel="z",
             system=system,
@@ -160,10 +155,7 @@ def sigpy_n_seq(
         )
 
         if rfp.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rfp.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rfp.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rfp.delay < (gz.rise_time + gz.delay):
             rfp.delay = gz.rise_time + gz.delay
@@ -193,7 +185,7 @@ def make_slr(
 ):
     if system == None:
         system = Opts.default
-        
+
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time
 
@@ -223,9 +215,7 @@ def make_slr(
         # Simulate it
         [a, b] = rf.sim.abrm(
             pulse,
-            np.arange(
-                -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-            ),
+            np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
         Mxy = 2 * np.multiply(np.conj(a), b)
@@ -244,7 +234,7 @@ def make_sms(
 ):
     if system == None:
         system = Opts.default
-        
+
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time
 
@@ -267,9 +257,7 @@ def make_sms(
         d2=d2,
         cancel_alpha_phs=cancel_alpha_phs,
     )
-    pulse = rf.multiband.mb_rf(
-        pulse_in, n_bands=n_bands, band_sep=band_sep, phs_0_pt=phs_0_pt
-    )
+    pulse = rf.multiband.mb_rf(pulse_in, n_bands=n_bands, band_sep=band_sep, phs_0_pt=phs_0_pt)
 
     flip = np.sum(pulse) * system.rf_raster_time * 2 * np.pi
     signal = pulse * flip_angle / flip
@@ -281,9 +269,7 @@ def make_sms(
         # Simulate it
         [a, b] = rf.sim.abrm(
             pulse,
-            np.arange(
-                -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-            ),
+            np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
         Mxy = 2 * np.multiply(np.conj(a), b)

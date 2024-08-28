@@ -1,3 +1,0 @@
-include VERSION
-include pypulseq/SAR/QGlobal.mat
-recursive-include pypulseq/seq_examples/* *
