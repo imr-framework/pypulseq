@@ -9,6 +9,8 @@ from pypulseq.opts import Opts
 def make_arbitrary_grad(
     channel: str,
     waveform: np.ndarray,
+    first: Union[float, None] = None,
+    last: Union[float, None] = None,
     delay: float = 0,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
@@ -30,6 +32,12 @@ def make_arbitrary_grad(
         Orientation of gradient event of arbitrary shape. Must be one of `x`, `y` or `z`.
     waveform : numpy.ndarray
         Arbitrary waveform.
+    first : float
+        Gradient value at the start of the gradient event. (t=0)
+        Will default to a linear extrapolated value if not provided.
+    last : float
+        Gradient value at the end of the gradient event. (t=duration)
+        Will default to a linear extrapolated value if not provided.
     system : Opts
         System limits.
         Will default to `pypulseq.opts.default` if not provided.
@@ -72,6 +80,12 @@ def make_arbitrary_grad(
     if max(abs(waveform)) >= max_grad:
         raise ValueError(f"Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}")
 
+    if not first:
+        first = (3 * waveform[0] - waveform[1]) * 0.5  # linear extrapolation
+
+    if not last:
+        last = (3 * waveform[-1] - waveform[-2]) * 0.5  # linear extrapolation
+
     grad = SimpleNamespace()
     grad.type = "grad"
     grad.channel = channel
@@ -79,8 +93,8 @@ def make_arbitrary_grad(
     grad.delay = delay
     grad.tt = (np.arange(len(waveform)) + 0.5) * system.grad_raster_time
     grad.shape_dur = len(waveform) * system.grad_raster_time
-    grad.first = (3 * waveform[0] - waveform[1]) * 0.5  # Extrapolate by 1/2 gradient raster
-    grad.last = (waveform[-1] * 3 - waveform[-2]) * 0.5  # Extrapolate by 1/2 gradient raster
+    grad.first = first
+    grad.last = last
     grad.area = (waveform * system.grad_raster_time).sum()
 
     return grad
