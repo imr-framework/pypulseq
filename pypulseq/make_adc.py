@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 from typing import Optional, Tuple, List
-from math import isclose, floor, ceil, lcm ,gcd
+from math import isclose, floor, ceil, lcm ,gcd, prod
 import itertools
 import numpy as np
 from pypulseq.opts import Opts
@@ -88,7 +88,7 @@ def calc_adc_segments(
     system : Optional[Opts], default=None
        System limits. Default is a system limits object initialised to default values.
     mode : str, default='lengthen'
-        The total number of samples can either be shortened or legthend to match the constraints.
+        The total number of samples can either be shortened or lengthened to match the constraints.
 
     Returns
     -------
@@ -101,14 +101,14 @@ def calc_adc_segments(
     sample length (8192 samples on Siemens) should be splittable to N 
     equal parts, each of which aligned to the gradient raster. Each 
     segment, however, needs to have the number of samples smaller than 
-    system.' and divisible by system.adcSamplesDivisor to be
+    system.adcSamplesLimit' and divisible by system.adcSamplesDivisor to be
     executable on the scanner. The optional parameter mode can be either
     'shorten' or 'lengthen'." [Matlab implementation of 'calcAdcSeg'. https://github.com/pulseq]
     
     Raises
     ------
     ValueError
-        If 'mode' is not 'shorthen' or 'lengthen'.
+        If 'mode' is not 'shorten' or 'lengthen'.
     ValueError
         If no suitable segmentation could be found.
     ValueError
@@ -160,15 +160,11 @@ def calc_adc_segments(
         adc_seg_primes = _prime_factors(samples_seg_multip)
         num_segments = 1
         if len(adc_seg_primes) > 1:
-            prime_permutations = list(
-                itertools.permutations(adc_seg_primes))
-            # Get candidates for samples in single segment
-            num_segments_candids = np.unique(
-                np.cumprod(prime_permutations, axis=1)
-            )
+            num_segments_candids = set() 
+            for k in range(1, len(adc_seg_primes)+1):
+                num_segments_candids |= set(prod(perm) for perm in itertools.combinations(adc_seg_primes, k))
             # Find suitable candidate
-            for candid in num_segments_candids:
-                num_segments = candid
+            for num_segments in sorted(num_segments_candids):
                 num_samples_seg = (
                     samples_seg_multip 
                     * min_samples_segment 
@@ -177,17 +173,17 @@ def calc_adc_segments(
                 if (num_samples_seg <= system.adc_samples_limit
                         and num_segments<=MAX_SEGMENTS):
                     break  # Found segments and samples
-        else:  # Only one pollible solution
+        else:  # Only one possible solution
             num_samples_seg = samples_seg_multip * min_samples_segment
         
-        # Does output already fullfills contraints?
+        # Does output already fulfill constraints?
         if (num_samples_seg <= system.adc_samples_limit
                 and num_segments<=MAX_SEGMENTS):
             break  
         else: # Shorten or lengthen the number of samples per segment
             samples_seg_multip += (1 if mode=='lengthen' else -1)
             
-    # Validate contraints
+    # Validate constraints
     if samples_seg_multip <= 0:
         raise ValueError(
             "Could not find suitable segmentation.")
@@ -198,11 +194,12 @@ def calc_adc_segments(
         raise ValueError(
             f"Number of segments ({num_segments}) exceeds allowed number of {MAX_SEGMENTS}")
         
-    return num_segments, num_samples_seg
+    return int(num_segments), int(num_samples_seg)
     
 
 
-def _prime_factors(n) -> List[int]:
+def _prime_factors(n: int) -> List[int]:
+    """Compute the prime factors of given integer n."""
     if n == 1:
         return [1]
     else:
@@ -213,11 +210,12 @@ def _prime_factors(n) -> List[int]:
             n //= 2
         
         # Checking odd factors from 3 upwards
-        for i in range(3, int(n**0.5) + 1, 2):
+        i = 3
+        while i * i <= n:
             while n % i == 0:
                 factors.append(i)
                 n //= i
-                
+            i += 2
         if n > 2:
             factors.append(n)
         
