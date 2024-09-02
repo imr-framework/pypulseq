@@ -430,7 +430,7 @@ def register_adc_event(self, event: EventLibrary) -> int:
     data = (
             event.num_samples,
             event.dwell,
-            max(event.delay, event.dead_time),
+            event.delay,
             event.freq_offset,
             event.phase_offset,
             event.dead_time,
