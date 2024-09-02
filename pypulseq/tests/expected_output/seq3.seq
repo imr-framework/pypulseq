@@ -4,13 +4,14 @@
 [VERSION]
 major 1
 minor 4
-revision 0
+revision 2
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
 GradientRasterTime 1e-05 
 RadiofrequencyRasterTime 1e-06 
+TotalDuration 0.12722 
 
 # Format of blocks:
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
@@ -131,4 +132,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 265ac18d4d5e62e65129e3171830fc69
+Hash 54a863dda55463e26b0cc8a849a0111b
