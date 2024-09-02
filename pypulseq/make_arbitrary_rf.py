@@ -86,7 +86,7 @@ def make_arbitrary_rf(
     """
     if system == None:
         system = Opts.default
-        
+
     valid_use_pulses = get_supported_rf_uses()
     if use != "" and use not in valid_use_pulses:
         raise ValueError(

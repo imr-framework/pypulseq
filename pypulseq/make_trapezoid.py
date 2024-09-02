@@ -31,7 +31,7 @@ def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_tim
 
     flat_time = t_eff - rise_time
     fall_time = rise_time
-    
+
     return amplitude, rise_time, flat_time, fall_time
 
 
@@ -106,7 +106,7 @@ def make_trapezoid(
     """
     if system == None:
         system = Opts.default
-        
+
     if channel not in ["x", "y", "z"]:
         raise ValueError(
             f"Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}"
@@ -203,7 +203,7 @@ def make_trapezoid(
         if area is None:
             raise ValueError("Must supply area or duration.")
         else:
-            # Find the shortest possible duration.           
+            # Find the shortest possible duration.
             amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(area, max_slew, max_grad, system.grad_raster_time)
 
     assert abs(amplitude2) <= max_grad, (

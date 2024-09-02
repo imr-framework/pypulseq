@@ -46,7 +46,7 @@ def split_gradient_at(
     """
     if system == None:
         system = Opts.default
-        
+
     # copy() to emulate pass-by-value; otherwise passed grad is modified
     grad = deepcopy(grad)
 

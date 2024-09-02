@@ -50,7 +50,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             if event.type == "rf":
                 if self.block_events[block_index][1] != 0:
                     raise ValueError('Multiple RF events were specified in set_block')
-                
+
                 if hasattr(event, "id"):
                     rf_id = event.id
                 else:
@@ -66,7 +66,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 if self.block_events[block_index][idx] != 0:
                     raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
-                
+
                 grad_start = (
                     event.delay
                     + math.floor(event.tt[0] / self.grad_raster_time + 1e-10)
@@ -113,7 +113,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             elif event.type == "adc":
                 if self.block_events[block_index][5] != 0:
                     raise ValueError('Multiple ADC events were specified in set_block')
-                
+
                 if hasattr(event, "id"):
                     adc_id = event.id
                 else:
@@ -410,7 +410,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     # Enter block into the block cache
     if self.use_block_cache:
         self.block_cache[block_index] = block
-    
+
     return block
 
 
@@ -548,12 +548,12 @@ def register_grad_event(
         any_changed = any_changed or found
     else:
         grad_id = self.grad_library.insert(0, data, event.type[0])
-        
+
     # Clear block cache because grad event or shapes were overwritten
     # TODO: Could find only the blocks that are affected by the changes
     if self.use_block_cache and any_changed:
         self.block_cache.clear()
-    
+
     if event.type == "grad":
         return grad_id, shape_IDs
     elif event.type == "trap":
@@ -658,7 +658,7 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)
-        
+
         # Clear block cache because RF event was overwritten
         # TODO: Could find only the blocks that are affected by the changes
         if self.use_block_cache and found:
@@ -666,6 +666,6 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
     else:
         rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
 
-    
+
 
     return rf_id, shape_IDs

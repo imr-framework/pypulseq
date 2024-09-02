@@ -40,7 +40,7 @@ def add_gradients(
     """
     if system == None:
         system = Opts.default
-        
+
     if max_grad <= 0:
         max_grad = system.max_grad
     if max_slew <= 0:
@@ -54,7 +54,7 @@ def add_gradients(
             return copy(grads[0])
         else:
             return deepcopy(grads[0])
-    
+
     # First gradient defines channel
     channel = grads[0].channel
 
@@ -71,7 +71,7 @@ def add_gradients(
                               fall_time=grads[0].fall_time,
                               delay=grads[0].delay,
                               system=system)
-    
+
     # Find out the general delay of all gradients and other statistics
     delays, firsts, lasts, durs, is_trap, is_arb = [], [], [], [], [], []
     for ii in range(len(grads)):
@@ -146,7 +146,7 @@ def add_gradients(
             channel=channel, amplitudes=amplitudes, times=times, system=system
         )
         return grad
-    
+
     # Convert to numpy.ndarray for fancy-indexing later on
     firsts, lasts = np.array(firsts), np.array(lasts)
     common_delay = np.min(delays)

@@ -55,7 +55,7 @@ class Sequence:
     def __init__(self, system=None, use_block_cache=True):
         if system == None:
             system = Opts()
-            
+
         # =========
         # EVENT LIBRARIES
         # =========
@@ -83,7 +83,7 @@ class Sequence:
         self.use_block_cache = use_block_cache
         self.block_cache = dict()  # Block cache
         self.next_free_block_ID = 1
-        
+
         self.definitions = dict()  # Optional sequence definitions
 
         self.rf_raster_time = (
@@ -149,7 +149,7 @@ class Sequence:
                 raise ValueError('Time range must be list of two elements')
             if time_range[0] > time_range[1]:
                 raise ValueError('End time of time_range must be after begin time')
-            
+
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
@@ -159,10 +159,10 @@ class Sequence:
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
-            
+
         for block_counter in blocks:
             block = self.get_block(block_counter)
-            
+
             if block.adc is not None:  # ADC
                 t_adc.append(
                     (np.arange(block.adc.num_samples) + 0.5) * block.adc.dwell
@@ -172,7 +172,7 @@ class Sequence:
                 fp_adc.append([block.adc.freq_offset, block.adc.phase_offset])
 
             curr_dur += self.block_durations[block_counter]
-        
+
         if t_adc == []:
             # If there are no ADCs, make sure the output is the right shape
             t_adc = np.zeros(0)
@@ -200,7 +200,7 @@ class Sequence:
         """
         block.set_block(self, self.next_free_block_ID, *args)
         self.next_free_block_ID += 1
-    
+
     def calculate_gradient_spectrum(
             self, max_frequency: float = 2000,
             window_width: float = 0.05,
@@ -215,7 +215,7 @@ class Sequence:
         Calculates the gradient spectrum of the sequence. Returns a spectrogram
         for each gradient channel, as well as a root-sum-squares combined
         spectrogram.
-        
+
         Works by splitting the sequence into windows that are 'window_width'
         long and calculating the fourier transform of each window. Windows
         overlap 50% with the previous and next window. When 'combine_mode' is
@@ -268,7 +268,7 @@ class Sequence:
                                            combine_mode=combine_mode,
                                            use_derivative=use_derivative,
                                            acoustic_resonances=acoustic_resonances)
-    
+
     def calculate_kspace(
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
@@ -310,7 +310,7 @@ class Sequence:
         # Convert data to piecewise polynomials
         gw_pp = self.get_gradients(trajectory_delay, gradient_offset)
         ng = len(gw_pp)
-        
+
         # Calculate slice positions. For now we entirely rely on the excitation -- ignoring complicated interleaved
         # refocused sequences
         if len(t_excitation) > 0:
@@ -324,7 +324,7 @@ class Sequence:
                     divisor = np.array(gw_pp[j](t_excitation))
                     slice_pos[j, divisor != 0.0] = fp_excitation[0, divisor != 0.0] / divisor[divisor != 0.0]
                     slice_pos[j, divisor == 0.0] = np.nan
-                    
+
             slice_pos[~np.isfinite(slice_pos)] = 0  # Reset undefined to 0
         else:
             slice_pos = []
@@ -337,19 +337,19 @@ class Sequence:
             if gw_pp[i] is None:
                 gm_pp.append(None)
                 continue
-            
+
             gm_pp.append(gw_pp[i].antiderivative())
             tc.append(gm_pp[i].x)
             # "Sample" ramps for display purposes otherwise piecewise-linear display (plot) fails
             ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
-            
+
             # Do nothing if there are no ramps
             if ii.shape[0] == 0:
                 continue
-            
+
             starts = np.int64(np.floor((gm_pp[i].x[ii] + eps) / self.grad_raster_time))
             ends = np.int64(np.ceil((gm_pp[i].x[ii+1] - eps) / self.grad_raster_time))
-            
+
             # Create all ranges starts[0]:ends[0], starts[1]:ends[1], etc.
             lengths = ends-starts+1
             inds = np.ones((lengths).sum())
@@ -362,8 +362,8 @@ class Sequence:
             tc.append(np.cumsum(inds) * self.grad_raster_time)
         if tc != []:
             tc = np.concatenate(tc)
-        
-            
+
+
         t_acc = 1e-10  # Temporal accuracy
         t_acc_inv = 1 / t_acc
         # tc = self.__flatten_jagged_arr(tc)
@@ -389,7 +389,7 @@ class Sequence:
         i_excitation = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_excitation)))
         i_refocusing = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_refocusing)))
         i_adc = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_adc)))
-        
+
         i_periods = np.unique([0, *i_excitation, *i_refocusing, len(t_ktraj) - 1])
         if len(i_excitation) > 0:
             ii_next_excitation = 0
@@ -463,9 +463,9 @@ class Sequence:
         """
         Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
         See http://github.com/filip-szczepankiewicz/safe_pns_prediction
-        
+
         Returns pns levels due to respective axes (normalized to 1 and not to 100#)
-        
+
         Parameters
         ----------
         hardware : SimpleNamespace
@@ -601,18 +601,18 @@ class Sequence:
             ) -> dict:
         """
         Evaluate label values of the entire sequence.
-        
+
         When no evolution is given, returns the label values at the end of the
         sequence. Returns a dictionary with keys named after the labels used
         in the sequence. Only the keys corresponding to the labels actually
         used are created.
         E.g. labels['LIN'] == 4
-        
+
         When evolution is given, labels are tracked through the sequence. See
         below for options for different types of evolutions. The resulting
         dictionary will contain arrays of the label values.
         E.g. labels['LIN'] == np.array([0,1,2,3,4])
-        
+
         Initial values for the labels can be given with the 'init' parameter.
         Useful if evaluating labels block-by-block.
 
@@ -641,14 +641,14 @@ class Sequence:
         """
         labels = init or dict()
         label_evolution = []
-        
+
         # TODO: MATLAB implementation includes block_range parameter. But in
         #       general we cannot assume linear block ordering. Could include
         #       time_range like in other sequence functions. Or a blocks
         #       parameter to specify which blocks to loop over?
         for block_counter in self.block_events:
             block = self.get_block(block_counter)
-            
+
             if block.label is not None:
                 # Current block has labels
                 for lab in block.label.values():
@@ -656,23 +656,23 @@ class Sequence:
                         # Increment label
                         if lab.label not in labels:
                             labels[lab.label] = 0
-                        
+
                         labels[lab.label] += lab.value
                     else:
                         # Set label
                         labels[lab.label] = lab.value
-                
+
                 if evolution == 'label':
                     label_evolution.append(dict(labels))
 
             if evolution == 'blocks' or (evolution == 'adc' and block.adc is not None):
                 label_evolution.append(dict(labels))
-        
+
         # Convert evolutions into label dictionary
         if len(label_evolution) > 0:
             for lab in labels:
                 labels[lab] = np.array([e[lab] if lab in e else 0 for e in label_evolution])
-        
+
         return labels
 
     def flip_grad_axis(self, axis: str) -> None:
@@ -799,7 +799,7 @@ class Sequence:
         more timepoints using `gw_pp[channel](t)` (where t is a float, list of
         floats, or numpy array). Note that PPoly objects return nan for
         timepoints outside the waveform.
-        
+
         Parameters
         ----------
         trajectory_delay : float or list, default=0
@@ -819,10 +819,10 @@ class Sequence:
             )
 
         total_duration = sum(self.block_durations.values())
-        
+
         gw_data = self.waveforms(time_range=time_range)
         ng = len(gw_data)
-        
+
         # Gradient delay handling
         if isinstance(trajectory_delay, (int, float)):
             gradient_delays = [trajectory_delay] * ng
@@ -1343,7 +1343,7 @@ class Sequence:
                 raise ValueError('Time range must be list of two elements')
             if time_range[0] > time_range[1]:
                 raise ValueError('End time of time_range must be after begin time')
-            
+
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
@@ -1353,10 +1353,10 @@ class Sequence:
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
-            
+
         for block_counter in blocks:
             block = self.get_block(block_counter)
-            
+
             if block.rf is not None:  # RF
                 rf = block.rf
                 t = rf.delay + calc_rf_center(rf)[0]
@@ -1377,12 +1377,12 @@ class Sequence:
             fp_excitation = np.array(fp_excitation).T
         else:
             fp_excitation = np.empty((2,0))
-            
+
         if len(t_refocusing) != 0:
             fp_refocusing = np.array(fp_refocusing).T
         else:
             fp_refocusing = np.empty((2,0))
-        
+
         return t_excitation, fp_excitation, t_refocusing, fp_refocusing
 
     def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
@@ -1500,7 +1500,7 @@ class Sequence:
                 raise ValueError('Time range must be list of two elements')
             if time_range[0] > time_range[1]:
                 raise ValueError('End time of time_range must be after begin time')
-            
+
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
             t = np.cumsum(bd)
@@ -1510,10 +1510,10 @@ class Sequence:
             end_block = np.searchsorted(t - bd, time_range[1], side='right')
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
-            
+
         for block_counter in blocks:
             block = self.get_block(block_counter)
-            
+
             for j in range(len(grad_channels)):
                 grad = getattr(block, grad_channels[j])
                 if grad is not None:  # Gradients
@@ -1529,10 +1529,10 @@ class Sequence:
                             but first we have to restore samples on the edges of the gradient raster intervals for that
                             we need the first sample.
                             """
-                            
+
                             # TODO: Implement restoreAdditionalShapeSamples
                             #       https://github.com/pulseq/pulseq/blob/master/matlab/%2Bmr/restoreAdditionalShapeSamples.m
-                            
+
                             out_len[j] += len(grad.tt)+2
                             shape_pieces[j].append(np.array(
                                 [
@@ -1613,7 +1613,7 @@ class Sequence:
             if shape_pieces[j] == []:
                 wave_data.append(np.zeros((2,0)))
                 continue
-            
+
             # If the first element of the next shape has the same time as
             # the last element of the previous shape, drop the first
             # element of the next shape.
@@ -1658,15 +1658,15 @@ class Sequence:
         fp_adc : np.ndarray
             Contains frequency and phase offsets of each ADC object (not samples).
         """
-        
+
         wave_data = self.waveforms(append_RF=append_RF, time_range=time_range)
         t_excitation, fp_excitation, t_refocusing, fp_refocusing = self.rf_times(time_range=time_range)
         t_adc, fp_adc = self.adc_times(time_range=time_range)
-        
+
         # Join times, frequency and phases of RF pulses for compatibility with previous implementation
         tfp_excitation = np.concatenate((np.array(t_excitation)[None], fp_excitation), axis=0)
         tfp_refocusing = np.concatenate((np.array(t_refocusing)[None], fp_refocusing), axis=0)
-        
+
         return wave_data, tfp_excitation, tfp_refocusing, t_adc, fp_adc
 
     def waveforms_export(self, time_range=(0, np.inf)) -> dict:
@@ -1840,11 +1840,11 @@ class Sequence:
             Boolean flag to indicate if the file has to be signed.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
-        
+
         Returns
         -------
-        signature or None : If create_signature is True, it returns the written .seq file's signature as a string, 
-        otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the 
+        signature or None : If create_signature is True, it returns the written .seq file's signature as a string,
+        otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the
         deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
         """
         signature = write_seq(self, name, create_signature, remove_duplicates)
