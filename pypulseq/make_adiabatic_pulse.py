@@ -31,7 +31,7 @@ def make_adiabatic_pulse(
     return_gz: bool = False,
     return_delay: bool = False,
     slice_thickness: float = 0,
-    system=None,
+    system: Union[Opts, None] = None,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,

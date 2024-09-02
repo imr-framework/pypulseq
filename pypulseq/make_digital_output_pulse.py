@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.opts import Opts
 
@@ -31,7 +32,7 @@ def make_digital_output_pulse(
     ValueError
         If `channel` is invalid. Must be one of 'osc0','osc1', or 'ext1'.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if channel not in ["osc0", "osc1", "ext1"]:

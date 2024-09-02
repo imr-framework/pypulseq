@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Union
 
 import numpy as np
 import math
@@ -47,7 +48,7 @@ def make_trapezoid(
     max_grad: float = 0,
     max_slew: float = 0,
     rise_time: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Create a trapezoidal gradient event.
@@ -104,7 +105,7 @@ def make_trapezoid(
         If `flat_time`, `duration` and `area` are not supplied.
         Amplitude violation
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     if channel not in ["x", "y", "z"]:

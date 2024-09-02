@@ -13,7 +13,7 @@ def add_ramps(
     max_grad: int = 0,
     max_slew: int = 0,
     rf: SimpleNamespace = None,
-    system=None,
+    system: Union[Opts, None] = None,
 ) -> List[np.ndarray]:
     """
     Add segments to the trajectory to ramp to and from the given trajectory.
@@ -45,7 +45,7 @@ def add_ramps(
     RuntimeError
         If gradient ramps fail to be calculated
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if not isinstance(k, (list, np.ndarray, tuple)):

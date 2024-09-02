@@ -25,7 +25,7 @@ def make_sinc_pulse(
     return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
@@ -89,7 +89,7 @@ def make_sinc_pulse(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     valid_pulse_uses = get_supported_rf_uses()

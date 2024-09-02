@@ -27,7 +27,7 @@ def make_arbitrary_rf(
     return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 0,
     use: str = str(),
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
@@ -84,7 +84,7 @@ def make_arbitrary_rf(
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwidth` are not passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     valid_use_pulses = get_supported_rf_uses()

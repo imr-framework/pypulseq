@@ -52,8 +52,8 @@ class Sequence:
     version_minor = int(minor)
     version_revision = revision
 
-    def __init__(self, system=None, use_block_cache=True):
-        if system == None:
+    def __init__(self, system: Union[Opts, None] = None, use_block_cache: bool = True):
+        if system is None:
             system = Opts()
 
         # =========

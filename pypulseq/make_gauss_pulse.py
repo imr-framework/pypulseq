@@ -27,7 +27,7 @@ def make_gauss_pulse(
     return_gz: bool = False,
     return_delay: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
@@ -94,7 +94,7 @@ def make_gauss_pulse(
         If invalid `use` is passed.
         If `return_gz=True` and `slice_thickness` was not passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if use != "" and use not in get_supported_rf_uses():

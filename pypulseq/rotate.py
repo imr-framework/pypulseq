@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import List
+from typing import List, Union
 
 import numpy as np
 
@@ -18,7 +18,7 @@ def rotate(
     *args: SimpleNamespace,
     angle: float,
     axis: str,
-    system=None
+    system : Union[Opts, None] = None
 ) -> List[SimpleNamespace]:
     """
     Rotates the corresponding gradient(s) about the given axis by the specified amount. Gradients parallel to the
@@ -40,7 +40,7 @@ def rotate(
     rotated_grads : [SimpleNamespace]
         Rotated gradient(s).
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     axes = ["x", "y", "z"]

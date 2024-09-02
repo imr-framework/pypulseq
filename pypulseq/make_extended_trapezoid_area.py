@@ -43,8 +43,8 @@ def make_extended_trapezoid_area(
     ------
         ValueError if no solution was found that satisfies the constraints and the desired area.
     """
-    if not system:
-        system = Opts()
+    if system is None:
+        system = Opts.default
 
     max_slew = system.max_slew * 0.99
     max_grad = system.max_grad * 0.99

@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -9,7 +9,7 @@ from pypulseq.opts import Opts
 
 
 def split_gradient(
-    grad: SimpleNamespace, system: Opts = None
+    grad: SimpleNamespace, system: Union[Opts, None] = None
 ) -> Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]:
     """
     Splits a trapezoidal gradient into slew up, flat top and slew down. Returns the individual gradient parts (slew up,
@@ -41,7 +41,7 @@ def split_gradient(
          If arbitrary gradients are passed.
          If non-gradient event is passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     grad_raster_time = system.grad_raster_time

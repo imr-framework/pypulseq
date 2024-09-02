@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from types import SimpleNamespace
-from typing import Iterable
+from typing import List, Union
 
 import numpy as np
 
@@ -14,10 +14,10 @@ from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.utils.cumsum import cumsum
 
 def add_gradients(
-    grads: Iterable[SimpleNamespace],
+    grads: List[SimpleNamespace],
     max_grad: int = 0,
     max_slew: int = 0,
-    system=None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Returns the superposition of several gradients.
@@ -38,7 +38,7 @@ def add_gradients(
     grad : SimpleNamespace
         Superimposition of gradient events from `grads`.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     if max_grad <= 0:

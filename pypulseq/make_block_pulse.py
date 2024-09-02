@@ -19,7 +19,7 @@ def make_block_pulse(
     freq_offset: float = 0,
     phase_offset: float = 0,
     return_delay: bool = False,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     use: str = str(),
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
@@ -67,7 +67,7 @@ def make_block_pulse(
         One of bandwidth or duration must be defined, but not both.
         One of bandwidth or duration must be defined and be > 0.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     valid_use_pulses = get_supported_rf_uses()

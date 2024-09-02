@@ -10,7 +10,7 @@ from pypulseq.opts import Opts
 
 
 def split_gradient_at(
-    grad: SimpleNamespace, time_point: float, system: Opts = None
+    grad: SimpleNamespace, time_point: float, system: Union[Opts, None] = None
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
     Splits a trapezoidal gradient into two extended trapezoids defined by the cut line. Returns the two gradient parts
@@ -44,7 +44,7 @@ def split_gradient_at(
     ValueError
         If non-gradient event is passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     # copy() to emulate pass-by-value; otherwise passed grad is modified

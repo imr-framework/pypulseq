@@ -29,7 +29,7 @@ def sigpy_n_seq(
     phase_offset: float = 0,
     return_gz: bool = True,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     use: str = str(),
@@ -88,7 +88,7 @@ def sigpy_n_seq(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     valid_use_pulses = ["excitation", "refocusing", "inversion"]
@@ -179,11 +179,11 @@ def make_slr(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
 
     N = int(round(duration / 1e-6))
@@ -228,11 +228,11 @@ def make_sms(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
 
     N = int(round(duration / 1e-6))

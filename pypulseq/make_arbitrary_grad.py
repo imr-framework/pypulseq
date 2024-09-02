@@ -38,7 +38,7 @@ def make_arbitrary_grad(
     last : float
         Gradient value at the end of the gradient event. (t=duration)
         Will default to a linear extrapolated value if not provided.
-    system : Opts
+    system : Opts, default=Opts()
         System limits.
         Will default to `pypulseq.opts.default` if not provided.
     max_grad : float

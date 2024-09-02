@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.opts import Opts
 
@@ -10,7 +11,7 @@ def make_adc(
     dwell: float = 0,
     freq_offset: float = 0,
     phase_offset: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Create an ADC readout event.
@@ -42,7 +43,7 @@ def make_adc(
     ValueError
         If neither `dwell` nor `duration` are defined.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     adc = SimpleNamespace()
