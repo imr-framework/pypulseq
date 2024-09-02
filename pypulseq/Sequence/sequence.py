@@ -35,6 +35,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.tracing import trace_enabled, trace
 
 major, minor, revision = __version__.split(".")
 
@@ -80,6 +81,7 @@ class Sequence:
         self.system = system
 
         self.block_events = OrderedDict()  # Event table
+        self.block_trace = OrderedDict()
         self.use_block_cache = use_block_cache
         self.block_cache = dict()  # Block cache
         self.next_free_block_ID = 1
@@ -198,6 +200,10 @@ class Sequence:
         args : SimpleNamespace
             Block structure or events to be added as a block to `Sequence`.
         """
+
+        if trace_enabled():
+            self.block_trace[self.next_free_block_ID] = SimpleNamespace(block=trace())
+
         block.set_block(self, self.next_free_block_ID, *args)
         self.next_free_block_ID += 1
 
@@ -1341,6 +1347,10 @@ class Sequence:
         args : SimpleNamespace
             Block or events to be replaced/added or created at `block_index`.
         """
+
+        if trace_enabled():
+            self.block_trace[block_index] = SimpleNamespace(block=trace())
+
         block.set_block(self, block_index, *args)
 
         if block_index >= self.next_free_block_ID:

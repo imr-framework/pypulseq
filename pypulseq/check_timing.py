@@ -145,7 +145,10 @@ def print_error_report(seq: Sequence,
         if e.block != current_block:
             print(f'Block {e.block}:')
             current_block = e.block
+            trace = seq.block_trace.get(current_block, None)
 
+            if hasattr(trace, 'block'):
+                print(('\x1b[38;5;8m' if colored else '') + 'Block created here:\n' + format_trace(trace.block) + ('\x1b[0m' if colored else ''))
 
         unit = 'us'
         multiplier = 1e6
@@ -155,6 +158,9 @@ def print_error_report(seq: Sequence,
 
         error_message = format_string(error_messages[e.error_type], **e.__dict__, unit=unit, multiplier=multiplier)
         print(f'- {e.event}.{e.field}: ' + ('\x1b[38;5;9m' if colored else '') + error_message + ('\x1b[0m' if colored else ''))
+
+        if hasattr(trace, e.event) and e.event != 'block':
+            print(('\x1b[38;5;8m' if colored else '') + f'  `{e.event}` created here:\n' + format_trace(getattr(trace, e.event), indent=2) + ('\x1b[0m' if colored else ''))
 
     if len(error_report) > max_errors:
         blocks = [e.block for e in error_report[max_errors:]]

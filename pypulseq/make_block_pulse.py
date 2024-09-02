@@ -8,6 +8,7 @@ from pypulseq.calc_duration import calc_duration
 from pypulseq.make_delay import make_delay
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_block_pulse(
@@ -128,6 +129,9 @@ def make_block_pulse(
     if rf.ringdown_time > 0 and return_delay:
         warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_delay:
         return rf, delay

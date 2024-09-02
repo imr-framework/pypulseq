@@ -9,6 +9,7 @@ from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.supported_labels_rf_use import get_supported_labels
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
@@ -60,6 +61,10 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 duration = max(
                     duration, event.shape_dur + event.delay + event.ringdown_time
                 )
+
+                if trace_enabled():
+                    if hasattr(event, 'trace'):
+                        setattr(self.block_trace[block_index], 'rf', event.trace)
             elif event.type == "grad":
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
@@ -90,6 +95,10 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 self.block_events[block_index][idx] = grad_id
                 duration = max(duration, grad_duration)
+
+                if trace_enabled():
+                    if hasattr(event, 'trace'):
+                        setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
             elif event.type == "trap":
                 channel_num = ["x", "y", "z"].index(event.channel)
                 idx = 2 + channel_num
@@ -110,6 +119,10 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                         + event.flat_time
                         + event.fall_time
                 )
+
+                if trace_enabled():
+                    if hasattr(event, 'trace'):
+                        setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
             elif event.type == "adc":
                 if self.block_events[block_index][5] != 0:
                     raise ValueError('Multiple ADC events were specified in set_block')
@@ -124,6 +137,10 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                         duration,
                         event.delay + event.num_samples * event.dwell + event.dead_time
                 )
+
+                if trace_enabled():
+                    if hasattr(event, 'trace'):
+                        setattr(self.block_trace[block_index], 'adc', event.trace)
             elif event.type == "delay":
                 duration = max(duration, event.delay)
             elif event.type in ["output", "trigger"]:

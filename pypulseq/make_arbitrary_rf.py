@@ -12,6 +12,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.calc_duration import calc_duration
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_arbitrary_rf(
@@ -161,6 +162,9 @@ def make_arbitrary_rf(
 
     if rf.ringdown_time > 0 and return_delay:
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, delay

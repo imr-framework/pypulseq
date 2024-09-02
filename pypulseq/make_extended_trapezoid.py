@@ -7,6 +7,7 @@ from pypulseq import eps
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_extended_trapezoid(
@@ -142,5 +143,8 @@ def make_extended_trapezoid(
 
     grad.first = amplitudes[0]
     grad.last = amplitudes[-1]
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

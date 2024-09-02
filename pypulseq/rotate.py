@@ -6,6 +6,7 @@ import numpy as np
 from pypulseq.add_gradients import add_gradients
 from pypulseq.scale_grad import scale_grad
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:
@@ -118,5 +119,9 @@ def rotate(
     # Export
     bypass = np.take(args, i_bypass)
     rotated_grads = [*bypass, *g]
+
+    if trace_enabled():
+        for grad in rotated_grads:
+            grad.trace = trace()
 
     return rotated_grads

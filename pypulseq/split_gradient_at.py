@@ -7,6 +7,7 @@ import numpy as np
 from pypulseq import eps
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def split_gradient_at(
@@ -78,6 +79,12 @@ def split_gradient_at(
                 grad1.waveform = grad.waveform[:time_index]
                 grad2.t = grad.t[time_index:] - time_point
                 grad2.waveform = grad.waveform[time_index:]
+
+                if trace_enabled():
+                    t = trace()
+                    grad1.trace = t
+                    grad2.trace = t
+
                 return grad1, grad2
         else:
             # Extended trapezoid
@@ -146,5 +153,10 @@ def split_gradient_at(
         skip_check=True,
     )
     grad2.delay = time_point
+
+    if trace_enabled():
+        t = trace()
+        grad1.trace = t
+        grad2.trace = t
 
     return grad1, grad2

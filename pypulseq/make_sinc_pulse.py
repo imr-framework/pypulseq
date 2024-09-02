@@ -10,6 +10,7 @@ from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_sinc_pulse(
@@ -171,6 +172,9 @@ def make_sinc_pulse(
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, gzr, delay

@@ -6,6 +6,7 @@ import numpy as np
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def split_gradient(
@@ -88,6 +89,12 @@ def split_gradient(
             skip_check=True,
         )
         flat_top.delay = grad.delay + grad.rise_time
+
+        if trace_enabled():
+            t = trace()
+            ramp_down.trace = t
+            flat_top.trace = t
+            ramp_down.trace = t
 
         return ramp_up, flat_top, ramp_down
     elif grad.type == "grad":

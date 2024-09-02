@@ -13,6 +13,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_adiabatic_pulse(
@@ -267,6 +268,9 @@ def make_adiabatic_pulse(
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
     else:
         delay = make_delay(calc_duration(rf))
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, gzr, delay

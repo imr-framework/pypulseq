@@ -17,7 +17,7 @@ except ModuleNotFoundError:
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
-
+from pypulseq.utils.tracing import trace_enabled, trace
 
 def sigpy_n_seq(
     flip_angle: float,
@@ -170,6 +170,9 @@ def sigpy_n_seq(
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rfp.signal == -0.0)
     rfp.signal[negative_zero_indices] = 0
+
+    if trace_enabled():
+        rfp.trace = trace()
 
     if return_gz:
         return rfp, gz, gzr, pulse

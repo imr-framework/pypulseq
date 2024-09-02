@@ -6,6 +6,7 @@ import numpy as np
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_extended_trapezoid_area(
@@ -223,6 +224,10 @@ def make_extended_trapezoid_area(
         amplitudes = np.array([grad_start, grad_amp, grad_end])
 
     grad = make_extended_trapezoid(channel=channel, system=system, times=times, amplitudes=amplitudes)
+
+    # Overwrite trace
+    if trace_enabled():
+        grad.trace = trace()
 
     if not abs(grad.area - area) < 1e-8:
         raise ValueError(f"Could not find a solution for area={area}.")
