@@ -29,12 +29,12 @@ from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
+from pypulseq.check_timing import print_error_report
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
-from pypulseq.block_to_events import block_to_events
 
 major, minor, revision = __version__.split(".")
 
@@ -491,86 +491,25 @@ class Sequence:
         """
         return calc_pns(self, hardware, time_range=time_range, do_plots=do_plots)
 
-    def check_timing(self) -> Tuple[bool, List[str]]:
+    def check_timing(self, print_errors=False) -> Tuple[bool, List[SimpleNamespace]]:
         """
-        Checks timing of all blocks and objects in the sequence optionally returns the detailed error log. This
-        function also modifies the sequence object by adding the field "TotalDuration" to sequence definitions.
+        Checks timing of all blocks and objects in the sequence optionally returns the detailed error log.
 
         Returns
         -------
         is_ok : bool
             Boolean flag indicating timing errors.
-        error_report : str
+        error_report : List[SimpleNamespace]
             Error report in case of timing errors.
         """
-        error_report = []
-        is_ok = True
-        total_duration = 0
 
-        for block_counter in self.block_events:
-            block = self.get_block(block_counter)
-            events = block_to_events(block)
-            res, rep, duration = ext_check_timing(self.system, *events)
-            is_ok = is_ok and res
+        is_ok, error_report = ext_check_timing(self)
 
-            # Check the stored total block duration
-            if abs(duration - self.block_durations[block_counter]) > eps:
-                rep += "Inconsistency between the stored block duration and the duration of the block content"
-                is_ok = False
-                duration = self.block_durations[block_counter]
-
-            # Check RF dead times
-            if block.rf is not None:
-                if block.rf.delay - block.rf.dead_time < -eps:
-                    rep += (
-                        f"Delay of {block.rf.delay * 1e6} us is smaller than the RF dead time "
-                        f"{block.rf.dead_time * 1e6} us"
-                    )
-                    is_ok = False
-
-                if (
-                    block.rf.delay + block.rf.t[-1] + block.rf.ringdown_time - duration
-                    > eps
-                ):
-                    rep += (
-                        f"Time between the end of the RF pulse at {block.rf.delay + block.rf.t[-1]} and the end "
-                        f"of the block at {duration * 1e6} us is shorter than rf_ringdown_time"
-                    )
-                    is_ok = False
-
-            # Check ADC dead times
-            if block.adc is not None:
-                if block.adc.delay - self.system.adc_dead_time < -eps:
-                    rep += "adc.delay < system.adc_dead_time"
-                    is_ok = False
-
-                if (
-                    block.adc.delay
-                    + block.adc.num_samples * block.adc.dwell
-                    + self.system.adc_dead_time
-                    - duration
-                    > eps
-                ):
-                    rep += "adc: system.adc_dead_time (post-ADC) violation"
-                    is_ok = False
-
-            # Update report
-            if len(rep) != 0:
-                error_report.append(f"Event: {block_counter} - {rep}\n")
-            total_duration += duration
-
-        # Check if all the gradients in the last block are ramped down properly
-        if len(events) != 0 and all([isinstance(e, SimpleNamespace) for e in events]):
-            for e in range(len(events)):
-                if not isinstance(events[e], list) and events[e].type == "grad":
-                    if events[e].last != 0:
-                        error_report.append(
-                            f"Event: {list(self.block_events)[-1]} - Gradients do not ramp to 0 at the end of the sequence"
-                        )
-
-        self.set_definition("TotalDuration", total_duration)
+        if not is_ok and print_errors:
+            print_error_report(self, error_report)
 
         return is_ok, error_report
+
 
     def duration(self) -> Tuple[int, int, np.ndarray]:
         """
@@ -1826,7 +1765,13 @@ class Sequence:
 
         return all_waveforms
 
-    def write(self, name: str, create_signature: bool = True, remove_duplicates: bool = True) -> Union[str, None]:
+    def write(
+            self,
+            name: str,
+            create_signature: bool = True,
+            remove_duplicates: bool = True,
+            check_timing: bool = True
+    ) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
 
@@ -1847,6 +1792,13 @@ class Sequence:
         otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the
         deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
         """
+        if check_timing:
+            is_ok, error_report = self.check_timing()
+            if not is_ok:
+                warn(f'write(): {len(error_report)} timing errors found in the sequence', stacklevel=2)
+
+        self.set_definition("TotalDuration", sum(self.block_durations.values()))
+
         signature = write_seq(self, name, create_signature, remove_duplicates)
 
         if signature is not None:
