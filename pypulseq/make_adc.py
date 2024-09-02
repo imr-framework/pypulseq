@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import Union
+from warnings import warn
 
 from pypulseq.opts import Opts
 
@@ -65,6 +66,7 @@ def make_adc(
         adc.duration = dwell * num_samples
 
     if adc.dead_time > adc.delay:
+        warn(f'Specified ADC delay {adc.delay*1e6:.2f} us is less than the dead time {adc.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         adc.delay = adc.dead_time
 
     return adc

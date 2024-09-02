@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from typing import Tuple, Union
 from copy import copy
+from warnings import warn
 
 import numpy as np
 import math
@@ -217,6 +218,7 @@ def make_adiabatic_pulse(
     rf.delay = delay
     rf.use = use if use != "" else "inversion"
     if rf.dead_time > rf.delay:
+        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         rf.delay = rf.dead_time
 
     if return_gz:
