@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 from typing import Optional, Tuple, List
-from math import isclose, floor, ceil, lcm ,gcd, prod
+from math import isclose, floor, ceil ,gcd, prod
 import itertools
 import numpy as np
 from pypulseq.opts import Opts
@@ -141,7 +141,7 @@ def calc_adc_segments(
         raise ValueError(
             "'dwell' is not a multiple of system 'adc_raster_time'.")
 
-    i_common = lcm(i_gr, i_dwell)
+    i_common = _lcm(i_gr, i_dwell)
     min_samples_segment = int(i_common/i_dwell)  # lcm(a,b)/b is always int
 
     # Siemens: Number of Samples should be divisible by a divisor
@@ -197,7 +197,6 @@ def calc_adc_segments(
     return int(num_segments), int(num_samples_seg)
     
 
-
 def _prime_factors(n: int) -> List[int]:
     """Compute the prime factors of given integer n."""
     if n == 1:
@@ -220,3 +219,8 @@ def _prime_factors(n: int) -> List[int]:
             factors.append(n)
         
         return factors
+    
+def _lcm(a, b):
+    """Calculates the least common multiple of a and b."""
+    return (a*b)//gcd(a, b)
+    
