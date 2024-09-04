@@ -35,9 +35,6 @@ Homepage = "https://github.com/imr-framework/pypulseq"
 Issues = "https://github.com/imr-framework/pypulseq/issues"
 Documentation = "https://pypulseq.readthedocs.io/en/latest/"
 
-[tool.setuptools.packages.find]
-where = ["pypulseq"]
-
 [tool.setuptools.package-data]
 SAR = ["QGlobal.mat"]
 
