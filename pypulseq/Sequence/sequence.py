@@ -35,7 +35,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace_enabled, trace, format_trace
 
 major, minor, revision = __version__.split(".")
 
@@ -1802,15 +1802,39 @@ class Sequence:
         otherwise it returns None. Note that, if remove_duplicates is True, signature belongs to the
         deduplicated sequences signature, and not the Sequence that is stored in the Sequence object.
         """
+        # Check if there are any timing errors in the sequence
         if check_timing:
             is_ok, error_report = self.check_timing()
             if not is_ok:
                 warn(f'write(): {len(error_report)} timing errors found in the sequence', stacklevel=2)
 
+        # Calculate sequence duration and stored it in the TotalDuration definition
         self.set_definition("TotalDuration", sum(self.block_durations.values()))
 
+        # Check whether all gradients in the last block are ramped down properly
+        last_block_id = next(reversed(self.block_events))
+        last_block = self.get_block(last_block_id)
+        for channel, event in zip(('x', 'y', 'z'),
+                                  (last_block.gx, last_block.gy, last_block.gz)):
+            if (event is not None and
+                    event.type == 'grad' and
+                    abs(event.last) > self.system.max_slew * self.system.grad_raster_time):
+                warn_msg = f'write(): Gradient on channel {channel} in last sequence block does not ramp down to 0'
+
+                if trace_enabled():
+                    trace = self.block_trace.get(last_block_id, None)
+
+                    if hasattr(trace, 'block'):
+                        warn_msg += '\nLast block defined here:\n' + format_trace(trace.block)
+                    if hasattr(trace, 'g' + channel):
+                        warn_msg += f'\n`g{channel}` defined here:\n' + format_trace(getattr(trace, 'g' + channel))
+
+                warn(warn_msg, stacklevel=2)
+
+        # Write the sequence
         signature = write_seq(self, name, create_signature, remove_duplicates)
 
+        # Return the sequence md5 signature if requested
         if signature is not None:
             self.signature_type = "md5"
             self.signature_file = "text"
