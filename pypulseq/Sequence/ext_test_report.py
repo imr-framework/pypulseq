@@ -68,7 +68,8 @@ def ext_test_report(self) -> str:
             TR = t_ex_tmp1[0] - t_ex_tmp[-1]
 
     # Check sequence dimensionality and spatial resolution
-    k_extent = np.max(np.abs(k_traj_adc), axis=1)
+    # Small error made for non-symmetric k-space, e.g. if you sample from -32 to +31 with 64 samples
+    k_extent = 0.5 * (np.max(k_traj_adc, axis=1) -  np.min(k_traj_adc, axis=1)) 
     k_scale = np.max(k_extent)
     is_cartesian = False
     if k_scale != 0:
