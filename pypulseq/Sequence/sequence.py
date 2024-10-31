@@ -11,7 +11,8 @@ try:
     from typing import Self
 except ImportError:
     from typing import TypeVar
-    Self = TypeVar('Self', bound='Sequence')
+
+    Self = TypeVar("Self", bound="Sequence")
 
 import matplotlib as mpl
 import numpy as np
@@ -60,43 +61,31 @@ class Sequence:
         # =========
         # EVENT LIBRARIES
         # =========
-        self.adc_library = EventLibrary()  # Library of ADC events
-        self.delay_library = EventLibrary()  # Library of delay events
-        # Library of extension events. Extension events form single-linked zero-terminated lists
+        self.adc_library = EventLibrary()
+        self.delay_library = EventLibrary()
         self.extensions_library = EventLibrary()
-        self.grad_library = EventLibrary()  # Library of gradient events
-        self.label_inc_library = (
-            EventLibrary()
-        )  # Library of Label(inc) events (reference from the extensions library)
-        self.label_set_library = (
-            EventLibrary()
-        )  # Library of Label(set) events (reference from the extensions library)
-        self.rf_library = EventLibrary()  # Library of RF events
-        self.shape_library = EventLibrary(numpy_data=True)  # Library of compressed shapes
-        self.trigger_library = EventLibrary()  # Library of trigger events
+        self.grad_library = EventLibrary()
+        self.label_inc_library = EventLibrary()
+        self.label_set_library = EventLibrary()
+        self.rf_library = EventLibrary()
+        self.shape_library = EventLibrary(numpy_data=True)
+        self.trigger_library = EventLibrary()
 
         # =========
         # OTHER
         # =========
         self.system = system
 
-        self.block_events = OrderedDict()  # Event table
+        self.block_events = OrderedDict()
         self.block_trace = OrderedDict()
         self.use_block_cache = use_block_cache
-        self.block_cache = dict()  # Block cache
+        self.block_cache = dict()
         self.next_free_block_ID = 1
+        self.definitions = dict()
 
-        self.definitions = dict()  # Optional sequence definitions
-
-        self.rf_raster_time = (
-            self.system.rf_raster_time
-        )  # RF raster time (system dependent)
-        self.grad_raster_time = (
-            self.system.grad_raster_time
-        )  # Gradient raster time (system dependent)
-        self.adc_raster_time = (
-            self.system.adc_raster_time
-        )  # ADC raster time (system dependent)
+        self.rf_raster_time = self.system.rf_raster_time
+        self.grad_raster_time = self.system.grad_raster_time
+        self.adc_raster_time = self.system.adc_raster_time
         self.block_duration_raster = self.system.block_duration_raster
         self.set_definition("AdcRasterTime", self.adc_raster_time)
         self.set_definition("BlockDurationRaster", self.block_duration_raster)
@@ -106,9 +95,9 @@ class Sequence:
         self.signature_file = ""
         self.signature_value = ""
 
-        self.block_durations = dict()  # Cache of block durations
-        self.extension_numeric_idx = []  # numeric IDs of the used extensions
-        self.extension_string_idx = []  # string IDs of the used extensions
+        self.block_durations = dict()
+        self.extension_numeric_idx = []
+        self.extension_string_idx = []
 
     def __str__(self) -> str:
         s = "Sequence:"
@@ -117,17 +106,13 @@ class Sequence:
         s += "\ngrad_library: " + str(self.grad_library)
         s += "\nadc_library: " + str(self.adc_library)
         s += "\ndelay_library: " + str(self.delay_library)
-        s += "\nextensions_library: " + str(
-            self.extensions_library
-        )  # inserted for trigger support by mveldmann
+        s += "\nextensions_library: " + str(self.extensions_library)
         s += "\nrf_raster_time: " + str(self.rf_raster_time)
         s += "\ngrad_raster_time: " + str(self.grad_raster_time)
         s += "\nblock_events: " + str(len(self.block_events))
         return s
 
-    def adc_times(
-        self, time_range: List[float] = None
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def adc_times(self, time_range: Union[List[float], None] = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Return time points of ADC sampling points.
 
@@ -144,13 +129,13 @@ class Sequence:
         fp_adc = []
 
         curr_dur = 0
-        if time_range == None:
+        if time_range is None:
             blocks = self.block_events
         else:
             if len(time_range) != 2:
-                raise ValueError('Time range must be list of two elements')
+                raise ValueError("Time range must be list of two elements")
             if time_range[0] > time_range[1]:
-                raise ValueError('End time of time_range must be after begin time')
+                raise ValueError("End time of time_range must be after begin time")
 
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
@@ -158,19 +143,15 @@ class Sequence:
             # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
             # Search block begin times for end of time range
-            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            end_block = np.searchsorted(t - bd, time_range[1], side="right")
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
 
         for block_counter in blocks:
             block = self.get_block(block_counter)
 
-            if block.adc is not None:  # ADC
-                t_adc.append(
-                    (np.arange(block.adc.num_samples) + 0.5) * block.adc.dwell
-                    + block.adc.delay
-                    + curr_dur
-                )
+            if block.adc is not None:
+                t_adc.append((np.arange(block.adc.num_samples) + 0.5) * block.adc.dwell + block.adc.delay + curr_dur)
                 fp_adc.append([block.adc.freq_offset, block.adc.phase_offset])
 
             curr_dur += self.block_durations[block_counter]
@@ -178,7 +159,7 @@ class Sequence:
         if t_adc == []:
             # If there are no ADCs, make sure the output is the right shape
             t_adc = np.zeros(0)
-            fp_adc = np.zeros((0,2))
+            fp_adc = np.zeros((0, 2))
         else:
             t_adc = np.concatenate(t_adc)
             fp_adc = np.array(fp_adc)
@@ -208,14 +189,15 @@ class Sequence:
         self.next_free_block_ID += 1
 
     def calculate_gradient_spectrum(
-            self, max_frequency: float = 2000,
-            window_width: float = 0.05,
-            frequency_oversampling: float = 3,
-            time_range: List[float] = None,
-            plot: bool = True,
-            combine_mode: str = 'max',
-            use_derivative: bool = False,
-            acoustic_resonances: List[dict] = []
+        self,
+        max_frequency: float = 2000,
+        window_width: float = 0.05,
+        frequency_oversampling: float = 3,
+        time_range: Union[List[float], None] = None,
+        plot: bool = True,
+        combine_mode: str = "max",
+        use_derivative: bool = False,
+        acoustic_resonances: List[dict] = [],
     ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculates the gradient spectrum of the sequence. Returns a spectrogram
@@ -266,20 +248,23 @@ class Sequence:
             Time axis of the spectrograms (only relevant when combine_mode == 'none').
 
         """
-        return calculate_gradient_spectrum(self, max_frequency=max_frequency,
-                                           window_width=window_width,
-                                           frequency_oversampling=frequency_oversampling,
-                                           time_range=time_range,
-                                           plot=plot,
-                                           combine_mode=combine_mode,
-                                           use_derivative=use_derivative,
-                                           acoustic_resonances=acoustic_resonances)
+        return calculate_gradient_spectrum(
+            self,
+            max_frequency=max_frequency,
+            window_width=window_width,
+            frequency_oversampling=frequency_oversampling,
+            time_range=time_range,
+            plot=plot,
+            combine_mode=combine_mode,
+            use_derivative=use_derivative,
+            acoustic_resonances=acoustic_resonances,
+        )
 
     def calculate_kspace(
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
-        gradient_offset: Union[float, List[float], np.ndarray] = 0
-    ) -> Tuple[np.array, np.array, List[float], List[float], np.array]:
+        gradient_offset: Union[float, List[float], np.ndarray] = 0,
+    ) -> Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray]:
         """
         Calculates the k-space trajectory of the entire pulse sequence.
 
@@ -304,9 +289,7 @@ class Sequence:
             Sampling timepoints.
         """
         if np.any(np.abs(trajectory_delay) > 100e-6):
-            raise Warning(
-                f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high"
-            )
+            raise Warning(f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high")
 
         total_duration = sum(self.block_durations.values())
 
@@ -317,8 +300,8 @@ class Sequence:
         gw_pp = self.get_gradients(trajectory_delay, gradient_offset)
         ng = len(gw_pp)
 
-        # Calculate slice positions. For now we entirely rely on the excitation -- ignoring complicated interleaved
-        # refocused sequences
+        # Calculate slice positions.
+        # For now we entirely rely on the excitation -- ignoring complicated interleaved refocused sequences
         if len(t_excitation) > 0:
             # Position in x, y, z
             slice_pos = np.zeros((ng, len(t_excitation)))
@@ -335,7 +318,6 @@ class Sequence:
         else:
             slice_pos = []
 
-        # =========
         # Integrate waveforms as PPs to produce gradient moments
         gm_pp = []
         tc = []
@@ -346,7 +328,7 @@ class Sequence:
 
             gm_pp.append(gw_pp[i].antiderivative())
             tc.append(gm_pp[i].x)
-            # "Sample" ramps for display purposes otherwise piecewise-linear display (plot) fails
+            # "Sample" ramps for display purposes.  Otherwise piecewise-linear display (plot) fails
             ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
 
             # Do nothing if there are no ramps
@@ -354,13 +336,13 @@ class Sequence:
                 continue
 
             starts = np.int64(np.floor((gm_pp[i].x[ii] + eps) / self.grad_raster_time))
-            ends = np.int64(np.ceil((gm_pp[i].x[ii+1] - eps) / self.grad_raster_time))
+            ends = np.int64(np.ceil((gm_pp[i].x[ii + 1] - eps) / self.grad_raster_time))
 
             # Create all ranges starts[0]:ends[0], starts[1]:ends[1], etc.
-            lengths = ends-starts+1
+            lengths = ends - starts + 1
             inds = np.ones((lengths).sum())
             # Calculate output index where each range will start
-            start_inds = np.cumsum(np.concatenate(([0],lengths[:-1])))
+            start_inds = np.cumsum(np.concatenate(([0], lengths[:-1])))
             # Create element-wise differences that will cumsum into
             # the final indices: [starts[0], 1, 1, starts[1]-starts[0]-lengths[0]+1, 1, etc.]
             inds[start_inds] = np.concatenate(([starts[0]], np.diff(starts) - lengths[:-1] + 1))
@@ -368,7 +350,6 @@ class Sequence:
             tc.append(np.cumsum(inds) * self.grad_raster_time)
         if tc != []:
             tc = np.concatenate(tc)
-
 
         t_acc = 1e-10  # Temporal accuracy
         t_acc_inv = 1 / t_acc
@@ -411,15 +392,17 @@ class Sequence:
             if gw_pp[i] is None:
                 continue
 
-            it = np.where(np.logical_and(
-                t_ktraj >= t_acc * round(t_acc_inv * gm_pp[i].x[0]),
-                t_ktraj <= t_acc * round(t_acc_inv * gm_pp[i].x[-1]),
-            ))[0]
+            it = np.where(
+                np.logical_and(
+                    t_ktraj >= t_acc * round(t_acc_inv * gm_pp[i].x[0]),
+                    t_ktraj <= t_acc * round(t_acc_inv * gm_pp[i].x[-1]),
+                )
+            )[0]
             k_traj[i, it] = gm_pp[i](t_ktraj[it])
             if t_ktraj[it[-1]] < t_ktraj[-1]:
                 k_traj[i, it[-1] + 1 :] = k_traj[i, it[-1]]
 
-        # Convert gradient moments to kspace
+        # Convert gradient moments to k-space positions
         dk = -k_traj[:, 0]
         for i in range(len(i_periods) - 1):
             i_period = i_periods[i]
@@ -435,17 +418,13 @@ class Sequence:
                     k_traj[:, i_period - 1] = np.nan
                 # -1 on len(i_excitation) for 0-based indexing
                 ii_next_excitation = min(len(i_excitation) - 1, ii_next_excitation + 1)
-            elif (
-                ii_next_refocusing >= 0 and i_refocusing[ii_next_refocusing] == i_period
-            ):
+            elif ii_next_refocusing >= 0 and i_refocusing[ii_next_refocusing] == i_period:
                 # dk = -k_traj[:, i_period]
                 dk = -2 * k_traj[:, i_period] - dk
                 # -1 on len(i_excitation) for 0-based indexing
                 ii_next_refocusing = min(len(i_refocusing) - 1, ii_next_refocusing + 1)
 
-            k_traj[:, i_period:i_period_end] = (
-                k_traj[:, i_period:i_period_end] + dk[:, None]
-            )
+            k_traj[:, i_period:i_period_end] = k_traj[:, i_period:i_period_end] + dk[:, None]
 
         k_traj[:, i_period_end] = k_traj[:, i_period_end] + dk
         k_traj_adc = k_traj[:, i_adc]
@@ -453,19 +432,23 @@ class Sequence:
         return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
 
     def calculate_kspacePP(
-            self,
-            trajectory_delay: Union[float, List[float], np.ndarray] = 0,
-            gradient_offset: Union[float, List[float], np.ndarray] = 0
-        ) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
-        warn('Sequence.calculate_kspacePP has been deprecated, use calculate_kspace instead', DeprecationWarning, stacklevel=2)
+        self,
+        trajectory_delay: Union[float, List[float], np.ndarray] = 0,
+        gradient_offset: Union[float, List[float], np.ndarray] = 0,
+    ) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
+        warn(
+            "Sequence.calculate_kspacePP has been deprecated, use calculate_kspace instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.calculate_kspace(trajectory_delay, gradient_offset)
 
     def calculate_pns(
-            self,
-            hardware: SimpleNamespace,
-            time_range: List[float] = None,
-            do_plots: bool = True
-            ) -> Tuple[bool, np.array, np.ndarray, np.array]:
+        self,
+        hardware: SimpleNamespace,
+        time_range: Union[List[float], None] = None,
+        do_plots: bool = True,
+    ) -> Tuple[bool, np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
         See http://github.com/filip-szczepankiewicz/safe_pns_prediction
@@ -516,7 +499,6 @@ class Sequence:
 
         return is_ok, error_report
 
-
     def duration(self) -> Tuple[int, int, np.ndarray]:
         """
         Returns the total duration of this sequence, and the total count of blocks and events.
@@ -539,11 +521,7 @@ class Sequence:
 
         return duration, num_blocks, event_count
 
-    def evaluate_labels(
-            self,
-            init: dict = None,
-            evolution: str = 'none'
-            ) -> dict:
+    def evaluate_labels(self, init: Union[dict, None] = None, evolution: str = "none") -> dict:
         """
         Evaluate label values of the entire sequence.
 
@@ -597,7 +575,7 @@ class Sequence:
             if block.label is not None:
                 # Current block has labels
                 for lab in block.label.values():
-                    if lab.type == 'labelinc':
+                    if lab.type == "labelinc":
                         # Increment label
                         if lab.label not in labels:
                             labels[lab.label] = 0
@@ -607,10 +585,10 @@ class Sequence:
                         # Set label
                         labels[lab.label] = lab.value
 
-                if evolution == 'label':
+                if evolution == "label":
                     label_evolution.append(dict(labels))
 
-            if evolution == 'blocks' or (evolution == 'adc' and block.adc is not None):
+            if evolution == "blocks" or (evolution == "adc" and block.adc is not None):
                 label_evolution.append(dict(labels))
 
         # Convert evolutions into label dictionary
@@ -727,17 +705,17 @@ class Sequence:
         if extension_id in self.extension_numeric_idx:
             num = self.extension_numeric_idx.index(extension_id)
         else:
-            raise ValueError(
-                f"Extension for the given ID - {extension_id} - is unknown."
-            )
+            raise ValueError(f"Extension for the given ID - {extension_id} - is unknown.")
 
         extension_str = self.extension_string_idx[num]
         return extension_str
 
-    def get_gradients(self,
+    def get_gradients(
+        self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
         gradient_offset: Union[float, List[float], np.ndarray] = 0,
-        time_range: List[float] = None) -> List[PPoly]:
+        time_range: Union[List[float], None] = None,
+    ) -> List[PPoly]:
         """
         Get all gradient waveforms of the sequence in a piecewise-polynomial
         format (scipy PPoly). Gradient values can be accessed easily at one or
@@ -759,9 +737,7 @@ class Sequence:
             expressed as scipy PPoly objects.
         """
         if np.any(np.abs(trajectory_delay) > 100e-6):
-            raise Warning(
-                f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high"
-            )
+            raise Warning(f"Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high")
 
         total_duration = sum(self.block_durations.values())
 
@@ -772,14 +748,14 @@ class Sequence:
         if isinstance(trajectory_delay, (int, float)):
             gradient_delays = [trajectory_delay] * ng
         else:
-            assert(len(trajectory_delay) == ng)  # Need to have same number of gradient channels
+            assert len(trajectory_delay) == ng  # Need to have same number of gradient channels
             gradient_delays = [trajectory_delay] * ng
 
         # Gradient offset handling
         if isinstance(gradient_offset, (int, float)):
             gradient_offset = [gradient_offset] * ng
         else:
-            assert (len(gradient_offset) == ng)  # Need to have same number of gradient channels
+            assert len(gradient_offset) == ng  # Need to have same number of gradient channels
 
         # Convert data to piecewise polynomials
         gw_pp = []
@@ -801,17 +777,16 @@ class Sequence:
                 raise Warning("Not all elements of the generated waveform are finite.")
 
             teps = 1e-12
-            _temp1 = np.array(([gw[0, 0] - 2*teps, gw[0, 0] - teps], [0, 0]))
-            _temp2 = np.array(([gw[0, -1] + teps, gw[0, -1] + 2*teps], [0, 0]))
+            _temp1 = np.array(([gw[0, 0] - 2 * teps, gw[0, 0] - teps], [0, 0]))
+            _temp2 = np.array(([gw[0, -1] + teps, gw[0, -1] + 2 * teps], [0, 0]))
             gw = np.hstack((_temp1, gw, _temp2))
 
             if np.abs(gradient_offset[j]) > eps:
-                gw[1,:] += gradient_offset[j]
+                gw[1, :] += gradient_offset[j]
 
             gw[1][gw[1] == -0.0] = 0.0
 
-            gw_pp.append(PPoly(np.stack((np.diff(gw[1]) / np.diff(gw[0]),
-                                         gw[1][:-1])), gw[0], extrapolate=True))
+            gw_pp.append(PPoly(np.stack((np.diff(gw[1]) / np.diff(gw[0]), gw[1][:-1])), gw[0], extrapolate=True))
         return gw_pp
 
     def mod_grad_axis(self, axis: str, modifier: int) -> None:
@@ -834,9 +809,7 @@ class Sequence:
             If same gradient event is used on multiple axes.
         """
         if axis not in ["x", "y", "z"]:
-            raise ValueError(
-                f"Invalid axis. Must be one of 'x', 'y','z'. Passed: {axis}"
-            )
+            raise ValueError(f"Invalid axis. Must be one of 'x', 'y','z'. Passed: {axis}")
 
         channel_num = ["x", "y", "z"].index(axis)
         other_channels = [0, 1, 2]
@@ -850,16 +823,11 @@ class Sequence:
         selected_events = selected_events[selected_events != 0]
         other_events = np.unique(all_grad_events[:, other_channels])
         if len(np.intersect1d(selected_events, other_events)) > 0:
-            raise RuntimeError(
-                "mod_grad_axis does not yet support the same gradient event used on multiple axes."
-            )
+            raise RuntimeError("mod_grad_axis does not yet support the same gradient event used on multiple axes.")
 
         for i in range(len(selected_events)):
             self.grad_library.data[selected_events[i]][0] *= modifier
-            if (
-                self.grad_library.type[selected_events[i]] == "g"
-                and self.grad_library.lengths[selected_events[i]] == 5
-            ):
+            if self.grad_library.type[selected_events[i]] == "g" and self.grad_library.lengths[selected_events[i]] == 5:
                 # Need to update first and last fields
                 self.grad_library.data[selected_events[i]][3] *= modifier
                 self.grad_library.data[selected_events[i]][4] *= modifier
@@ -872,7 +840,7 @@ class Sequence:
         time_range=(0, np.inf),
         time_disp: str = "s",
         grad_disp: str = "kHz/m",
-        plot_now: bool = True
+        plot_now: bool = True,
     ) -> None:
         """
         Plot `Sequence`.
@@ -904,19 +872,13 @@ class Sequence:
         valid_time_units = ["s", "ms", "us"]
         valid_grad_units = ["kHz/m", "mT/m"]
         valid_labels = get_supported_labels()
-        if (
-            not all([isinstance(x, (int, float)) for x in time_range])
-            or len(time_range) != 2
-        ):
+        if not all([isinstance(x, (int, float)) for x in time_range]) or len(time_range) != 2:
             raise ValueError("Invalid time range")
         if time_disp not in valid_time_units:
             raise ValueError("Unsupported time unit")
 
         if grad_disp not in valid_grad_units:
-            raise ValueError(
-                "Unsupported gradient unit. Supported gradient units are: "
-                + str(valid_grad_units)
-            )
+            raise ValueError("Unsupported gradient unit. Supported gradient units are: " + str(valid_grad_units))
 
         fig1, fig2 = plt.figure(1), plt.figure(2)
         sp11 = fig1.add_subplot(311)
@@ -951,12 +913,9 @@ class Sequence:
             cycler = mpl.cycler(color=label_colors_to_plot)
             sp11.set_prop_cycle(cycler)
 
-
         # Block timings
         block_edges = np.cumsum([0] + [x[1] for x in sorted(self.block_durations.items())])
-        block_edges_in_range = block_edges[
-            (block_edges >= time_range[0]) * (block_edges <= time_range[1])
-        ]
+        block_edges_in_range = block_edges[(block_edges >= time_range[0]) * (block_edges <= time_range[1])]
         if show_blocks:
             for sp in [sp11, sp12, sp13, *fig2_subplots]:
                 sp.set_xticks(t_factor * block_edges_in_range)
@@ -964,8 +923,7 @@ class Sequence:
 
         for block_counter in self.block_events:
             block = self.get_block(block_counter)
-            is_valid = (time_range[0] <= t0 + self.block_durations[block_counter]
-                        and t0 <= time_range[1])
+            is_valid = time_range[0] <= t0 + self.block_durations[block_counter] and t0 <= time_range[1]
             if is_valid:
                 if getattr(block, "label", None) is not None:
                     for i in range(len(block.label)):
@@ -983,10 +941,7 @@ class Sequence:
                     sp11.plot(t_factor * (t0 + t), np.zeros(len(t)), "rx")
                     sp13.plot(
                         t_factor * (t0 + t),
-                        np.angle(
-                            np.exp(1j * adc.phase_offset)
-                            * np.exp(1j * 2 * np.pi * t * adc.freq_offset)
-                        ),
+                        np.angle(np.exp(1j * adc.phase_offset) * np.exp(1j * 2 * np.pi * t * adc.freq_offset)),
                         "b.",
                         markersize=0.25,
                     )
@@ -998,10 +953,7 @@ class Sequence:
                         _t = [t_factor * t] * len(lbl_vals)
                         # Plot each label individually to retrieve each corresponding Line2D object
                         p = itertools.chain.from_iterable(
-                            [
-                                sp11.plot(__t, _lbl_vals, ".")
-                                for __t, _lbl_vals in zip(_t, lbl_vals)
-                            ]
+                            [sp11.plot(__t, _lbl_vals, ".") for __t, _lbl_vals in zip(_t, lbl_vals)]
                         )
                         if len(label_legend_to_plot) != 0:
                             sp11.legend(p, label_legend_to_plot, loc="upper left")
@@ -1025,9 +977,7 @@ class Sequence:
                     sp13.plot(
                         t_factor * (t0 + time + rf.delay),
                         np.angle(
-                            signal
-                            * np.exp(1j * rf.phase_offset)
-                            * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                            signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
                         ),
                         t_factor * (t0 + tc + rf.delay),
                         np.angle(
@@ -1046,20 +996,18 @@ class Sequence:
                             # We extend the shape by adding the first and the last points in an effort of making the
                             # display a bit less confusing...
                             time = grad.delay + np.array([0, *grad.tt, grad.shape_dur])
-                            waveform = g_factor * np.array(
-                                (grad.first, *grad.waveform, grad.last)
-                            )
+                            waveform = g_factor * np.array((grad.first, *grad.waveform, grad.last))
                         else:
-                            time = np.array(cumsum(
+                            time = np.array(
+                                cumsum(
                                     0,
                                     grad.delay,
                                     grad.rise_time,
                                     grad.flat_time,
                                     grad.fall_time,
-                            ))
-                            waveform = (
-                                g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
+                                )
                             )
+                            waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
             t0 += self.block_durations[block_counter]
 
@@ -1113,9 +1061,7 @@ class Sequence:
     def register_adc_event(self, event: EventLibrary) -> int:
         return block.register_adc_event(self, event)
 
-    def register_grad_event(
-        self, event: SimpleNamespace
-    ) -> Union[int, Tuple[int, int]]:
+    def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, int]]:
         return block.register_grad_event(self, event)
 
     def register_label_event(self, event: SimpleNamespace) -> int:
@@ -1155,7 +1101,7 @@ class Sequence:
 
         # Remap shape IDs of arbitrary gradient events
         for grad_id in seq_copy.grad_library.data:
-            if seq_copy.grad_library.type[grad_id] == 'g':
+            if seq_copy.grad_library.type[grad_id] == "g":
                 data = seq_copy.grad_library.data[grad_id]
                 new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
                 if data != new_data:
@@ -1193,7 +1139,6 @@ class Sequence:
 
         return seq_copy
 
-
     def rf_from_lib_data(self, lib_data: list, use: str = str()) -> SimpleNamespace:
         """
         Construct RF object from `lib_data`.
@@ -1230,9 +1175,7 @@ class Sequence:
             compressed.num_samples = shape_data[0]
             compressed.data = shape_data[1:]
             rf.t = decompress_shape(compressed) * self.rf_raster_time
-            rf.shape_dur = (
-                math.ceil((rf.t[-1] - eps) / self.rf_raster_time) * self.rf_raster_time
-            )
+            rf.shape_dur = math.ceil((rf.t[-1] - eps) / self.rf_raster_time) * self.rf_raster_time
         else:  # Generate default time raster on the fly
             rf.t = (np.arange(1, len(rf.signal) + 1) - 0.5) * self.rf_raster_time
             rf.shape_dur = len(rf.signal) * self.rf_raster_time
@@ -1257,7 +1200,7 @@ class Sequence:
         return rf
 
     def rf_times(
-        self, time_range: List[float] = None
+        self, time_range: Union[List[float], None] = None
     ) -> Tuple[List[float], np.ndarray, List[float], np.ndarray, np.ndarray]:
         """
         Return time points of excitations and refocusings.
@@ -1281,13 +1224,13 @@ class Sequence:
         fp_refocusing = []
 
         curr_dur = 0
-        if time_range == None:
+        if time_range is None:
             blocks = self.block_events
         else:
             if len(time_range) != 2:
-                raise ValueError('Time range must be list of two elements')
+                raise ValueError("Time range must be list of two elements")
             if time_range[0] > time_range[1]:
-                raise ValueError('End time of time_range must be after begin time')
+                raise ValueError("End time of time_range must be after begin time")
 
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
@@ -1295,14 +1238,14 @@ class Sequence:
             # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
             # Search block begin times for end of time range
-            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            end_block = np.searchsorted(t - bd, time_range[1], side="right")
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
 
         for block_counter in blocks:
             block = self.get_block(block_counter)
 
-            if block.rf is not None:  # RF
+            if block.rf is not None:
                 rf = block.rf
                 t = rf.delay + calc_rf_center(rf)[0]
                 if not hasattr(rf, "use") or block.rf.use in [
@@ -1317,16 +1260,15 @@ class Sequence:
 
             curr_dur += self.block_durations[block_counter]
 
-
         if len(t_excitation) != 0:
             fp_excitation = np.array(fp_excitation).T
         else:
-            fp_excitation = np.empty((2,0))
+            fp_excitation = np.empty((2, 0))
 
         if len(t_refocusing) != 0:
             fp_refocusing = np.array(fp_refocusing).T
         else:
-            fp_refocusing = np.empty((2,0))
+            fp_refocusing = np.empty((2, 0))
 
         return t_excitation, fp_excitation, t_refocusing, fp_refocusing
 
@@ -1356,9 +1298,7 @@ class Sequence:
         if block_index >= self.next_free_block_ID:
             self.next_free_block_ID = block_index + 1
 
-    def set_definition(
-        self, key: str, value: Union[float, int, list, np.ndarray, str, tuple]
-    ) -> None:
+    def set_definition(self, key: str, value: Union[float, int, list, np.ndarray, str, tuple]) -> None:
         """
         Modify a custom definition of the sequence. Set the user definition 'key' to value 'value'. If the definition
         does not exist it will be created.
@@ -1396,10 +1336,7 @@ class Sequence:
         ValueError
             If given numeric or string extension ID is not unique.
         """
-        if (
-            extension_str in self.extension_string_idx
-            or extension_id in self.extension_numeric_idx
-        ):
+        if extension_str in self.extension_string_idx or extension_id in self.extension_numeric_idx:
             raise ValueError("Numeric or string ID is not unique")
 
         self.extension_numeric_idx.append(extension_id)
@@ -1412,10 +1349,7 @@ class Sequence:
         """
         return ext_test_report(self)
 
-
-    def waveforms(
-        self, append_RF: bool = False, time_range: List[float] = None
-    ) -> Tuple[np.ndarray]:
+    def waveforms(self, append_RF: bool = False, time_range: Union[List[float], None] = None) -> Tuple[np.ndarray]:
         """
         Decompress the entire gradient waveform. Returns gradient waveforms as a tuple of `np.ndarray` of
         `gradient_axes` (typically 3) dimensions. Each `np.ndarray` contains timepoints and the corresponding
@@ -1442,13 +1376,13 @@ class Sequence:
         out_len = np.zeros(shape_channels)  # Last 'channel' is RF
 
         curr_dur = 0
-        if time_range == None:
+        if time_range is None:
             blocks = self.block_events
         else:
             if len(time_range) != 2:
-                raise ValueError('Time range must be list of two elements')
+                raise ValueError("Time range must be list of two elements")
             if time_range[0] > time_range[1]:
-                raise ValueError('End time of time_range must be after begin time')
+                raise ValueError("End time of time_range must be after begin time")
 
             # Calculate end times of each block
             bd = np.array(list(self.block_durations.values()))
@@ -1456,7 +1390,7 @@ class Sequence:
             # Search block end times for start of time range
             begin_block = np.searchsorted(t, time_range[0])
             # Search block begin times for end of time range
-            end_block = np.searchsorted(t - bd, time_range[1], side='right')
+            end_block = np.searchsorted(t - bd, time_range[1], side="right")
             blocks = list(self.block_durations.keys())[begin_block:end_block]
             curr_dur = t[begin_block] - bd[begin_block]
 
@@ -1469,9 +1403,7 @@ class Sequence:
                     if grad.type == "grad":
                         # Check if we have an extended trapezoid or an arbitrary gradient on a regular raster
                         tt_rast = grad.tt / self.grad_raster_time + 0.5
-                        if np.all(
-                            np.abs(tt_rast - np.arange(1, len(tt_rast) + 1)) < eps
-                        ):  # Arbitrary gradient
+                        if np.all(np.abs(tt_rast - np.arange(1, len(tt_rast) + 1)) < eps):  # Arbitrary gradient
                             """
                             Arbitrary gradient: restore & recompress shape - if we had a trapezoid converted to shape we
                             have to find the "corners" and we can eliminate internal samples on the straight segments
@@ -1482,31 +1414,37 @@ class Sequence:
                             # TODO: Implement restoreAdditionalShapeSamples
                             #       https://github.com/pulseq/pulseq/blob/master/matlab/%2Bmr/restoreAdditionalShapeSamples.m
 
-                            out_len[j] += len(grad.tt)+2
-                            shape_pieces[j].append(np.array(
-                                [
-                                    curr_dur + grad.delay + np.concatenate(([0], grad.tt, [grad.tt[-1] + self.grad_raster_time/2])),
-                                    np.concatenate(([grad.first], grad.waveform, [grad.last]))
-                                ]
-                            ))
+                            out_len[j] += len(grad.tt) + 2
+                            shape_pieces[j].append(
+                                np.array(
+                                    [
+                                        curr_dur
+                                        + grad.delay
+                                        + np.concatenate(([0], grad.tt, [grad.tt[-1] + self.grad_raster_time / 2])),
+                                        np.concatenate(([grad.first], grad.waveform, [grad.last])),
+                                    ]
+                                )
+                            )
                         else:  # Extended trapezoid
                             out_len[j] += len(grad.tt)
-                            shape_pieces[j].append(np.array(
-                                [
-                                    curr_dur + grad.delay + grad.tt,
-                                    grad.waveform,
-                                ]
-                            ))
+                            shape_pieces[j].append(
+                                np.array(
+                                    [
+                                        curr_dur + grad.delay + grad.tt,
+                                        grad.waveform,
+                                    ]
+                                )
+                            )
                     else:
                         if abs(grad.flat_time) > eps:
                             out_len[j] += 4
                             _temp = np.vstack(
                                 (
                                     cumsum(
-                                            curr_dur + grad.delay,
-                                            grad.rise_time,
-                                            grad.flat_time,
-                                            grad.fall_time,
+                                        curr_dur + grad.delay,
+                                        grad.rise_time,
+                                        grad.flat_time,
+                                        grad.fall_time,
                                     ),
                                     grad.amplitude * np.array([0, 1, 1, 0]),
                                 )
@@ -1524,7 +1462,11 @@ class Sequence:
                                 shape_pieces[j].append(_temp)
                             else:
                                 if abs(grad.amplitude) > eps:
-                                    print('Warning: "empty" gradient with non-zero magnitude detected in block {}'.format(block_counter))
+                                    print(
+                                        'Warning: "empty" gradient with non-zero magnitude detected in block {}'.format(
+                                            block_counter
+                                        )
+                                    )
 
             if block.rf is not None:  # RF
                 rf = block.rf
@@ -1532,22 +1474,18 @@ class Sequence:
                     rf_piece = np.array(
                         [
                             curr_dur + rf.delay + rf.t,
-                            rf.signal
-                            * np.exp(
-                                1j
-                                * (rf.phase_offset + 2 * np.pi * rf.freq_offset * rf.t)
-                            ),
+                            rf.signal * np.exp(1j * (rf.phase_offset + 2 * np.pi * rf.freq_offset * rf.t)),
                         ]
                     )
                     out_len[-1] += len(rf.t)
 
                     if abs(rf.signal[0]) > 0:
-                        pre = np.array([[rf_piece[0, 0] - 0.1*self.system.rf_raster_time], [0]])
+                        pre = np.array([[rf_piece[0, 0] - 0.1 * self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((pre, rf_piece))
                         out_len[-1] += pre.shape[1]
 
                     if abs(rf.signal[-1]) > 0:
-                        post = np.array([[rf_piece[0, -1] + 0.1*self.system.rf_raster_time], [0]])
+                        post = np.array([[rf_piece[0, -1] + 0.1 * self.system.rf_raster_time], [0]])
                         rf_piece = np.hstack((rf_piece, post))
                         out_len[-1] += post.shape[1]
 
@@ -1560,29 +1498,27 @@ class Sequence:
 
         for j in range(shape_channels):
             if shape_pieces[j] == []:
-                wave_data.append(np.zeros((2,0)))
+                wave_data.append(np.zeros((2, 0)))
                 continue
 
             # If the first element of the next shape has the same time as
             # the last element of the previous shape, drop the first
             # element of the next shape.
-            shape_pieces[j] = ([shape_pieces[j][0]] +
-                               [cur if prev[0,-1]+eps < cur[0,0] else cur[:,1:]
-                                for prev,cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:])])
+            shape_pieces[j] = [shape_pieces[j][0]] + [
+                cur if prev[0, -1] + eps < cur[0, 0] else cur[:, 1:]
+                for prev, cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:])
+            ]
 
             wave_data.append(np.concatenate(shape_pieces[j], axis=1))
 
             rftdiff = np.diff(wave_data[j][0])
             if np.any(rftdiff < eps):
-                raise Warning(
-                    "Time vector elements are not monotonically increasing."
-                )
+                raise Warning("Time vector elements are not monotonically increasing.")
 
         return wave_data
 
-
     def waveforms_and_times(
-        self, append_RF: bool = False, time_range: List[float] = None
+        self, append_RF: bool = False, time_range: Union[List[float], None] = None
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Decompress the entire gradient waveform. Returns gradient waveforms as a tuple of `np.ndarray` of
@@ -1648,10 +1584,7 @@ class Sequence:
             - `time_unit`: [seconds],
         """
         # Check time range validity
-        if (
-            not all([isinstance(x, (int, float)) for x in time_range])
-            or len(time_range) != 2
-        ):
+        if not all([isinstance(x, (int, float)) for x in time_range]) or len(time_range) != 2:
             raise ValueError("Invalid time range")
 
         t0 = 0
@@ -1670,24 +1603,20 @@ class Sequence:
 
         for block_counter in self.block_events:  # For each block
             block = self.get_block(block_counter)  # Retrieve it
-            is_valid = (
-                time_range[0] <= t0 <= time_range[1]
-            )  # Check if "current time" is within requested range.
+            is_valid = time_range[0] <= t0 <= time_range[1]  # Check if "current time" is within requested range.
             if is_valid:
                 # Case 1: ADC
-                if block.adc != None:
+                if block.adc is not None:
                     adc = block.adc  # Get adc info
                     # From Pulseq: According to the information from Klaus Scheffler and indirectly from Siemens this
                     # is the present convention - the samples are shifted by 0.5 dwell
                     t = adc.delay + (np.arange(int(adc.num_samples)) + 0.5) * adc.dwell
                     adc_t = t0 + t
-                    adc_signal = np.exp(1j * adc.phase_offset) * np.exp(
-                        1j * 2 * np.pi * t * adc.freq_offset
-                    )
+                    adc_signal = np.exp(1j * adc.phase_offset) * np.exp(1j * 2 * np.pi * t * adc.freq_offset)
                     adc_t_all = np.concatenate((adc_t_all, adc_t))
                     adc_signal_all = np.concatenate((adc_signal_all, adc_signal))
 
-                if block.rf != None:
+                if block.rf is not None:
                     rf = block.rf
                     tc, ic = calc_rf_center(rf)
                     t = rf.t + rf.delay
@@ -1702,21 +1631,15 @@ class Sequence:
                     #           'xb')
 
                     rf_t = t0 + t
-                    rf = (
-                        rf.signal
-                        * np.exp(1j * rf.phase_offset)
-                        * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)
-                    )
+                    rf = rf.signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)
                     rf_t_all = np.concatenate((rf_t_all, rf_t))
                     rf_signal_all = np.concatenate((rf_signal_all, rf))
                     rf_t_centers = np.concatenate((rf_t_centers, [rf_t[ic]]))
                     rf_signal_centers = np.concatenate((rf_signal_centers, [rf[ic]]))
 
                 grad_channels = ["gx", "gy", "gz"]
-                for x in range(
-                    len(grad_channels)
-                ):  # Check each gradient channel: x, y, and z
-                    if getattr(block, grad_channels[x]) != None:
+                for x in range(len(grad_channels)):  # Check each gradient channel: x, y, and z
+                    if getattr(block, grad_channels[x]) is not None:
                         # If this channel is on in current block
                         grad = getattr(block, grad_channels[x])
                         if grad.type == "grad":  # Arbitrary gradient option
@@ -1733,11 +1656,11 @@ class Sequence:
                             g = 1e-3 * np.array((grad.first, *grad.waveform, grad.last))
                         else:  # Trapezoid gradient option
                             g_t = cumsum(
-                                    t0,
-                                    grad.delay,
-                                    grad.rise_time,
-                                    grad.flat_time,
-                                    grad.fall_time,
+                                t0,
+                                grad.delay,
+                                grad.rise_time,
+                                grad.flat_time,
+                                grad.fall_time,
                             )
                             g = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
 
@@ -1751,9 +1674,7 @@ class Sequence:
                             gz_t_all = np.concatenate((gz_t_all, g_t))
                             gz_all = np.concatenate((gz_all, g))
 
-            t0 += self.block_durations[
-                block_counter
-            ]  # "Current time" gets updated to end of block just examined
+            t0 += self.block_durations[block_counter]  # "Current time" gets updated to end of block just examined
 
         all_waveforms = {
             "t_adc": adc_t_all,
@@ -1776,11 +1697,7 @@ class Sequence:
         return all_waveforms
 
     def write(
-            self,
-            name: str,
-            create_signature: bool = True,
-            remove_duplicates: bool = True,
-            check_timing: bool = True
+        self, name: str, create_signature: bool = True, remove_duplicates: bool = True, check_timing: bool = True
     ) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
@@ -1806,7 +1723,7 @@ class Sequence:
         if check_timing:
             is_ok, error_report = self.check_timing()
             if not is_ok:
-                warn(f'write(): {len(error_report)} timing errors found in the sequence', stacklevel=2)
+                warn(f"write(): {len(error_report)} timing errors found in the sequence", stacklevel=2)
 
         # Calculate sequence duration and stored it in the TotalDuration definition
         self.set_definition("TotalDuration", sum(self.block_durations.values()))
@@ -1814,20 +1731,21 @@ class Sequence:
         # Check whether all gradients in the last block are ramped down properly
         last_block_id = next(reversed(self.block_events))
         last_block = self.get_block(last_block_id)
-        for channel, event in zip(('x', 'y', 'z'),
-                                  (last_block.gx, last_block.gy, last_block.gz)):
-            if (event is not None and
-                    event.type == 'grad' and
-                    abs(event.last) > self.system.max_slew * self.system.grad_raster_time):
-                warn_msg = f'write(): Gradient on channel {channel} in last sequence block does not ramp down to 0'
+        for channel, event in zip(("x", "y", "z"), (last_block.gx, last_block.gy, last_block.gz)):
+            if (
+                event is not None
+                and event.type == "grad"
+                and abs(event.last) > self.system.max_slew * self.system.grad_raster_time
+            ):
+                warn_msg = f"write(): Gradient on channel {channel} in last sequence block does not ramp down to 0"
 
                 if trace_enabled():
                     trace = self.block_trace.get(last_block_id, None)
 
-                    if hasattr(trace, 'block'):
-                        warn_msg += '\nLast block defined here:\n' + format_trace(trace.block)
-                    if hasattr(trace, 'g' + channel):
-                        warn_msg += f'\n`g{channel}` defined here:\n' + format_trace(getattr(trace, 'g' + channel))
+                    if hasattr(trace, "block"):
+                        warn_msg += "\nLast block defined here:\n" + format_trace(trace.block)
+                    if hasattr(trace, "g" + channel):
+                        warn_msg += f"\n`g{channel}` defined here:\n" + format_trace(getattr(trace, "g" + channel))
 
                 warn(warn_msg, stacklevel=2)
 
