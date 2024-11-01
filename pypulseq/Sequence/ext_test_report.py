@@ -21,9 +21,7 @@ def ext_test_report(self) -> str:
             rf = self.rf_from_lib_data(lib_data, self.rf_library.type[k])
         else:
             rf = self.rf_from_lib_data(lib_data)
-        flip_angles_deg.append(
-            np.abs(np.sum(rf.signal[:-1] * (rf.t[1:] - rf.t[:-1]))) * 360
-        )
+        flip_angles_deg.append(np.abs(np.sum(rf.signal[:-1] * (rf.t[1:] - rf.t[:-1]))) * 360)
 
     flip_angles_deg = np.unique(flip_angles_deg)
 
@@ -89,7 +87,7 @@ def ext_test_report(self) -> str:
         k_map = dict()
         keys = np.round(k_traj_adc / k_threshold).astype(np.int32)
         for i in range(k_len):
-            key_string = tuple(keys[:,i])
+            key_string = tuple(keys[:, i])
             k_storage_ind = k_map.get(key_string)
             if k_storage_ind is None:
                 k_storage_ind = k_storage_next
@@ -104,15 +102,13 @@ def ext_test_report(self) -> str:
         repeats_unique = np.unique(k_storage[:k_storage_next])
         counts_unique = np.zeros_like(repeats_unique)
         for i in range(len(repeats_unique)):
-            counts_unique[i] = np.sum(
-                repeats_unique[i] == k_storage[: k_storage_next - 1]
-            )
+            counts_unique[i] = np.sum(repeats_unique[i] == k_storage[: k_storage_next - 1])
 
         k_traj_rep1 = k_traj_adc[:, k_repeat == 1]
 
         k_counters = np.zeros_like(k_traj_rep1)
         dims = k_traj_rep1.shape[0]
-        
+
         keys = keys[:, k_repeat == 1]
         for j in range(dims):
             k_map = dict()
@@ -120,7 +116,7 @@ def ext_test_report(self) -> str:
             k_storage_next = 0
 
             for i in range(k_traj_rep1.shape[1]):
-                key = keys[j,i]
+                key = keys[j, i]
                 k_storage_ind = k_map.get(key)
                 if k_storage_ind is None:
                     k_storage_ind = k_map.get(key + 1)
@@ -149,9 +145,7 @@ def ext_test_report(self) -> str:
     for gc in range(len(gw_data)):
         if gw_data[gc].shape[1] > 0:
             # Slew
-            gws[gc] = (gw_data[gc][1, 1:] - gw_data[gc][1, :-1]) / (
-                gw_data[gc][0, 1:] - gw_data[gc][0, :-1]
-            )
+            gws[gc] = (gw_data[gc][1, 1:] - gw_data[gc][1, :-1]) / (gw_data[gc][0, 1:] - gw_data[gc][0, :-1])
 
             # Interpolate to common time
             gw_ct[gc] = np.interp(
@@ -164,9 +158,7 @@ def ext_test_report(self) -> str:
 
             # Sometimes there are very small steps in common_time:
             #   add 1e-10 to resolve instability (adding eps is too small)
-            gs_ct[gc] = (gw_ct[gc][1:] - gw_ct[gc][:-1]) / (
-                common_time[1:] - common_time[:-1] + 1e-10
-            )
+            gs_ct[gc] = (gw_ct[gc][1:] - gw_ct[gc][:-1]) / (common_time[1:] - common_time[:-1] + 1e-10)
 
             # Max grad/slew per channel
             ga[gc] = np.max(np.abs(gw_data[gc][1:]))
@@ -190,11 +182,7 @@ def ext_test_report(self) -> str:
         f"TE: {TE:.6f} s\n"
         f"TR: {TR:.6f} s\n"
     )
-    report += (
-        "Flip angle: "
-        + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg)
-        + "deg\n"
-    )
+    report += "Flip angle: " + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg) + "deg\n"
     report += (
         "Unique k-space positions (aka cols, rows, etc.): "
         + ("{:.0f} " * len(unique_k_positions)).format(*unique_k_positions)
@@ -203,22 +191,13 @@ def ext_test_report(self) -> str:
 
     if np.any(unique_k_positions > 1):
         report += f"Dimensions: {len(k_extent)}\n"
-        report += ("Spatial resolution: {:.02f} mm\n" * len(k_extent)).format(
-            *(0.5 / k_extent * 1e3)
-        )
+        report += ("Spatial resolution: {:.02f} mm\n" * len(k_extent)).format(*(0.5 / k_extent * 1e3))
         report += f"Repetitions/slices/contrasts: {repeats_median}; range: [{repeats_min, repeats_max}]\n"
 
         if is_cartesian:
             report += "Cartesian encoding trajectory detected\n"
         else:
             report += "Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n"
-
-    if timing_ok:
-        report += "Event timing check passed successfully\n"
-    else:
-        report += (
-            f"Event timing check failed. Error listing follows:\n {timing_error_report}"
-        )
 
     ga_converted = convert(from_value=ga, from_unit="Hz/m", to_unit="mT/m")
     gs_converted = convert(from_value=gs, from_unit="Hz/m/s", to_unit="T/m/s")
@@ -239,11 +218,18 @@ def ext_test_report(self) -> str:
 
     ga_abs_converted = convert(from_value=ga_abs, from_unit="Hz/m", to_unit="mT/m")
     gs_abs_converted = convert(from_value=gs_abs, from_unit="Hz/m/s", to_unit="T/m/s")
-    report += (
-        f"Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n"
-    )
-    report += (
-        f"Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s"
-    )
+    report += f"Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n"
+    report += f"Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s"
+
+    if timing_ok:
+        report += "\nEvent timing check passed successfully\n"
+    else:
+        report += f"\nEvent timing check failed with {len(timing_error_report)} errors in total. \n"
+        report += "Details of the first up to 20 timing errors:"
+        max_errors = min(20, len(timing_error_report))
+        for line in timing_error_report[:max_errors]:
+            report += f"\n{line}"
+        if len(timing_error_report) > max_errors:
+            report += "\n..."
 
     return report
