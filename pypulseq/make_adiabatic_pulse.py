@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from typing import Tuple, Union
 from copy import copy
+from warnings import warn
 
 import numpy as np
 import math
@@ -12,6 +13,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_adiabatic_pulse(
@@ -31,7 +33,7 @@ def make_adiabatic_pulse(
     return_gz: bool = False,
     return_delay: bool = False,
     slice_thickness: float = 0,
-    system=None,
+    system: Union[Opts, None] = None,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
@@ -217,6 +219,7 @@ def make_adiabatic_pulse(
     rf.delay = delay
     rf.use = use if use != "" else "inversion"
     if rf.dead_time > rf.delay:
+        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         rf.delay = rf.dead_time
 
     if return_gz:
@@ -265,6 +268,9 @@ def make_adiabatic_pulse(
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
     else:
         delay = make_delay(calc_duration(rf))
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, gzr, delay

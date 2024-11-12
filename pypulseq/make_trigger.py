@@ -1,12 +1,13 @@
 # inserted for trigger support by mveldmann
 
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.opts import Opts
 
 
 def make_trigger(
-    channel: str, delay: float = 0, duration: float = 0, system: Opts = None
+    channel: str, delay: float = 0, duration: float = 0, system: Union[Opts, None] = None
 ) -> SimpleNamespace:
     """
      Create a trigger halt event for a synchronisation with an external signal from a given channel with an optional
@@ -36,7 +37,7 @@ def make_trigger(
      ValueError
          If invalid `channel` is passed. Must be one of 'physio1' or 'physio2'.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if channel not in ["physio1", "physio2"]:

@@ -4,6 +4,7 @@ from typing import Union
 import numpy as np
 
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_arbitrary_grad(
@@ -38,7 +39,7 @@ def make_arbitrary_grad(
     last : float
         Gradient value at the end of the gradient event. (t=duration)
         Will default to a linear extrapolated value if not provided.
-    system : Opts
+    system : Opts, default=Opts()
         System limits.
         Will default to `pypulseq.opts.default` if not provided.
     max_grad : float
@@ -96,5 +97,8 @@ def make_arbitrary_grad(
     grad.first = first
     grad.last = last
     grad.area = (waveform * system.grad_raster_time).sum()
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

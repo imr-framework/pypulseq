@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from types import SimpleNamespace
-from typing import Iterable
+from typing import List, Union
 
 import numpy as np
 
@@ -12,12 +12,14 @@ from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.tracing import trace_enabled, trace
+
 
 def add_gradients(
-    grads: Iterable[SimpleNamespace],
+    grads: List[SimpleNamespace],
     max_grad: int = 0,
     max_slew: int = 0,
-    system=None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Returns the superposition of several gradients.
@@ -38,9 +40,9 @@ def add_gradients(
     grad : SimpleNamespace
         Superimposition of gradient events from `grads`.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     if max_grad <= 0:
         max_grad = system.max_grad
     if max_slew <= 0:
@@ -51,10 +53,14 @@ def add_gradients(
     if len(grads) == 1:
         # Trapezoids only require a shallow copy
         if grads[0].type == 'trap':
-            return copy(grads[0])
+            grad = copy(grads[0])
         else:
-            return deepcopy(grads[0])
-    
+            grad = deepcopy(grads[0])
+
+        if trace_enabled():
+            grad.trace = trace()
+        return grad
+
     # First gradient defines channel
     channel = grads[0].channel
 
@@ -64,14 +70,17 @@ def add_gradients(
             and all(g.flat_time == grads[0].flat_time for g in grads)
             and all(g.fall_time == grads[0].fall_time for g in grads)
             and all(g.delay == grads[0].delay for g in grads)):
-        return make_trapezoid(grads[0].channel,
+        grad = make_trapezoid(grads[0].channel,
                               amplitude=sum(g.amplitude for g in grads)+eps,
                               rise_time=grads[0].rise_time,
                               flat_time=grads[0].flat_time,
                               fall_time=grads[0].fall_time,
                               delay=grads[0].delay,
                               system=system)
-    
+        if trace_enabled():
+            grad.trace = trace()
+        return grad
+
     # Find out the general delay of all gradients and other statistics
     delays, firsts, lasts, durs, is_trap, is_arb = [], [], [], [], [], []
     for ii in range(len(grads)):
@@ -145,8 +154,12 @@ def add_gradients(
         grad = make_extended_trapezoid(
             channel=channel, amplitudes=amplitudes, times=times, system=system
         )
+
+        if trace_enabled():
+            grad.trace = trace()
+
         return grad
-    
+
     # Convert to numpy.ndarray for fancy-indexing later on
     firsts, lasts = np.array(firsts), np.array(lasts)
     common_delay = np.min(delays)
@@ -225,5 +238,8 @@ def add_gradients(
     # Last is defined by the sum of lasts with the maximum duration (total_duration == durs.max())
     grad.first = np.sum(firsts[np.array(delays) == common_delay])
     grad.last = np.sum(lasts[durs == durs.max()])
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

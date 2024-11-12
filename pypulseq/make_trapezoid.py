@@ -1,9 +1,12 @@
 from types import SimpleNamespace
+from typing import Union
 
 import numpy as np
 import math
 
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
+
 
 def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_time):
     rise_time = (
@@ -31,7 +34,7 @@ def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_tim
 
     flat_time = t_eff - rise_time
     fall_time = rise_time
-    
+
     return amplitude, rise_time, flat_time, fall_time
 
 
@@ -47,7 +50,7 @@ def make_trapezoid(
     max_grad: float = 0,
     max_slew: float = 0,
     rise_time: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Create a trapezoidal gradient event.
@@ -104,9 +107,9 @@ def make_trapezoid(
         If `flat_time`, `duration` and `area` are not supplied.
         Amplitude violation
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     if channel not in ["x", "y", "z"]:
         raise ValueError(
             f"Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}"
@@ -203,7 +206,7 @@ def make_trapezoid(
         if area is None:
             raise ValueError("Must supply area or duration.")
         else:
-            # Find the shortest possible duration.           
+            # Find the shortest possible duration.
             amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(area, max_slew, max_grad, system.grad_raster_time)
 
     assert abs(amplitude2) <= max_grad, (
@@ -221,5 +224,8 @@ def make_trapezoid(
     grad.delay = delay
     grad.first = 0
     grad.last = 0
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

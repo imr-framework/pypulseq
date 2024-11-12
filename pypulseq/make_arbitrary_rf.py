@@ -4,6 +4,7 @@ from copy import copy
 
 import numpy as np
 import math
+from warnings import warn
 
 from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
@@ -11,6 +12,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.calc_duration import calc_duration
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_arbitrary_rf(
@@ -27,7 +29,7 @@ def make_arbitrary_rf(
     return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 0,
     use: str = str(),
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
@@ -84,9 +86,9 @@ def make_arbitrary_rf(
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwidth` are not passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     valid_use_pulses = get_supported_rf_uses()
     if use != "" and use not in valid_use_pulses:
         raise ValueError(
@@ -122,6 +124,7 @@ def make_arbitrary_rf(
         rf.use = use
 
     if rf.dead_time > rf.delay:
+        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         rf.delay = rf.dead_time
 
     if return_gz:
@@ -159,6 +162,9 @@ def make_arbitrary_rf(
 
     if rf.ringdown_time > 0 and return_delay:
         delay = make_delay(calc_duration(rf) + rf.ringdown_time)
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, delay

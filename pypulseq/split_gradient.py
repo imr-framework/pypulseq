@@ -1,15 +1,16 @@
 from types import SimpleNamespace
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
 from pypulseq.calc_duration import calc_duration
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def split_gradient(
-    grad: SimpleNamespace, system: Opts = None
+    grad: SimpleNamespace, system: Union[Opts, None] = None
 ) -> Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]:
     """
     Splits a trapezoidal gradient into slew up, flat top and slew down. Returns the individual gradient parts (slew up,
@@ -41,7 +42,7 @@ def split_gradient(
          If arbitrary gradients are passed.
          If non-gradient event is passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     grad_raster_time = system.grad_raster_time
@@ -88,6 +89,12 @@ def split_gradient(
             skip_check=True,
         )
         flat_top.delay = grad.delay + grad.rise_time
+
+        if trace_enabled():
+            t = trace()
+            ramp_down.trace = t
+            flat_top.trace = t
+            ramp_down.trace = t
 
         return ramp_up, flat_top, ramp_down
     elif grad.type == "grad":

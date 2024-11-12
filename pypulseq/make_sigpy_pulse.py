@@ -1,4 +1,5 @@
 import math
+from warnings import warn
 from types import SimpleNamespace
 from typing import Tuple, Union
 from copy import copy
@@ -16,7 +17,7 @@ except ModuleNotFoundError:
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
-
+from pypulseq.utils.tracing import trace_enabled, trace
 
 def sigpy_n_seq(
     flip_angle: float,
@@ -29,7 +30,7 @@ def sigpy_n_seq(
     phase_offset: float = 0,
     return_gz: bool = True,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     use: str = str(),
@@ -88,7 +89,7 @@ def sigpy_n_seq(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
 
     valid_use_pulses = ["excitation", "refocusing", "inversion"]
@@ -131,6 +132,7 @@ def sigpy_n_seq(
         rfp.use = use
 
     if rfp.dead_time > rfp.delay:
+        warn(f'Specified RF delay {rfp.delay*1e6:.2f} us is less than the dead time {rfp.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         rfp.delay = rfp.dead_time
 
     if return_gz:
@@ -169,6 +171,9 @@ def sigpy_n_seq(
     negative_zero_indices = np.where(rfp.signal == -0.0)
     rfp.signal[negative_zero_indices] = 0
 
+    if trace_enabled():
+        rfp.trace = trace()
+
     if return_gz:
         return rfp, gz, gzr, pulse
     else:
@@ -179,11 +184,11 @@ def make_slr(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
 
     N = int(round(duration / 1e-6))
@@ -228,11 +233,11 @@ def make_sms(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
 
     N = int(round(duration / 1e-6))

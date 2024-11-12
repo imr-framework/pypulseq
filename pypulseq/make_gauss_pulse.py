@@ -1,4 +1,5 @@
 import math
+from warnings import warn
 from types import SimpleNamespace
 from typing import Tuple, Union
 from copy import copy
@@ -10,6 +11,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_gauss_pulse(
@@ -27,7 +29,7 @@ def make_gauss_pulse(
     return_gz: bool = False,
     return_delay: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
@@ -94,7 +96,7 @@ def make_gauss_pulse(
         If invalid `use` is passed.
         If `return_gz=True` and `slice_thickness` was not passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if use != "" and use not in get_supported_rf_uses():
@@ -132,6 +134,7 @@ def make_gauss_pulse(
         rf.use = use
 
     if rf.dead_time > rf.delay:
+        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
         rf.delay = rf.dead_time
 
     if return_gz:
@@ -172,6 +175,9 @@ def make_gauss_pulse(
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
+
+    if trace_enabled():
+        rf.trace = trace()
 
     if return_gz and return_delay:
         return rf, gz, gzr, delay

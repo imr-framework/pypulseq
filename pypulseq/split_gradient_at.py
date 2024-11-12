@@ -7,10 +7,11 @@ import numpy as np
 from pypulseq import eps
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def split_gradient_at(
-    grad: SimpleNamespace, time_point: float, system: Opts = None
+    grad: SimpleNamespace, time_point: float, system: Union[Opts, None] = None
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
     Splits a trapezoidal gradient into two extended trapezoids defined by the cut line. Returns the two gradient parts
@@ -44,9 +45,9 @@ def split_gradient_at(
     ValueError
         If non-gradient event is passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     # copy() to emulate pass-by-value; otherwise passed grad is modified
     grad = deepcopy(grad)
 
@@ -78,6 +79,12 @@ def split_gradient_at(
                 grad1.waveform = grad.waveform[:time_index]
                 grad2.t = grad.t[time_index:] - time_point
                 grad2.waveform = grad.waveform[time_index:]
+
+                if trace_enabled():
+                    t = trace()
+                    grad1.trace = t
+                    grad2.trace = t
+
                 return grad1, grad2
         else:
             # Extended trapezoid
@@ -146,5 +153,10 @@ def split_gradient_at(
         skip_check=True,
     )
     grad2.delay = time_point
+
+    if trace_enabled():
+        t = trace()
+        grad1.trace = t
+        grad2.trace = t
 
     return grad1, grad2

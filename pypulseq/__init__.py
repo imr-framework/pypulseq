@@ -28,6 +28,7 @@ def round_half_up(n, decimals=0):
 # We then round the value to the closest power of 10.
 eps = 10 ** np.floor(np.log10(np.spacing(1e6) * 10))  # this is 1e-9 for np.float64
 
+
 # =========
 # PACKAGE-LEVEL IMPORTS
 # =========
@@ -62,3 +63,4 @@ from pypulseq.split_gradient import split_gradient
 from pypulseq.split_gradient_at import split_gradient_at
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.traj_to_grad import traj_to_grad
+from pypulseq.utils.tracing import enable_trace, disable_trace

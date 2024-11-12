@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Union
 
 import numpy as np
 
@@ -6,6 +7,7 @@ from pypulseq import eps
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
+from pypulseq.utils.tracing import trace_enabled, trace
 
 
 def make_extended_trapezoid(
@@ -15,7 +17,7 @@ def make_extended_trapezoid(
     max_grad: float = 0,
     max_slew: float = 0,
     skip_check: bool = False,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     times: np.ndarray = np.zeros(1),
 ) -> SimpleNamespace:
     """
@@ -60,7 +62,7 @@ def make_extended_trapezoid(
         If all elements in `amplitudes` are zero.
         If first amplitude of a gradient is non-ero and does not connect to a previous block.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
         
     if channel not in ["x", "y", "z"]:
@@ -141,5 +143,8 @@ def make_extended_trapezoid(
 
     grad.first = amplitudes[0]
     grad.last = amplitudes[-1]
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad
