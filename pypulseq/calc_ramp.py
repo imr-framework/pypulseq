@@ -8,9 +8,9 @@ from pypulseq.opts import Opts
 def calc_ramp(
     k0: np.ndarray,
     k_end: np.ndarray,
-    max_grad: np.ndarray = np.zeros(0),
+    max_grad: Union[np.ndarray, None] = None,
     max_points: int = 500,
-    max_slew: np.ndarray = np.zeros(0),
+    max_slew: Union[np.ndarray, None] = None,
     system: Union[Opts, None] = None,
 ) -> Tuple[np.ndarray, bool]:
     """
@@ -44,6 +44,12 @@ def calc_ramp(
     """
     if system is None:
         system = Opts.default
+
+    if max_grad is None:
+        max_grad = np.zeros(0)
+
+    if max_slew is None:
+        max_slew = np.zeros(0)
 
     def __inside_limits(grad, slew):
         if mode == 0:

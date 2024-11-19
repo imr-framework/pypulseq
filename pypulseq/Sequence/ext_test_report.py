@@ -84,7 +84,7 @@ def ext_test_report(self) -> str:
         k_repeat = np.zeros(k_len)
         k_storage = np.zeros(k_len)
         k_storage_next = 0
-        k_map = dict()
+        k_map = {}
         keys = np.round(k_traj_adc / k_threshold).astype(np.int32)
         for i in range(k_len):
             key_string = tuple(keys[:, i])
@@ -111,7 +111,7 @@ def ext_test_report(self) -> str:
 
         keys = keys[:, k_repeat == 1]
         for j in range(dims):
-            k_map = dict()
+            k_map = {}
             k_storage = np.zeros(k_len)
             k_storage_next = 0
 

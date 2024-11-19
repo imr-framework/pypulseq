@@ -57,7 +57,7 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
         if len(self.definitions) != 0:
             output_file.write('[DEFINITIONS]\n')
-            keys = sorted(list(self.definitions.keys()))
+            keys = sorted(self.definitions.keys())
             values = [self.definitions[k] for k in keys]
             for block_counter in range(len(keys)):
                 output_file.write(f'{keys[block_counter]} ')

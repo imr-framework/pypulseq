@@ -12,7 +12,7 @@ from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.utils.cumsum import cumsum
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def add_gradients(
@@ -164,7 +164,7 @@ def add_gradients(
     durs = np.array(durs)
 
     # Convert everything to a regularly-sampled waveform
-    waveforms = dict()
+    waveforms = {}
     max_length = 0
     for ii in range(len(grads)):
         g = grads[ii]

@@ -4,7 +4,7 @@ from typing import Union
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleNamespace:
+def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleNamespace:  # noqa: A002
     """
     Create an ADC Label.
 

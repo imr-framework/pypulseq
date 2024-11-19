@@ -1,11 +1,10 @@
 import itertools
 import math
 from collections import OrderedDict
-from types import SimpleNamespace
-from typing import Tuple, List
-from typing import Union
-from warnings import warn
 from copy import deepcopy
+from types import SimpleNamespace
+from typing import List, Tuple, Union
+from warnings import warn
 
 try:
     from typing import Self
@@ -16,27 +15,25 @@ except ImportError:
 
 import matplotlib as mpl
 import numpy as np
-from scipy.interpolate import PPoly
 from matplotlib import pyplot as plt
+from scipy.interpolate import PPoly
 
-from pypulseq import eps
-from pypulseq import __version__
-from pypulseq.Sequence import block, parula
-from pypulseq.Sequence.ext_test_report import ext_test_report
-from pypulseq.Sequence.read_seq import read
-from pypulseq.Sequence.write_seq import write as write_seq
-from pypulseq.Sequence.calc_pns import calc_pns
-from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
-
+from pypulseq import __version__, eps
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.check_timing import print_error_report
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
+from pypulseq.Sequence import block, parula
+from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
+from pypulseq.Sequence.calc_pns import calc_pns
+from pypulseq.Sequence.ext_test_report import ext_test_report
+from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
-from pypulseq.utils.tracing import trace_enabled, trace, format_trace
+from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 
 major, minor, revision = __version__.split('.')
 
@@ -79,9 +76,9 @@ class Sequence:
         self.block_events = OrderedDict()
         self.block_trace = OrderedDict()
         self.use_block_cache = use_block_cache
-        self.block_cache = dict()
+        self.block_cache = {}
         self.next_free_block_ID = 1
-        self.definitions = dict()
+        self.definitions = {}
 
         self.rf_raster_time = self.system.rf_raster_time
         self.grad_raster_time = self.system.grad_raster_time
@@ -95,7 +92,7 @@ class Sequence:
         self.signature_file = ''
         self.signature_value = ''
 
-        self.block_durations = dict()
+        self.block_durations = {}
         self.extension_numeric_idx = []
         self.extension_string_idx = []
 
@@ -197,7 +194,7 @@ class Sequence:
         plot: bool = True,
         combine_mode: str = 'max',
         use_derivative: bool = False,
-        acoustic_resonances: List[dict] = [],
+        acoustic_resonances: Union[List[dict], None] = None,
     ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculates the gradient spectrum of the sequence. Returns a spectrogram
@@ -248,6 +245,9 @@ class Sequence:
             Time axis of the spectrograms (only relevant when combine_mode == 'none').
 
         """
+        if acoustic_resonances is None:
+            acoustic_resonances = []
+
         return calculate_gradient_spectrum(
             self,
             max_frequency=max_frequency,
@@ -562,7 +562,7 @@ class Sequence:
             dictionary.
 
         """
-        labels = init or dict()
+        labels = init or {}
         label_evolution = []
 
         # TODO: MATLAB implementation includes block_range parameter. But in
@@ -872,7 +872,7 @@ class Sequence:
         valid_time_units = ['s', 'ms', 'us']
         valid_grad_units = ['kHz/m', 'mT/m']
         valid_labels = get_supported_labels()
-        if not all([isinstance(x, (int, float)) for x in time_range]) or len(time_range) != 2:
+        if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
             raise ValueError('Invalid time range')
         if time_disp not in valid_time_units:
             raise ValueError('Unsupported time unit')
@@ -900,7 +900,7 @@ class Sequence:
         label_defined = False
         label_idx_to_plot = []
         label_legend_to_plot = []
-        label_store = dict()
+        label_store = {}
         for i in range(len(valid_labels)):
             label_store[valid_labels[i]] = 0
             if valid_labels[i] in label.upper():
@@ -1584,7 +1584,7 @@ class Sequence:
             - `time_unit`: [seconds],
         """
         # Check time range validity
-        if not all([isinstance(x, (int, float)) for x in time_range]) or len(time_range) != 2:
+        if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
             raise ValueError('Invalid time range')
 
         t0 = 0

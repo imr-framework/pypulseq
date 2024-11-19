@@ -1,23 +1,23 @@
 import math
-from warnings import warn
+from copy import copy
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
+from warnings import warn
 
 import numpy as np
 
 try:
     import sigpy.mri.rf as rf
     import sigpy.plot as pl
-except ModuleNotFoundError:
+except ModuleNotFoundError as err:
     raise ModuleNotFoundError(
         "SigPy is not installed. Install it using 'pip install sigpy' or 'pip install pypulseq[sigpy]'."
-    )
+    ) from err
 
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def sigpy_n_seq(
@@ -33,7 +33,7 @@ def sigpy_n_seq(
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
     time_bw_product: float = 4,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     use: str = str(),
     plot: bool = True,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
@@ -92,6 +92,9 @@ def sigpy_n_seq(
     """
     if system is None:
         system = Opts.default
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
 
     valid_use_pulses = ['excitation', 'refocusing', 'inversion']
     if use != '' and use not in valid_use_pulses:
@@ -189,11 +192,14 @@ def make_slr(
     time_bw_product: float = 4,
     duration: float = 0,
     system: Union[Opts, None] = None,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
 ):
     if system is None:
         system = Opts.default
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
 
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time
@@ -238,11 +244,14 @@ def make_sms(
     time_bw_product: float = 4,
     duration: float = 0,
     system: Union[Opts, None] = None,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
 ):
     if system is None:
         system = Opts.default
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
 
     N = int(round(duration / 1e-6))
     t = np.arange(1, N + 1) * system.rf_raster_time

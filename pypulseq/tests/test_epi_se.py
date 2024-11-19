@@ -1,9 +1,9 @@
 import unittest
 
+import pytest
+
 from pypulseq.seq_examples.scripts import write_epi_se
 from pypulseq.tests import base
-
-import pytest
 
 
 @pytest.mark.matlab_seq_comp

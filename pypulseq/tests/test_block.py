@@ -1,4 +1,5 @@
 import pytest
+
 import pypulseq as pp
 
 # Gradient definitions used in tests

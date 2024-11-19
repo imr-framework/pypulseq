@@ -1,6 +1,6 @@
 import math
 from types import SimpleNamespace
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 
@@ -67,7 +67,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 if trace_enabled():
                     if hasattr(event, 'trace'):
-                        setattr(self.block_trace[block_index], 'rf', event.trace)
+                        self.block_trace[block_index].rf = event.trace
             elif event.type == 'grad':
                 channel_num = ['x', 'y', 'z'].index(event.channel)
                 idx = 2 + channel_num
@@ -130,7 +130,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
 
                 if trace_enabled():
                     if hasattr(event, 'trace'):
-                        setattr(self.block_trace[block_index], 'adc', event.trace)
+                        self.block_trace[block_index].adc = event.trace
             elif event.type == 'delay':
                 duration = max(duration, event.delay)
             elif event.type in ['output', 'trigger']:

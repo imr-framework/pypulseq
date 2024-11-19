@@ -1,11 +1,11 @@
+import math
 from types import SimpleNamespace
 from typing import Union
 
 import numpy as np
-import math
 
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_time):

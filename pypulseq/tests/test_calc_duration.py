@@ -1,7 +1,8 @@
-import pypulseq as pp
+from itertools import combinations_with_replacement
+
 import pytest
 
-from itertools import combinations_with_replacement
+import pypulseq as pp
 
 """
 Tests calc_duration by feeding it some sample events with known durations.
@@ -33,7 +34,7 @@ known_duration_event_zoo = [
 
 
 @pytest.mark.parametrize('name,event,expected_dur', known_duration_event_zoo)
-def test_single_events(name, event, expected_dur):
+def test_single_events(name, event, expected_dur):  # noqa: ARG001
     assert pp.calc_duration(event) == expected_dur
 
 

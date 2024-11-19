@@ -37,8 +37,8 @@
 
 from types import SimpleNamespace
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def safe_example_hw():

@@ -108,3 +108,6 @@ venv.bak/
 
 # PyCharm config folder
 \.idea/
+
+# VS Code config folder
+\.vscode/

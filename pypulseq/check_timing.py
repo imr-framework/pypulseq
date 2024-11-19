@@ -1,10 +1,9 @@
 from types import SimpleNamespace
-from typing import Tuple, List, Any
+from typing import Any, List, Tuple
 
-from pypulseq import eps, Sequence
+from pypulseq import Sequence, eps
 from pypulseq.calc_duration import calc_duration
 from pypulseq.utils.tracing import format_trace
-
 
 error_messages = {
     'RASTER': '{value*multiplier:.2f} {unit} does not align to {raster} (Nearest valid value: {value_rounded*multiplier:.0f} {unit}, error: {error*multiplier:.2f} {unit})',

@@ -1,8 +1,8 @@
+import math
 from types import SimpleNamespace
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
-import math
 
 from pypulseq.calc_rf_center import calc_rf_center
 

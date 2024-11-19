@@ -1,10 +1,10 @@
 # sms - check MB
 # slr - check slice profile
 
-import pytest
 import importlib.util
 
 import numpy as np
+import pytest
 
 import pypulseq as pp
 from pypulseq.opts import Opts
@@ -22,8 +22,9 @@ def test_sigpy_import():
 
 @pytest.mark.sigpy
 def test_slr():
-    from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
+
+    from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
     print('Testing SLR design')
 
@@ -79,8 +80,9 @@ def test_slr():
 
 @pytest.mark.sigpy
 def test_sms():
-    from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
+
+    from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
     print('Testing SMS design')
 

@@ -1,15 +1,14 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
 from pathlib import Path
-from typing import Tuple
-from typing import Union
+from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from scipy import interpolate
 
-from pypulseq.Sequence.sequence import Sequence
 from pypulseq.calc_duration import calc_duration
+from pypulseq.Sequence.sequence import Sequence
 
 
 def _calc_SAR(Q: np.ndarray, I: np.ndarray) -> np.ndarray:

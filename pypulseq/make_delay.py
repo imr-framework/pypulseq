@@ -1,5 +1,6 @@
-import numpy as np
 from types import SimpleNamespace
+
+import numpy as np
 
 
 def make_delay(d: float) -> SimpleNamespace:

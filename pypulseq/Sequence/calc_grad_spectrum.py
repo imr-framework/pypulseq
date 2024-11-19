@@ -1,8 +1,8 @@
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
-from scipy.signal import spectrogram
 from matplotlib import pyplot as plt
+from scipy.signal import spectrogram
 
 
 def calculate_gradient_spectrum(
@@ -14,7 +14,7 @@ def calculate_gradient_spectrum(
     plot: bool = True,
     combine_mode: str = 'max',
     use_derivative: bool = False,
-    acoustic_resonances: List[dict] = [],
+    acoustic_resonances: Union[List[dict], None] = None,
 ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
     """
     Calculates the gradient spectrum of the sequence. Returns a spectrogram
@@ -65,6 +65,9 @@ def calculate_gradient_spectrum(
         Time axis of the spectrograms (only relevant when combine_mode == 'none').
 
     """
+    if acoustic_resonances is None:
+        acoustic_resonances = []
+
     dt = obj.system.grad_raster_time  # time raster
     nwin = round(window_width / dt)
     nfft = round(frequency_oversampling * nwin)

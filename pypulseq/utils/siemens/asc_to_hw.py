@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import List
+
 import numpy as np
 
 
@@ -25,7 +26,7 @@ def asc_to_acoustic_resonances(asc: dict) -> List[dict]:
         freqs = asc['asGPAParameters'][0]['sGCParameters']['aflAcousticResonanceFrequency']
         bw = asc['asGPAParameters'][0]['sGCParameters']['aflAcousticResonanceBandwidth']
 
-    return [dict(frequency=f, bandwidth=b) for f, b in zip(freqs.values(), bw.values()) if f != 0]
+    return [{'frequency': f, 'bandwidth': b} for f, b in zip(freqs.values(), bw.values()) if f != 0]
 
 
 def asc_to_hw(asc: dict, cardiac_model: bool = False) -> SimpleNamespace:

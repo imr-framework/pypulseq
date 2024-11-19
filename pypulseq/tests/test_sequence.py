@@ -1,15 +1,13 @@
-import os
 import math
+import os
 from pathlib import Path
-
-import pytest
 from unittest.mock import patch
 
-from pypulseq import Sequence
-from pypulseq.tests.base import Approx, compare_seq_file
+import pytest
 
 import pypulseq as pp
-
+from pypulseq import Sequence
+from pypulseq.tests.base import Approx, compare_seq_file
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
@@ -150,7 +148,7 @@ def test_sequence_writeread(seq_func, tmp_path):
         if a is None and b is None:
             continue
         if a is None or b is None:
-            assert False
+            raise AssertionError()
 
         assert a.x == Approx(b.x, abs=1e-3, rel=1e-3)
         assert a.c == Approx(b.c, abs=1e-3, rel=1e-3)
@@ -193,7 +191,7 @@ def test_sequence_recreate(seq_func, tmp_path):
         if a is None and b is None:
             continue
         if a is None or b is None:
-            assert False
+            raise AssertionError()
 
         assert a.x == Approx(b.x, abs=1e-4, rel=1e-4)
         assert a.c == Approx(b.c, abs=1e-4, rel=1e-4)

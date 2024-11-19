@@ -7,18 +7,18 @@ from pypulseq import eps
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_extended_trapezoid(
     channel: str,
-    amplitudes: np.ndarray = np.zeros(1),
+    amplitudes: Union[np.ndarray, None] = None,
     convert_to_arbitrary: bool = False,
     max_grad: float = 0,
     max_slew: float = 0,
     skip_check: bool = False,
     system: Union[Opts, None] = None,
-    times: np.ndarray = np.zeros(1),
+    times: Union[np.ndarray, None] = None,
 ) -> SimpleNamespace:
     """
     Create a gradient by specifying a set of points (amplitudes) at specified time points(times) at a given channel
@@ -62,6 +62,12 @@ def make_extended_trapezoid(
         If all elements in `amplitudes` are zero.
         If first amplitude of a gradient is non-ero and does not connect to a previous block.
     """
+    if amplitudes is None:
+        amplitudes = np.zeros(1)
+
+    if times is None:
+        times = np.zeros(1)
+
     if system is None:
         system = Opts.default
 

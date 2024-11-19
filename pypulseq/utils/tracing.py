@@ -1,5 +1,5 @@
-import traceback
 import sys
+import traceback
 
 # Global variables indicating whether tracing is enabled and how deep the
 # calls are traced.

@@ -5,8 +5,8 @@ Will Clarke, University of Oxford, 2023
 
 from types import SimpleNamespace
 
-import pytest
 import numpy as np
+import pytest
 
 from pypulseq import make_block_pulse
 

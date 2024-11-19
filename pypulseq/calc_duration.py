@@ -1,6 +1,5 @@
 from types import SimpleNamespace
 
-
 from pypulseq.block_to_events import block_to_events
 
 

@@ -1,12 +1,11 @@
+import itertools
+from math import ceil, floor, gcd, isclose, prod
 from types import SimpleNamespace
-from typing import Union
+from typing import List, Optional, Tuple, Union
 from warnings import warn
 
-from typing import Optional, Tuple, List
-from math import isclose, floor, ceil, gcd, prod
-import itertools
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_adc(
@@ -165,7 +164,7 @@ def calc_adc_segments(
         if len(adc_seg_primes) > 1:
             num_segments_candids = set()
             for k in range(1, len(adc_seg_primes) + 1):
-                num_segments_candids |= set(prod(perm) for perm in itertools.combinations(adc_seg_primes, k))
+                num_segments_candids |= {prod(perm) for perm in itertools.combinations(adc_seg_primes, k)}
             # Find suitable candidate
             for num_segments in sorted(num_segments_candids):
                 num_samples_seg = samples_seg_multip * min_samples_segment / num_segments

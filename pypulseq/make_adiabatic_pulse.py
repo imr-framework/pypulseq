@@ -1,9 +1,9 @@
+import math
 from types import SimpleNamespace
 from typing import Tuple, Union
 from warnings import warn
 
 import numpy as np
-import math
 
 from pypulseq import eps
 from pypulseq.calc_duration import calc_duration
@@ -12,7 +12,7 @@ from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_adiabatic_pulse(

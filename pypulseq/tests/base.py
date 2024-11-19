@@ -1,6 +1,6 @@
+from pathlib import Path
 from types import SimpleNamespace
 
-from pathlib import Path
 import numpy as np
 import pytest
 from _pytest.python_api import ApproxBase

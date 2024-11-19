@@ -2,9 +2,10 @@
 
 import math
 import os
+
 import numpy as np
-from pypulseq import Opts
-from pypulseq import calc_adc_segments
+
+from pypulseq import Opts, calc_adc_segments
 
 system = Opts.default
 system.adc_raster_time = 1e-7

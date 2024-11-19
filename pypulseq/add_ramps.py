@@ -1,6 +1,6 @@
 from copy import copy
 from types import SimpleNamespace
-from typing import Union, List
+from typing import List, Union
 
 import numpy as np
 

@@ -1,9 +1,10 @@
-import pytest
-import numpy as np
-import random
 import math
+import random
 
-from pypulseq import Opts, make_extended_trapezoid_area, make_extended_trapezoid, calc_duration
+import numpy as np
+import pytest
+
+from pypulseq import Opts, calc_duration, make_extended_trapezoid, make_extended_trapezoid_area
 from pypulseq.utils.cumsum import cumsum
 
 system = Opts()

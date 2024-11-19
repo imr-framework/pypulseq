@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_arbitrary_grad(

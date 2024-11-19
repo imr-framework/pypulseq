@@ -4,9 +4,9 @@ from typing import List, Union
 import numpy as np
 
 from pypulseq.add_gradients import add_gradients
-from pypulseq.scale_grad import scale_grad
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.scale_grad import scale_grad
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:

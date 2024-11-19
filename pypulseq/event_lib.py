@@ -9,6 +9,7 @@ except ImportError:
     Self = TypeVar('Self', bound='EventLibrary')
 
 import math
+
 import numpy as np
 
 
@@ -37,9 +38,9 @@ class EventLibrary:
     """
 
     def __init__(self, numpy_data=False):
-        self.data = dict()
-        self.type = dict()
-        self.keymap = dict()
+        self.data = {}
+        self.type = {}
+        self.keymap = {}
         self.next_free_ID = 1
         self.numpy_data = numpy_data
 
@@ -212,7 +213,7 @@ class EventLibrary:
     def update(
         self,
         key_id: int,
-        old_data: Union[np.ndarray, None],
+        old_data: Union[np.ndarray, None],  # noqa: ARG002
         new_data: np.ndarray,
         data_type: str = str(),
     ):

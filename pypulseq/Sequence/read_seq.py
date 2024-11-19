@@ -1,7 +1,7 @@
 import re
 import warnings
 from types import SimpleNamespace
-from typing import Dict, Tuple, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     try:
         input_file = open(path, 'r')
     except FileNotFoundError as e:
-        raise FileNotFoundError(e)
+        raise FileNotFoundError(e) from e
 
     # Event libraries
     self.adc_library = EventLibrary()
@@ -241,7 +241,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 )
 
         # For versions prior to 1.4.0 block_durations have not been initialized
-        self.block_durations = dict()
+        self.block_durations = {}
         # Scan through blocks and calculate durations
         for block_counter in self.block_events:
             # Insert delay as temporary block_duration
@@ -362,7 +362,7 @@ def __read_definitions(input_file) -> Dict[str, str]:
     definitions : dict{str, str}
         Dict object containing key value pairs of definitions.
     """
-    definitions = dict()
+    definitions = {}
     line = __skip_comments(input_file)
     while line != -1 and not (line == '' or line[0] == '#'):
         tok = line.split(' ')
@@ -432,9 +432,9 @@ def __read_blocks(
     delay_idx : list
         Delay IDs.
     """
-    event_table = dict()
-    block_durations = dict()
-    delay_idx = dict()
+    event_table = {}
+    block_durations = {}
+    delay_idx = {}
     line = __strip_line(input_file)
 
     while line != '' and line != '#':
