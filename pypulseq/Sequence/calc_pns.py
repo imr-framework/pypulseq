@@ -70,9 +70,9 @@ def calc_pns(
         for i in range(ng):
             if gw_pp[i] is not None:
                 plt.plot(gw_pp[i].x[1:-1], gw_pp[i].c[1, :-1])
-        plt.title("gradient wave form, in Hz/m")
+        plt.title('gradient wave form, in Hz/m')
 
-    if type(hardware) == str:
+    if isinstance(hardware, str):
         # this loads the parameters from the provided text file
         asc, _ = readasc(hardware)
         hardware = asc_to_hw(asc)

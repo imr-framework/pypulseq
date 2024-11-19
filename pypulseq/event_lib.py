@@ -6,7 +6,7 @@ try:
 except ImportError:
     from typing import TypeVar
 
-    Self = TypeVar("Self", bound="EventLibrary")
+    Self = TypeVar('Self', bound='EventLibrary')
 
 import math
 import numpy as np
@@ -14,7 +14,7 @@ import numpy as np
 
 class EventLibrary:
     """
-    Defines an event library ot maintain a list of events. Provides methods to insert new data and find existing data.
+    Defines an event library to maintain a list of events. Provides methods to insert new data and find existing data.
 
     Sequence Properties:
     - data - A struct array with field 'array' to store data of varying lengths, remaining compatible with codegen.
@@ -44,9 +44,9 @@ class EventLibrary:
         self.numpy_data = numpy_data
 
     def __str__(self) -> str:
-        s = "EventLibrary:"
-        s += "\ndata: " + str(len(self.data))
-        s += "\ntype: " + str(len(self.type))
+        s = 'EventLibrary:'
+        s += '\ndata: ' + str(len(self.data))
+        s += '\ntype: ' + str(len(self.type))
         return s
 
     def find(self, new_data: np.ndarray) -> Tuple[int, bool]:
@@ -183,9 +183,9 @@ class EventLibrary:
         dict
         """
         return {
-            "key": key_id,
-            "data": self.data[key_id],
-            "type": self.type[key_id],
+            'key': key_id,
+            'data': self.data[key_id],
+            'type': self.type[key_id],
         }
 
     def out(self, key_id: int) -> SimpleNamespace:
@@ -276,7 +276,7 @@ class EventLibrary:
         def round_data(data: Tuple[float], digits: Tuple[int]) -> Tuple[float]:
             """
             Round the data tuple to a specified number of significant digits,
-            specified by `digits`. Rounding behaviour is similar to the {.Ng}
+            specified by `digits`. Rounding behavior is similar to the {.Ng}
             format specifier if N > 0, and similar to {.0f} otherwise.
             """
             return tuple(
@@ -287,7 +287,7 @@ class EventLibrary:
         def round_data_numpy(data: np.ndarray, digits: int) -> np.ndarray:
             """
             Round the data array to a specified number of significant digits,
-            specified by `digits`. Rounding behaviour is similar to the {.Ng}
+            specified by `digits`. Rounding behavior is similar to the {.Ng}
             format specifier if N > 0, and similar to {.0f} otherwise.
             """
             mags = 10 ** (digits - (np.ceil(np.log10(abs(data) + 1e-12))) if digits > 0 else -digits)

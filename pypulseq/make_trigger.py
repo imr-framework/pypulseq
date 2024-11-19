@@ -10,7 +10,7 @@ def make_trigger(
     channel: str, delay: float = 0, duration: float = 0, system: Union[Opts, None] = None
 ) -> SimpleNamespace:
     """
-     Create a trigger halt event for a synchronisation with an external signal from a given channel with an optional
+     Create a trigger halt event for a synchronization with an external signal from a given channel with an optional
      given delay prio to the sync and duration after the sync. Possible channel values: 'physio1','physio2'
      (Siemens specific).
 
@@ -39,14 +39,12 @@ def make_trigger(
     """
     if system is None:
         system = Opts.default
-        
-    if channel not in ["physio1", "physio2"]:
-        raise ValueError(
-            f"Channel {channel} is invalid. Must be one of 'physio1' or 'physio2'."
-        )
+
+    if channel not in ['physio1', 'physio2']:
+        raise ValueError(f"Channel {channel} is invalid. Must be one of 'physio1' or 'physio2'.")
 
     trigger = SimpleNamespace()
-    trigger.type = "trigger"
+    trigger.type = 'trigger'
     trigger.channel = channel
     trigger.delay = delay
     trigger.duration = duration

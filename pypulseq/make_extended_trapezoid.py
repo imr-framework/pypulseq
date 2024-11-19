@@ -64,39 +64,27 @@ def make_extended_trapezoid(
     """
     if system is None:
         system = Opts.default
-        
-    if channel not in ["x", "y", "z"]:
-        raise ValueError(
-            f"Invalid channel. Must be one of 'x', 'y' or 'z'. Passed: {channel}"
-        )
+
+    if channel not in ['x', 'y', 'z']:
+        raise ValueError(f"Invalid channel. Must be one of 'x', 'y' or 'z'. Passed: {channel}")
 
     times = np.asarray(times)
     amplitudes = np.asarray(amplitudes)
 
     if len(times) != len(amplitudes):
-        raise ValueError("Times and amplitudes must have the same length.")
+        raise ValueError('Times and amplitudes must have the same length.')
 
     if np.all(times == 0):
-        raise ValueError("At least one of the given times must be non-zero")
+        raise ValueError('At least one of the given times must be non-zero')
 
     if np.any(np.diff(times) <= 0):
-        raise ValueError(
-            "Times must be in ascending order and all times must be distinct"
-        )
+        raise ValueError('Times must be in ascending order and all times must be distinct')
 
-    if (
-        abs(
-            round(times[-1] / system.grad_raster_time) * system.grad_raster_time
-            - times[-1]
-        )
-        > eps
-    ):
-        raise ValueError("The last time point must be on a gradient raster")
+    if abs(round(times[-1] / system.grad_raster_time) * system.grad_raster_time - times[-1]) > eps:
+        raise ValueError('The last time point must be on a gradient raster')
 
     if skip_check is False and times[0] > 0 and amplitudes[0] != 0:
-        raise ValueError(
-            "If first amplitude of a gradient is non-zero, it must connect to previous block"
-        )
+        raise ValueError('If first amplitude of a gradient is non-zero, it must connect to previous block')
 
     if max_grad <= 0:
         max_grad = system.max_grad
@@ -106,9 +94,7 @@ def make_extended_trapezoid(
 
     if convert_to_arbitrary:
         # Represent the extended trapezoid on the regularly sampled time grid
-        waveform = points_to_waveform(
-            times=times, amplitudes=amplitudes, grad_raster_time=system.grad_raster_time
-        )
+        waveform = points_to_waveform(times=times, amplitudes=amplitudes, grad_raster_time=system.grad_raster_time)
         grad = make_arbitrary_grad(
             channel=channel,
             waveform=waveform,
@@ -119,24 +105,16 @@ def make_extended_trapezoid(
         )
     else:
         #  Keep the original possibly irregular sampling
-        if np.any(
-            np.abs(
-                np.round(times / system.grad_raster_time) * system.grad_raster_time
-                - times
-            )
-            > eps
-        ):
+        if np.any(np.abs(np.round(times / system.grad_raster_time) * system.grad_raster_time - times) > eps):
             raise ValueError(
                 'All time points must be on a gradient raster or "convert_to_arbitrary" option must be used.'
             )
 
         grad = SimpleNamespace()
-        grad.type = "grad"
+        grad.type = 'grad'
         grad.channel = channel
         grad.waveform = amplitudes
-        grad.delay = (
-            round(times[0] / system.grad_raster_time) * system.grad_raster_time
-        )
+        grad.delay = round(times[0] / system.grad_raster_time) * system.grad_raster_time
         grad.tt = times - grad.delay
         grad.shape_dur = grad.tt[-1]
         grad.area = 0.5 * ((grad.tt[1:] - grad.tt[:-1]) * (grad.waveform[1:] + grad.waveform[:-1])).sum()

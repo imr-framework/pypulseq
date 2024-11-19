@@ -170,66 +170,66 @@ def ext_test_report(self) -> str:
     timing_ok, timing_error_report = self.check_timing()
 
     report = (
-        f"Number of blocks: {num_blocks}\n"
-        f"Number of events:\n"
-        f"RF: {event_count[1]:6.0f}\n"
-        f"Gx: {event_count[2]:6.0f}\n"
-        f"Gy: {event_count[3]:6.0f}\n"
-        f"Gz: {event_count[4]:6.0f}\n"
-        f"ADC: {event_count[5]:6.0f}\n"
-        f"Delay: {event_count[0]:6.0f}\n"
-        f"Sequence duration: {duration:.6f} s\n"
-        f"TE: {TE:.6f} s\n"
-        f"TR: {TR:.6f} s\n"
+        f'Number of blocks: {num_blocks}\n'
+        f'Number of events:\n'
+        f'RF: {event_count[1]:6.0f}\n'
+        f'Gx: {event_count[2]:6.0f}\n'
+        f'Gy: {event_count[3]:6.0f}\n'
+        f'Gz: {event_count[4]:6.0f}\n'
+        f'ADC: {event_count[5]:6.0f}\n'
+        f'Delay: {event_count[0]:6.0f}\n'
+        f'Sequence duration: {duration:.6f} s\n'
+        f'TE: {TE:.6f} s\n'
+        f'TR: {TR:.6f} s\n'
     )
-    report += "Flip angle: " + ("{:.02f} " * len(flip_angles_deg)).format(*flip_angles_deg) + "deg\n"
+    report += 'Flip angle: ' + ('{:.02f} ' * len(flip_angles_deg)).format(*flip_angles_deg) + 'deg\n'
     report += (
-        "Unique k-space positions (aka cols, rows, etc.): "
-        + ("{:.0f} " * len(unique_k_positions)).format(*unique_k_positions)
-        + "\n"
+        'Unique k-space positions (aka cols, rows, etc.): '
+        + ('{:.0f} ' * len(unique_k_positions)).format(*unique_k_positions)
+        + '\n'
     )
 
     if np.any(unique_k_positions > 1):
-        report += f"Dimensions: {len(k_extent)}\n"
-        report += ("Spatial resolution: {:.02f} mm\n" * len(k_extent)).format(*(0.5 / k_extent * 1e3))
-        report += f"Repetitions/slices/contrasts: {repeats_median}; range: [{repeats_min, repeats_max}]\n"
+        report += f'Dimensions: {len(k_extent)}\n'
+        report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*(0.5 / k_extent * 1e3))
+        report += f'Repetitions/slices/contrasts: {repeats_median}; range: [{repeats_min, repeats_max}]\n'
 
         if is_cartesian:
-            report += "Cartesian encoding trajectory detected\n"
+            report += 'Cartesian encoding trajectory detected\n'
         else:
-            report += "Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n"
+            report += 'Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n'
 
-    ga_converted = convert(from_value=ga, from_unit="Hz/m", to_unit="mT/m")
-    gs_converted = convert(from_value=gs, from_unit="Hz/m/s", to_unit="T/m/s")
+    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m')
+    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s')
     report += (
-        "Max gradient: "
-        + ("{:.0f} " * len(ga)).format(*ga)
-        + "Hz/m == "
-        + ("{:.02f} " * len(ga_converted)).format(*ga_converted)
-        + "mT/m\n"
+        'Max gradient: '
+        + ('{:.0f} ' * len(ga)).format(*ga)
+        + 'Hz/m == '
+        + ('{:.02f} ' * len(ga_converted)).format(*ga_converted)
+        + 'mT/m\n'
     )
     report += (
-        "Max slew rate: "
-        + ("{:.0f} " * len(gs)).format(*gs)
-        + "Hz/m/s == "
-        + ("{:.02f} " * len(ga_converted)).format(*gs_converted)
-        + "T/m/s\n"
+        'Max slew rate: '
+        + ('{:.0f} ' * len(gs)).format(*gs)
+        + 'Hz/m/s == '
+        + ('{:.02f} ' * len(ga_converted)).format(*gs_converted)
+        + 'T/m/s\n'
     )
 
-    ga_abs_converted = convert(from_value=ga_abs, from_unit="Hz/m", to_unit="mT/m")
-    gs_abs_converted = convert(from_value=gs_abs, from_unit="Hz/m/s", to_unit="T/m/s")
-    report += f"Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n"
-    report += f"Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s"
+    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m')
+    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s')
+    report += f'Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n'
+    report += f'Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s'
 
     if timing_ok:
-        report += "\nEvent timing check passed successfully\n"
+        report += '\nEvent timing check passed successfully\n'
     else:
-        report += f"\nEvent timing check failed with {len(timing_error_report)} errors in total. \n"
-        report += "Details of the first up to 20 timing errors:"
+        report += f'\nEvent timing check failed with {len(timing_error_report)} errors in total. \n'
+        report += 'Details of the first up to 20 timing errors:'
         max_errors = min(20, len(timing_error_report))
         for line in timing_error_report[:max_errors]:
-            report += f"\n{line}"
+            report += f'\n{line}'
         if len(timing_error_report) > max_errors:
-            report += "\n..."
+            report += '\n...'
 
     return report

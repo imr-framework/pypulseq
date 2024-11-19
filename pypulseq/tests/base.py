@@ -9,7 +9,7 @@ from _pytest.python_api import ApproxBase
 def main(script: callable, matlab_seq_filename: str, pypulseq_seq_filename: str):
     path_here = Path(__file__)  # Path of this file
     pypulseq_seq_filename = path_here.parent / pypulseq_seq_filename  # Path to PyPulseq seq
-    matlab_seq_filename = path_here.parent / "matlab_seqs" / matlab_seq_filename  # Path to MATLAB seq
+    matlab_seq_filename = path_here.parent / 'matlab_seqs' / matlab_seq_filename  # Path to MATLAB seq
 
     # Run PyPulseq script and write seq file
     script.main(plot=False, write_seq=True, seq_filename=str(pypulseq_seq_filename))
@@ -63,24 +63,24 @@ class Approx(ApproxBase):
         #     return [f'Actual and expected types do not match: {type(actual)} != {type(self.expected)}']
         if isinstance(self.expected, dict):
             if set(self.expected.keys()) != set(actual.keys()):
-                return [f"Actual and expected keys do not match: {set(actual.keys())} != {set(self.expected.keys())}"]
+                return [f'Actual and expected keys do not match: {set(actual.keys())} != {set(self.expected.keys())}']
 
             r = []
             for k in self.expected:
                 approx_obj = Approx(self.expected[k], rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
                 if actual[k] != approx_obj:
-                    r += [f"{k} does not match:"]
-                    r += [f"  {x}" for x in approx_obj._repr_compare(actual[k])]
+                    r += [f'{k} does not match:']
+                    r += [f'  {x}' for x in approx_obj._repr_compare(actual[k])]
             return r
         elif isinstance(self.expected, (list, tuple)):
             if len(self.expected) != len(actual):
-                return [f"Actual and expected lengths do not match: {len(actual)} != {len(self.expected)}"]
+                return [f'Actual and expected lengths do not match: {len(actual)} != {len(self.expected)}']
             r = []
             for i, (e, a) in enumerate(zip(self.expected, actual)):
                 approx_obj = Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
                 if a != approx_obj:
-                    r += [f"Index {i} does not match:"]
-                    r += [f"  {x}" for x in approx_obj._repr_compare(a)]
+                    r += [f'Index {i} does not match:']
+                    r += [f'  {x}' for x in approx_obj._repr_compare(a)]
             return r
         elif isinstance(self.expected, SimpleNamespace):
             return Approx(self.expected.__dict__, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)._repr_compare(

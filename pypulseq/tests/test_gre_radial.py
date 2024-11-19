@@ -9,8 +9,8 @@ import pytest
 @pytest.mark.matlab_seq_comp
 class TestEPISpinEchoRS(unittest.TestCase):
     def test_write_epi(self):
-        matlab_seq_filename = "gre_radial_matlab.seq"
-        pypulseq_seq_filename = "gre_radial_pypulseq.seq"
+        matlab_seq_filename = 'gre_radial_matlab.seq'
+        pypulseq_seq_filename = 'gre_radial_pypulseq.seq'
         base.main(
             script=write_radial_gre,
             matlab_seq_filename=matlab_seq_filename,
@@ -18,5 +18,5 @@ class TestEPISpinEchoRS(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

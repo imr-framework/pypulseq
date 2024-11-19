@@ -48,9 +48,9 @@ def safe_example_hw():
     # See comments for units.
 
     hw = SimpleNamespace()
-    hw.name = "MP_GPA_EXAMPLE"
-    hw.checksum = "1234567890"
-    hw.dependency = ""
+    hw.name = 'MP_GPA_EXAMPLE'
+    hw.checksum = '1234567890'
+    hw.dependency = ''
 
     hw.x = SimpleNamespace()
     hw.x.tau1 = 0.20  # ms
@@ -199,10 +199,10 @@ def safe_hw_check(hw):
         or abs(hw.y.a1 + hw.y.a2 + hw.y.a3 - 1) > 0.001
         or abs(hw.z.a1 + hw.z.a2 + hw.z.a3 - 1) > 0.001
     ):
-        raise ValueError("Hardware specification a1+a2+a3 must be equal to 1!")
+        raise ValueError('Hardware specification a1+a2+a3 must be equal to 1!')
 
-    axl = ["x", "y", "z"]
-    fnl = ["stim_limit", "stim_thresh", "tau1", "tau2", "tau3", "a1", "a2", "a3", "g_scale"]
+    axl = ['x', 'y', 'z']
+    fnl = ['stim_limit', 'stim_thresh', 'tau1', 'tau2', 'tau3', 'a1', 'a2', 'a3', 'g_scale']
 
     for axn in axl:
         if not hasattr(hw, axn):
@@ -324,7 +324,7 @@ def safe_gwf_to_pns(gwf, rf, dt, hw, do_padding=True):
     pns[:, 1] = safe_pns_model(dgdt[:, 1], dt, hw.y)
     pns[:, 2] = safe_pns_model(dgdt[:, 2], dt, hw.z)
 
-    # Export relevant paramters
+    # Export relevant parameters
     res = SimpleNamespace()
     res.pns = pns
     res.gwf = gwf
@@ -361,33 +361,33 @@ def safe_plot(pns, dt=None, envelope=True, envelope_points=500):
 
     if dt is None:
         ttot = 1  # au
-        xlabstr = "Time [a.u.]"
+        xlabstr = 'Time [a.u.]'
     else:
         ttot = pns.shape[0] * dt * 1000  # ms
-        xlabstr = "Time [ms]"
+        xlabstr = 'Time [ms]'
 
     t = np.linspace(0, ttot, pns.shape[0])
 
-    plt.plot(t, pns[:, 0], "r-", t, pns[:, 1], "g-", t, pns[:, 2], "b-", t, pnsnorm, "k-")
+    plt.plot(t, pns[:, 0], 'r-', t, pns[:, 1], 'g-', t, pns[:, 2], 'b-', t, pnsnorm, 'k-')
 
     plt.ylim([0, 120])
     plt.xlim([min(t), max(t)])
 
-    plt.title(f"Predicted PNS ({max(pnsnorm):0.0f}%)")
+    plt.title(f'Predicted PNS ({max(pnsnorm):0.0f}%)')
 
     plt.xlabel(xlabstr)
-    plt.ylabel("Relative stimulation [%]")
+    plt.ylabel('Relative stimulation [%]')
 
-    plt.plot([0, max(t)], [max(pnsnorm), max(pnsnorm)], "k:")
+    plt.plot([0, max(t)], [max(pnsnorm), max(pnsnorm)], 'k:')
 
     plt.legend(
         [
-            f"X ({max(pns[:,0]):0.0f}%)",
-            f"Y ({max(pns[:,1]):0.0f}%)",
-            f"Z ({max(pns[:,2]):0.0f}%)",
-            f"nrm ({max(pnsnorm):0.0f}%)",
+            f'X ({max(pns[:,0]):0.0f}%)',
+            f'Y ({max(pns[:,1]):0.0f}%)',
+            f'Z ({max(pns[:,2]):0.0f}%)',
+            f'nrm ({max(pnsnorm):0.0f}%)',
         ],
-        loc="best",
+        loc='best',
     )
 
 
@@ -395,7 +395,7 @@ def safe_example():
     # Load an exampe gradient waveform
     [gwf, rf, dt] = safe_example_gwf()
 
-    # Load reponse parameters for example hardware
+    # Load response parameters for example hardware
     hw = safe_example_hw()
 
     # Check if hardware parameters are consistent
@@ -411,5 +411,5 @@ def safe_example():
     safe_plot(pns, dt)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     safe_example()

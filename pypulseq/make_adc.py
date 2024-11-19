@@ -5,7 +5,6 @@ from warnings import warn
 from typing import Optional, Tuple, List
 from math import isclose, floor, ceil, gcd, prod
 import itertools
-import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.utils.tracing import trace_enabled, trace
 
@@ -27,7 +26,7 @@ def make_adc(
     num_samples: int
         Number of readout samples.
     system : Opts, default=Opts()
-        System limits. Default is a system limits object initialised to default values.
+        System limits. Default is a system limits object initialized to default values.
     dwell : float, default=0
         ADC dead time in seconds (s) after sampling.
     duration : float, default=0
@@ -53,7 +52,7 @@ def make_adc(
         system = Opts.default
 
     adc = SimpleNamespace()
-    adc.type = "adc"
+    adc.type = 'adc'
     adc.num_samples = num_samples
     adc.dwell = dwell
     adc.delay = delay
@@ -62,7 +61,7 @@ def make_adc(
     adc.dead_time = system.adc_dead_time
 
     if (dwell == 0 and duration == 0) or (dwell > 0 and duration > 0):
-        raise ValueError("Either dwell or duration must be defined")
+        raise ValueError('Either dwell or duration must be defined')
 
     if duration > 0:
         adc.dwell = duration / num_samples
@@ -72,7 +71,7 @@ def make_adc(
 
     if adc.dead_time > adc.delay:
         warn(
-            f"Specified ADC delay {adc.delay*1e6:.2f} us is less than the dead time {adc.dead_time*1e6:.0f} us. Delay was increased to the dead time.",
+            f'Specified ADC delay {adc.delay*1e6:.2f} us is less than the dead time {adc.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
             stacklevel=2,
         )
         adc.delay = adc.dead_time
@@ -84,7 +83,7 @@ def make_adc(
 
 
 def calc_adc_segments(
-    num_samples: int, dwell: float, system: Optional[Opts] = None, mode: str = "lengthen"
+    num_samples: int, dwell: float, system: Optional[Opts] = None, mode: str = 'lengthen'
 ) -> Tuple[int, int]:
     """Calculate splitting of the ADC in segments with equal samples.
 
@@ -95,7 +94,7 @@ def calc_adc_segments(
     dwell : float
         Dwell time of the ADC in [s]
     system : Optional[Opts], default=None
-       System limits. Default is a system limits object initialised to default values.
+       System limits. Default is a system limits object initialized to default values.
     mode : str, default='lengthen'
         The total number of samples can either be shortened or lengthened to match the constraints.
 
@@ -126,7 +125,7 @@ def calc_adc_segments(
     # Define maximum number of segments for the ADC
     MAX_SEGMENTS = 128
 
-    if mode not in ["shorten", "lengthen"]:
+    if mode not in ['shorten', 'lengthen']:
         raise ValueError(f"'mode' must be 'shorten' or 'lengthen' but is {mode}")
 
     if system is None:
@@ -155,7 +154,7 @@ def calc_adc_segments(
         min_samples_segment *= system.adc_samples_divisor / gcd_adcdiv
 
     # Get segment multiplier
-    if mode == "shorten":
+    if mode == 'shorten':
         samples_seg_multip = floor(num_samples / min_samples_segment)
     else:
         samples_seg_multip = ceil(num_samples / min_samples_segment)
@@ -179,15 +178,15 @@ def calc_adc_segments(
         if num_samples_seg <= system.adc_samples_limit and num_segments <= MAX_SEGMENTS:
             break
         else:  # Shorten or lengthen the number of samples per segment
-            samples_seg_multip += 1 if mode == "lengthen" else -1
+            samples_seg_multip += 1 if mode == 'lengthen' else -1
 
     # Validate constraints
     if samples_seg_multip <= 0:
-        raise ValueError("Could not find suitable segmentation.")
+        raise ValueError('Could not find suitable segmentation.')
     if num_samples_seg == 0:
-        raise ValueError("Could not find suitable number of samples per segment.")
+        raise ValueError('Could not find suitable number of samples per segment.')
     if num_segments > MAX_SEGMENTS:
-        raise ValueError(f"Number of segments ({num_segments}) exceeds allowed number of {MAX_SEGMENTS}")
+        raise ValueError(f'Number of segments ({num_segments}) exceeds allowed number of {MAX_SEGMENTS}')
 
     return int(num_segments), int(num_samples_seg)
 

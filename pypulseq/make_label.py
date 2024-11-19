@@ -4,9 +4,7 @@ from typing import Union
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def make_label(
-    label: str, type: str, value: Union[bool, float, int]
-) -> SimpleNamespace:
+def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleNamespace:
     """
     Create an ADC Label.
 
@@ -39,16 +37,16 @@ def make_label(
             "Invalid label. Must be one of 'SLC', 'SEG', 'REP', 'AVG', 'SET', 'ECO', 'PHS', 'LIN', 'PAR', "
             "NAV', 'REV', or 'SMS'."
         )
-    if type not in ["SET", "INC"]:
+    if type not in ['SET', 'INC']:
         raise ValueError("Invalid type. Must be one of 'SET' or 'INC'.")
     if not isinstance(value, (bool, float, int)):
-        raise ValueError("Must supply a valid numerical or logical value.")
+        raise ValueError('Must supply a valid numerical or logical value.')
 
     out = SimpleNamespace()
-    if type == "SET":
-        out.type = "labelset"
-    elif type == "INC":
-        out.type = "labelinc"
+    if type == 'SET':
+        out.type = 'labelset'
+    elif type == 'INC':
+        out.type = 'labelinc'
 
     out.label = label
     out.value = value

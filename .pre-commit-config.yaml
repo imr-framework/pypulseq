@@ -1,0 +1,28 @@
+﻿default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+      # - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+        exclude: ^.vscode/
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff # linter
+        args: [--fix]
+      - id: ruff-format # formatter
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.25.0
+    hooks:
+      - id: typos
+        exclude: ^pypulseq/seq_examples/

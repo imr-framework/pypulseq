@@ -44,11 +44,11 @@ def split_gradient(
     """
     if system is None:
         system = Opts.default
-        
+
     grad_raster_time = system.grad_raster_time
     total_length = calc_duration(grad)
 
-    if grad.type == "trap":
+    if grad.type == 'trap':
         channel = grad.channel
         grad.delay = round(grad.delay / grad_raster_time) * grad_raster_time
         grad.rise_time = round(grad.rise_time / grad_raster_time) * grad_raster_time
@@ -77,10 +77,9 @@ def split_gradient(
         )
         ramp_down.delay = total_length - grad.fall_time
 
-
         times = np.array([0, grad.flat_time])
         amplitudes = np.array([grad.amplitude, grad.amplitude])
-        
+
         flat_top = make_extended_trapezoid(
             channel=channel,
             system=system,
@@ -97,7 +96,7 @@ def split_gradient(
             ramp_down.trace = t
 
         return ramp_up, flat_top, ramp_down
-    elif grad.type == "grad":
-        raise ValueError("Splitting of arbitrary gradients is not implemented yet.")
+    elif grad.type == 'grad':
+        raise ValueError('Splitting of arbitrary gradients is not implemented yet.')
     else:
-        raise ValueError("Splitting of unsupported event.")
+        raise ValueError('Splitting of unsupported event.')

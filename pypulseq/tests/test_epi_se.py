@@ -9,8 +9,8 @@ import pytest
 @pytest.mark.matlab_seq_comp
 class TestEPISpinEcho(unittest.TestCase):
     def test_write_epi(self):
-        matlab_seq_filename = "epi_se_matlab.seq"
-        pypulseq_seq_filename = "epi_se_pypulseq.seq"
+        matlab_seq_filename = 'epi_se_matlab.seq'
+        pypulseq_seq_filename = 'epi_se_pypulseq.seq'
         base.main(
             script=write_epi_se,
             matlab_seq_filename=matlab_seq_filename,
@@ -18,5 +18,5 @@ class TestEPISpinEcho(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

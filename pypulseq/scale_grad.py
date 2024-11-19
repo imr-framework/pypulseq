@@ -20,7 +20,7 @@ def scale_grad(grad: SimpleNamespace, scale: float) -> SimpleNamespace:
     """
     # copy() to emulate pass-by-value; otherwise passed grad event is modified
     scaled_grad = copy(grad)
-    if scaled_grad.type == "trap":
+    if scaled_grad.type == 'trap':
         scaled_grad.amplitude = scaled_grad.amplitude * scale
         scaled_grad.area = scaled_grad.area * scale
         scaled_grad.flat_area = scaled_grad.flat_area * scale
@@ -29,7 +29,7 @@ def scale_grad(grad: SimpleNamespace, scale: float) -> SimpleNamespace:
         scaled_grad.first = scaled_grad.first * scale
         scaled_grad.last = scaled_grad.last * scale
 
-    if hasattr(scaled_grad, "id"):
-        delattr(scaled_grad, "id")
+    if hasattr(scaled_grad, 'id'):
+        delattr(scaled_grad, 'id')
 
     return scaled_grad

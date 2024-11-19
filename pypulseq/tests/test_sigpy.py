@@ -2,6 +2,7 @@
 # slr - check slice profile
 
 import pytest
+import importlib.util
 
 import numpy as np
 
@@ -11,11 +12,12 @@ from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 
 
 def test_sigpy_import():
-    try:
-        from pypulseq.make_sigpy_pulse import sigpy_n_seq
-    except (ImportError, ModuleNotFoundError):
-        with pytest.raises(ModuleNotFoundError, match="SigPy is not installed."):
-            from pypulseq.make_sigpy_pulse import sigpy_n_seq
+    if importlib.util.find_spec('pypulseq.make_sigpy_pulse'):
+        # Attempt to import and ensure no issues
+        pass
+    else:
+        with pytest.raises(ModuleNotFoundError, match='SigPy is not installed.'):
+            raise ModuleNotFoundError('SigPy is not installed.')
 
 
 @pytest.mark.sigpy
@@ -23,7 +25,7 @@ def test_slr():
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
 
-    print("Testing SLR design")
+    print('Testing SLR design')
 
     time_bw_product = 4
     slice_thickness = 3e-3  # Slice thickness
@@ -31,22 +33,22 @@ def test_slr():
     # Set system limits
     system = Opts(
         max_grad=32,
-        grad_unit="mT/m",
+        grad_unit='mT/m',
         max_slew=130,
-        slew_unit="T/m/s",
+        slew_unit='T/m/s',
         rf_ringdown_time=30e-6,
         rf_dead_time=100e-6,
     )
     pulse_cfg = SigpyPulseOpts(
-        pulse_type="slr",
-        ptype="st",
-        ftype="ls",
+        pulse_type='slr',
+        ptype='st',
+        ftype='ls',
         d1=0.01,
         d2=0.01,
         cancel_alpha_phs=False,
         n_bands=3,
         band_sep=20,
-        phs_0_pt="None",
+        phs_0_pt='None',
     )
     rfp, gz, _, pulse = sigpy_n_seq(
         flip_angle=flip_angle,
@@ -80,7 +82,7 @@ def test_sms():
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
     import sigpy.mri.rf as rf
 
-    print("Testing SMS design")
+    print('Testing SMS design')
 
     time_bw_product = 4
     slice_thickness = 3e-3  # Slice thickness
@@ -89,22 +91,22 @@ def test_sms():
     # Set system limits
     system = Opts(
         max_grad=32,
-        grad_unit="mT/m",
+        grad_unit='mT/m',
         max_slew=130,
-        slew_unit="T/m/s",
+        slew_unit='T/m/s',
         rf_ringdown_time=30e-6,
         rf_dead_time=100e-6,
     )
     pulse_cfg = SigpyPulseOpts(
-        pulse_type="sms",
-        ptype="st",
-        ftype="ls",
+        pulse_type='sms',
+        ptype='st',
+        ftype='ls',
         d1=0.01,
         d2=0.01,
         cancel_alpha_phs=False,
         n_bands=n_bands,
         band_sep=20,
-        phs_0_pt="None",
+        phs_0_pt='None',
     )
     rfp, gz, _, pulse = sigpy_n_seq(
         flip_angle=flip_angle,

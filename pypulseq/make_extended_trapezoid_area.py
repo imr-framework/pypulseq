@@ -80,9 +80,7 @@ def make_extended_trapezoid_area(
         # First, consider solutions that use maximum slew rate:
         # Analytically calculate calculate the point where:
         #   grad_start + ramp_up_time * max_slew == grad_end + ramp_down_time * max_slew
-        ramp_up_time = (duration * max_slew * raster_time - grad_start + grad_end) / (
-                           2*max_slew*raster_time
-                       )
+        ramp_up_time = (duration * max_slew * raster_time - grad_start + grad_end) / (2 * max_slew * raster_time)
         ramp_up_time = round(ramp_up_time)
 
         # Check if gradient amplitude exceeds max_grad, if so, adjust ramp
@@ -94,17 +92,13 @@ def make_extended_trapezoid_area(
             ramp_down_time = duration - ramp_up_time
 
         # Add possible solution if timing is valid
-        if (ramp_up_time > 0
-                and ramp_down_time > 0
-                and ramp_up_time + ramp_down_time <= duration):
+        if ramp_up_time > 0 and ramp_down_time > 0 and ramp_up_time + ramp_down_time <= duration:
             ramp_up_times.append(ramp_up_time)
             ramp_down_times.append(ramp_down_time)
 
         # Analytically calculate calculate the point where:
         #   grad_start - ramp_up_time * max_slew == grad_end - ramp_down_time * max_slew
-        ramp_up_time = (duration * max_slew * raster_time + grad_start - grad_end) / (
-                           2*max_slew*raster_time
-                       )
+        ramp_up_time = (duration * max_slew * raster_time + grad_start - grad_end) / (2 * max_slew * raster_time)
         ramp_up_time = round(ramp_up_time)
 
         # Check if gradient amplitude exceeds -max_grad, if so, adjust ramp
@@ -116,9 +110,7 @@ def make_extended_trapezoid_area(
             ramp_down_time = duration - ramp_up_time
 
         # Add possible solution if timing is valid
-        if (ramp_up_time > 0
-                and ramp_down_time > 0
-                and ramp_up_time + ramp_down_time <= duration):
+        if ramp_up_time > 0 and ramp_down_time > 0 and ramp_up_time + ramp_down_time <= duration:
             ramp_up_times.append(ramp_up_time)
             ramp_down_times.append(ramp_down_time)
 
@@ -176,10 +168,10 @@ def make_extended_trapezoid_area(
     # From this point onwards, solutions can always be found by extending
     # the duration and doing a binary search.
     max_duration = max(
-                       round(_calc_ramp_time(0, grad_start) / raster_time),
-                       round(_calc_ramp_time(0, grad_end) / raster_time),
-                       min_duration,
-                   )
+        round(_calc_ramp_time(0, grad_start) / raster_time),
+        round(_calc_ramp_time(0, grad_end) / raster_time),
+        min_duration,
+    )
 
     # Linear search
     solution = None
@@ -230,6 +222,6 @@ def make_extended_trapezoid_area(
         grad.trace = trace()
 
     if not abs(grad.area - area) < 1e-8:
-        raise ValueError(f"Could not find a solution for area={area}.")
+        raise ValueError(f'Could not find a solution for area={area}.')
 
     return grad, np.array(times), amplitudes

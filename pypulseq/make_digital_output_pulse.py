@@ -34,14 +34,12 @@ def make_digital_output_pulse(
     """
     if system is None:
         system = Opts.default
-        
-    if channel not in ["osc0", "osc1", "ext1"]:
-        raise ValueError(
-            f"Channel {channel} is invalid. Must be one of 'osc0','osc1', or 'ext1'."
-        )
+
+    if channel not in ['osc0', 'osc1', 'ext1']:
+        raise ValueError(f"Channel {channel} is invalid. Must be one of 'osc0','osc1', or 'ext1'.")
 
     trig = SimpleNamespace()
-    trig.type = "output"
+    trig.type = 'output'
     trig.channel = channel
     trig.delay = delay
     trig.duration = duration

@@ -68,7 +68,7 @@ def make_sinc_pulse(
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
     system : Opts, default=Opts()
-        System limits. Default is a system limits object initialised to default values.
+        System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, default=4
         Time-bandwidth product.
     use : str, default=str()
@@ -93,18 +93,16 @@ def make_sinc_pulse(
     """
     if system is None:
         system = Opts.default
-        
+
     valid_pulse_uses = get_supported_rf_uses()
-    if use != "" and use not in valid_pulse_uses:
-        raise ValueError(
-            f"Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}"
-        )
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
 
     if duration <= 0:
-        raise ValueError("RF pulse duration must be positive.")
+        raise ValueError('RF pulse duration must be positive.')
 
     BW = time_bw_product / duration
     alpha = apodization
@@ -117,7 +115,7 @@ def make_sinc_pulse(
     signal = signal * flip_angle / flip
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
     rf.shape_dur = N * dwell
@@ -131,12 +129,15 @@ def make_sinc_pulse(
         rf.use = use
 
     if rf.dead_time > rf.delay:
-        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -148,20 +149,15 @@ def make_sinc_pulse(
 
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
         if rf.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay

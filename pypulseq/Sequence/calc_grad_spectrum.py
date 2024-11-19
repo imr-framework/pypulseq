@@ -12,7 +12,7 @@ def calculate_gradient_spectrum(
     frequency_oversampling: float = 3,
     time_range: Union[List[float], None] = None,
     plot: bool = True,
-    combine_mode: str = "max",
+    combine_mode: str = 'max',
     use_derivative: bool = False,
     acoustic_resonances: List[dict] = [],
 ) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray, np.ndarray]:
@@ -101,12 +101,12 @@ def calculate_gradient_spectrum(
         freq, times, sxx = spectrogram(
             gw[i],
             fs=1 / dt,
-            mode="magnitude",
+            mode='magnitude',
             nperseg=nwin,
             noverlap=nwin // 2,
             nfft=nfft,
-            detrend="constant",
-            window=("tukey", 1),
+            detrend='constant',
+            window=('tukey', 1),
         )
         mask = freq < max_frequency
 
@@ -114,50 +114,50 @@ def calculate_gradient_spectrum(
         spectrogram_rss += sxx[mask] ** 2
 
         # Combine spectrogram over time axis
-        if combine_mode == "max":
+        if combine_mode == 'max':
             s = sxx[mask].max(axis=1)
-        elif combine_mode == "mean":
+        elif combine_mode == 'mean':
             s = sxx[mask].mean(axis=1)
-        elif combine_mode == "rss":
+        elif combine_mode == 'rss':
             s = np.sqrt((sxx[mask] ** 2).sum(axis=1))
-        elif combine_mode == "none":
+        elif combine_mode == 'none':
             s = sxx[mask]
         else:
-            raise ValueError(f"Unknown value for combine_mode: {combine_mode}, must be one of [max, mean, rss, none]")
+            raise ValueError(f'Unknown value for combine_mode: {combine_mode}, must be one of [max, mean, rss, none]')
 
         frequencies = freq[mask]
         spectrograms.append(s)
 
     # Root-sum-of-squares combined spectrogram for all gradient channels
     spectrogram_rss = np.sqrt(spectrogram_rss)
-    if combine_mode == "max":
+    if combine_mode == 'max':
         spectrogram_rss = spectrogram_rss.max(axis=1)
-    elif combine_mode == "mean":
+    elif combine_mode == 'mean':
         spectrogram_rss = spectrogram_rss.mean(axis=1)
-    elif combine_mode == "rss":
+    elif combine_mode == 'rss':
         spectrogram_rss = np.sqrt((spectrogram_rss**2).sum(axis=1))
 
     # Plot spectrograms and acoustic resonances if specified
     if plot:
-        if combine_mode != "none":
+        if combine_mode != 'none':
             plt.figure()
-            plt.xlabel("Frequency (Hz)")
+            plt.xlabel('Frequency (Hz)')
             # According to spectrogram documentation y unit is (Hz/m)^2 / Hz = Hz/m^2, is this meaningful?
             for s in spectrograms:
                 plt.plot(frequencies, s)
             plt.plot(frequencies, spectrogram_rss)
-            plt.legend(["x", "y", "z", "rss"])
+            plt.legend(['x', 'y', 'z', 'rss'])
 
             for res in acoustic_resonances:
-                plt.axvline(res["frequency"], color="k", linestyle="-")
-                plt.axvline(res["frequency"] - res["bandwidth"] / 2, color="k", linestyle="--")
-                plt.axvline(res["frequency"] + res["bandwidth"] / 2, color="k", linestyle="--")
+                plt.axvline(res['frequency'], color='k', linestyle='-')
+                plt.axvline(res['frequency'] - res['bandwidth'] / 2, color='k', linestyle='--')
+                plt.axvline(res['frequency'] + res['bandwidth'] / 2, color='k', linestyle='--')
         else:
-            for s, c in zip(spectrograms, ["X", "Y", "Z"]):
+            for s, c in zip(spectrograms, ['X', 'Y', 'Z']):
                 plt.figure()
-                plt.title(f"Spectrum {c}")
-                plt.xlabel("Time (s)")
-                plt.ylabel("Frequency (Hz)")
+                plt.title(f'Spectrum {c}')
+                plt.xlabel('Time (s)')
+                plt.ylabel('Frequency (Hz)')
                 plt.imshow(
                     abs(s[::-1]),
                     extent=(times[0], times[-1], frequencies[0], frequencies[-1]),
@@ -165,14 +165,14 @@ def calculate_gradient_spectrum(
                 )
 
                 for res in acoustic_resonances:
-                    plt.axhline(res["frequency"], color="r", linestyle="-")
-                    plt.axhline(res["frequency"] - res["bandwidth"] / 2, color="r", linestyle="--")
-                    plt.axhline(res["frequency"] + res["bandwidth"] / 2, color="r", linestyle="--")
+                    plt.axhline(res['frequency'], color='r', linestyle='-')
+                    plt.axhline(res['frequency'] - res['bandwidth'] / 2, color='r', linestyle='--')
+                    plt.axhline(res['frequency'] + res['bandwidth'] / 2, color='r', linestyle='--')
 
             plt.figure()
-            plt.title("Total spectrum")
-            plt.xlabel("Time (s)")
-            plt.ylabel("Frequency (Hz)")
+            plt.title('Total spectrum')
+            plt.xlabel('Time (s)')
+            plt.ylabel('Frequency (Hz)')
             plt.imshow(
                 abs(spectrogram_rss[::-1]),
                 extent=(times[0], times[-1], frequencies[0], frequencies[-1]),
@@ -180,8 +180,8 @@ def calculate_gradient_spectrum(
             )
 
             for res in acoustic_resonances:
-                plt.axhline(res["frequency"], color="r", linestyle="-")
-                plt.axhline(res["frequency"] - res["bandwidth"] / 2, color="r", linestyle="--")
-                plt.axhline(res["frequency"] + res["bandwidth"] / 2, color="r", linestyle="--")
+                plt.axhline(res['frequency'], color='r', linestyle='-')
+                plt.axhline(res['frequency'] - res['bandwidth'] / 2, color='r', linestyle='--')
+                plt.axhline(res['frequency'] + res['bandwidth'] / 2, color='r', linestyle='--')
 
     return spectrograms, spectrogram_rss, frequencies, times

@@ -83,4 +83,4 @@ def main(N: int) -> LinearSegmentedColormap:
         [0.9769, 0.9839, 0.0805],
     ]
 
-    return LinearSegmentedColormap.from_list(name="parula", colors=cm_data, N=N)
+    return LinearSegmentedColormap.from_list(name='parula', colors=cm_data, N=N)

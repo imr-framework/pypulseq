@@ -98,11 +98,9 @@ def make_gauss_pulse(
     """
     if system is None:
         system = Opts.default
-        
-    if use != "" and use not in get_supported_rf_uses():
-        raise ValueError(
-            f"Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}"
-        )
+
+    if use != '' and use not in get_supported_rf_uses():
+        raise ValueError(f'Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
@@ -121,7 +119,7 @@ def make_gauss_pulse(
     signal = signal * flip_angle / flip
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
     rf.shape_dur = N * dwell
@@ -130,16 +128,19 @@ def make_gauss_pulse(
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    if use != "":
+    if use != '':
         rf.use = use
 
     if rf.dead_time > rf.delay:
-        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -151,20 +152,15 @@ def make_gauss_pulse(
 
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
         if rf.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay

@@ -19,6 +19,7 @@ from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 from pypulseq.utils.tracing import trace_enabled, trace
 
+
 def sigpy_n_seq(
     flip_angle: float,
     delay: float = 0,
@@ -66,7 +67,7 @@ def sigpy_n_seq(
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
     system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
+        System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, optional, default=4
         Time-bandwidth product.
     use : str, optional, default=str()
@@ -92,13 +93,13 @@ def sigpy_n_seq(
     if system is None:
         system = Opts.default
 
-    valid_use_pulses = ["excitation", "refocusing", "inversion"]
-    if use != "" and use not in valid_use_pulses:
+    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
+    if use != '' and use not in valid_use_pulses:
         raise ValueError(
             f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
         )
 
-    if pulse_cfg.pulse_type == "slr":
+    if pulse_cfg.pulse_type == 'slr':
         [signal, t, pulse] = make_slr(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
@@ -107,7 +108,7 @@ def sigpy_n_seq(
             pulse_cfg=pulse_cfg,
             disp=plot,
         )
-    if pulse_cfg.pulse_type == "sms":
+    if pulse_cfg.pulse_type == 'sms':
         [signal, t, pulse] = make_sms(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
@@ -118,7 +119,7 @@ def sigpy_n_seq(
         )
 
     rfp = SimpleNamespace()
-    rfp.type = "rf"
+    rfp.type = 'rf'
     rfp.signal = signal
     rfp.t = t
     rfp.shape_dur = t[-1]
@@ -128,16 +129,19 @@ def sigpy_n_seq(
     rfp.ringdown_time = system.rf_ringdown_time
     rfp.delay = delay
 
-    if use != "":
+    if use != '':
         rfp.use = use
 
     if rfp.dead_time > rfp.delay:
-        warn(f'Specified RF delay {rfp.delay*1e6:.2f} us is less than the dead time {rfp.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
+        warn(
+            f'Specified RF delay {rfp.delay*1e6:.2f} us is less than the dead time {rfp.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rfp.delay = rfp.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -149,9 +153,9 @@ def sigpy_n_seq(
         BW = time_bw_product / duration
         amplitude = BW / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(channel="z", system=system, flat_time=duration, flat_area=area)
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )

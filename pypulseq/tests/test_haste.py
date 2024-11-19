@@ -9,8 +9,8 @@ import pytest
 @pytest.mark.matlab_seq_comp
 class TestHASTE(unittest.TestCase):
     def test_write_epi(self):
-        matlab_seq_filename = "haste_matlab.seq"
-        pypulseq_seq_filename = "haste_pypulseq.seq"
+        matlab_seq_filename = 'haste_matlab.seq'
+        pypulseq_seq_filename = 'haste_pypulseq.seq'
         base.main(
             script=write_haste,
             matlab_seq_filename=matlab_seq_filename,
@@ -18,5 +18,5 @@ class TestHASTE(unittest.TestCase):
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

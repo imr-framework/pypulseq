@@ -3,9 +3,7 @@ from types import SimpleNamespace
 import numpy as np
 
 
-def decompress_shape(
-    compressed_shape: SimpleNamespace, force_decompression: bool = False
-) -> np.ndarray:
+def decompress_shape(compressed_shape: SimpleNamespace, force_decompression: bool = False) -> np.ndarray:
     """
     Decompress a gradient or pulse shape compressed with a run-length compression scheme on the derivative. The given
     shape is structure with the following fields:
@@ -52,9 +50,7 @@ def decompress_shape(
         if current_unpack_samples < 0:  # Rejects false positives
             continue
         elif current_unpack_samples > 0:  # We have an unpacked block to copy
-            decompressed_shape[
-                count_unpack : count_unpack + current_unpack_samples
-            ] = data_pack[count_pack:next_pack]
+            decompressed_shape[count_unpack : count_unpack + current_unpack_samples] = data_pack[count_pack:next_pack]
             count_pack += current_unpack_samples
             count_unpack += current_unpack_samples
 
