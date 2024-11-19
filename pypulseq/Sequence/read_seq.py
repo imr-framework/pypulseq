@@ -487,7 +487,7 @@ def __read_events(
         event_id = data[0]
         data = tuple(data[1:] * scale)
         if append is not None:
-            data = data + (append,)
+            data = (*data, append)
         if event_type == '':
             event_library.insert(key_id=event_id, new_data=data)
         else:
