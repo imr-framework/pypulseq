@@ -72,7 +72,6 @@ def make_extended_trapezoid_area(
         -------
             Tuple of ramp-up time, flat time, ramp-down time, gradient amplitude or None if no solution was found
         """
-
         # Determine timings to check for possible solutions
         ramp_up_times = []
         ramp_down_times = []

@@ -153,8 +153,8 @@ def sigpy_n_seq(
         if max_slew > 0:
             system = copy(system)
             system.max_slew = max_slew
-        BW = time_bw_product / duration
-        amplitude = BW / slice_thickness
+        bandwidth = time_bw_product / duration
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
         gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
@@ -201,8 +201,8 @@ def make_slr(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    N = int(round(duration / 1e-6))
-    t = np.arange(1, N + 1) * system.rf_raster_time
+    n_samples = int(round(duration / 1e-6))
+    t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
     ptype = pulse_cfg.ptype
@@ -212,7 +212,7 @@ def make_slr(
     cancel_alpha_phs = pulse_cfg.cancel_alpha_phs
 
     pulse = rf.slr.dzrf(
-        n=N,
+        n=n_samples,
         tb=time_bw_product,
         ptype=ptype,
         ftype=ftype,
@@ -233,8 +233,8 @@ def make_slr(
             np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
-        Mxy = 2 * np.multiply(np.conj(a), b)
-        pl.LinePlot(Mxy)
+        mag_xy = 2 * np.multiply(np.conj(a), b)
+        pl.LinePlot(mag_xy)
 
     return signal, t, pulse
 
@@ -253,8 +253,8 @@ def make_sms(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    N = int(round(duration / 1e-6))
-    t = np.arange(1, N + 1) * system.rf_raster_time
+    n_samples = int(round(duration / 1e-6))
+    t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
     ptype = pulse_cfg.ptype
@@ -267,7 +267,7 @@ def make_sms(
     phs_0_pt = pulse_cfg.phs_0_pt
 
     pulse_in = rf.slr.dzrf(
-        n=N,
+        n=n_samples,
         tb=time_bw_product,
         ptype=ptype,
         ftype=ftype,
@@ -290,7 +290,7 @@ def make_sms(
             np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
-        Mxy = 2 * np.multiply(np.conj(a), b)
-        pl.LinePlot(Mxy)
+        mag_xy = 2 * np.multiply(np.conj(a), b)
+        pl.LinePlot(mag_xy)
 
     return signal, t, pulse

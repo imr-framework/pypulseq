@@ -25,10 +25,7 @@ system_broken = pp.Opts(
 
 # Check whether there are no errors in the timing error report for the given blocks
 def blocks_not_in_error_report(error_report, blocks):
-    for error in error_report:
-        if error.block in blocks:
-            return False
-    return True
+    return all(error.block not in blocks for error in error_report)
 
 
 # Check whether a given timing error exists in the report

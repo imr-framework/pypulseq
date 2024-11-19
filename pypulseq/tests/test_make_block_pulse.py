@@ -42,7 +42,6 @@ def test_generation_methods():
         - bandwidth
         - bandwidth + time_bw_product
     """
-
     # Capture expected warning for default case
     with pytest.warns(UserWarning):
         case1 = make_block_pulse(flip_angle=np.pi)

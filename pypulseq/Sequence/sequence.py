@@ -120,7 +120,6 @@ class Sequence:
         fp_adc : np.ndarray
             Contains frequency and phase offsets of each ADC object (not samples).
         """
-
         # Collect ADC timing data
         t_adc = []
         fp_adc = []
@@ -167,7 +166,8 @@ class Sequence:
         """
         Add a new block/multiple events to the sequence. Adds a sequence block with provided as a block structure
 
-        See also:
+        See Also
+        --------
         - `pypulseq.Sequence.sequence.Sequence.set_block()`
         - `pypulseq.make_adc.make_adc()`
         - `pypulseq.make_trapezoid.make_trapezoid()`
@@ -178,7 +178,6 @@ class Sequence:
         args : SimpleNamespace
             Block structure or events to be added as a block to `Sequence`.
         """
-
         if trace_enabled():
             self.block_trace[self.next_free_block_ID] = SimpleNamespace(block=trace())
 
@@ -491,7 +490,6 @@ class Sequence:
         error_report : List[SimpleNamespace]
             Error report in case of timing errors.
         """
-
         is_ok, error_report = ext_check_timing(self)
 
         if not is_ok and print_errors:
@@ -594,7 +592,7 @@ class Sequence:
         # Convert evolutions into label dictionary
         if len(label_evolution) > 0:
             for lab in labels:
-                labels[lab] = np.array([e[lab] if lab in e else 0 for e in label_evolution])
+                labels[lab] = np.array([e.get(lab, 0) for e in label_evolution])
 
         return labels
 
@@ -615,7 +613,8 @@ class Sequence:
         Return a block of the sequence  specified by the index. The block is created from the sequence data with all
         events and shapes decompressed.
 
-        See also:
+        See Also
+        --------
         - `pypulseq.Sequence.sequence.Sequence.set_block()`.
         - `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
@@ -1195,7 +1194,7 @@ class Sequence:
                 's': 'saturation',
                 'p': 'preparation',
             }
-            rf.use = use_cases[use] if use in use_cases else 'undefined'
+            rf.use = use_cases.get(use, 'undefined')
 
         return rf
 
@@ -1216,7 +1215,6 @@ class Sequence:
         fp_refocusing : np.ndarray
             Contains frequency and phase offsets of the excitation RF pulses
         """
-
         # Collect RF timing data
         t_excitation = []
         fp_excitation = []
@@ -1278,7 +1276,8 @@ class Sequence:
         from events and store at position specified by index. The block or events are provided in uncompressed form and
         will be stored in the compressed, non-redundant internal libraries.
 
-        See also:
+        See Also
+        --------
         - `pypulseq.Sequence.sequence.Sequence.get_block()`
         - `pypulseq.Sequence.sequence.Sequence.add_block()`
 
@@ -1289,7 +1288,6 @@ class Sequence:
         args : SimpleNamespace
             Block or events to be replaced/added or created at `block_index`.
         """
-
         if trace_enabled():
             self.block_trace[block_index] = SimpleNamespace(block=trace())
 
@@ -1312,11 +1310,10 @@ class Sequence:
         value : int, list, np.ndarray, str or tuple
             Definition value.
         """
-        if key == 'FOV':
-            if np.max(value) > 1:
-                text = 'Definition FOV uses values exceeding 1 m. '
-                text += 'New Pulseq interpreters expect values in units of meters.'
-                warn(text)
+        if key == 'FOV' and np.max(value) > 1:
+            text = 'Definition FOV uses values exceeding 1 m. '
+            text += 'New Pulseq interpreters expect values in units of meters.'
+            warn(text)
 
         self.definitions[key] = value
 
@@ -1543,7 +1540,6 @@ class Sequence:
         fp_adc : np.ndarray
             Contains frequency and phase offsets of each ADC object (not samples).
         """
-
         wave_data = self.waveforms(append_RF=append_RF, time_range=time_range)
         t_excitation, fp_excitation, t_refocusing, fp_refocusing = self.rf_times(time_range=time_range)
         t_adc, fp_adc = self.adc_times(time_range=time_range)

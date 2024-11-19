@@ -208,7 +208,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
             if self.grad_library.type[i] == 't':
-                if self.grad_library.data[i][1] == 0:
+                if self.grad_library.data[i][1] == 0:  # noqa: SIM102
                     if abs(self.grad_library.data[i][0]) == 0 and self.grad_library.data[i][2] > 0:
                         d = self.grad_library.data[i]
                         self.grad_library.update(
@@ -218,7 +218,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                             self.grad_library.type[i],
                         )
 
-                if self.grad_library.data[i][3] == 0:
+                if self.grad_library.data[i][3] == 0:  # noqa: SIM102
                     if abs(self.grad_library.data[i][0]) == 0 and self.grad_library.data[i][2] > 0:
                         d = self.grad_library.data[i]
                         self.grad_library.update(
@@ -478,7 +478,6 @@ def __read_events(
     event_library : EventLibrary
         Event library containing Pulseq events.
     """
-
     if event_library is None:
         event_library = EventLibrary()
     line = __strip_line(input_file)
@@ -488,7 +487,7 @@ def __read_events(
         event_id = data[0]
         data = tuple(data[1:] * scale)
         if append is not None:
-            data = data + (append,)
+            data = (*data, append)
         if event_type == '':
             event_library.insert(key_id=event_id, new_data=data)
         else:
@@ -592,7 +591,6 @@ def __skip_comments(input_file, stop_before_section: bool = False) -> str:
         First line in `input_file` after skipping one '#' comment block. Note: File pointer is remembered, so
         successive calls work as expected.
     """
-
     temp_pos = input_file.tell()
     line = __strip_line(input_file)
     while line != -1 and (line == '' or line[0] == '#'):

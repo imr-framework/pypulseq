@@ -12,7 +12,7 @@ def add_ramps(
     k: Union[list, np.ndarray, tuple],
     max_grad: int = 0,
     max_slew: int = 0,
-    rf: SimpleNamespace = None,
+    rf: Union[SimpleNamespace, None] = None,
     system: Union[Opts, None] = None,
 ) -> List[np.ndarray]:
     """

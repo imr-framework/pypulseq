@@ -18,7 +18,8 @@ def split_gradient_at(
     trapezoids, for 'arb' as arbitrary gradient objects. The delays in the individual gradient events are adapted such
     that add_gradients(...) produces a gradient equivalent to 'grad'.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.split_gradient()`
     - `pypulseq.make_extended_trapezoid()`
     - `pypulseq.make_trapezoid()`

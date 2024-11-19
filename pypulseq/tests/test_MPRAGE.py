@@ -2,7 +2,7 @@ import unittest
 
 import pytest
 
-from pypulseq.seq_examples.scripts import write_MPRAGE
+from pypulseq.seq_examples.scripts import write_mprage
 from pypulseq.tests import base
 
 
@@ -12,7 +12,7 @@ class TestMPRAGE(unittest.TestCase):
         matlab_seq_filename = 'mprage_matlab.seq'
         pypulseq_seq_filename = 'mprage_pypulseq.seq'
         base.main(
-            script=write_MPRAGE,
+            script=write_mprage,
             matlab_seq_filename=matlab_seq_filename,
             pypulseq_seq_filename=pypulseq_seq_filename,
         )

@@ -103,9 +103,9 @@ def make_arbitrary_rf(
     if not no_signal_scaling:
         signal = signal / np.abs(np.sum(signal * dwell)) * flip_angle / (2 * np.pi)
 
-    N = len(signal)
-    duration = N * dwell
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    n_samples = len(signal)
+    duration = n_samples * dwell
+    t = (np.arange(1, n_samples + 1) - 0.5) * dwell
 
     rf = SimpleNamespace()
     rf.type = 'rf'
@@ -141,11 +141,10 @@ def make_arbitrary_rf(
             system = copy(system)
             system.max_slew = max_slew
 
-        BW = bandwidth
         if time_bw_product > 0:
-            BW = time_bw_product / duration
+            bandwidth = time_bw_product / duration
 
-        amplitude = BW / slice_thickness
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
         gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
 

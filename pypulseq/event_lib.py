@@ -102,7 +102,6 @@ class EventLibrary:
         found : bool
             If `new_data` was found in the event library or not.
         """
-
         if self.numpy_data:
             new_data = np.asarray(new_data)
             new_data.flags.writeable = False
@@ -225,9 +224,8 @@ class EventLibrary:
         new_data : numpy.ndarray
         data_type : str, default=str()
         """
-        if key_id in self.data:
-            if self.data[key_id] in self.keymap:
-                del self.keymap[self.data[key_id]]
+        if key_id in self.data and self.data[key_id] in self.keymap:
+            del self.keymap[self.data[key_id]]
 
         self.insert(key_id, new_data, data_type)
 

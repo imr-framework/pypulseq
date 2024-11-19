@@ -11,7 +11,7 @@ system = Opts.default
 system.adc_raster_time = 1e-7
 system.grad_raster_time = 1e-5
 
-dirpath = os.path.dirname(__file__)
+dirpath = os.path.dirname(__file__)  # noqa: PTH120 (temporary solution)
 
 data = np.genfromtxt(
     dirpath + '/expected_output/pulseq_calcAdcSeg.txt',

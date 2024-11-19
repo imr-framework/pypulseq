@@ -122,7 +122,7 @@ def calc_adc_segments(
         If number of segments exceeds 128.
     """
     # Define maximum number of segments for the ADC
-    MAX_SEGMENTS = 128
+    max_segments = 128
 
     if mode not in ['shorten', 'lengthen']:
         raise ValueError(f"'mode' must be 'shorten' or 'lengthen' but is {mode}")
@@ -168,13 +168,13 @@ def calc_adc_segments(
             # Find suitable candidate
             for num_segments in sorted(num_segments_candids):
                 num_samples_seg = samples_seg_multip * min_samples_segment / num_segments
-                if num_samples_seg <= system.adc_samples_limit and num_segments <= MAX_SEGMENTS:
+                if num_samples_seg <= system.adc_samples_limit and num_segments <= max_segments:
                     break  # Found segments and samples
         else:  # Only one possible solution
             num_samples_seg = samples_seg_multip * min_samples_segment
 
         # Does output already fulfill constraints?
-        if num_samples_seg <= system.adc_samples_limit and num_segments <= MAX_SEGMENTS:
+        if num_samples_seg <= system.adc_samples_limit and num_segments <= max_segments:
             break
         else:  # Shorten or lengthen the number of samples per segment
             samples_seg_multip += 1 if mode == 'lengthen' else -1
@@ -184,8 +184,8 @@ def calc_adc_segments(
         raise ValueError('Could not find suitable segmentation.')
     if num_samples_seg == 0:
         raise ValueError('Could not find suitable number of samples per segment.')
-    if num_segments > MAX_SEGMENTS:
-        raise ValueError(f'Number of segments ({num_segments}) exceeds allowed number of {MAX_SEGMENTS}')
+    if num_segments > max_segments:
+        raise ValueError(f'Number of segments ({num_segments}) exceeds allowed number of {max_segments}')
 
     return int(num_segments), int(num_samples_seg)
 

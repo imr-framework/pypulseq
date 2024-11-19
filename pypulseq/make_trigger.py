@@ -16,8 +16,8 @@ def make_trigger(
 
     See also `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
-     Parameters
-     ----------
+    Parameters
+    ----------
      channel : str
          Must be one of 'physio1' or 'physio2'.
      delay : float, default=0
@@ -27,13 +27,13 @@ def make_trigger(
      system : Opts, default=Opts()
          System limits.
 
-     Returns
-     -------
+    Returns
+    -------
      trigger : SimpleNamespace
          Trigger event.
 
-     Raises
-     ------
+    Raises
+    ------
      ValueError
          If invalid `channel` is passed. Must be one of 'physio1' or 'physio2'.
     """

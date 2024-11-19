@@ -23,7 +23,7 @@ def make_digital_output_pulse(
         System limits.
 
     Returns
-    ------
+    -------
     trig : SimpleNamespace
         Trigger event.
 

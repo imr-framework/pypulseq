@@ -74,7 +74,6 @@ def test_generation_methods():
         - flat_time and amplitude
         - flat_time, area and rise_time
     """
-
     assert isinstance(make_trapezoid(channel='x', area=1), SimpleNamespace)
 
     assert isinstance(make_trapezoid(channel='x', amplitude=1, duration=1), SimpleNamespace)

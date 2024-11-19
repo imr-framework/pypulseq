@@ -30,7 +30,6 @@ def _calc_SAR(Q: np.ndarray, I: np.ndarray) -> np.ndarray:
     SAR : numpy.ndarray
        Contains the SAR value for a particular Q matrix
     """
-
     if len(I.shape) == 1:  # Just to fit the multi-transmit case for now, TODO
         I = np.tile(I, (Q.shape[0], 1))  # Nc x Nt
 

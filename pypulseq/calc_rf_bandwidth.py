@@ -27,6 +27,7 @@ def calc_rf_bandwidth(
         Boolean flag to indicate if frequency axis of RF pulse will be returned.
     return_spectrum : bool, default=False
         Boolean flag to indicate if spectrum of RF pulse will be returned.
+
     Returns
     -------
     bw : float

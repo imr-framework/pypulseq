@@ -346,17 +346,17 @@ def safe_plot(pns, dt=None, envelope=True, envelope_points=500):
     # FZ: Added option to plot the moving maximum of pns and pnsnorm to keep
     #     plots for long sequences intelligible
     if envelope and pns.shape[0] > envelope_points:
-        N = int(np.ceil(pns.shape[0] / envelope_points))
+        n_samples = int(np.ceil(pns.shape[0] / envelope_points))
         if dt is not None:
-            dt *= N
+            dt *= n_samples
 
-        if pns.shape[0] % N != 0:
-            pns = np.concatenate((pns, np.zeros((N - pns.shape[0] % N, pns.shape[1]))))
-            pnsnorm = np.concatenate((pnsnorm, np.zeros((N - pnsnorm.shape[0] % N))))
+        if pns.shape[0] % n_samples != 0:
+            pns = np.concatenate((pns, np.zeros((n_samples - pns.shape[0] % n_samples, pns.shape[1]))))
+            pnsnorm = np.concatenate((pnsnorm, np.zeros((n_samples - pnsnorm.shape[0] % n_samples))))
 
-        pns = pns.reshape(pns.shape[0] // N, N, pns.shape[1])
+        pns = pns.reshape(pns.shape[0] // n_samples, n_samples, pns.shape[1])
         pns = pns.max(axis=1)
-        pnsnorm = pnsnorm.reshape(pnsnorm.shape[0] // N, N)
+        pnsnorm = pnsnorm.reshape(pnsnorm.shape[0] // n_samples, n_samples)
         pnsnorm = pnsnorm.max(axis=1)
 
     if dt is None:

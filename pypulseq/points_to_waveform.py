@@ -20,7 +20,6 @@ def points_to_waveform(amplitudes: np.ndarray, grad_raster_time: float, times: n
     waveform : numpy.ndarray
         Gradient waveform.
     """
-
     amplitudes = np.asarray(amplitudes)
     times = np.asarray(times)
 

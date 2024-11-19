@@ -60,33 +60,39 @@ select = [
   # "FA", # flake8-future-annotations
   "I", # isort
   # "N",   # pep8-naming
-  # "NPY", # NumPy-specific rules
-  # "RUF", # Ruff-specific rules
-  # "S",   # flake8-bandit
-  # "SIM", # flake8-simplify
+  "NPY", # NumPy-specific rules
+  "RUF", # Ruff-specific rules
+  "S",   # flake8-bandit
+  "SIM", # flake8-simplify
   # "UP",  # pyupgrade
-  # "PIE", # flake8-pie
-  # # "PL",  # PyLint
-  # "PTH", # flake8-use-pathlib
-  # "T20", # flake8-print
-  # "Q",   # flake8-quotes
-  # "W",   # pycodestyle warnings
-  # "YTT", # flake8-2020
+  "PIE", # flake8-pie
+  "PTH", # flake8-use-pathlib
+  "Q",   # flake8-quotes
+  "W",   # pycodestyle warnings
+  "YTT", # flake8-2020
   # "ERA", # flake8-eradicate
 ]
-# extend-select = [
-#   "ANN001", #  type annotation for function argument
-#   "ANN201", #  return type annonation public function
-#   "ANN205", #  return type annonation static method
-#   "ANN401", #  any type annotation
-#   "BLE001", #  blind exception
-#   "D107",   #  missing docstring in __init__
-#   "D417",   #  undocumented-parameter
-# ]
+
+extend-select = [
+  # "ANN001", #  type annotation for function argument
+  # # "ANN201", #  return type annonation public function
+  # # "ANN205", #  return type annonation static method
+  # # "ANN401", #  any type annotation
+  # # "BLE001", #  blind exception
+  # # "D107",   #  missing docstring in __init__
+  # # "D417",   #  undocumented-parameter
+]
+
 ignore = [
   "B028",   #  explicit "stacklevel" arg in warnings
   "COM812", #  missing-trailing-comma (conflict with formatter)
+  "PTH123", #  use of Path.open
+  "S101",   #  use of assert
+  "S307",   #  use of possibly insecure eval function
+  "S311",   #  standard pseudo-random generators
+  "S324",   #  insecure hash function
   "SIM108", #  if-else-block-instead-of-if-exp
+  "SIM115", #  use of context manager
 ]
 
 [tool.ruff.lint.isort]

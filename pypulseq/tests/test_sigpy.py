@@ -70,12 +70,12 @@ def test_slr():
         np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
         True,
     )
-    Mxy = 2 * np.multiply(np.conj(a), b)
+    mag_xy = 2 * np.multiply(np.conj(a), b)
     # pl.LinePlot(Mxy)
     # print(np.sum(np.abs(Mxy)))
     # peaks, dict = sis.find_peaks(np.abs(Mxy),threshold=0.5, plateau_size=40)
-    plateau_widths = np.sum(np.abs(Mxy) > 0.8)
-    assert 29 == plateau_widths
+    plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
+    assert plateau_widths == 29
 
 
 @pytest.mark.sigpy
@@ -129,10 +129,10 @@ def test_sms():
         np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
         True,
     )
-    Mxy = 2 * np.multiply(np.conj(a), b)
+    mag_xy = 2 * np.multiply(np.conj(a), b)
     # pl.LinePlot(Mxy)
     # print(np.sum(np.abs(Mxy)))
     # peaks, dict = sis.find_peaks(np.abs(Mxy),threshold=0.5, plateau_size=40)
-    plateau_widths = np.sum(np.abs(Mxy) > 0.8)
+    plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
     # if slr has 29 > 0.8, then sms with MB = n_bands
     assert (29 * n_bands) == plateau_widths

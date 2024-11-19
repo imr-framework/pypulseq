@@ -22,7 +22,6 @@ def make_delay(d: float) -> SimpleNamespace:
     ValueError
         If delay is invalid (not finite or < 0).
     """
-
     delay = SimpleNamespace()
     if not np.isfinite(d) or d < 0:
         raise ValueError('Delay {:.2f} ms is invalid'.format(d * 1e3))

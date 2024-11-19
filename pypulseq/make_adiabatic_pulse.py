@@ -54,12 +54,14 @@ def make_adiabatic_pulse(
             - mu (float): a constant, determines amplitude of frequency sweep.
             - dur (float): pulse time (s).
 
-        Returns:
+    Returns
+    -------
             2-element tuple containing
             - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
 
-        References:
+    References
+    ----------
             Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
             inversion of a two-level system by phase-modulated pulses'.
             Phys. Rev. A., 32:3435-3447.
@@ -73,12 +75,14 @@ def make_adiabatic_pulse(
             - bw (float): pulse bandwidth.
             - dur (float): pulse time (s).
 
-        Returns:
+    Returns
+    -------
             2-element tuple containing
             - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
 
-        References:
+    References
+    ----------
             Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
             Broadband Spin Inversion'.
             J. Magn. Reason. Set. A., 117:246-256.
@@ -334,18 +338,19 @@ def _bir4(n: int, beta: float, kappa: float, theta: float, dw0: np.ndarray):
         theta (float): flip angle in radians.
         dw0: FM waveform scaling (radians/s).
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Staewen, R.S. et al. (1990). '3-D FLASH Imaging using a single surface
         coil and a new adiabatic pulse, BIR-4'.
         Invest. Radiology, 25:559-567.
     """
-
     dphi = np.pi + theta / 2
 
     t = np.arange(0, n) / n
@@ -379,18 +384,19 @@ def _hypsec(n: int = 512, beta: float = 800.0, mu: float = 4.9, dur: float = 0.0
         mu (float): a constant, determines amplitude of frequency sweep.
         dur (float): pulse time (s).
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
         inversion of a two-level system by phase-modulated pulses'.
         Phys. Rev. A., 32:3435-3447.
     """
-
     t = np.arange(-n // 2, n // 2) / n * dur
 
     a = np.cosh(beta * t) ** -1
@@ -411,18 +417,19 @@ def _wurst(n: int = 512, n_fac: int = 40, bw: float = 40e3, dur: float = 2e-3):
         dur (float): pulse time (s).
 
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
         Broadband Spin Inversion'.
         J. Magn. Reason. Set. A., 117:246-256.
     """
-
     t = np.arange(0, n) * dur / n
 
     a = 1 - np.power(np.abs(np.cos(np.pi * t / dur)), n_fac)
@@ -452,20 +459,21 @@ def _goia_wurst(
         b1_max (float): maximum b1 (Hz)
         bw (float): pulse bandwidth (Hz)
 
-    Returns:
+    Returns
+    -------
         3-element tuple containing:
 
         - **a** (*array*): AM waveform (Hz)
         - **om** (*array*): FM waveform (Hz)
         - **g** (*array*): normalized gradient waveform
 
-    References:
+    References
+    ----------
         O. C. Andronesi, S. Ramadan, E.-M. Ratai, D. Jennings, C. E. Mountford,
         A. G. Sorenson.
         J Magn Reason, 203:283-293, 2010.
 
     """
-
     t = np.arange(0, n) * dur / n
 
     a = b1_max * (1 - np.abs(np.sin(np.pi / 2 * (2 * t / dur - 1))) ** n_b1)
@@ -497,20 +505,21 @@ def _bloch_siegert_fm(
             perturbation
         gamma (float): gyromagnetic ratio
 
-    Returns:
+    Returns
+    -------
         om (array): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         M. M. Khalighi, B. K. Rutt, and A. B. Kerr.
         Adiabatic RF pulse design for Bloch-Siegert B1+ mapping.
-        Magn Reason Med, 70(3):829–835, 2013.
+        Magn Reason Med, 70(3):829-835, 2013.
 
         M. Jankiewicz, J. C. Gore, and W. A. Grissom.
         Improved encoding pulses for Bloch-Siegert B1+ mapping.
-        J Magn Reason, 226:79–87, 2013.
+        J Magn Reason, 226:79-87, 2013.
 
     """
-
     # set gamma to PyPulseq default if not provided
     if gamma is None:
         gamma = 2 * np.pi * 42.576e6

@@ -34,7 +34,7 @@ known_duration_event_zoo = [
 
 
 @pytest.mark.parametrize('name,event,expected_dur', known_duration_event_zoo)
-def test_single_events(name, event, expected_dur):  # noqa: ARG001
+def test_single_events(name, event, expected_dur):
     assert pp.calc_duration(event) == expected_dur
 
 

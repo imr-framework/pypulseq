@@ -22,7 +22,6 @@ def readasc(filename: str) -> Tuple[dict, dict]:
     extra : dict
         Dictionary of other fields after "ASCCONV END"
     """
-
     asc, extra = {}, {}
 
     # Read asc file and convert it into a dictionary structure

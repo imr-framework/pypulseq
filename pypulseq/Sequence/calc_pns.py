@@ -42,7 +42,6 @@ def calc_pns(
     t_pns : np.array [N]
         Time axis for the pns_norm and pns_components arrays
     """
-
     dt = obj.grad_raster_time
     # Get gradients as piecewise-polynomials
     gw_pp = obj.get_gradients(time_range=time_range)

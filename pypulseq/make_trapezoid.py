@@ -32,11 +32,11 @@ def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_tim
 def make_trapezoid(
     channel: str,
     amplitude: float = 0,
-    area: float = None,
+    area: Union[float, None] = None,
     delay: float = 0,
     duration: float = 0,
     fall_time: float = 0,
-    flat_area: float = None,
+    flat_area: Union[float, None] = None,
     flat_time: float = -1,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -54,7 +54,8 @@ def make_trapezoid(
     - flat_time, area and rise_time
     Additional options may be supplied with the above.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.Sequence.sequence.Sequence.add_block()`
     - `pypulseq.opts.Opts`
 
@@ -157,8 +158,8 @@ def make_trapezoid(
                     f'{round(min_duration * 1e6)} us'
                 )
 
-                dC = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
-                amplitude2 = (duration - math.sqrt(duration**2 - 4 * abs(area) * dC)) / (2 * dC)
+                dc = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
+                amplitude2 = (duration - math.sqrt(duration**2 - 4 * abs(area) * dc)) / (2 * dc)
             else:
                 if fall_time == 0:
                     fall_time = rise_time

@@ -14,9 +14,9 @@ from pypulseq.utils.tracing import trace, trace_enabled
 def make_block_pulse(
     flip_angle: float,
     delay: float = 0,
-    duration: float = None,
-    bandwidth: float = None,
-    time_bw_product: float = None,
+    duration: Union[float, None] = None,
+    bandwidth: Union[float, None] = None,
+    time_bw_product: Union[float, None] = None,
     freq_offset: float = 0,
     phase_offset: float = 0,
     return_delay: bool = False,
@@ -97,8 +97,8 @@ def make_block_pulse(
             f'duration = {duration} s, bandwidth = {bandwidth} Hz.'
         )
 
-    N = round(duration / system.rf_raster_time)
-    t = np.array([0, N]) * system.rf_raster_time
+    n_samples = round(duration / system.rf_raster_time)
+    t = np.array([0, n_samples]) * system.rf_raster_time
     signal = flip_angle / (2 * np.pi) / duration * np.ones_like(t)
 
     rf = SimpleNamespace()

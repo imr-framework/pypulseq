@@ -24,7 +24,8 @@ def make_extended_trapezoid(
     Create a gradient by specifying a set of points (amplitudes) at specified time points(times) at a given channel
     with given system limits. Returns an arbitrary gradient object.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.Sequence.sequence.Sequence.add_block()`
     - `pypulseq.opts.Opts`
     - `pypulseq.make_trapezoid.make_trapezoid()`

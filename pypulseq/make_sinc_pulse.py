@@ -104,13 +104,13 @@ def make_sinc_pulse(
     if duration <= 0:
         raise ValueError('RF pulse duration must be positive.')
 
-    BW = time_bw_product / duration
+    bandwidth = time_bw_product / duration
     alpha = apodization
-    N = round(duration / dwell)
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    n_samples = round(duration / dwell)
+    t = (np.arange(1, n_samples + 1) - 0.5) * dwell
     tt = t - (duration * center_pos)
     window = 1 - alpha + alpha * np.cos(2 * np.pi * tt / duration)
-    signal = np.multiply(window, np.sinc(BW * tt))
+    signal = np.multiply(window, np.sinc(bandwidth * tt))
     flip = np.sum(signal) * dwell * 2 * np.pi
     signal = signal * flip_angle / flip
 
@@ -118,7 +118,7 @@ def make_sinc_pulse(
     rf.type = 'rf'
     rf.signal = signal
     rf.t = t
-    rf.shape_dur = N * dwell
+    rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
@@ -147,7 +147,7 @@ def make_sinc_pulse(
             system = copy(system)
             system.max_slew = max_slew
 
-        amplitude = BW / slice_thickness
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
         gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(

@@ -18,7 +18,6 @@ def asc_to_acoustic_resonances(asc: dict) -> List[dict]:
     List[dict]
         List of acoustic resonances (specified by frequency and bandwidth fields).
     """
-
     if 'aflGCAcousticResonanceFrequency' in asc:
         freqs = asc['aflGCAcousticResonanceFrequency']
         bw = asc['aflGCAcousticResonanceBandwidth']

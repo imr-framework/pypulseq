@@ -17,7 +17,8 @@ def split_gradient(
     flat top and slew down) as extended trapezoid gradient objects. The delays in the individual gradient events are
     adapted such that addGradients(...) produces an gradient equivalent to 'grad'.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.split_gradient()`
     - `pypulseq.make_extended_trapezoid()`
     - `pypulseq.make_trapezoid()`

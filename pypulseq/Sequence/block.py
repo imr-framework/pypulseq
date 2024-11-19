@@ -19,7 +19,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     from events and store at position specified by index. The block or events are provided in uncompressed form and
     will be stored in the compressed, non-redundant internal libraries.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.Sequence.sequence.Sequence.get_block()`
     - `pypulseq.Sequence.sequence.Sequence.add_block()`
 
@@ -65,9 +66,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 new_block[1] = rf_id
                 duration = max(duration, event.shape_dur + event.delay + event.ringdown_time)
 
-                if trace_enabled():
-                    if hasattr(event, 'trace'):
-                        self.block_trace[block_index].rf = event.trace
+                if trace_enabled() and hasattr(event, 'trace'):
+                    self.block_trace[block_index].rf = event.trace
             elif event.type == 'grad':
                 channel_num = ['x', 'y', 'z'].index(event.channel)
                 idx = 2 + channel_num
@@ -95,9 +95,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 new_block[idx] = grad_id
                 duration = max(duration, grad_duration)
 
-                if trace_enabled():
-                    if hasattr(event, 'trace'):
-                        setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
+                if trace_enabled() and hasattr(event, 'trace'):
+                    setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
             elif event.type == 'trap':
                 channel_num = ['x', 'y', 'z'].index(event.channel)
                 idx = 2 + channel_num
@@ -113,9 +112,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 new_block[idx] = trap_id
                 duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
 
-                if trace_enabled():
-                    if hasattr(event, 'trace'):
-                        setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
+                if trace_enabled() and hasattr(event, 'trace'):
+                    setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
             elif event.type == 'adc':
                 if new_block[5] != 0:
                     raise ValueError('Multiple ADC events were specified in set_block')
@@ -128,9 +126,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 new_block[5] = adc_id
                 duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
 
-                if trace_enabled():
-                    if hasattr(event, 'trace'):
-                        self.block_trace[block_index].adc = event.trace
+                if trace_enabled() and hasattr(event, 'trace'):
+                    self.block_trace[block_index].adc = event.trace
             elif event.type == 'delay':
                 duration = max(duration, event.delay)
             elif event.type in ['output', 'trigger']:
@@ -194,7 +191,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     # PERFORM GRADIENT CHECKS
     # =========
     for grad_to_check in check_g.values():
-        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:  # noqa: SIM102
             if grad_to_check.start[0] > eps:
                 raise RuntimeError('No delay allowed for gradients which start with a non-zero amplitude')
 
@@ -293,7 +290,6 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         If a trigger event of an unsupported control type is encountered.
         If a label object of an unknown extension ID is encountered.
     """
-
     # Check if block exists in the block cache. If so, return that
     if self.use_block_cache and block_index in self.block_cache:
         return self.block_cache[block_index]
@@ -596,7 +592,6 @@ def register_label_event(self, event: SimpleNamespace) -> int:
     int
         ID of registered label event.
     """
-
     label_id = get_supported_labels().index(event.label) + 1
     data = (event.value, label_id)
     if event.type == 'labelset':
