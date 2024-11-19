@@ -487,7 +487,7 @@ def __read_events(
         event_id = data[0]
         data = tuple(data[1:] * scale)
         if append is not None:
-            data = (*data, append)
+            data = data + (append,)
         if event_type == '':
             event_library.insert(key_id=event_id, new_data=data)
         else:
@@ -517,15 +517,15 @@ def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
     line = __strip_line(input_file)
 
     while line != '' and line != '#':
-        data = re.split(r'(\s+)', line)
-        data = [d for d in data if d != ' ']
-        data = np.zeros(len(data) - 1, dtype=np.int32)
-        event_id = int(data[0])
-        for i in range(1, len(data)):
+        list_of_data_str = re.split(r'(\s+)', line)
+        list_of_data_str = [d for d in list_of_data_str if d != ' ']
+        data = np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
+        event_id = int(list_of_data_str[0])
+        for i in range(1, len(list_of_data_str)):
             if i > len(args):
-                data[i - 1] = int(data[i])
+                data[i - 1] = int(list_of_data_str[i])
             else:
-                data[i - 1] = args[i - 1](data[i])
+                data[i - 1] = args[i - 1](list_of_data_str[i])
         event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 
