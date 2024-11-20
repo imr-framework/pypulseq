@@ -25,4 +25,4 @@ repos:
     rev: v1.25.0
     hooks:
       - id: typos
-        exclude: ^pypulseq/seq_examples/
+        exclude: ^pypulseq/seq_examples/|paper.md
