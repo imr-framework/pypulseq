@@ -40,7 +40,7 @@ research works [@poojar2019rapid; @gehua2019ismrm; @ravi2018amri; @ravi2019acces
 
 MRI is a non-invasive diagnostic imaging tool. It is a critical component of healthcare and has a significant impact on 
 diagnosis and treatment assessment. Structural, functional and metabolic MRI generate valuable information that aid in 
-the accurate diagnosis of a wide range of pathologies. A unique strength of MRI is the ability to visualize diverse 
+the accurate diagnosis of a wide range of pathologies. A unique strength of MRI is the ability to visualise diverse 
 pathologies achieved by the flexibility in designing tailored pulse sequences. MRI pulse sequences are a collection of 
 radio-frequency and gradient waveforms that are executed on the scanner hardware to acquire raw data. 
 
@@ -62,7 +62,7 @@ independent, compact and low-level [@layton2017pulseq]. A pulse sequence compris
 field gradient waveforms, delays or analog-to-digital converter (ADC) readout *events*. A *block* comprises of one or 
 more *events* occurring simultaneously. *Event* envelopes are defined by *shapes*, which are run-length encoded and 
 stored in the `.seq` file. In a `.seq` file, each *event* and *shape* is identified uniquely by an integer. *Blocks* 
-are constructed by assembling the uniquely referenced *events*. Therefore, any custom pulse sequence can be synthesized 
+are constructed by assembling the uniquely referenced *events*. Therefore, any custom pulse sequence can be synthesised 
 by concatenating *blocks*.
 
 # About `PyPulseq`
