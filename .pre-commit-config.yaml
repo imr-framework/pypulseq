@@ -26,3 +26,13 @@ repos:
     hooks:
       - id: typos
         exclude: ^pypulseq/seq_examples/|paper.md
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit] auto fixes from pre-commit hooks
+  autofix_prs: true
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit] pre-commit autoupdate"
+  autoupdate_schedule: monthly
+  skip: []
+  submodules: false
