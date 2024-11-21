@@ -175,7 +175,7 @@ def sigpy_n_seq(
         rfp.trace = trace()
 
     if return_gz:
-        return rfp, gz, gzr, pulse
+        return rfp, gz, gzr
     else:
         return rfp
 

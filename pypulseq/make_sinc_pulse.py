@@ -6,7 +6,6 @@ from copy import copy
 
 import numpy as np
 
-from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
@@ -24,7 +23,6 @@ def make_sinc_pulse(
     max_grad: float = 0,
     max_slew: float = 0,
     phase_offset: float = 0,
-    return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
@@ -33,7 +31,6 @@ def make_sinc_pulse(
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
-    Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
 ]:
     """
     Creates a radio-frequency sinc pulse event and optionally accompanying slice select and slice select rephasing
@@ -60,8 +57,6 @@ def make_sinc_pulse(
         Maximum slew rate of accompanying slice select trapezoidal event.
     phase_offset : float, default=0
         Phase offset in Hertz (Hz).
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay event has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -166,9 +161,6 @@ def make_sinc_pulse(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0 and return_delay:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
-
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
@@ -176,9 +168,7 @@ def make_sinc_pulse(
     if trace_enabled():
         rf.trace = trace()
 
-    if return_gz and return_delay:
-        return rf, gz, gzr, delay
-    elif return_gz:
+    if return_gz:
         return rf, gz, gzr
     else:
         return rf
