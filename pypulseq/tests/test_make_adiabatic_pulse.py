@@ -47,13 +47,6 @@ def test_option_requirements():
     assert gz.type == 'trap'
     assert gzr.type == 'trap'
 
-    # Assert delay is returned if requested
-    _, delay = make_adiabatic_pulse(pulse_type='hypsec', return_gz=False, return_delay=True)
-    assert delay.type == 'delay'
-
-    _, _, _, delay = make_adiabatic_pulse(pulse_type='hypsec', return_gz=True, slice_thickness=1, return_delay=True)
-    assert delay.type == 'delay'
-
 
 # My intention was to test that the rephase gradient area is appropriate,
 # but this doesn't pass and I'm highly suspicious of the calculation in

@@ -6,9 +6,7 @@ from warnings import warn
 import numpy as np
 
 from pypulseq import eps
-from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_center import calc_rf_center
-from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
@@ -30,13 +28,11 @@ def make_adiabatic_pulse(
     mu: float = 4.9,
     phase_offset: float = 0,
     return_gz: bool = False,
-    return_delay: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
-    Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
 ]:
     """
@@ -112,8 +108,6 @@ def make_adiabatic_pulse(
         Power to exponentiate to within AM term. ~20 or greater is typical.
     phase_offset : float, default=0
         Phase offset.
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -130,8 +124,6 @@ def make_adiabatic_pulse(
         Slice-selective trapezoid event.
     gzr : SimpleNamespace, optional
         Slice-select rephasing trapezoid event.
-    delay : SimpleNamespace, optional
-        Delay event.
 
     Raises
     ------
@@ -272,19 +264,10 @@ def make_adiabatic_pulse(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
-    else:
-        delay = make_delay(calc_duration(rf))
-
     if trace_enabled():
         rf.trace = trace()
 
-    if return_gz and return_delay:
-        return rf, gz, gzr, delay
-    elif return_delay:
-        return rf, delay
-    elif return_gz:
+    if return_gz:
         return rf, gz, gzr
     else:
         return rf

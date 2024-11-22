@@ -24,7 +24,6 @@ def make_arbitrary_rf(
     max_grad: float = 0,
     max_slew: float = 0,
     phase_offset: float = 0,
-    return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
@@ -56,8 +55,6 @@ def make_arbitrary_rf(
         Maximum slew rate of accompanying slice select trapezoidal event.
     phase_offset : float, default=0
         Phase offset in Hertz (Hz).a
-    return_delay : bool, default=False
-        Boolean flag to indicate if delay has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -155,15 +152,10 @@ def make_arbitrary_rf(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0 and return_delay:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
-
     if trace_enabled():
         rf.trace = trace()
 
-    if return_gz and return_delay:
-        return rf, gz, delay
-    elif return_gz:
+    if return_gz:
         return rf, gz
     else:
         return rf

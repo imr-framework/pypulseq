@@ -4,8 +4,6 @@ from warnings import warn
 
 import numpy as np
 
-from pypulseq.calc_duration import calc_duration
-from pypulseq.make_delay import make_delay
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 from pypulseq.utils.tracing import trace, trace_enabled
@@ -19,10 +17,9 @@ def make_block_pulse(
     time_bw_product: Union[float, None] = None,
     freq_offset: float = 0,
     phase_offset: float = 0,
-    return_delay: bool = False,
     system: Union[Opts, None] = None,
     use: str = str(),
-) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
+) -> SimpleNamespace:
     """
     Create a block (RECT or hard) pulse.
 
@@ -47,8 +44,6 @@ def make_block_pulse(
         Frequency offset in Hertz (Hz).
     phase_offset : float, default=0
         Phase offset Hertz (Hz).
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay event has to be returned.
     system : Opts, default=Opts()
         System limits.
     use : str, default=str()
@@ -58,8 +53,6 @@ def make_block_pulse(
     -------
     rf : SimpleNamespace
         Radio-frequency block pulse event.
-    delay : SimpleNamespace, optional
-        Delay event.
 
     Raises
     ------
@@ -118,17 +111,7 @@ def make_block_pulse(
     if rf.dead_time > rf.delay:
         rf.delay = rf.dead_time
 
-    if rf.ringdown_time > 0 and return_delay:
-        warn(
-            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
-            stacklevel=2,
-        )
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
-
     if trace_enabled():
         rf.trace = trace()
 
-    if return_delay:
-        return rf, delay
-    else:
-        return rf
+    return rf
