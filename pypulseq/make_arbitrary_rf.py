@@ -6,7 +6,6 @@ from warnings import warn
 
 import numpy as np
 
-from pypulseq import calc_duration, make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses

@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import Tuple, Union
+from typing import Union
 from warnings import warn
 
 import numpy as np
