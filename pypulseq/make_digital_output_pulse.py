@@ -1,10 +1,11 @@
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.opts import Opts
 
 
 def make_digital_output_pulse(
-    channel: str, delay: float = 0, duration: float = 4e-3, system: Opts = None
+    channel: str, delay: float = 0, duration: float = 4e-3, system: Union[Opts, None] = None
 ) -> SimpleNamespace:
     """
     Create a digital output pulse event a.k.a. trigger. Creates an output trigger event on a given channel with optional
@@ -22,7 +23,7 @@ def make_digital_output_pulse(
         System limits.
 
     Returns
-    ------
+    -------
     trig : SimpleNamespace
         Trigger event.
 
@@ -31,16 +32,14 @@ def make_digital_output_pulse(
     ValueError
         If `channel` is invalid. Must be one of 'osc0','osc1', or 'ext1'.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    if channel not in ["osc0", "osc1", "ext1"]:
-        raise ValueError(
-            f"Channel {channel} is invalid. Must be one of 'osc0','osc1', or 'ext1'."
-        )
+
+    if channel not in ['osc0', 'osc1', 'ext1']:
+        raise ValueError(f"Channel {channel} is invalid. Must be one of 'osc0','osc1', or 'ext1'.")
 
     trig = SimpleNamespace()
-    trig.type = "output"
+    trig.type = 'output'
     trig.channel = channel
     trig.delay = delay
     trig.duration = duration

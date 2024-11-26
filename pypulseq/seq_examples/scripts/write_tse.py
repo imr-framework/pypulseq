@@ -6,7 +6,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
+def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
     # ======
     # SETUP
     # ======
@@ -15,9 +15,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     # Set system limits
     system = pp.Opts(
         max_grad=32,
-        grad_unit="mT/m",
+        grad_unit='mT/m',
         max_slew=130,
-        slew_unit="T/m/s",
+        slew_unit='T/m/s',
         rf_ringdown_time=100e-6,
         rf_dead_time=100e-6,
         adc_dead_time=10e-6,
@@ -64,7 +64,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         return_gz=True,
     )
     gs_ex = pp.make_trapezoid(
-        channel="z",
+        channel='z',
         system=system,
         amplitude=gz.amplitude,
         flat_time=t_exwd,
@@ -80,11 +80,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         apodization=0.5,
         time_bw_product=4,
         phase_offset=rf_ref_phase,
-        use="refocusing",
+        use='refocusing',
         return_gz=True,
     )
     gs_ref = pp.make_trapezoid(
-        channel="z",
+        channel='z',
         system=system,
         amplitude=gs_ex.amplitude,
         flat_time=t_refwd,
@@ -93,31 +93,27 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
 
     ags_ex = gs_ex.area / 2
     gs_spr = pp.make_trapezoid(
-        channel="z",
+        channel='z',
         system=system,
         area=ags_ex * (1 + fsp_s),
         duration=t_sp,
         rise_time=dG,
     )
-    gs_spex = pp.make_trapezoid(
-        channel="z", system=system, area=ags_ex * fsp_s, duration=t_spex, rise_time=dG
-    )
+    gs_spex = pp.make_trapezoid(channel='z', system=system, area=ags_ex * fsp_s, duration=t_spex, rise_time=dG)
 
     delta_k = 1 / fov
     k_width = Nx * delta_k
 
     gr_acq = pp.make_trapezoid(
-        channel="x",
+        channel='x',
         system=system,
         flat_area=k_width,
         flat_time=readout_time,
         rise_time=dG,
     )
-    adc = pp.make_adc(
-        num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time
-    )
+    adc = pp.make_adc(num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time)
     gr_spr = pp.make_trapezoid(
-        channel="x",
+        channel='x',
         system=system,
         area=gr_acq.area * fsp_r,
         duration=t_sp,
@@ -126,26 +122,24 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
 
     agr_spr = gr_spr.area
     agr_preph = gr_acq.area / 2 + agr_spr
-    gr_preph = pp.make_trapezoid(
-        channel="x", system=system, area=agr_preph, duration=t_spex, rise_time=dG
-    )
+    gr_preph = pp.make_trapezoid(channel='x', system=system, area=agr_preph, duration=t_spex, rise_time=dG)
 
     # Phase-encoding
     n_ex = math.floor(Ny / n_echo)
     pe_steps = np.arange(1, n_echo * n_ex + 1) - 0.5 * n_echo * n_ex - 1
     if divmod(n_echo, 2)[1] == 0:
         pe_steps = np.roll(pe_steps, [0, int(-np.round(n_ex / 2))])
-    pe_order = pe_steps.reshape((n_ex, n_echo), order="F").T
+    pe_order = pe_steps.reshape((n_ex, n_echo), order='F').T
     phase_areas = pe_order * delta_k
 
     # Split gradients and recombine into blocks
     gs1_times = np.array([0, gs_ex.rise_time])
     gs1_amp = np.array([0, gs_ex.amplitude])
-    gs1 = pp.make_extended_trapezoid(channel="z", times=gs1_times, amplitudes=gs1_amp)
+    gs1 = pp.make_extended_trapezoid(channel='z', times=gs1_times, amplitudes=gs1_amp)
 
     gs2_times = np.array([0, gs_ex.flat_time])
     gs2_amp = np.array([gs_ex.amplitude, gs_ex.amplitude])
-    gs2 = pp.make_extended_trapezoid(channel="z", times=gs2_times, amplitudes=gs2_amp)
+    gs2 = pp.make_extended_trapezoid(channel='z', times=gs2_times, amplitudes=gs2_amp)
 
     gs3_times = np.array(
         [
@@ -155,14 +149,12 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
             gs_spex.rise_time + gs_spex.flat_time + gs_spex.fall_time,
         ]
     )
-    gs3_amp = np.array(
-        [gs_ex.amplitude, gs_spex.amplitude, gs_spex.amplitude, gs_ref.amplitude]
-    )
-    gs3 = pp.make_extended_trapezoid(channel="z", times=gs3_times, amplitudes=gs3_amp)
+    gs3_amp = np.array([gs_ex.amplitude, gs_spex.amplitude, gs_spex.amplitude, gs_ref.amplitude])
+    gs3 = pp.make_extended_trapezoid(channel='z', times=gs3_times, amplitudes=gs3_amp)
 
     gs4_times = np.array([0, gs_ref.flat_time])
     gs4_amp = np.array([gs_ref.amplitude, gs_ref.amplitude])
-    gs4 = pp.make_extended_trapezoid(channel="z", times=gs4_times, amplitudes=gs4_amp)
+    gs4 = pp.make_extended_trapezoid(channel='z', times=gs4_times, amplitudes=gs4_amp)
 
     gs5_times = np.array(
         [
@@ -173,7 +165,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         ]
     )
     gs5_amp = np.array([gs_ref.amplitude, gs_spr.amplitude, gs_spr.amplitude, 0])
-    gs5 = pp.make_extended_trapezoid(channel="z", times=gs5_times, amplitudes=gs5_amp)
+    gs5 = pp.make_extended_trapezoid(channel='z', times=gs5_times, amplitudes=gs5_amp)
 
     gs7_times = np.array(
         [
@@ -184,7 +176,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         ]
     )
     gs7_amp = np.array([0, gs_spr.amplitude, gs_spr.amplitude, gs_ref.amplitude])
-    gs7 = pp.make_extended_trapezoid(channel="z", times=gs7_times, amplitudes=gs7_amp)
+    gs7 = pp.make_extended_trapezoid(channel='z', times=gs7_times, amplitudes=gs7_amp)
 
     # Readout gradient
     gr3 = gr_preph
@@ -198,11 +190,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         ]
     )
     gr5_amp = np.array([0, gr_spr.amplitude, gr_spr.amplitude, gr_acq.amplitude])
-    gr5 = pp.make_extended_trapezoid(channel="x", times=gr5_times, amplitudes=gr5_amp)
+    gr5 = pp.make_extended_trapezoid(channel='x', times=gr5_times, amplitudes=gr5_amp)
 
     gr6_times = np.array([0, readout_time])
     gr6_amp = np.array([gr_acq.amplitude, gr_acq.amplitude])
-    gr6 = pp.make_extended_trapezoid(channel="x", times=gr6_times, amplitudes=gr6_amp)
+    gr6 = pp.make_extended_trapezoid(channel='x', times=gr6_times, amplitudes=gr6_amp)
 
     gr7_times = np.array(
         [
@@ -213,16 +205,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         ]
     )
     gr7_amp = np.array([gr_acq.amplitude, gr_spr.amplitude, gr_spr.amplitude, 0])
-    gr7 = pp.make_extended_trapezoid(channel="x", times=gr7_times, amplitudes=gr7_amp)
+    gr7 = pp.make_extended_trapezoid(channel='x', times=gr7_times, amplitudes=gr7_amp)
 
     # Fill-times
     t_ex = pp.calc_duration(gs1) + pp.calc_duration(gs2) + pp.calc_duration(gs3)
-    t_ref = (
-        pp.calc_duration(gs4)
-        + pp.calc_duration(gs5)
-        + pp.calc_duration(gs7)
-        + readout_time
-    )
+    t_ref = pp.calc_duration(gs4) + pp.calc_duration(gs5) + pp.calc_duration(gs7) + readout_time
     t_end = pp.calc_duration(gs4) + pp.calc_duration(gs5)
 
     TE_train = t_ex + n_echo * t_ref + t_end
@@ -231,11 +218,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     TR_fill = system.grad_raster_time * np.round(TR_fill / system.grad_raster_time)
     if TR_fill < 0:
         TR_fill = 1e-3
-        warnings.warn(
-            f"TR too short, adapted to include all slices to: {1000 * n_slices * (TE_train + TR_fill)} ms"
-        )
+        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (TE_train + TR_fill)} ms')
     else:
-        print(f"TR fill: {1000 * TR_fill} ms")
+        print(f'TR fill: {1000 * TR_fill} ms')
     delay_TR = pp.make_delay(TR_fill)
 
     # ======
@@ -243,20 +228,10 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
     # ======
     for k_ex in range(n_ex + 1):
         for s in range(n_slices):
-            rf_ex.freq_offset = (
-                gs_ex.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
-            )
-            rf_ref.freq_offset = (
-                gs_ref.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
-            )
-            rf_ex.phase_offset = (
-                rf_ex_phase
-                - 2 * np.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
-            )
-            rf_ref.phase_offset = (
-                rf_ref_phase
-                - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
-            )
+            rf_ex.freq_offset = gs_ex.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            rf_ref.freq_offset = gs_ref.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            rf_ex.phase_offset = rf_ex_phase - 2 * np.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
+            rf_ref.phase_offset = rf_ref_phase - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
 
             seq.add_block(gs1)
             seq.add_block(gs2, rf_ex)
@@ -269,14 +244,14 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
                     phase_area = 0.0  # 0.0 and not 0 because -phase_area should successfully result in negative zero
 
                 gp_pre = pp.make_trapezoid(
-                    channel="y",
+                    channel='y',
                     system=system,
                     area=phase_area,
                     duration=t_sp,
                     rise_time=dG,
                 )
                 gp_rew = pp.make_trapezoid(
-                    channel="y",
+                    channel='y',
                     system=system,
                     area=-phase_area,
                     duration=t_sp,
@@ -300,9 +275,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         error_report,
     ) = seq.check_timing()  # Check whether the timing of the sequence is correct
     if ok:
-        print("Timing check passed successfully")
+        print('Timing check passed successfully')
     else:
-        print("Timing check failed. Error listing follows:")
+        print('Timing check failed. Error listing follows:')
         [print(e) for e in error_report]
 
     # ======
@@ -318,5 +293,5 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse_pypulseq.seq"):
         seq.write(seq_filename)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(plot=True, write_seq=True)

@@ -1,17 +1,16 @@
+import math
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
+from warnings import warn
 
 import numpy as np
-import math
 
 from pypulseq import eps
-from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_center import calc_rf_center
-from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_adiabatic_pulse(
@@ -29,13 +28,11 @@ def make_adiabatic_pulse(
     mu: float = 4.9,
     phase_offset: float = 0,
     return_gz: bool = False,
-    return_delay: bool = False,
     slice_thickness: float = 0,
-    system=None,
+    system: Union[Opts, None] = None,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
-    Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
 ]:
     """
@@ -53,12 +50,14 @@ def make_adiabatic_pulse(
             - mu (float): a constant, determines amplitude of frequency sweep.
             - dur (float): pulse time (s).
 
-        Returns:
+    Returns
+    -------
             2-element tuple containing
             - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
 
-        References:
+    References
+    ----------
             Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
             inversion of a two-level system by phase-modulated pulses'.
             Phys. Rev. A., 32:3435-3447.
@@ -72,15 +71,17 @@ def make_adiabatic_pulse(
             - bw (float): pulse bandwidth.
             - dur (float): pulse time (s).
 
-        Returns:
+    Returns
+    -------
             2-element tuple containing
             - **a** (*array*): AM waveform.
             - **om** (*array*): FM waveform (radians/s).
 
-        References:
+    References
+    ----------
             Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
             Broadband Spin Inversion'.
-            J. Magn. Reson. Ser. A., 117:246-256.
+            J. Magn. Reason. Set. A., 117:246-256.
 
     Parameters
     ----------
@@ -107,8 +108,6 @@ def make_adiabatic_pulse(
         Power to exponentiate to within AM term. ~20 or greater is typical.
     phase_offset : float, default=0
         Phase offset.
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -125,8 +124,6 @@ def make_adiabatic_pulse(
         Slice-selective trapezoid event.
     gzr : SimpleNamespace, optional
         Slice-select rephasing trapezoid event.
-    delay : SimpleNamespace, optional
-        Delay event.
 
     Raises
     ------
@@ -139,14 +136,14 @@ def make_adiabatic_pulse(
         system = Opts.default
 
     if return_gz and slice_thickness <= 0:
-        raise ValueError("Slice thickness must be provided")
+        raise ValueError('Slice thickness must be provided')
 
-    valid_pulse_types = ["hypsec", "wurst"]
+    valid_pulse_types = ['hypsec', 'wurst']
     if (not pulse_type) or (pulse_type not in valid_pulse_types):
-        raise ValueError(f"Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}")
+        raise ValueError(f'Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}')
     valid_rf_use_labels = get_supported_rf_uses()
-    if use != "" and use not in valid_rf_use_labels:
-        raise ValueError(f"Invalid use parameter. Must be one of {valid_rf_use_labels}. Passed: {use}")
+    if use != '' and use not in valid_rf_use_labels:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_rf_use_labels}. Passed: {use}')
 
     if dwell is None:
         dwell = system.rf_raster_time
@@ -156,9 +153,9 @@ def make_adiabatic_pulse(
     # Number of points must be divisible by 4 - requirement of individual pulse functions
     n_samples = math.floor(n_raw / 4) * 4
 
-    if pulse_type == "hypsec":
+    if pulse_type == 'hypsec':
         amp_mod, freq_mod = _hypsec(n=n_samples, beta=beta, mu=mu, dur=duration)
-    elif pulse_type == "wurst":
+    elif pulse_type == 'wurst':
         amp_mod, freq_mod = _wurst(n=n_samples, n_fac=n_fac, bw=bandwidth, dur=duration)
 
     phase_mod = np.cumsum(freq_mod) * dwell
@@ -199,14 +196,14 @@ def make_adiabatic_pulse(
         n_pad = n_raw - n_samples
         pad_left = n_pad // 2
         pad_right = n_pad - pad_left
-        signal = np.pad(signal, (pad_left, pad_right), mode="constant")
+        signal = np.pad(signal, (pad_left, pad_right), mode='constant')
         n_samples = n_raw
 
     # Calculate time points
     t = (np.arange(n_samples) + 0.5) * dwell
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
     rf.shape_dur = n_samples * dwell
@@ -215,8 +212,12 @@ def make_adiabatic_pulse(
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    rf.use = use if use != "" else "inversion"
+    rf.use = use if use != '' else 'inversion'
     if rf.dead_time > rf.delay:
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
@@ -232,9 +233,9 @@ def make_adiabatic_pulse(
             # Set to zero, not None for compatibility with existing make_trapezoid
             max_slew_slice_select = 0
 
-        if pulse_type == "hypsec":
+        if pulse_type == 'hypsec':
             bandwidth = mu * beta / np.pi
-        elif pulse_type == "wurst":
+        elif pulse_type == 'wurst':
             bandwidth = bandwidth
 
         center_pos, _ = calc_rf_center(rf)
@@ -242,18 +243,20 @@ def make_adiabatic_pulse(
         amplitude = bandwidth / slice_thickness
         area = amplitude * duration
         gz = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             flat_time=duration,
             flat_area=area,
             max_grad=max_grad_slice_select,
-            max_slew=max_slew_slice_select)
+            max_slew=max_slew_slice_select,
+        )
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
             max_grad=max_grad_slice_select,
-            max_slew=max_slew_slice_select)
+            max_slew=max_slew_slice_select,
+        )
 
         if rf.delay > gz.rise_time:  # Round-up to gradient raster
             gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
@@ -261,16 +264,10 @@ def make_adiabatic_pulse(
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.ringdown_time > 0:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
-    else:
-        delay = make_delay(calc_duration(rf))
+    if trace_enabled():
+        rf.trace = trace()
 
-    if return_gz and return_delay:
-        return rf, gz, gzr, delay
-    elif return_delay:
-        return rf, delay
-    elif return_gz:
+    if return_gz:
         return rf, gz, gzr
     else:
         return rf
@@ -278,7 +275,7 @@ def make_adiabatic_pulse(
 
 """Adiabatic Pulse Design functions.
     The below functions are originally from ssigpy/sigpy/mri/rf/adiabatic.py
-    Used under the terms of the Sigpy BSD 3-clause licence.
+    Used under the terms of the Sigpy BSD 3-clause license.
 
     Copyright (c) 2016, Frank Ong.
     Copyright (c) 2016, The Regents of the University of California.
@@ -324,18 +321,19 @@ def _bir4(n: int, beta: float, kappa: float, theta: float, dw0: np.ndarray):
         theta (float): flip angle in radians.
         dw0: FM waveform scaling (radians/s).
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Staewen, R.S. et al. (1990). '3-D FLASH Imaging using a single surface
         coil and a new adiabatic pulse, BIR-4'.
         Invest. Radiology, 25:559-567.
     """
-
     dphi = np.pi + theta / 2
 
     t = np.arange(0, n) / n
@@ -369,18 +367,19 @@ def _hypsec(n: int = 512, beta: float = 800.0, mu: float = 4.9, dur: float = 0.0
         mu (float): a constant, determines amplitude of frequency sweep.
         dur (float): pulse time (s).
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
         inversion of a two-level system by phase-modulated pulses'.
         Phys. Rev. A., 32:3435-3447.
     """
-
     t = np.arange(-n // 2, n // 2) / n * dur
 
     a = np.cosh(beta * t) ** -1
@@ -401,18 +400,19 @@ def _wurst(n: int = 512, n_fac: int = 40, bw: float = 40e3, dur: float = 2e-3):
         dur (float): pulse time (s).
 
 
-    Returns:
+    Returns
+    -------
         2-element tuple containing
 
         - **a** (*array*): AM waveform.
         - **om** (*array*): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         Kupce, E. and Freeman, R. (1995). 'Stretched Adiabatic Pulses for
         Broadband Spin Inversion'.
-        J. Magn. Reson. Ser. A., 117:246-256.
+        J. Magn. Reason. Set. A., 117:246-256.
     """
-
     t = np.arange(0, n) * dur / n
 
     a = 1 - np.power(np.abs(np.cos(np.pi * t / dur)), n_fac)
@@ -442,20 +442,21 @@ def _goia_wurst(
         b1_max (float): maximum b1 (Hz)
         bw (float): pulse bandwidth (Hz)
 
-    Returns:
+    Returns
+    -------
         3-element tuple containing:
 
         - **a** (*array*): AM waveform (Hz)
         - **om** (*array*): FM waveform (Hz)
         - **g** (*array*): normalized gradient waveform
 
-    References:
+    References
+    ----------
         O. C. Andronesi, S. Ramadan, E.-M. Ratai, D. Jennings, C. E. Mountford,
         A. G. Sorenson.
-        J Magn Reson, 203:283-293, 2010.
+        J Magn Reason, 203:283-293, 2010.
 
     """
-
     t = np.arange(0, n) * dur / n
 
     a = b1_max * (1 - np.abs(np.sin(np.pi / 2 * (2 * t / dur - 1))) ** n_b1)
@@ -487,20 +488,21 @@ def _bloch_siegert_fm(
             perturbation
         gamma (float): gyromagnetic ratio
 
-    Returns:
+    Returns
+    -------
         om (array): FM waveform (radians/s).
 
-    References:
+    References
+    ----------
         M. M. Khalighi, B. K. Rutt, and A. B. Kerr.
         Adiabatic RF pulse design for Bloch-Siegert B1+ mapping.
-        Magn Reson Med, 70(3):829–835, 2013.
+        Magn Reason Med, 70(3):829-835, 2013.
 
         M. Jankiewicz, J. C. Gore, and W. A. Grissom.
         Improved encoding pulses for Bloch-Siegert B1+ mapping.
-        J Magn Reson, 226:79–87, 2013.
+        J Magn Reason, 226:79-87, 2013.
 
     """
-
     # set gamma to PyPulseq default if not provided
     if gamma is None:
         gamma = 2 * np.pi * 42.576e6

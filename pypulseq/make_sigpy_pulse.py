@@ -1,24 +1,23 @@
 import math
+from copy import copy
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
+from warnings import warn
 
 import numpy as np
+
 try:
     import sigpy.mri.rf as rf
     import sigpy.plot as pl
-except ModuleNotFoundError as exc:
-    import warnings
-    warnings.warn(
-        'Sigpy dependency not found, please install it to use '
-        'the sigpy pulse functions: sigpy_n_seq, make_slr, make_sms. '
-        'Use "pip install pypulse[sigpy]" to install.',
-        UserWarning)
-    raise exc
+except ModuleNotFoundError as err:
+    raise ModuleNotFoundError(
+        "SigPy is not installed. Install it using 'pip install sigpy' or 'pip install pypulseq[sigpy]'."
+    ) from err
 
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def sigpy_n_seq(
@@ -32,9 +31,9 @@ def sigpy_n_seq(
     phase_offset: float = 0,
     return_gz: bool = True,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     use: str = str(),
     plot: bool = True,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
@@ -68,7 +67,7 @@ def sigpy_n_seq(
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
     system : Opts, optional
-        System limits. Default is a system limits object initialised to default values.
+        System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, optional, default=4
         Time-bandwidth product.
     use : str, optional, default=str()
@@ -91,16 +90,19 @@ def sigpy_n_seq(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    valid_use_pulses = ["excitation", "refocusing", "inversion"]
-    if use != "" and use not in valid_use_pulses:
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
+
+    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
+    if use != '' and use not in valid_use_pulses:
         raise ValueError(
             f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
         )
 
-    if pulse_cfg.pulse_type == "slr":
+    if pulse_cfg.pulse_type == 'slr':
         [signal, t, pulse] = make_slr(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
@@ -109,7 +111,7 @@ def sigpy_n_seq(
             pulse_cfg=pulse_cfg,
             disp=plot,
         )
-    if pulse_cfg.pulse_type == "sms":
+    if pulse_cfg.pulse_type == 'sms':
         [signal, t, pulse] = make_sms(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
@@ -120,7 +122,7 @@ def sigpy_n_seq(
         )
 
     rfp = SimpleNamespace()
-    rfp.type = "rf"
+    rfp.type = 'rf'
     rfp.signal = signal
     rfp.t = t
     rfp.shape_dur = t[-1]
@@ -130,15 +132,19 @@ def sigpy_n_seq(
     rfp.ringdown_time = system.rf_ringdown_time
     rfp.delay = delay
 
-    if use != "":
+    if use != '':
         rfp.use = use
 
     if rfp.dead_time > rfp.delay:
+        warn(
+            f'Specified RF delay {rfp.delay*1e6:.2f} us is less than the dead time {rfp.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rfp.delay = rfp.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -147,23 +153,18 @@ def sigpy_n_seq(
         if max_slew > 0:
             system = copy(system)
             system.max_slew = max_slew
-        BW = time_bw_product / duration
-        amplitude = BW / slice_thickness
+        bandwidth = time_bw_product / duration
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
         if rfp.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rfp.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rfp.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rfp.delay < (gz.rise_time + gz.delay):
             rfp.delay = gz.rise_time + gz.delay
@@ -177,8 +178,11 @@ def sigpy_n_seq(
     negative_zero_indices = np.where(rfp.signal == -0.0)
     rfp.signal[negative_zero_indices] = 0
 
+    if trace_enabled():
+        rfp.trace = trace()
+
     if return_gz:
-        return rfp, gz, gzr, pulse
+        return rfp, gz, gzr
     else:
         return rfp
 
@@ -187,15 +191,18 @@ def make_slr(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    system: Union[Opts, None] = None,
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    N = int(round(duration / 1e-6))
-    t = np.arange(1, N + 1) * system.rf_raster_time
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
+
+    n_samples = int(round(duration / 1e-6))
+    t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
     ptype = pulse_cfg.ptype
@@ -205,7 +212,7 @@ def make_slr(
     cancel_alpha_phs = pulse_cfg.cancel_alpha_phs
 
     pulse = rf.slr.dzrf(
-        n=N,
+        n=n_samples,
         tb=time_bw_product,
         ptype=ptype,
         ftype=ftype,
@@ -223,13 +230,11 @@ def make_slr(
         # Simulate it
         [a, b] = rf.sim.abrm(
             pulse,
-            np.arange(
-                -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-            ),
+            np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
-        Mxy = 2 * np.multiply(np.conj(a), b)
-        pl.LinePlot(Mxy)
+        mag_xy = 2 * np.multiply(np.conj(a), b)
+        pl.LinePlot(mag_xy)
 
     return signal, t, pulse
 
@@ -238,15 +243,18 @@ def make_sms(
     flip_angle: float,
     time_bw_product: float = 4,
     duration: float = 0,
-    system: Opts = None,
-    pulse_cfg: SigpyPulseOpts = SigpyPulseOpts(),
+    system: Union[Opts, None] = None,
+    pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
 ):
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    N = int(round(duration / 1e-6))
-    t = np.arange(1, N + 1) * system.rf_raster_time
+
+    if pulse_cfg is None:
+        pulse_cfg = SigpyPulseOpts()
+
+    n_samples = int(round(duration / 1e-6))
+    t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
     ptype = pulse_cfg.ptype
@@ -259,7 +267,7 @@ def make_sms(
     phs_0_pt = pulse_cfg.phs_0_pt
 
     pulse_in = rf.slr.dzrf(
-        n=N,
+        n=n_samples,
         tb=time_bw_product,
         ptype=ptype,
         ftype=ftype,
@@ -267,9 +275,7 @@ def make_sms(
         d2=d2,
         cancel_alpha_phs=cancel_alpha_phs,
     )
-    pulse = rf.multiband.mb_rf(
-        pulse_in, n_bands=n_bands, band_sep=band_sep, phs_0_pt=phs_0_pt
-    )
+    pulse = rf.multiband.mb_rf(pulse_in, n_bands=n_bands, band_sep=band_sep, phs_0_pt=phs_0_pt)
 
     flip = np.sum(pulse) * system.rf_raster_time * 2 * np.pi
     signal = pulse * flip_angle / flip
@@ -281,12 +287,10 @@ def make_sms(
         # Simulate it
         [a, b] = rf.sim.abrm(
             pulse,
-            np.arange(
-                -20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000
-            ),
+            np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
             True,
         )
-        Mxy = 2 * np.multiply(np.conj(a), b)
-        pl.LinePlot(Mxy)
+        mag_xy = 2 * np.multiply(np.conj(a), b)
+        pl.LinePlot(mag_xy)
 
     return signal, t, pulse

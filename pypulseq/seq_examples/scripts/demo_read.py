@@ -6,20 +6,18 @@ import pypulseq as pp
 """
 Read a sequence into MATLAB. The `Sequence` class provides an implementation of the _open file format_ for MR sequences 
 described here: http://pulseq.github.io/specification.pdf. This example demonstrates parsing an MRI sequence stored in 
-this format, accessing sequence parameters and visualising the sequence.
+this format, accessing sequence parameters and visualizing the sequence.
 """
 
 # Read a sequence file - a sequence can be loaded from the open MR file format using the `read` method.
-seq_name = "epi_rs.seq"
+seq_name = 'epi_rs.seq'
 
-system = pp.Opts(
-    B0=2.89
-)  # Need system here if we want 'detectRFuse' to detect fat-sat pulses
+system = pp.Opts(B0=2.89)  # Need system here if we want 'detectRFuse' to detect fat-sat pulses
 seq = pp.Sequence(system)
 seq.read(seq_name, detect_rf_use=True)
 
 # Sanity check to see if the reading and writing are consistent
-seq.write("read_test.seq")
+seq.write('read_test.seq')
 # os_system(f'diff -s -u {seq_name} read_test.seq -echo')  # Linux only
 
 """
@@ -27,7 +25,7 @@ Access sequence parameters and blocks. Parameters defined with in the `[DEFINITI
 are accessed with the `get_definition()` method. These are user-specified definitions and do not effect the execution of 
 the sequence.
 """
-seq_name = seq.get_definition("Name")
+seq_name = seq.get_definition('Name')
 
 # Calculate and display real TE, TR as well as slew rates and gradient amplitudes
 test_report = seq.test_report()
@@ -43,12 +41,12 @@ rf = b1.rf
 
 plt.subplot(211)
 plt.plot(rf.t, np.abs(rf.signal))
-plt.ylabel("RF magnitude")
+plt.ylabel('RF magnitude')
 
 plt.subplot(212)
 plt.plot(1e3 * rf.t, np.angle(rf.signal))
-plt.xlabel("t (ms)")
-plt.ylabel("RF phase")
+plt.xlabel('t (ms)')
+plt.ylabel('RF phase')
 
 # The next three blocks contain: three gradient events; a delay; and readout gradient with ADC event, each with
 # corresponding fields defining the details of the events.
@@ -56,13 +54,13 @@ b2 = seq.get_block(2)
 b3 = seq.get_block(3)
 b4 = seq.get_block(4)
 
-# Plot the sequence. Visualise the sequence using the `plot()` method of the class. This creates a new figure and shows
+# Plot the sequence. Visualize the sequence using the `plot()` method of the class. This creates a new figure and shows
 # ADC, RF and gradient events. The axes are linked so zooming is consistent. In this example, a simple gradient echo
 # sequence for MRI is displayed.
 # seq.plot()
 
 """
-The details of individual pulses are not well-represented when the entire sequence is visualised. Interactive zooming 
+The details of individual pulses are not well-represented when the entire sequence is visualized. Interactive zooming 
 is helpful here. Alternatively, a time range can be specified. An additional parameter also allows the display units to 
 be changed for easy reading. Further, the handle of the created figure can be returned if required.
 """
@@ -75,13 +73,13 @@ In this example, a Hamming window is applied to the # first RF pulse of the sequ
 """
 rf2 = rf
 duration = rf2.t[-1]
-t = rf2.t - duration / 2  # Centre time about 0
+t = rf2.t - duration / 2  # Center time about 0
 alpha = 0.5
 BW = 4 / duration  # Time bandwidth product = 4
 window = 1.0 - alpha + alpha * np.cos(2 * np.pi * t / duration)  # Hamming window
 signal = window * np.sinc(BW * t)
 
-# Normalise area to achieve 2*pi rotation
+# Normalize area to achieve 2*pi rotation
 signal = signal / (seq.rf_raster_time * np.sum(np.real(signal)))
 
 # Scale to 45 degree flip angle
@@ -91,7 +89,7 @@ b1.rf = rf2
 seq.set_block(1, b1)
 
 # Second check to see what has changed
-seq.write("read_test2.seq")
+seq.write('read_test2.seq')
 # os_system(f'diff -s -u {seq_name} read_test2.seq -echo')  # Linux only
 
 # The amplitude of the first rf pulse is reduced due to the reduced flip-angle. Notice the reduction is not exactly a
