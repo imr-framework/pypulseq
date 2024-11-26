@@ -35,7 +35,7 @@ from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 
-major, minor, revision = __version__.split('.')
+major, minor, revision = __version__.split('.')[:3]
 
 
 class Sequence:
