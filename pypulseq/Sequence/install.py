@@ -1,8 +1,7 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from sys import platform
-
-from typing import List, Tuple, Any
+from typing import Any, List, Tuple, Union
 
 from pypulseq import Sequence
 
@@ -12,10 +11,12 @@ scanner_definitions = {}
 scanner_targets = {}
 scanner_cache = {}
 
+
 class ScannerDefinition:
     """
     Abstract base class for scanner install implementations.
     """
+
     def can_install(self) -> bool:
         """
         Check whether the sequence can be installed to this scanner. E.g.
@@ -51,7 +52,7 @@ class ScannerDefinition:
         raise NotImplementedError()
 
 
-def register_scanner(name : str, definition : ScannerDefinition, groups : List[str] = None) -> None:
+def register_scanner(name: str, definition: ScannerDefinition, groups: Union[List[str], None] = None) -> None:
     """
     Adds a `ScannerDefinition` to the list of known scanner targets.
 
@@ -81,7 +82,8 @@ def register_scanner(name : str, definition : ScannerDefinition, groups : List[s
             else:
                 scanner_targets[g].append(name)
 
-def detect_scanner(target : str = None, clear_cache : bool = False) -> Tuple[str, ScannerDefinition]:
+
+def detect_scanner(target: Union[str, None] = None, clear_cache: bool = False) -> Tuple[str, ScannerDefinition]:
     """
     Detects whether any known scanner is available for installing pulseq
     sequences.
@@ -116,7 +118,7 @@ def detect_scanner(target : str = None, clear_cache : bool = False) -> Tuple[str
     if target is not None:
         if target not in scanner_targets:
             raise ValueError('Unknown scanner target')
-        sd = {k:scanner_definitions[k] for k in scanner_targets[target]}
+        sd = {k: scanner_definitions[k] for k in scanner_targets[target]}
     else:
         sd = scanner_definitions
 
@@ -128,7 +130,8 @@ def detect_scanner(target : str = None, clear_cache : bool = False) -> Tuple[str
 
     return None, None
 
-def silent_call(command : str) -> int:
+
+def silent_call(command: str) -> int:
     """
     Calls a system command while suppressing all output.
 
@@ -142,7 +145,7 @@ def silent_call(command : str) -> int:
     int
         Status code for the command.
     """
-    return subprocess.call(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.call(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # noqa: S603
 
 
 # Implementation for Siemens scanners
@@ -156,11 +159,12 @@ class SiemensDefinition(ScannerDefinition):
     When installing, saves the sequence to file, transfers it to the ICE
     machine, and renames and moves it into the `pulseq_seq_path`.
     """
-    def __init__(self, ice_ip : str, pulseq_seq_path : str):
+
+    def __init__(self, ice_ip: str, pulseq_seq_path: str):
         self.ice_ip = ice_ip
         self.pulseq_seq_path = pulseq_seq_path
 
-    def execute(self, command : str) -> bool:
+    def execute(self, command: str) -> bool:
         """
         Executes a command on the ICE machine.
 
@@ -174,7 +178,9 @@ class SiemensDefinition(ScannerDefinition):
         bool
             Status whether the command was successfully executed.
         """
-        status = silent_call(f'ssh -oBatchMode=yes -oStrictHostKeyChecking=no -oHostKeyAlgorithms=+ssh-rsa root@{self.ice_ip} "{command}"')
+        status = silent_call(
+            f'ssh -oBatchMode=yes -oStrictHostKeyChecking=no -oHostKeyAlgorithms=+ssh-rsa root@{self.ice_ip} "{command}"'
+        )
         return status == 0
 
     def can_install(self) -> bool:
@@ -205,12 +211,13 @@ class SiemensDefinition(ScannerDefinition):
         # Does the pulseq seq path exist on the scanner? (i.e. is this the right scanner?)
         return self.execute(f'test -d {self.pulseq_seq_path}')
 
-
-    def install(self,
-                seq : Sequence,
-                name : str = 'external',
-                local_filename : str = 'external.seq',
-                remove_local_file : bool = True) -> bool:
+    def install(
+        self,
+        seq: Sequence,
+        name: str = 'external',
+        local_filename: str = 'external.seq',
+        remove_local_file: bool = True,
+    ) -> bool:
         """
         Install the sequence to this Siemens scanner.
 
@@ -247,7 +254,9 @@ class SiemensDefinition(ScannerDefinition):
         seq.write(local_filename)
 
         # Transfer the sequence file to the ICE machine with a temporary filename
-        status = silent_call(f'scp -oBatchMode=yes -oStrictHostKeyChecking=no -oHostKeyAlgorithms=+ssh-rsa {local_filename} root@{self.ice_ip}:{self.pulseq_seq_path}/external_tmp.seq')
+        status = silent_call(
+            f'scp -oBatchMode=yes -oStrictHostKeyChecking=no -oHostKeyAlgorithms=+ssh-rsa {local_filename} root@{self.ice_ip}:{self.pulseq_seq_path}/external_tmp.seq'
+        )
         if status != 0:
             return False
 
@@ -272,13 +281,13 @@ class SiemensDefinition(ScannerDefinition):
 # Built-in scanner definitions
 
 # Siemens Numaris 4, two different IPs
-register_scanner('siemens_n4_2',
-                 SiemensDefinition('192.168.2.2', '/opt/medcom/MriCustomer/seq/pulseq'),
-                 ['siemens', 'siemens_n4'])
-register_scanner('siemens_n4_3',
-                 SiemensDefinition('192.168.2.3', '/opt/medcom/MriCustomer/seq/pulseq'),
-                 ['siemens', 'siemens_n4'])
+register_scanner(
+    'siemens_n4_2', SiemensDefinition('192.168.2.2', '/opt/medcom/MriCustomer/seq/pulseq'), ['siemens', 'siemens_n4']
+)
+register_scanner(
+    'siemens_n4_3', SiemensDefinition('192.168.2.3', '/opt/medcom/MriCustomer/seq/pulseq'), ['siemens', 'siemens_n4']
+)
 # Siemens Numaris X
-register_scanner('siemens_nx',
-                 SiemensDefinition('192.168.2.2', '/opt/medcom/MriCustomer/CustomerSeq/pulseq'),
-                 ['siemens'])
+register_scanner(
+    'siemens_nx', SiemensDefinition('192.168.2.2', '/opt/medcom/MriCustomer/CustomerSeq/pulseq'), ['siemens']
+)
