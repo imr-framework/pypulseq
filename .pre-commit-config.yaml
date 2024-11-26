@@ -6,6 +6,7 @@ repos:
     rev: v4.6.0
     hooks:
       - id: check-added-large-files
+        exclude: ^pypulseq/tests/expected_output/pulseq_calcAdcSeg.txt
       # - id: check-docstring-first
       - id: check-merge-conflict
       - id: check-yaml
