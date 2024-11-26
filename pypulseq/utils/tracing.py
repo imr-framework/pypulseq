@@ -1,10 +1,11 @@
-import traceback
 import sys
+import traceback
 
 # Global variables indicating whether tracing is enabled and how deep the
 # calls are traced.
-_tracing : bool = False
-_trace_limit : int = 1
+_tracing: bool = False
+_trace_limit: int = 1
+
 
 def trace_enabled() -> bool:
     """
@@ -13,6 +14,7 @@ def trace_enabled() -> bool:
     """
     global _tracing
     return _tracing
+
 
 def enable_trace(limit: int = 1) -> None:
     """
@@ -31,12 +33,14 @@ def enable_trace(limit: int = 1) -> None:
     _tracing = True
     _trace_limit = limit
 
+
 def disable_trace() -> None:
     """
     Disabling tracing where sequence events and blocks were created.
     """
     global _tracing
     _tracing = False
+
 
 def trace() -> traceback.StackSummary:
     """
@@ -47,8 +51,9 @@ def trace() -> traceback.StackSummary:
     traceback.StackSummary
         Call stack summary.
     """
-    f = sys._getframe().f_back.f_back # type: ignore
+    f = sys._getframe().f_back.f_back  # type: ignore
     return traceback.extract_stack(f, limit=_trace_limit)
+
 
 def format_trace(trace: traceback.StackSummary, indent: int = 0) -> str:
     """
@@ -67,4 +72,4 @@ def format_trace(trace: traceback.StackSummary, indent: int = 0) -> str:
     str
         Stack summary formatted into a printable string.
     """
-    return '\n'.join(' '*indent + y for x in trace.format() for y in x.splitlines())
+    return '\n'.join(' ' * indent + y for x in trace.format() for y in x.splitlines())

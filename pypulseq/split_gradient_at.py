@@ -4,10 +4,9 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pypulseq import eps
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def split_gradient_at(
@@ -19,7 +18,8 @@ def split_gradient_at(
     trapezoids, for 'arb' as arbitrary gradient objects. The delays in the individual gradient events are adapted such
     that add_gradients(...) produces a gradient equivalent to 'grad'.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.split_gradient()`
     - `pypulseq.make_extended_trapezoid()`
     - `pypulseq.make_trapezoid()`
@@ -58,7 +58,7 @@ def split_gradient_at(
     time_point = round(time_index * grad_raster_time, 6)
     channel = grad.channel
 
-    if grad.type == "grad":
+    if grad.type == 'grad':
         # Check if we have an arbitrary gradient or an extended trapezoid
         if abs(grad.tt[-1] - 0.5 * grad_raster_time) < 1e-10 and np.all(
             abs(grad.tt[1:] - grad.tt[:-1] - grad_raster_time) < 1e-10
@@ -70,9 +70,7 @@ def split_gradient_at(
             else:
                 grad1 = grad
                 grad2 = grad
-                grad1.last = 0.5 * (
-                    grad.waveform[time_index - 1] + grad.waveform[time_index]
-                )
+                grad1.last = 0.5 * (grad.waveform[time_index - 1] + grad.waveform[time_index])
                 grad2.first = grad1.last
                 grad2.delay = grad.delay + grad.t[time_index]
                 grad1.t = grad.t[:time_index]
@@ -90,7 +88,7 @@ def split_gradient_at(
             # Extended trapezoid
             times = grad.tt
             amplitudes = grad.waveform
-    elif grad.type == "trap":
+    elif grad.type == 'trap':
         grad.delay = round(grad.delay / grad_raster_time) * grad_raster_time
         grad.rise_time = round(grad.rise_time / grad_raster_time) * grad_raster_time
         grad.flat_time = round(grad.flat_time / grad_raster_time) * grad_raster_time
@@ -109,13 +107,11 @@ def split_gradient_at(
             ]
             amplitudes = [0, grad.amplitude, grad.amplitude, 0]
     else:
-        raise ValueError("Splitting of unsupported event.")
+        raise ValueError('Splitting of unsupported event.')
 
     # If the split line is behind the gradient, there is no second gradient to create
     if time_point >= grad.delay + times[-1]:
-        raise ValueError(
-            "Splitting of gradient at time point after the end of gradient."
-        )
+        raise ValueError('Splitting of gradient at time point after the end of gradient.')
 
     # If the split line goes through the delay
     if time_point < grad.delay:

@@ -1,14 +1,13 @@
 from types import SimpleNamespace
-from typing import Tuple, Union, List
+from typing import List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from pypulseq import Sequence
 from pypulseq.utils.safe_pns_prediction import safe_gwf_to_pns, safe_plot
-
-from pypulseq.utils.siemens.readasc import readasc
 from pypulseq.utils.siemens.asc_to_hw import asc_to_hw
+from pypulseq.utils.siemens.readasc import readasc
 
 
 def calc_pns(
@@ -43,7 +42,6 @@ def calc_pns(
     t_pns : np.array [N]
         Time axis for the pns_norm and pns_components arrays
     """
-
     dt = obj.grad_raster_time
     # Get gradients as piecewise-polynomials
     gw_pp = obj.get_gradients(time_range=time_range)
@@ -70,9 +68,9 @@ def calc_pns(
         for i in range(ng):
             if gw_pp[i] is not None:
                 plt.plot(gw_pp[i].x[1:-1], gw_pp[i].c[1, :-1])
-        plt.title("gradient wave form, in Hz/m")
+        plt.title('gradient wave form, in Hz/m')
 
-    if type(hardware) == str:
+    if isinstance(hardware, str):
         # this loads the parameters from the provided text file
         asc, _ = readasc(hardware)
         hardware = asc_to_hw(asc)

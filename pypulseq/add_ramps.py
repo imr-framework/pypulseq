@@ -1,6 +1,6 @@
 from copy import copy
 from types import SimpleNamespace
-from typing import Union, List
+from typing import List, Union
 
 import numpy as np
 
@@ -12,7 +12,7 @@ def add_ramps(
     k: Union[list, np.ndarray, tuple],
     max_grad: int = 0,
     max_slew: int = 0,
-    rf: SimpleNamespace = None,
+    rf: Union[SimpleNamespace, None] = None,
     system: Union[Opts, None] = None,
 ) -> List[np.ndarray]:
     """
@@ -47,11 +47,9 @@ def add_ramps(
     """
     if system is None:
         system = Opts.default
-        
+
     if not isinstance(k, (list, np.ndarray, tuple)):
-        raise ValueError(
-            f"k has to be one of list, np.ndarray, tuple. Passed: {type(k)}"
-        )
+        raise ValueError(f'k has to be one of list, np.ndarray, tuple. Passed: {type(k)}')
 
     k_arg = copy(k)
     if max_grad > 0:
@@ -64,14 +62,12 @@ def add_ramps(
 
     k = np.vstack(k)
     num_channels = k.shape[0]
-    k = np.vstack(
-        (k, np.zeros((3 - num_channels, k.shape[1])))
-    )  # Pad with zeros if needed
+    k = np.vstack((k, np.zeros((3 - num_channels, k.shape[1]))))  # Pad with zeros if needed
 
     k_up, ok1 = calc_ramp(k0=np.zeros((3, 2)), k_end=k[:, :2], system=system)
     k_down, ok2 = calc_ramp(k0=k[:, -2:], k_end=np.zeros((3, 2)), system=system)
     if not (ok1 and ok2):
-        raise RuntimeError("Failed to calculate gradient ramps")
+        raise RuntimeError('Failed to calculate gradient ramps')
 
     # Add start and end points to ramps
     k_up = np.hstack((np.zeros((3, 2)), k_up))
@@ -88,10 +84,6 @@ def add_ramps(
             result.append(k[i])
 
     if rf is not None:
-        result.append(
-            np.concatenate(
-                (np.zeros(k_up.shape[1] * 10), rf, np.zeros(k_down.shape[1] * 10))
-            )
-        )
+        result.append(np.concatenate((np.zeros(k_up.shape[1] * 10), rf, np.zeros(k_down.shape[1] * 10))))
 
     return result

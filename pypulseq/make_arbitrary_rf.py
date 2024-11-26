@@ -1,18 +1,15 @@
+import math
+from copy import copy
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
-
-import numpy as np
-import math
 from warnings import warn
 
-from pypulseq import make_delay, calc_duration
+import numpy as np
+
 from pypulseq.make_trapezoid import make_trapezoid
-from pypulseq.make_delay import make_delay
-from pypulseq.calc_duration import calc_duration
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_arbitrary_rf(
@@ -87,7 +84,7 @@ def make_arbitrary_rf(
         system = Opts.default
 
     valid_use_pulses = get_supported_rf_uses()
-    if use != "" and use not in valid_use_pulses:
+    if use != '' and use not in valid_use_pulses:
         raise ValueError(
             f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
         )
@@ -97,17 +94,17 @@ def make_arbitrary_rf(
 
     signal = np.squeeze(signal)
     if signal.ndim > 1:
-        raise ValueError(f"signal should have ndim=1. Passed ndim={signal.ndim}")
+        raise ValueError(f'signal should have ndim=1. Passed ndim={signal.ndim}')
 
     if not no_signal_scaling:
         signal = signal / np.abs(np.sum(signal * dwell)) * flip_angle / (2 * np.pi)
 
-    N = len(signal)
-    duration = N * dwell
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    n_samples = len(signal)
+    duration = n_samples * dwell
+    t = (np.arange(1, n_samples + 1) - 0.5) * dwell
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
     rf.shape_dur = duration
@@ -117,18 +114,21 @@ def make_arbitrary_rf(
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
 
-    if use != "":
+    if use != '':
         rf.use = use
 
     if rf.dead_time > rf.delay:
-        warn(f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.', stacklevel=2)
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
         if slice_thickness <= 0:
-            raise ValueError("Slice thickness must be provided.")
+            raise ValueError('Slice thickness must be provided.')
         if bandwidth <= 0:
-            raise ValueError("Bandwidth of pulse must be provided.")
+            raise ValueError('Bandwidth of pulse must be provided.')
 
         if max_grad > 0:
             system = copy(system)
@@ -137,22 +137,16 @@ def make_arbitrary_rf(
             system = copy(system)
             system.max_slew = max_slew
 
-        BW = bandwidth
         if time_bw_product > 0:
-            BW = time_bw_product / duration
+            bandwidth = time_bw_product / duration
 
-        amplitude = BW / slice_thickness
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
 
         if rf.delay > gz.rise_time:
             # Round-up to gradient raster
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay

@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_arbitrary_grad(
@@ -72,14 +72,14 @@ def make_arbitrary_grad(
     if max_slew is None or max_slew == 0:
         max_slew = system.max_slew
 
-    if channel not in ["x", "y", "z"]:
-        raise ValueError(f"Invalid channel. Must be one of x, y or z. Passed: {channel}")
+    if channel not in ['x', 'y', 'z']:
+        raise ValueError(f'Invalid channel. Must be one of x, y or z. Passed: {channel}')
 
     slew_rate = np.diff(waveform) / system.grad_raster_time
     if max(abs(slew_rate)) >= max_slew:
-        raise ValueError(f"Slew rate violation {max(abs(slew_rate)) / max_slew * 100}")
+        raise ValueError(f'Slew rate violation {max(abs(slew_rate)) / max_slew * 100}')
     if max(abs(waveform)) >= max_grad:
-        raise ValueError(f"Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}")
+        raise ValueError(f'Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}')
 
     if not first:
         first = (3 * waveform[0] - waveform[1]) * 0.5  # linear extrapolation
@@ -88,7 +88,7 @@ def make_arbitrary_grad(
         last = (3 * waveform[-1] - waveform[-2]) * 0.5  # linear extrapolation
 
     grad = SimpleNamespace()
-    grad.type = "grad"
+    grad.type = 'grad'
     grad.channel = channel
     grad.waveform = waveform
     grad.delay = delay

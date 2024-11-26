@@ -4,23 +4,18 @@ from typing import List, Union
 import numpy as np
 
 from pypulseq.add_gradients import add_gradients
-from pypulseq.scale_grad import scale_grad
 from pypulseq.opts import Opts
-from pypulseq.utils.tracing import trace_enabled, trace
+from pypulseq.scale_grad import scale_grad
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:
-    if grad.type == "trap":
+    if grad.type == 'trap':
         return abs(grad.amplitude)
     return np.max(np.abs(grad.waveform))
 
 
-def rotate(
-    *args: SimpleNamespace,
-    angle: float,
-    axis: str,
-    system : Union[Opts, None] = None
-) -> List[SimpleNamespace]:
+def rotate(*args: SimpleNamespace, angle: float, axis: str, system: Union[Opts, None] = None) -> List[SimpleNamespace]:
     """
     Rotates the corresponding gradient(s) about the given axis by the specified amount. Gradients parallel to the
     rotation axis and non-gradient(s) are not affected. Possible rotation axes are 'x', 'y' or 'z'.
@@ -43,8 +38,8 @@ def rotate(
     """
     if system is None:
         system = Opts.default
-        
-    axes = ["x", "y", "z"]
+
+    axes = ['x', 'y', 'z']
 
     # Cycle through the objects and rotate gradients non-parallel to the given rotation axis. Rotated gradients
     # assigned to the same axis are then added together.
@@ -57,12 +52,12 @@ def rotate(
     axes.remove(axis)
     axes_to_rotate = axes
     if len(axes_to_rotate) != 2:
-        raise ValueError("Incorrect axes specification.")
+        raise ValueError('Incorrect axes specification.')
 
     for i in range(len(args)):
         event = args[i]
 
-        if (event.type != "grad" and event.type != "trap") or event.channel == axis:
+        if (event.type != 'grad' and event.type != 'trap') or event.channel == axis:
             i_bypass.append(i)
         else:
             if event.channel == axes_to_rotate[0]:

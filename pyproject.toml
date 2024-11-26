@@ -28,7 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
-test = ["pytest"]
+test = ["pytest", "pre-commit"]
 
 [project.urls]
 Homepage = "https://github.com/imr-framework/pypulseq"
@@ -40,6 +40,79 @@ SAR = ["QGlobal.mat"]
 
 [tool.setuptools.dynamic]
 version = { attr = "version.__version__" }
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["__init__.py"]
+exclude = ["doc/**", "pypulseq/seq_examples/**"]
+
+# RUFF section
+[tool.ruff.lint]
+select = [
+  "A",   # flake8-builtins
+  "ARG", # flake8-unused-arguments
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "COM", # flake8-commas
+  # "D",   # pydocstyle
+  # "E",   # pycodestyle errors
+  "F", # Pyflakes
+  # "FA", # flake8-future-annotations
+  "I", # isort
+  # "N",   # pep8-naming
+  "NPY", # NumPy-specific rules
+  "RUF", # Ruff-specific rules
+  "S",   # flake8-bandit
+  "SIM", # flake8-simplify
+  # "UP",  # pyupgrade
+  "PIE", # flake8-pie
+  "PTH", # flake8-use-pathlib
+  "Q",   # flake8-quotes
+  "W",   # pycodestyle warnings
+  "YTT", # flake8-2020
+  # "ERA", # flake8-eradicate
+]
+
+extend-select = [
+  # "ANN001", #  type annotation for function argument
+  # # "ANN201", #  return type annonation public function
+  # # "ANN205", #  return type annonation static method
+  # # "ANN401", #  any type annotation
+  # # "BLE001", #  blind exception
+  # # "D107",   #  missing docstring in __init__
+  # # "D417",   #  undocumented-parameter
+]
+
+ignore = [
+  "B028",   #  explicit "stacklevel" arg in warnings
+  "COM812", #  missing-trailing-comma (conflict with formatter)
+  "PTH123", #  use of Path.open
+  "S101",   #  use of assert
+  "S307",   #  use of possibly insecure eval function
+  "S311",   #  standard pseudo-random generators
+  "S324",   #  insecure hash function
+  "SIM108", #  if-else-block-instead-of-if-exp
+  "SIM115", #  use of context manager
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+split-on-trailing-comma = false
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+quote-style = "single"
+skip-magic-trailing-comma = false
+
+[tool.typos.default]
+locale = "en-us"
+exclude = ["pypulseq/seq_examples/**"]
 
 # PyTest section
 [tool.pytest.ini_options]

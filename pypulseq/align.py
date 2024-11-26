@@ -7,9 +7,7 @@ import numpy as np
 from pypulseq.calc_duration import calc_duration
 
 
-def align(
-    **kwargs: Union[SimpleNamespace, List[SimpleNamespace]]
-) -> List[SimpleNamespace]:
+def align(**kwargs: Union[SimpleNamespace, List[SimpleNamespace]]) -> List[SimpleNamespace]:
     """
     Sets delays of the objects within the block to achieve the desired alignment of the objects in the block. Aligns
     objects as per specified alignment options by setting delays of the pulse sequence events within the block. All
@@ -40,13 +38,11 @@ def align(
     """
     alignment_specs = list(kwargs.keys())
     if not isinstance(alignment_specs[0], str):
-        raise ValueError(
-            f"First parameter must be of type str. Passed: {type(alignment_specs[0])}"
-        )
+        raise ValueError(f'First parameter must be of type str. Passed: {type(alignment_specs[0])}')
 
-    alignment_options = ["left", "center", "right"]
+    alignment_options = ['left', 'center', 'right']
     if np.any([align_opt not in alignment_options for align_opt in alignment_specs]):
-        raise ValueError("Invalid alignment spec.")
+        raise ValueError('Invalid alignment spec.')
 
     alignments = []
     objects = []
@@ -75,7 +71,7 @@ def align(
             objects[i].delay = dur - calc_duration(objects[i]) + objects[i].delay
             if objects[i].delay < 0:
                 raise ValueError(
-                    "align() attempts to set a negative delay, probably some RF pulses ignore rf_ringdown_time"
+                    'align() attempts to set a negative delay, probably some RF pulses ignore rf_ringdown_time'
                 )
 
     return objects
