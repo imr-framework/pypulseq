@@ -65,6 +65,13 @@ def test_amplitude_too_large_error():
         make_trapezoid(channel='x', amplitude=1e10, duration=1)
 
 
+def test_duration_too_short_error():
+    errstr = 'The `duration` is too short for the given `rise_time`.'
+
+    with pytest.raises(ValueError, match=errstr):
+        make_trapezoid(channel='x', area=1, duration=0.1, rise_time=0.1)
+
+
 def test_generation_methods():
     """Test minimum input cases
     Cover:
@@ -83,3 +90,7 @@ def test_generation_methods():
     assert isinstance(make_trapezoid(channel='x', flat_time=1, amplitude=1), SimpleNamespace)
 
     assert isinstance(make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1), SimpleNamespace)
+
+    # Test addition to minimum input cases
+
+    assert isinstance(make_trapezoid(channel='x', area=1, duration=0.1, rise_time=0.01), SimpleNamespace)

@@ -167,7 +167,7 @@ def make_trapezoid(
                     raise ValueError('The `duration` is too short for the given `rise_time`.')
 
                 if fall_time == 0:
-                    fall_time = duration - rise_time
+                    fall_time = rise_time
 
                 amplitude2 = area / (duration - 0.5 * rise_time - 0.5 * fall_time)
                 possible = duration >= (rise_time + fall_time) and abs(amplitude2) <= max_grad
