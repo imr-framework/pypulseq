@@ -12,10 +12,7 @@ from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 
 def test_use():
-
-    with pytest.raises(
-            ValueError,
-            match=r"Invalid use parameter. Must be one of"):
+    with pytest.raises(ValueError, match=r'Invalid use parameter. Must be one of'):
         make_gauss_pulse(flip_angle=1, use='invalid')
 
     for use in get_supported_rf_uses():

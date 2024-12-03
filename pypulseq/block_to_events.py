@@ -18,13 +18,9 @@ def block_to_events(*args: SimpleNamespace) -> Tuple[SimpleNamespace, ...]:
     """
     if len(args) == 1 and hasattr(args[0], 'rf'):
         events = list(vars(args[0]).values())  # Get all attrs
-        events = list(
-            filter(lambda filter_none: filter_none is not None, events)
-        )  # Filter None attributes
-        events = __get_label_events_if_any(
-            *events
-        )  # Flatten label events from dict datatype
-        
+        events = list(filter(lambda filter_none: filter_none is not None, events))  # Filter None attributes
+        events = __get_label_events_if_any(*events)  # Flatten label events from dict datatype
+
     else:  # args is a tuple of events
         return args
 

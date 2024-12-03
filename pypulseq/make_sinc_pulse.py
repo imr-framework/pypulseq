@@ -1,14 +1,15 @@
 import math
+from copy import copy
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
+from warnings import warn
 
 import numpy as np
 
-from pypulseq import make_delay, calc_duration
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_sinc_pulse(
@@ -22,16 +23,14 @@ def make_sinc_pulse(
     max_grad: float = 0,
     max_slew: float = 0,
     phase_offset: float = 0,
-    return_delay: bool = False,
     return_gz: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
-    Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
 ]:
     """
     Creates a radio-frequency sinc pulse event and optionally accompanying slice select and slice select rephasing
@@ -58,15 +57,13 @@ def make_sinc_pulse(
         Maximum slew rate of accompanying slice select trapezoidal event.
     phase_offset : float, default=0
         Phase offset in Hertz (Hz).
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay event has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, default=0
         Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
         slice select event.
     system : Opts, default=Opts()
-        System limits. Default is a system limits object initialised to default values.
+        System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, default=4
         Time-bandwidth product.
     use : str, default=str()
@@ -89,36 +86,34 @@ def make_sinc_pulse(
         If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     valid_pulse_uses = get_supported_rf_uses()
-    if use != "" and use not in valid_pulse_uses:
-        raise ValueError(
-            f"Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}"
-        )
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
 
     if duration <= 0:
-        raise ValueError("RF pulse duration must be positive.")
+        raise ValueError('RF pulse duration must be positive.')
 
-    BW = time_bw_product / duration
+    bandwidth = time_bw_product / duration
     alpha = apodization
-    N = round(duration / dwell)
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    n_samples = round(duration / dwell)
+    t = (np.arange(1, n_samples + 1) - 0.5) * dwell
     tt = t - (duration * center_pos)
     window = 1 - alpha + alpha * np.cos(2 * np.pi * tt / duration)
-    signal = np.multiply(window, np.sinc(BW * tt))
+    signal = np.multiply(window, np.sinc(bandwidth * tt))
     flip = np.sum(signal) * dwell * 2 * np.pi
     signal = signal * flip_angle / flip
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
-    rf.shape_dur = N * dwell
+    rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
@@ -129,11 +124,15 @@ def make_sinc_pulse(
         rf.use = use
 
     if rf.dead_time > rf.delay:
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -143,36 +142,29 @@ def make_sinc_pulse(
             system = copy(system)
             system.max_slew = max_slew
 
-        amplitude = BW / slice_thickness
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
         if rf.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
-
-    if rf.ringdown_time > 0 and return_delay:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
 
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    if return_gz and return_delay:
-        return rf, gz, gzr, delay
-    elif return_gz:
+    if trace_enabled():
+        rf.trace = trace()
+
+    if return_gz:
         return rf, gz, gzr
     else:
         return rf

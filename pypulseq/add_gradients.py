@@ -1,6 +1,6 @@
 from copy import copy, deepcopy
 from types import SimpleNamespace
-from typing import Iterable
+from typing import List, Union
 
 import numpy as np
 
@@ -12,12 +12,14 @@ from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.points_to_waveform import points_to_waveform
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.tracing import trace, trace_enabled
+
 
 def add_gradients(
-    grads: Iterable[SimpleNamespace],
+    grads: List[SimpleNamespace],
     max_grad: int = 0,
     max_slew: int = 0,
-    system=None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Returns the superposition of several gradients.
@@ -38,51 +40,62 @@ def add_gradients(
     grad : SimpleNamespace
         Superimposition of gradient events from `grads`.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
+
     if max_grad <= 0:
         max_grad = system.max_grad
     if max_slew <= 0:
         max_slew = system.max_slew
 
     if len(grads) == 0:
-        raise ValueError("No gradients specified")
+        raise ValueError('No gradients specified')
     if len(grads) == 1:
         # Trapezoids only require a shallow copy
         if grads[0].type == 'trap':
-            return copy(grads[0])
+            grad = copy(grads[0])
         else:
-            return deepcopy(grads[0])
-    
+            grad = deepcopy(grads[0])
+
+        if trace_enabled():
+            grad.trace = trace()
+        return grad
+
     # First gradient defines channel
     channel = grads[0].channel
 
     # Check if we have a set of traps with the same timing
-    if (all(g.type == 'trap' for g in grads)
-            and all(g.rise_time == grads[0].rise_time for g in grads)
-            and all(g.flat_time == grads[0].flat_time for g in grads)
-            and all(g.fall_time == grads[0].fall_time for g in grads)
-            and all(g.delay == grads[0].delay for g in grads)):
-        return make_trapezoid(grads[0].channel,
-                              amplitude=sum(g.amplitude for g in grads)+eps,
-                              rise_time=grads[0].rise_time,
-                              flat_time=grads[0].flat_time,
-                              fall_time=grads[0].fall_time,
-                              delay=grads[0].delay,
-                              system=system)
-    
+    if (
+        all(g.type == 'trap' for g in grads)
+        and all(g.rise_time == grads[0].rise_time for g in grads)
+        and all(g.flat_time == grads[0].flat_time for g in grads)
+        and all(g.fall_time == grads[0].fall_time for g in grads)
+        and all(g.delay == grads[0].delay for g in grads)
+    ):
+        grad = make_trapezoid(
+            grads[0].channel,
+            amplitude=sum(g.amplitude for g in grads) + eps,
+            rise_time=grads[0].rise_time,
+            flat_time=grads[0].flat_time,
+            fall_time=grads[0].fall_time,
+            delay=grads[0].delay,
+            system=system,
+        )
+        if trace_enabled():
+            grad.trace = trace()
+        return grad
+
     # Find out the general delay of all gradients and other statistics
     delays, firsts, lasts, durs, is_trap, is_arb = [], [], [], [], [], []
     for ii in range(len(grads)):
         if grads[ii].channel != channel:
-            raise ValueError("Cannot add gradients on different channels.")
+            raise ValueError('Cannot add gradients on different channels.')
 
         delays.append(grads[ii].delay)
         firsts.append(grads[ii].first)
         lasts.append(grads[ii].last)
         durs.append(calc_duration(grads[ii]))
-        is_trap.append(grads[ii].type == "trap")
+        is_trap.append(grads[ii].type == 'trap')
         if is_trap[-1]:
             is_arb.append(False)
         else:
@@ -95,10 +108,8 @@ def add_gradients(
         times = []
         for ii in range(len(grads)):
             g = grads[ii]
-            if g.type == "trap":
-                times.extend(
-                    cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time)
-                )
+            if g.type == 'trap':
+                times.extend(cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time))
             else:
                 times.extend(g.delay + g.tt)
 
@@ -107,16 +118,14 @@ def add_gradients(
         ieps = np.flatnonzero(dt < eps)
         if np.any(ieps):
             dtx = np.array([times[0], *dt])
-            dtx[ieps] = (
-                dtx[ieps] + dtx[ieps + 1]
-            )  # Assumes that no more than two too similar values can occur
+            dtx[ieps] = dtx[ieps] + dtx[ieps + 1]  # Assumes that no more than two too similar values can occur
             dtx = np.delete(dtx, ieps + 1)
             times = np.cumsum(dtx)
 
         amplitudes = np.zeros_like(times)
         for ii in range(len(grads)):
             g = grads[ii]
-            if g.type == "trap":
+            if g.type == 'trap':
                 if g.flat_time > 0:  # Trapezoid or triangle
                     tt = list(cumsum(g.delay, g.rise_time, g.flat_time, g.fall_time))
                     waveform = [0, g.amplitude, g.amplitude, 0]
@@ -142,22 +151,24 @@ def add_gradients(
 
             amplitudes += np.interp(xp=tt, fp=waveform, x=times, left=0, right=0)
 
-        grad = make_extended_trapezoid(
-            channel=channel, amplitudes=amplitudes, times=times, system=system
-        )
+        grad = make_extended_trapezoid(channel=channel, amplitudes=amplitudes, times=times, system=system)
+
+        if trace_enabled():
+            grad.trace = trace()
+
         return grad
-    
+
     # Convert to numpy.ndarray for fancy-indexing later on
     firsts, lasts = np.array(firsts), np.array(lasts)
     common_delay = np.min(delays)
     durs = np.array(durs)
 
     # Convert everything to a regularly-sampled waveform
-    waveforms = dict()
+    waveforms = {}
     max_length = 0
     for ii in range(len(grads)):
         g = grads[ii]
-        if g.type == "grad":
+        if g.type == 'grad':
             if is_arb[ii]:
                 waveforms[ii] = g.waveform
             else:
@@ -166,18 +177,14 @@ def add_gradients(
                     times=g.tt,
                     grad_raster_time=system.grad_raster_time,
                 )
-        elif g.type == "trap":
+        elif g.type == 'trap':
             if g.flat_time > 0:  # Triangle or trapezoid
                 times = np.array(
                     [
                         g.delay - common_delay,
                         g.delay - common_delay + g.rise_time,
                         g.delay - common_delay + g.rise_time + g.flat_time,
-                        g.delay
-                        - common_delay
-                        + g.rise_time
-                        + g.flat_time
-                        + g.fall_time,
+                        g.delay - common_delay + g.rise_time + g.flat_time + g.fall_time,
                     ]
                 )
                 amplitudes = np.array([0, g.amplitude, g.amplitude, 0])
@@ -196,12 +203,14 @@ def add_gradients(
                 grad_raster_time=system.grad_raster_time,
             )
         else:
-            raise ValueError("Unknown gradient type")
+            raise ValueError('Unknown gradient type')
 
         if g.delay - common_delay > 0:
             # Stop for numpy.arange is not g.delay - common_delay - system.grad_raster_time like in Matlab
             # so as to include the endpoint
-            waveforms[ii] = np.concatenate((np.zeros(round((g.delay-common_delay)/system.grad_raster_time)), waveforms[ii]))
+            waveforms[ii] = np.concatenate(
+                (np.zeros(round((g.delay - common_delay) / system.grad_raster_time)), waveforms[ii])
+            )
 
         num_points = len(waveforms[ii])
         max_length = max(num_points, max_length)
@@ -225,5 +234,8 @@ def add_gradients(
     # Last is defined by the sum of lasts with the maximum duration (total_duration == durs.max())
     grad.first = np.sum(firsts[np.array(delays) == common_delay])
     grad.last = np.sum(lasts[durs == durs.max()])
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

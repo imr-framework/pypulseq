@@ -1,15 +1,14 @@
 # Copyright of the Board of Trustees of Columbia University in the City of New York
 from pathlib import Path
-from typing import Tuple
-from typing import Union
+from typing import Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from scipy import interpolate
 
-from pypulseq.Sequence.sequence import Sequence
 from pypulseq.calc_duration import calc_duration
+from pypulseq.Sequence.sequence import Sequence
 
 
 def _calc_SAR(Q: np.ndarray, I: np.ndarray) -> np.ndarray:
@@ -31,7 +30,6 @@ def _calc_SAR(Q: np.ndarray, I: np.ndarray) -> np.ndarray:
     SAR : numpy.ndarray
        Contains the SAR value for a particular Q matrix
     """
-
     if len(I.shape) == 1:  # Just to fit the multi-transmit case for now, TODO
         I = np.tile(I, (Q.shape[0], 1))  # Nc x Nt
 
@@ -54,19 +52,17 @@ def _load_Q() -> Tuple[np.ndarray, np.ndarray]:
         Contains the Q-matrix of global SAR values for body-mass and head-mass respectively.
     """
     # Load relevant Q matrices computed from the model - this code will be integrated later - starting from E fields
-    path_Q = str(Path(__file__).parent / "QGlobal.mat")
+    path_Q = str(Path(__file__).parent / 'QGlobal.mat')
     Q = sio.loadmat(path_Q)
-    Q = Q["Q"]
+    Q = Q['Q']
     val = Q[0, 0]
 
-    Qtmf = val["Qtmf"]
-    Qhmf = val["Qhmf"]
+    Qtmf = val['Qtmf']
+    Qhmf = val['Qhmf']
     return Qtmf, Qhmf
 
 
-def _SAR_from_seq(
-    seq: Sequence, Qtmf: np.ndarray, Qhmf: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _SAR_from_seq(seq: Sequence, Qtmf: np.ndarray, Qhmf: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute global whole body and head only SAR values for the given `seq` object.
 
@@ -102,7 +98,7 @@ def _SAR_from_seq(
         block_dur = calc_duration(block)
         t[block_counter - 1] = t_prev + block_dur
         t_prev = t[block_counter - 1]
-        if hasattr(block, "rf"):  # has rf
+        if hasattr(block, 'rf'):  # has rf
             rf = block.rf
             signal = rf.signal
             # This rf could be parallel transmit as well
@@ -176,9 +172,7 @@ def _SAR_lims_check(
         six_min_threshold_hg = 3.2
         ten_sec_threshold_hg = 6.4
 
-        SAR_wbg_lim_app = np.concatenate(
-            (np.zeros(5), SARwbg_lim_s, np.zeros(5)), axis=0
-        )
+        SAR_wbg_lim_app = np.concatenate((np.zeros(5), SARwbg_lim_s, np.zeros(5)), axis=0)
         SAR_hg_lim_app = np.concatenate((np.zeros(5), SARhg_lim_s, np.zeros(5)), axis=0)
 
         SAR_wbg_tensec = _do_sw_sar(SAR_wbg_lim_app, tsec, 10)  # < 2  SARmax
@@ -186,42 +180,34 @@ def _SAR_lims_check(
         SAR_wbg_tensec_peak = np.round(np.max(SAR_wbg_tensec), 2)
         SAR_hg_tensec_peak = np.round(np.max(SAR_hg_tensec), 2)
 
-        if (np.max(SAR_wbg_tensec) > ten_sec_threshold_wbg) or (
-            np.max(SAR_hg_tensec) > ten_sec_threshold_hg
-        ):
-            print("Pulse exceeding 10 second Global SAR limits, increase TR")
-        SAR_wbg_sixmin = "NA"
-        SAR_hg_sixmin = "NA"
-        SAR_wbg_sixmin_peak = "NA"
-        SAR_hg_sixmin_peak = "NA"
+        if (np.max(SAR_wbg_tensec) > ten_sec_threshold_wbg) or (np.max(SAR_hg_tensec) > ten_sec_threshold_hg):
+            print('Pulse exceeding 10 second Global SAR limits, increase TR')
+        SAR_wbg_sixmin = 'NA'
+        SAR_hg_sixmin = 'NA'
+        SAR_wbg_sixmin_peak = 'NA'
+        SAR_hg_sixmin_peak = 'NA'
 
         if tsec[-1] > 600:
-            SAR_wbg_lim_app = np.concatenate(
-                (np.zeros(300), SARwbg_lim_s, np.zeros(300)), axis=0
-            )
-            SAR_hg_lim_app = np.concatenate(
-                (np.zeros(300), SARhg_lim_s, np.zeros(300)), axis=0
-            )
+            SAR_wbg_lim_app = np.concatenate((np.zeros(300), SARwbg_lim_s, np.zeros(300)), axis=0)
+            SAR_hg_lim_app = np.concatenate((np.zeros(300), SARhg_lim_s, np.zeros(300)), axis=0)
 
             SAR_hg_sixmin = _do_sw_sar(SAR_hg_lim_app, tsec, 600)
             SAR_wbg_sixmin = _do_sw_sar(SAR_wbg_lim_app, tsec, 600)
             SAR_wbg_sixmin_peak = np.round(np.max(SAR_wbg_sixmin), 2)
             SAR_hg_sixmin_peak = np.round(np.max(SAR_hg_sixmin), 2)
 
-            if (np.max(SAR_hg_sixmin) > six_min_threshold_wbg) or (
-                np.max(SAR_hg_sixmin) > six_min_threshold_hg
-            ):
-                print("Pulse exceeding 10 second Global SAR limits, increase TR")
+            if (np.max(SAR_hg_sixmin) > six_min_threshold_wbg) or (np.max(SAR_hg_sixmin) > six_min_threshold_hg):
+                print('Pulse exceeding 10 second Global SAR limits, increase TR')
     else:
-        print("Need at least 10 seconds worth of sequence to calculate SAR")
-        SAR_wbg_tensec = "NA"
-        SAR_wbg_sixmin = "NA"
-        SAR_hg_tensec = "NA"
-        SAR_hg_sixmin = "NA"
-        SAR_wbg_sixmin_peak = "NA"
-        SAR_hg_sixmin_peak = "NA"
-        SAR_wbg_tensec_peak = "NA"
-        SAR_hg_tensec_peak = "NA"
+        print('Need at least 10 seconds worth of sequence to calculate SAR')
+        SAR_wbg_tensec = 'NA'
+        SAR_wbg_sixmin = 'NA'
+        SAR_hg_tensec = 'NA'
+        SAR_hg_sixmin = 'NA'
+        SAR_wbg_sixmin_peak = 'NA'
+        SAR_hg_sixmin_peak = 'NA'
+        SAR_wbg_tensec_peak = 'NA'
+        SAR_hg_tensec_peak = 'NA'
 
     return (
         SAR_wbg_tensec,
@@ -254,12 +240,8 @@ def _do_sw_sar(SAR: np.ndarray, tsec: np.ndarray, t: np.ndarray) -> np.ndarray:
         Sliding window time average of SAR values.
     """
     SAR_time_avg = np.zeros(len(tsec) + int(t))
-    for instant in range(
-        int(t / 2), int(t / 2) + (int(tsec[-1]))
-    ):  # better to go from  -sw / 2: sw / 2
-        SAR_time_avg[instant] = (
-            sum(SAR[range(instant - int(t / 2), instant + int(t / 2) - 1)]) / t
-        )
+    for instant in range(int(t / 2), int(t / 2) + (int(tsec[-1]))):  # better to go from  -sw / 2: sw / 2
+        SAR_time_avg[instant] = sum(SAR[range(instant - int(t / 2), instant + int(t / 2) - 1)]) / t
     SAR_time_avg = SAR_time_avg[int(t / 2) : int(t / 2) + (int(tsec[-1]))]
     return SAR_time_avg
 
@@ -270,7 +252,7 @@ def calc_SAR(file: Union[str, Path, Sequence]) -> None:
 
     Parameters
     ----------
-    file : str, Path or Seuqence
+    file : str, Path or Sequence
         `.seq` file for which global SAR values will be computed. Can be path to `.seq` file as `str` or `Path`, or the
         `Sequence` object itself.
 
@@ -288,7 +270,7 @@ def calc_SAR(file: Union[str, Path, Sequence]) -> None:
             seq_obj.read(str(file))
             seq_obj = seq_obj
         else:
-            raise ValueError("Seq file does not exist.")
+            raise ValueError('Seq file does not exist.')
     else:
         seq_obj = file
 
@@ -309,15 +291,15 @@ def calc_SAR(file: Union[str, Path, Sequence]) -> None:
 
     # Plot 10 sec average SAR
     if tsec[-1] > 10:
-        plt.plot(tsec, SAR_wbg_tensec, "x-", label="Whole Body: 10sec")
-        plt.plot(tsec, SAR_hg_tensec, ".-", label="Head only: 10sec")
+        plt.plot(tsec, SAR_wbg_tensec, 'x-', label='Whole Body: 10sec')
+        plt.plot(tsec, SAR_hg_tensec, '.-', label='Head only: 10sec')
 
         # plt.plot(t, SARwbg, label='Whole Body - instant')
         # plt.plot(t, SARhg, label='Whole Body - instant')
 
-        plt.xlabel("Time (s)")
-        plt.ylabel("SAR (W/kg)")
-        plt.title("Global SAR  - Mass Normalized -  Whole body and head only")
+        plt.xlabel('Time (s)')
+        plt.ylabel('SAR (W/kg)')
+        plt.title('Global SAR  - Mass Normalized -  Whole body and head only')
 
         plt.legend()
         plt.grid(True)

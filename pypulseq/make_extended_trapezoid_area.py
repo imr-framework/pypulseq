@@ -6,6 +6,7 @@ import numpy as np
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_extended_trapezoid_area(
@@ -43,8 +44,8 @@ def make_extended_trapezoid_area(
     ------
         ValueError if no solution was found that satisfies the constraints and the desired area.
     """
-    if not system:
-        system = Opts()
+    if system is None:
+        system = Opts.default
 
     max_slew = system.max_slew * 0.99
     max_grad = system.max_grad * 0.99
@@ -71,7 +72,6 @@ def make_extended_trapezoid_area(
         -------
             Tuple of ramp-up time, flat time, ramp-down time, gradient amplitude or None if no solution was found
         """
-
         # Determine timings to check for possible solutions
         ramp_up_times = []
         ramp_down_times = []
@@ -79,9 +79,7 @@ def make_extended_trapezoid_area(
         # First, consider solutions that use maximum slew rate:
         # Analytically calculate calculate the point where:
         #   grad_start + ramp_up_time * max_slew == grad_end + ramp_down_time * max_slew
-        ramp_up_time = (duration * max_slew * raster_time - grad_start + grad_end) / (
-                           2*max_slew*raster_time
-                       )
+        ramp_up_time = (duration * max_slew * raster_time - grad_start + grad_end) / (2 * max_slew * raster_time)
         ramp_up_time = round(ramp_up_time)
 
         # Check if gradient amplitude exceeds max_grad, if so, adjust ramp
@@ -93,17 +91,13 @@ def make_extended_trapezoid_area(
             ramp_down_time = duration - ramp_up_time
 
         # Add possible solution if timing is valid
-        if (ramp_up_time > 0
-                and ramp_down_time > 0
-                and ramp_up_time + ramp_down_time <= duration):
+        if ramp_up_time > 0 and ramp_down_time > 0 and ramp_up_time + ramp_down_time <= duration:
             ramp_up_times.append(ramp_up_time)
             ramp_down_times.append(ramp_down_time)
 
         # Analytically calculate calculate the point where:
         #   grad_start - ramp_up_time * max_slew == grad_end - ramp_down_time * max_slew
-        ramp_up_time = (duration * max_slew * raster_time + grad_start - grad_end) / (
-                           2*max_slew*raster_time
-                       )
+        ramp_up_time = (duration * max_slew * raster_time + grad_start - grad_end) / (2 * max_slew * raster_time)
         ramp_up_time = round(ramp_up_time)
 
         # Check if gradient amplitude exceeds -max_grad, if so, adjust ramp
@@ -115,9 +109,7 @@ def make_extended_trapezoid_area(
             ramp_down_time = duration - ramp_up_time
 
         # Add possible solution if timing is valid
-        if (ramp_up_time > 0
-                and ramp_down_time > 0
-                and ramp_up_time + ramp_down_time <= duration):
+        if ramp_up_time > 0 and ramp_down_time > 0 and ramp_up_time + ramp_down_time <= duration:
             ramp_up_times.append(ramp_up_time)
             ramp_down_times.append(ramp_down_time)
 
@@ -175,10 +167,10 @@ def make_extended_trapezoid_area(
     # From this point onwards, solutions can always be found by extending
     # the duration and doing a binary search.
     max_duration = max(
-                       round(_calc_ramp_time(0, grad_start) / raster_time),
-                       round(_calc_ramp_time(0, grad_end) / raster_time),
-                       min_duration,
-                   )
+        round(_calc_ramp_time(0, grad_start) / raster_time),
+        round(_calc_ramp_time(0, grad_end) / raster_time),
+        min_duration,
+    )
 
     # Linear search
     solution = None
@@ -224,7 +216,11 @@ def make_extended_trapezoid_area(
 
     grad = make_extended_trapezoid(channel=channel, system=system, times=times, amplitudes=amplitudes)
 
+    # Overwrite trace
+    if trace_enabled():
+        grad.trace = trace()
+
     if not abs(grad.area - area) < 1e-8:
-        raise ValueError(f"Could not find a solution for area={area}.")
+        raise ValueError(f'Could not find a solution for area={area}.')
 
     return grad, np.array(times), amplitudes

@@ -1,8 +1,8 @@
+import math
 from types import SimpleNamespace
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
-import math
 
 from pypulseq.calc_rf_center import calc_rf_center
 
@@ -27,6 +27,7 @@ def calc_rf_bandwidth(
         Boolean flag to indicate if frequency axis of RF pulse will be returned.
     return_spectrum : bool, default=False
         Boolean flag to indicate if spectrum of RF pulse will be returned.
+
     Returns
     -------
     bw : float

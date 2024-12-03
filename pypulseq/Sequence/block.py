@@ -1,14 +1,16 @@
 import math
 from types import SimpleNamespace
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.block_to_events import block_to_events
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.supported_labels_rf_use import get_supported_labels
+from pypulseq.utils.tracing import trace_enabled
 
 
 def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
@@ -17,7 +19,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     from events and store at position specified by index. The block or events are provided in uncompressed form and
     will be stored in the compressed, non-redundant internal libraries.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.Sequence.sequence.Sequence.get_block()`
     - `pypulseq.Sequence.sequence.Sequence.add_block()`
 
@@ -39,43 +42,44 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If a gradient that doesn't end at zero is not aligned to the block boundary.
     """
     events = block_to_events(*args)
-    self.block_events[block_index] = np.zeros(7, dtype=np.int32)
+    new_block = np.zeros(7, dtype=np.int32)
     duration = 0
 
-    check_g = {}  # Key-value mapping of index and  pairs of gradients/times
+    check_g = {
+        0: SimpleNamespace(idx=2, start=(0, 0), stop=(0, 0)),
+        1: SimpleNamespace(idx=3, start=(0, 0), stop=(0, 0)),
+        2: SimpleNamespace(idx=4, start=(0, 0), stop=(0, 0)),
+    }  # Key-value mapping of index and  pairs of gradients/times
     extensions = []
 
     for event in events:
         if not isinstance(event, float):  # If event is not a block duration
-            if event.type == "rf":
-                if self.block_events[block_index][1] != 0:
+            if event.type == 'rf':
+                if new_block[1] != 0:
                     raise ValueError('Multiple RF events were specified in set_block')
-                
-                if hasattr(event, "id"):
+
+                if hasattr(event, 'id'):
                     rf_id = event.id
                 else:
                     rf_id, _ = register_rf_event(self, event)
 
-                self.block_events[block_index][1] = rf_id
-                duration = max(
-                    duration, event.shape_dur + event.delay + event.ringdown_time
-                )
-            elif event.type == "grad":
-                channel_num = ["x", "y", "z"].index(event.channel)
+                new_block[1] = rf_id
+                duration = max(duration, event.shape_dur + event.delay + event.ringdown_time)
+
+                if trace_enabled() and hasattr(event, 'trace'):
+                    self.block_trace[block_index].rf = event.trace
+            elif event.type == 'grad':
+                channel_num = ['x', 'y', 'z'].index(event.channel)
                 idx = 2 + channel_num
 
-                if self.block_events[block_index][idx] != 0:
+                if new_block[idx] != 0:
                     raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
-                
+
                 grad_start = (
-                    event.delay
-                    + math.floor(event.tt[0] / self.grad_raster_time + 1e-10)
-                    * self.grad_raster_time
+                    event.delay + math.floor(event.tt[0] / self.grad_raster_time + 1e-10) * self.grad_raster_time
                 )
                 grad_duration = (
-                    event.delay
-                    + math.ceil(event.tt[-1] / self.grad_raster_time - 1e-10)
-                    * self.grad_raster_time
+                    event.delay + math.ceil(event.tt[-1] / self.grad_raster_time - 1e-10) * self.grad_raster_time
                 )
 
                 check_g[channel_num] = SimpleNamespace()
@@ -83,67 +87,67 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 check_g[channel_num].start = (grad_start, event.first)
                 check_g[channel_num].stop = (grad_duration, event.last)
 
-                if hasattr(event, "id"):
+                if hasattr(event, 'id'):
                     grad_id = event.id
                 else:
                     grad_id, _ = register_grad_event(self, event)
 
-                self.block_events[block_index][idx] = grad_id
+                new_block[idx] = grad_id
                 duration = max(duration, grad_duration)
-            elif event.type == "trap":
-                channel_num = ["x", "y", "z"].index(event.channel)
+
+                if trace_enabled() and hasattr(event, 'trace'):
+                    setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
+            elif event.type == 'trap':
+                channel_num = ['x', 'y', 'z'].index(event.channel)
                 idx = 2 + channel_num
 
-                if self.block_events[block_index][idx] != 0:
+                if new_block[idx] != 0:
                     raise ValueError(f'Multiple {event.channel.upper()} gradient events were specified in set_block')
 
-                if hasattr(event, "id"):
+                if hasattr(event, 'id'):
                     trap_id = event.id
                 else:
                     trap_id = register_grad_event(self, event)
 
-                self.block_events[block_index][idx] = trap_id
-                duration = max(
-                        duration,
-                        event.delay
-                        + event.rise_time
-                        + event.flat_time
-                        + event.fall_time
-                )
-            elif event.type == "adc":
-                if self.block_events[block_index][5] != 0:
+                new_block[idx] = trap_id
+                duration = max(duration, event.delay + event.rise_time + event.flat_time + event.fall_time)
+
+                if trace_enabled() and hasattr(event, 'trace'):
+                    setattr(self.block_trace[block_index], 'g' + event.channel, event.trace)
+            elif event.type == 'adc':
+                if new_block[5] != 0:
                     raise ValueError('Multiple ADC events were specified in set_block')
-                
-                if hasattr(event, "id"):
+
+                if hasattr(event, 'id'):
                     adc_id = event.id
                 else:
                     adc_id = register_adc_event(self, event)
 
-                self.block_events[block_index][5] = adc_id
-                duration = max(
-                        duration,
-                        event.delay + event.num_samples * event.dwell + event.dead_time
-                )
-            elif event.type == "delay":
+                new_block[5] = adc_id
+                duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
+
+                if trace_enabled() and hasattr(event, 'trace'):
+                    self.block_trace[block_index].adc = event.trace
+            elif event.type == 'delay':
                 duration = max(duration, event.delay)
-            elif event.type in ["output", "trigger"]:
-                if hasattr(event, "id"):
+            elif event.type in ['output', 'trigger']:
+                if hasattr(event, 'id'):
                     event_id = event.id
                 else:
                     event_id = register_control_event(self, event)
 
-                ext = {"type": self.get_extension_type_ID("TRIGGERS"), "ref": event_id}
+                ext = {'type': self.get_extension_type_ID('TRIGGERS'), 'ref': event_id}
                 extensions.append(ext)
                 duration = max(duration, event.delay + event.duration)
-            elif event.type in ["labelset", "labelinc"]:
-                if hasattr(event, "id"):
+            elif event.type in ['labelset', 'labelinc']:
+                if hasattr(event, 'id'):
                     label_id = event.id
                 else:
                     label_id = register_label_event(self, event)
 
                 ext = {
-                    "type": self.get_extension_type_ID(event.type.upper()),
-                    "ref": label_id,
+                    'type': self.get_extension_type_ID(event.type.upper()),
+                    'ref': label_id,
                 }
                 extensions.append(ext)
         else:
@@ -160,12 +164,12 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         mapping then... The trick is that we rely on the sorting of the extension IDs and then we can always find the
         last one in the list by setting the reference to the next to 0 and then proceed with the other elements.
         """
-        sort_idx = np.argsort([e["ref"] for e in extensions])
+        sort_idx = np.argsort([e['ref'] for e in extensions])
         extensions = np.take(extensions, sort_idx)
         all_found = True
         extension_id = 0
         for i in range(len(extensions)):
-            data = (extensions[i]["type"], extensions[i]["ref"], extension_id)
+            data = (extensions[i]['type'], extensions[i]['ref'], extension_id)
             extension_id, found = self.extensions_library.find(data)
             all_found = all_found and found
             if not found:
@@ -175,63 +179,92 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             # Add the list
             extension_id = 0
             for i in range(len(extensions)):
-                data = (extensions[i]["type"], extensions[i]["ref"], extension_id)
+                data = (extensions[i]['type'], extensions[i]['ref'], extension_id)
                 extension_id, found = self.extensions_library.find(data)
                 if not found:
                     self.extensions_library.insert(extension_id, data)
 
         # Now we add the ID
-        self.block_events[block_index][6] = extension_id
+        new_block[6] = extension_id
 
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
     for grad_to_check in check_g.values():
+        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:  # noqa: SIM102
+            if grad_to_check.start[0] > eps:
+                raise RuntimeError('No delay allowed for gradients which start with a non-zero amplitude')
 
-        if (
-            abs(grad_to_check.start[1])
-            > self.system.max_slew * self.system.grad_raster_time
-        ):
-            if grad_to_check.start[0] != 0:
-                raise ValueError(
-                    "No delay allowed for gradients which start with a non-zero amplitude"
-                )
+        # Check whether any blocks exist in the sequence
+        if self.next_free_block_ID > 1:
+            # Look up the previous block (and the next block in case of a set_block call)
+            if block_index == self.next_free_block_ID:
+                # New block inserted
+                prev_block_index = next(reversed(self.block_events))
+                next_block_index = None
+            else:
+                blocks = list(self.block_events)
+                try:
+                    # Existing block overwritten
+                    idx = blocks.index(block_index)
+                    prev_block_index = blocks[idx - 1] if idx > 0 else None
+                    next_block_index = blocks[idx + 1] if idx < len(blocks) - 1 else None
+                except ValueError:
+                    # Inserting a new block with non-contiguous numbering
+                    prev_block_index = next(reversed(self.block_events))
+                    next_block_index = None
 
-            if block_index > 1:
-                # TODO: block_index - 1 assumes linear ordering of blocks.
-                #       However, searching for the previous block index in block_events is a big performance hit
-                #       For newly inserted blocks (block_index not in self.block_events), we can just use the last block as previous
-                prev_id = self.block_events[block_index - 1][grad_to_check.idx]
+            # Look up the last gradient value in the previous block
+            last = 0
+            if prev_block_index is not None:
+                prev_id = self.block_events[prev_block_index][grad_to_check.idx]
                 if prev_id != 0:
                     prev_lib = self.grad_library.get(prev_id)
-                    prev_data = prev_lib["data"]
-                    prev_type = prev_lib["type"]
-                    if prev_type == "t":
-                        raise RuntimeError(
-                            "Two consecutive gradients need to have the same amplitude at the connection point"
-                        )
-                    elif prev_type == "g":
-                        last = prev_data[5]
-                        if (
-                            abs(last - grad_to_check.start[1])
-                            > self.system.max_slew * self.system.grad_raster_time
-                        ):
-                            raise RuntimeError(
-                                "Two consecutive gradients need to have the same amplitude at the connection point"
-                            )
-            else:
-                raise RuntimeError(
-                    "First gradient in the the first block has to start at 0."
-                )
+                    prev_type = prev_lib['type']
+
+                    if prev_type == 't':
+                        last = 0
+                    elif prev_type == 'g':
+                        last = prev_lib['data'][5]
+
+            # Check whether the difference between the last gradient value and
+            # the first value of the new gradient is achievable with the
+            # specified slew rate.
+            if abs(last - grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+                raise RuntimeError('Two consecutive gradients need to have the same amplitude at the connection point')
+
+            # Look up the first gradient value in the next block
+            # (this only happens when using set_block to patch a block)
+            if next_block_index is not None:
+                next_id = self.block_events[next_block_index][grad_to_check.idx]
+                if next_id != 0:
+                    next_lib = self.grad_library.get(next_id)
+                    next_type = next_lib['type']
+
+                    if next_type == 't':
+                        first = 0
+                    elif next_type == 'g':
+                        first = next_lib['data'][4]
+                else:
+                    first = 0
+
+                # Check whether the difference between the first gradient value
+                # in the next block and the last value of the new gradient is
+                # achievable with the specified slew rate.
+                if abs(first - grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time:
+                    raise RuntimeError(
+                        'Two consecutive gradients need to have the same amplitude at the connection point'
+                    )
+        elif abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+            raise RuntimeError('First gradient in the the first block has to start at 0.')
 
         if (
             grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
             and abs(grad_to_check.stop[0] - duration) > 1e-7
         ):
-            raise RuntimeError(
-                "A gradient that doesn't end at zero needs to be aligned to the block boundary."
-            )
+            raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
 
+    self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)
 
 
@@ -257,13 +290,12 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         If a trigger event of an unsupported control type is encountered.
         If a label object of an unknown extension ID is encountered.
     """
-
     # Check if block exists in the block cache. If so, return that
     if self.use_block_cache and block_index in self.block_cache:
         return self.block_cache[block_index]
 
     block = SimpleNamespace()
-    attrs = ["block_duration", "rf", "gx", "gy", "gz", "adc", "label"]
+    attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label']
     values = [None] * len(attrs)
     for att, val in zip(attrs, values):
         setattr(block, att, val)
@@ -271,30 +303,26 @@ def get_block(self, block_index: int) -> SimpleNamespace:
 
     if event_ind[0] > 0:  # Delay
         delay = SimpleNamespace()
-        delay.type = "delay"
+        delay.type = 'delay'
         delay.delay = self.delay_library.data[event_ind[0]][0]
         block.delay = delay
 
     if event_ind[1] > 0:  # RF
         if event_ind[1] in self.rf_library.type:
-            block.rf = self.rf_from_lib_data(
-                self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]]
-            )
+            block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]])
         else:
-            block.rf = self.rf_from_lib_data(
-                self.rf_library.data[event_ind[1]] , 'u'
-            )  # Undefined type/use
+            block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], 'u')  # Undefined type/use
 
     # Gradients
-    grad_channels = ["gx", "gy", "gz"]
+    grad_channels = ['gx', 'gy', 'gz']
     for i in range(len(grad_channels)):
         if event_ind[2 + i] > 0:
             grad, compressed = SimpleNamespace(), SimpleNamespace()
             grad_type = self.grad_library.type[event_ind[2 + i]]
             lib_data = self.grad_library.data[event_ind[2 + i]]
-            grad.type = "trap" if grad_type == "t" else "grad"
+            grad.type = 'trap' if grad_type == 't' else 'grad'
             grad.channel = grad_channels[i][1]
-            if grad.type == "grad":
+            if grad.type == 'grad':
                 amplitude = lib_data[0]
                 shape_id = lib_data[1]
                 time_id = lib_data[2]
@@ -330,9 +358,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.flat_time = lib_data[2]
                 grad.fall_time = lib_data[3]
                 grad.delay = lib_data[4]
-                grad.area = grad.amplitude * (
-                    grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2
-                )
+                grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
                 grad.flat_area = grad.amplitude * grad.flat_time
 
             setattr(block, grad_channels[i], grad)
@@ -351,7 +377,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             adc.dead_time,
         ) = [lib_data[x] for x in range(6)]
         adc.num_samples = int(adc.num_samples)
-        adc.type = "adc"
+        adc.type = 'adc'
         block.adc = adc
 
     # Triggers
@@ -363,32 +389,32 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             # Format: ext_type, ext_id, next_ext_id
             ext_type = self.get_extension_type_string(ext_data[0])
 
-            if ext_type == "TRIGGERS":
-                trigger_types = ["output", "trigger"]
+            if ext_type == 'TRIGGERS':
+                trigger_types = ['output', 'trigger']
                 data = self.trigger_library.data[ext_data[1]]
                 trigger = SimpleNamespace()
                 trigger.type = trigger_types[int(data[0]) - 1]
                 if data[0] == 1:
-                    trigger_channels = ["osc0", "osc1", "ext1"]
+                    trigger_channels = ['osc0', 'osc1', 'ext1']
                     trigger.channel = trigger_channels[int(data[1]) - 1]
                 elif data[0] == 2:
-                    trigger_channels = ["physio1", "physio2"]
+                    trigger_channels = ['physio1', 'physio2']
                     trigger.channel = trigger_channels[int(data[1]) - 1]
                 else:
-                    raise ValueError("Unsupported trigger event type")
+                    raise ValueError('Unsupported trigger event type')
 
                 trigger.delay = data[2]
                 trigger.duration = data[3]
                 # Allow for multiple triggers per block
-                if hasattr(block, "trigger"):
+                if hasattr(block, 'trigger'):
                     block.trigger[len(block.trigger)] = trigger
                 else:
                     block.trigger = {0: trigger}
-            elif ext_type in ["LABELSET", "LABELINC"]:
+            elif ext_type in ['LABELSET', 'LABELINC']:
                 label = SimpleNamespace()
                 label.type = ext_type.lower()
                 supported_labels = get_supported_labels()
-                if ext_type == "LABELSET":
+                if ext_type == 'LABELSET':
                     data = self.label_set_library.data[ext_data[1]]
                 else:
                     data = self.label_inc_library.data[ext_data[1]]
@@ -401,7 +427,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 else:
                     block.label = {0: label}
             else:
-                raise RuntimeError(f"Unknown extension ID {ext_data[0]}")
+                raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
 
             next_ext_id = ext_data[2]
 
@@ -410,7 +436,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     # Enter block into the block cache
     if self.use_block_cache:
         self.block_cache[block_index] = block
-    
+
     return block
 
 
@@ -428,13 +454,13 @@ def register_adc_event(self, event: EventLibrary) -> int:
         ID of registered ADC event.
     """
     data = (
-            event.num_samples,
-            event.dwell,
-            max(event.delay, event.dead_time),
-            event.freq_offset,
-            event.phase_offset,
-            event.dead_time,
-        )
+        event.num_samples,
+        event.dwell,
+        event.delay,
+        event.freq_offset,
+        event.phase_offset,
+        event.dead_time,
+    )
     adc_id, found = self.adc_library.find_or_insert(new_data=data)
 
     # Clear block cache because ADC was overwritten
@@ -458,15 +484,15 @@ def register_control_event(self, event: SimpleNamespace) -> int:
     int
         ID of registered control event.
     """
-    event_type = ["output", "trigger"].index(event.type)
+    event_type = ['output', 'trigger'].index(event.type)
     if event_type == 0:
         # Trigger codes supported by the Siemens interpreter as of May 2019
-        event_channel = ["osc0", "osc1", "ext1"].index(event.channel)
+        event_channel = ['osc0', 'osc1', 'ext1'].index(event.channel)
     elif event_type == 1:
         # Trigger codes supported by the Siemens interpreter as of June 2019
-        event_channel = ["physio1", "physio2"].index(event.channel)
+        event_channel = ['physio1', 'physio2'].index(event.channel)
     else:
-        raise ValueError("Unsupported control event type")
+        raise ValueError('Unsupported control event type')
 
     data = (event_type + 1, event_channel + 1, event.delay, event.duration)
     control_id, found = self.trigger_library.find_or_insert(new_data=data)
@@ -479,9 +505,7 @@ def register_control_event(self, event: SimpleNamespace) -> int:
     return control_id
 
 
-def register_grad_event(
-    self, event: SimpleNamespace
-) -> Union[int, Tuple[int, List[int]]]:
+def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, List[int]]]:
     """
     Parameters
     ----------
@@ -497,15 +521,13 @@ def register_grad_event(
     """
     may_exist = True
     any_changed = False
-    if event.type == "grad":
+    if event.type == 'grad':
         amplitude = np.abs(event.waveform).max()
         if amplitude > 0:
             fnz = event.waveform[np.nonzero(event.waveform)[0][0]]
-            amplitude *= (
-                np.sign(fnz) if fnz != 0 else 1
-            )  # Workaround for np.sign(0) = 0
+            amplitude *= np.sign(fnz) if fnz != 0 else 1  # Workaround for np.sign(0) = 0
 
-        if hasattr(event, "shape_IDs"):
+        if hasattr(event, 'shape_IDs'):
             shape_IDs = event.shape_IDs
         else:
             shape_IDs = [0, 0]
@@ -520,7 +542,7 @@ def register_grad_event(
             any_changed = any_changed or found
 
             # Check whether tt == np.arange(len(event.tt)) * self.grad_raster_time + 0.5
-            tt_regular = (np.floor(event.tt/self.grad_raster_time) == np.arange(len(event.tt))).all()
+            tt_regular = (np.floor(event.tt / self.grad_raster_time) == np.arange(len(event.tt))).all()
 
             if not tt_regular:
                 c_time = compress_shape(event.tt / self.grad_raster_time)
@@ -530,33 +552,31 @@ def register_grad_event(
                 any_changed = any_changed or found
 
         data = (amplitude, *shape_IDs, event.delay, event.first, event.last)
-    elif event.type == "trap":
+    elif event.type == 'trap':
         data = (
-                event.amplitude,
-                event.rise_time,
-                event.flat_time,
-                event.fall_time,
-                event.delay,
-            )
+            event.amplitude,
+            event.rise_time,
+            event.flat_time,
+            event.fall_time,
+            event.delay,
+        )
     else:
-        raise ValueError("Unknown gradient type passed to register_grad_event()")
+        raise ValueError('Unknown gradient type passed to register_grad_event()')
 
     if may_exist:
-        grad_id, found = self.grad_library.find_or_insert(
-            new_data=data, data_type=event.type[0]
-        )
+        grad_id, found = self.grad_library.find_or_insert(new_data=data, data_type=event.type[0])
         any_changed = any_changed or found
     else:
         grad_id = self.grad_library.insert(0, data, event.type[0])
-        
+
     # Clear block cache because grad event or shapes were overwritten
     # TODO: Could find only the blocks that are affected by the changes
     if self.use_block_cache and any_changed:
         self.block_cache.clear()
-    
-    if event.type == "grad":
+
+    if event.type == 'grad':
         return grad_id, shape_IDs
-    elif event.type == "trap":
+    elif event.type == 'trap':
         return grad_id
 
 
@@ -572,15 +592,14 @@ def register_label_event(self, event: SimpleNamespace) -> int:
     int
         ID of registered label event.
     """
-
     label_id = get_supported_labels().index(event.label) + 1
     data = (event.value, label_id)
-    if event.type == "labelset":
+    if event.type == 'labelset':
         label_id, found = self.label_set_library.find_or_insert(new_data=data)
-    elif event.type == "labelinc":
+    elif event.type == 'labelinc':
         label_id, found = self.label_inc_library.find_or_insert(new_data=data)
     else:
-        raise ValueError("Unsupported label type passed to register_label_event()")
+        raise ValueError('Unsupported label type passed to register_label_event()')
 
     # Clear block cache because label event was overwritten
     # TODO: Could find only the blocks that are affected by the changes
@@ -613,7 +632,7 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
     phase /= 2 * np.pi
     may_exist = True
 
-    if hasattr(event, "shape_IDs"):
+    if hasattr(event, 'shape_IDs'):
         shape_IDs = event.shape_IDs
     else:
         shape_IDs = [0, 0, 0]
@@ -628,44 +647,39 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         shape_IDs[1], found = self.shape_library.find_or_insert(data)
         may_exist = may_exist & found
 
-
-        t_regular = (np.floor(event.t/self.rf_raster_time) == np.arange(len(event.t))).all()
+        t_regular = (np.floor(event.t / self.rf_raster_time) == np.arange(len(event.t))).all()
 
         if t_regular:
             shape_IDs[2] = 0
         else:
-            time_shape = compress_shape(
-                event.t / self.rf_raster_time
-            )
+            time_shape = compress_shape(event.t / self.rf_raster_time)
             data = [time_shape.num_samples, *time_shape.data]
             shape_IDs[2], found = self.shape_library.find_or_insert(data)
             may_exist = may_exist & found
 
-    use = "u"  # Undefined
-    if hasattr(event, "use"):
+    use = 'u'  # Undefined
+    if hasattr(event, 'use'):
         if event.use in [
-            "excitation",
-            "refocusing",
-            "inversion",
-            "saturation",
-            "preparation",
+            'excitation',
+            'refocusing',
+            'inversion',
+            'saturation',
+            'preparation',
         ]:
             use = event.use[0]
         else:
-            use = "u"
+            use = 'u'
 
     data = (amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset)
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)
-        
+
         # Clear block cache because RF event was overwritten
         # TODO: Could find only the blocks that are affected by the changes
         if self.use_block_cache and found:
             self.block_cache.clear()
     else:
         rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
-
-    
 
     return rf_id, shape_IDs

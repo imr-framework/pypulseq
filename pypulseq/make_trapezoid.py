@@ -1,55 +1,48 @@
+import math
 from types import SimpleNamespace
 import warnings
+from typing import Union
 
 import numpy as np
-import math
 
 from pypulseq.opts import Opts
 from pypulseq import eps
+from pypulseq.utils.tracing import trace, trace_enabled
 
 def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_time):
-    rise_time = (
-        math.ceil(math.sqrt(abs(area) / max_slew) / grad_raster_time)
-        * grad_raster_time
-    )
+    rise_time = math.ceil(math.sqrt(abs(area) / max_slew) / grad_raster_time) * grad_raster_time
     if rise_time < grad_raster_time:  # Area was almost 0 maybe
         rise_time = grad_raster_time
     amplitude = np.divide(area, rise_time)  # To handle nan
     t_eff = rise_time
 
     if abs(amplitude) > max_grad:
-        t_eff = (
-            math.ceil(abs(area) / max_grad / grad_raster_time)
-            * grad_raster_time
-        )
+        t_eff = math.ceil(abs(area) / max_grad / grad_raster_time) * grad_raster_time
         amplitude = area / t_eff
-        rise_time = (
-            math.ceil(abs(amplitude) / max_slew / grad_raster_time)
-            * grad_raster_time
-        )
+        rise_time = math.ceil(abs(amplitude) / max_slew / grad_raster_time) * grad_raster_time
 
         if rise_time == 0:
             rise_time = grad_raster_time
 
     flat_time = t_eff - rise_time
     fall_time = rise_time
-    
+
     return amplitude, rise_time, flat_time, fall_time
 
 
 def make_trapezoid(
     channel: str,
     amplitude: float = 0,
-    area: float = None,
+    area: Union[float, None] = None,
     delay: float = 0,
     duration: float = 0,
     fall_time: float = 0,
-    flat_area: float = None,
+    flat_area: Union[float, None] = None,
     flat_time: float = -1,
     max_grad: float = 0,
     max_slew: float = 0,
     rise_time: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Create a trapezoidal gradient event.
@@ -62,7 +55,8 @@ def make_trapezoid(
     - flat_time, area and rise_time
     Additional options may be supplied with the above.
 
-    See also:
+    See Also
+    --------
     - `pypulseq.Sequence.sequence.Sequence.add_block()`
     - `pypulseq.opts.Opts`
 
@@ -106,13 +100,11 @@ def make_trapezoid(
         If `flat_time`, `duration` and `area` are not supplied.
         Amplitude violation
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    if channel not in ["x", "y", "z"]:
-        raise ValueError(
-            f"Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}"
-        )
+
+    if channel not in ['x', 'y', 'z']:
+        raise ValueError(f'Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}')
 
     if max_grad <= 0:
         max_grad = system.max_grad
@@ -126,7 +118,7 @@ def make_trapezoid(
     if fall_time > 0:
         if rise_time == 0:
             raise ValueError(
-                "Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly."
+                'Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.'
             )
     else:
         fall_time = 0.0
@@ -137,23 +129,20 @@ def make_trapezoid(
     if flat_time != -1:
         if amplitude != 0:
             amplitude2 = amplitude
-        elif area is not None\
-                and rise_time > 0:
+        elif area is not None and rise_time > 0:
             # We have rise_time, flat_time and area.
             amplitude2 = area / (rise_time + flat_time)
         elif flat_area is not None:
             amplitude2 = flat_area / flat_time
         else:
             raise ValueError(
-                    "When `flat_time` is provided, either `flat_area`, "
-                    "or `amplitude`, or `rise_time` and `area` must be provided as well."
-                )
+                'When `flat_time` is provided, either `flat_area`, '
+                'or `amplitude`, or `rise_time` and `area` must be provided as well.'
+            )
 
         if rise_time == 0:
             rise_time = abs(amplitude2) / max_slew
-            rise_time = (
-                math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
-            )
+            rise_time = math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
             if rise_time == 0:
                 rise_time = system.grad_raster_time
         if fall_time == 0:
@@ -161,17 +150,17 @@ def make_trapezoid(
     elif duration > 0:
         if amplitude == 0:
             if rise_time == 0:
-                _, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(area, max_slew, max_grad, system.grad_raster_time)
+                _, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
+                    area, max_slew, max_grad, system.grad_raster_time
+                )
                 min_duration = rise_time + flat_time + fall_time
                 assert duration >= min_duration, (
-                    f"Requested area is too large for this gradient. Minimum required duration is "
-                    f"{round(min_duration * 1e6)} us"
+                    f'Requested area is too large for this gradient. Minimum required duration is '
+                    f'{round(min_duration * 1e6)} us'
                 )
 
-                dC = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
-                amplitude2 = (
-                    duration - math.sqrt(duration**2 - 4 * abs(area) * dC)
-                ) / (2 * dC)
+                dc = 1 / abs(2 * max_slew) + 1 / abs(2 * max_slew)
+                amplitude2 = (duration - math.sqrt(duration**2 - 4 * abs(area) * dc)) / (2 * dc)
             else:
                 if duration <= (rise_time+eps):
                     raise ValueError(
@@ -182,21 +171,16 @@ def make_trapezoid(
                     fall_time = duration-rise_time
 
                 amplitude2 = area / (duration - 0.5 * rise_time - 0.5 * fall_time)
-                possible = (
-                    duration >= (rise_time + fall_time) and abs(amplitude2) <= max_grad
-                )
+                possible = duration >= (rise_time + fall_time) and abs(amplitude2) <= max_grad
                 assert possible, (
-                    f"Requested area is too large for this gradient. Probably amplitude is violated "
-                    f"{round(abs(amplitude) / max_grad * 100)}"
+                    f'Requested area is too large for this gradient. Probably amplitude is violated '
+                    f'{round(abs(amplitude) / max_grad * 100)}'
                 )
         else:
             amplitude2 = amplitude
 
         if rise_time == 0:
-            rise_time = (
-                math.ceil(abs(amplitude2) / max_slew / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            rise_time = math.ceil(abs(amplitude2) / max_slew / system.grad_raster_time) * system.grad_raster_time
             if rise_time == 0:
                 rise_time = system.grad_raster_time
 
@@ -209,18 +193,21 @@ def make_trapezoid(
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
     else:
         if area is None:
-            raise ValueError("Must supply area or duration.")
+            raise ValueError('Must supply area or duration.')
         else:
             # Find the shortest possible duration.
             if rise_time > 0:
                 warnings.warn("Rise time is ignored when calculating the shortest duration from `area`.")           
-            amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(area, max_slew, max_grad, system.grad_raster_time)
+            amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
+                area, max_slew, max_grad, system.grad_raster_time
+            )
 
-    assert abs(amplitude2) <= max_grad, (
-        f"Refined amplitude ({abs(amplitude2):0.0f} Hz/m) is larger than max ({max_grad:0.0f} Hz/m).")
+    assert (
+        abs(amplitude2) <= max_grad
+    ), f'Refined amplitude ({abs(amplitude2):0.0f} Hz/m) is larger than max ({max_grad:0.0f} Hz/m).'
 
     grad = SimpleNamespace()
-    grad.type = "trap"
+    grad.type = 'trap'
     grad.channel = channel
     grad.amplitude = amplitude2
     grad.rise_time = rise_time
@@ -231,5 +218,8 @@ def make_trapezoid(
     grad.delay = delay
     grad.first = 0
     grad.last = 0
+
+    if trace_enabled():
+        grad.trace = trace()
 
     return grad

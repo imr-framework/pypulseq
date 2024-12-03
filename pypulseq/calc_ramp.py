@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -8,10 +8,10 @@ from pypulseq.opts import Opts
 def calc_ramp(
     k0: np.ndarray,
     k_end: np.ndarray,
-    max_grad: np.ndarray = np.zeros(0),
+    max_grad: Union[np.ndarray, None] = None,
     max_points: int = 500,
-    max_slew: np.ndarray = np.zeros(0),
-    system: Opts = None,
+    max_slew: Union[np.ndarray, None] = None,
+    system: Union[Opts, None] = None,
 ) -> Tuple[np.ndarray, bool]:
     """
     Join the points `k0` and `k_end` in three-dimensional  k-space in minimal time, observing the gradient and slew
@@ -42,16 +42,20 @@ def calc_ramp(
     success : bool
         Boolean flag indicating if `k0` and `k_end` were successfully joined.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
+
+    if max_grad is None:
+        max_grad = np.zeros(0)
+
+    if max_slew is None:
+        max_slew = np.zeros(0)
 
     def __inside_limits(grad, slew):
         if mode == 0:
             grad2 = np.sum(np.square(grad), axis=1)
             slew2 = np.sum(np.square(slew), axis=1)
-            ok = np.all(np.max(grad2) <= np.square(max_grad)) and np.all(
-                np.max(slew2) <= np.square(max_slew)
-            )
+            ok = np.all(np.max(grad2) <= np.square(max_grad)) and np.all(np.max(slew2) <= np.square(max_slew))
         else:
             ok = (np.sum(np.max(np.abs(grad), axis=1) <= max_grad) == 3) and (
                 np.sum(np.max(np.abs(slew), axis=1) <= max_slew) == 3
@@ -109,9 +113,7 @@ def calc_ramp(
                 kglsl = kglsl + h * hdirection / np.linalg.norm(hdirection)
                 k_left = kglsl
 
-        success, k = __joinright0(
-            k_left, k_end, (k_left - k0) / grad_raster, G_end, use_points - 1
-        )
+        success, k = __joinright0(k_left, k_end, (k_left - k0) / grad_raster, G_end, use_points - 1)
         if len(k) != 0:
             if len(k.shape) == 1:
                 k = k.reshape((len(k), 1))
@@ -163,7 +165,7 @@ def calc_ramp(
             elif okSgl[ii] == 1:
                 k_left[ii] = kgl[ii]
             else:
-                print("Unknown error")
+                print('Unknown error')
 
         success, k = __joinright1(
             k0=k_left,
@@ -227,9 +229,7 @@ def calc_ramp(
                 c = np.linalg.norm(dkprol)
                 c1 = np.divide(np.square(a) - np.square(b) + np.square(c), (2 * c))
                 h = np.sqrt(np.square(a) - np.square(c1))
-                kglsl = k_end + np.multiply(
-                    c1, np.divide(dkprol, np.linalg.norm(dkprol))
-                )
+                kglsl = k_end + np.multiply(c1, np.divide(dkprol, np.linalg.norm(dkprol)))
                 projondkprol = (kgl * dkprol.T) * (dkprol / np.linalg.norm(dkprol))
                 hdirection = kgl - projondkprol
                 kglsl = kglsl + h * hdirection / np.linalg.norm(hdirection)
@@ -293,7 +293,7 @@ def calc_ramp(
             elif okSgl[ii] == 1:
                 k_right[ii] = kgl[ii]
             else:
-                print("Unknown error")
+                print('Unknown error')
 
         success, k = __joinleft1(
             k0=k0,
@@ -328,7 +328,7 @@ def calc_ramp(
     elif len(max_grad) == 3 and len(max_slew) == 3:
         mode = 1
     else:
-        raise ValueError("Input value max grad or max slew in invalid format.")
+        raise ValueError('Input value max grad or max slew in invalid format.')
 
     G0 = (k0[:, 1] - k0[:, 0]) / grad_raster
     G_end = (k_end[:, 1] - k_end[:, 0]) / grad_raster
@@ -343,15 +343,11 @@ def calc_ramp(
         if mode == 0:
             if np.linalg.norm(G0) > max_grad or np.linalg.norm(G_end) > max_grad:
                 break
-            success, k_out = __joinleft0(
-                k0=k0, k_end=k_end, G0=G0, G_end=G_end, use_points=use_points
-            )
+            success, k_out = __joinleft0(k0=k0, k_end=k_end, G0=G0, G_end=G_end, use_points=use_points)
         else:
             if abs(G0) > abs(max_grad) or abs(G_end) > abs(max_grad):
                 break
-            success, k_out = __joinleft1(
-                k0=k0, k_end=k_end, use_points=use_points, G0=G0, G_end=G_end
-            )
+            success, k_out = __joinleft1(k0=k0, k_end=k_end, use_points=use_points, G0=G0, G_end=G_end)
         use_points += 1
 
     return k_out, success

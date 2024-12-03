@@ -1,15 +1,15 @@
 import math
+from copy import copy
 from types import SimpleNamespace
 from typing import Tuple, Union
-from copy import copy
+from warnings import warn
 
 import numpy as np
 
-from pypulseq.calc_duration import calc_duration
-from pypulseq.make_delay import make_delay
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
+from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_gauss_pulse(
@@ -25,15 +25,13 @@ def make_gauss_pulse(
     max_slew: float = 0,
     phase_offset: float = 0,
     return_gz: bool = False,
-    return_delay: bool = False,
     slice_thickness: float = 0,
-    system: Opts = None,
+    system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
-    Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace, SimpleNamespace],
 ]:
     """
     Create a [optionally slice selective] Gauss pulse.
@@ -63,8 +61,6 @@ def make_gauss_pulse(
         Maximum slew rate of accompanying slice select trapezoidal event.
     phase_offset : float, default=0
         Phase offset in Hertz (Hz).
-    return_delay : bool, default=False
-        Boolean flag to indicate if the delay event has to be returned.
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -85,8 +81,6 @@ def make_gauss_pulse(
         Accompanying slice select trapezoidal gradient event.
     gzr : SimpleNamespace, optional
         Accompanying slice select rephasing trapezoidal gradient event.
-    delay : SimpleNamespace, optional
-        Delay event.
 
     Raises
     ------
@@ -94,49 +88,51 @@ def make_gauss_pulse(
         If invalid `use` is passed.
         If `return_gz=True` and `slice_thickness` was not passed.
     """
-    if system == None:
+    if system is None:
         system = Opts.default
-        
-    if use != "" and use not in get_supported_rf_uses():
-        raise ValueError(
-            f"Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}"
-        )
+
+    if use != '' and use not in get_supported_rf_uses():
+        raise ValueError(f'Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
 
     if bandwidth == 0:
-        BW = time_bw_product / duration
+        bandwidth = time_bw_product / duration
     else:
-        BW = bandwidth
+        bandwidth = bandwidth
     alpha = apodization
-    N = round(duration / dwell)
-    t = (np.arange(1, N + 1) - 0.5) * dwell
+    n_samples = round(duration / dwell)
+    t = (np.arange(1, n_samples + 1) - 0.5) * dwell
     tt = t - (duration * center_pos)
     window = 1 - alpha + alpha * np.cos(2 * np.pi * tt / duration)
-    signal = window * __gauss(BW * tt)
+    signal = window * __gauss(bandwidth * tt)
     flip = np.sum(signal) * dwell * 2 * np.pi
     signal = signal * flip_angle / flip
 
     rf = SimpleNamespace()
-    rf.type = "rf"
+    rf.type = 'rf'
     rf.signal = signal
     rf.t = t
-    rf.shape_dur = N * dwell
+    rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    if use != "":
+    if use != '':
         rf.use = use
 
     if rf.dead_time > rf.delay:
+        warn(
+            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError("Slice thickness must be provided")
+            raise ValueError('Slice thickness must be provided')
 
         if max_grad > 0:
             system = copy(system)
@@ -146,36 +142,29 @@ def make_gauss_pulse(
             system = copy(system)
             system.max_slew = max_slew
 
-        amplitude = BW / slice_thickness
+        amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(
-            channel="z", system=system, flat_time=duration, flat_area=area
-        )
+        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
         gzr = make_trapezoid(
-            channel="z",
+            channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
         if rf.delay > gz.rise_time:
-            gz.delay = (
-                math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time)
-                * system.grad_raster_time
-            )
+            gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
-
-    if rf.ringdown_time > 0 and return_delay:
-        delay = make_delay(calc_duration(rf) + rf.ringdown_time)
 
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
     rf.signal[negative_zero_indices] = 0
 
-    if return_gz and return_delay:
-        return rf, gz, gzr, delay
-    elif return_gz:
+    if trace_enabled():
+        rf.trace = trace()
+
+    if return_gz:
         return rf, gz, gzr
     else:
         return rf
