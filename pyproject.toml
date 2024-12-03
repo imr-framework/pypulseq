@@ -110,9 +110,21 @@ convention = "numpy"
 quote-style = "single"
 skip-magic-trailing-comma = false
 
+# Typos section
 [tool.typos.default]
 locale = "en-us"
 exclude = ["pypulseq/seq_examples/**"]
+
+# MyPy section
+[tool.mypy]
+files = ["pypulseq"]
+warn_return_any = false
+check_untyped_defs = true
+warn_no_return = true
+warn_unreachable = true
+exclude = "^pypulseq/seq_examples/.*|^pypulseq/tests/.*"
+enable_error_code = ["ignore-without-code"]
+warn_unused_ignores = true
 
 # PyTest section
 [tool.pytest.ini_options]

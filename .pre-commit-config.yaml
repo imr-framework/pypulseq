@@ -28,6 +28,20 @@ repos:
       - id: typos
         exclude: ^pypulseq/seq_examples/|paper.md
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        pass_filenames: false
+        always_run: true
+        args: [pypulseq]
+        additional_dependencies:
+          - numpy
+          - types-requests
+          - typing-extensions
+          - matplotlib
+          - pytest
+
 ci:
   autofix_commit_msg: |
     [pre-commit] auto fixes from pre-commit hooks
