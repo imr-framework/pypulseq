@@ -103,9 +103,9 @@ def make_extended_trapezoid(
     slew = np.squeeze(np.subtract(waveform[1:], waveform[:-1]) / system.grad_raster_time)
 
     if max(abs(slew)) >= max_slew:
-        raise ValueError(f"Slew rate violation {max(abs(slew)) / max_slew * 100}")
+        raise ValueError(f'Slew rate violation {max(abs(slew)) / max_slew * 100}')
     if max(abs(waveform)) >= max_grad:
-        raise ValueError(f"Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}")      
+        raise ValueError(f'Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}')
 
     if convert_to_arbitrary:
         # Represent the extended trapezoid on the regularly sampled time grid
