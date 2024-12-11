@@ -199,7 +199,11 @@ def make_trapezoid(
 
     assert (
         abs(amplitude2) / rise_time <= max_slew
-    ), f'Refined slew rate ({abs(amplitude2)/rise_time:0.0f} Hz/m/s) is larger than max ({max_slew:0.0f} Hz/m/s).'
+    ), f'Refined slew rate ({abs(amplitude2)/rise_time:0.0f} Hz/m/s) for ramp up is larger than max ({max_slew:0.0f} Hz/m/s).'
+
+    assert (
+        abs(amplitude2) / fall_time <= max_slew
+    ), f'Refined slew rate ({abs(amplitude2)/fall_time:0.0f} Hz/m/s) for ramp down is larger than max ({max_slew:0.0f} Hz/m/s).'
 
     grad = SimpleNamespace()
     grad.type = 'trap'
