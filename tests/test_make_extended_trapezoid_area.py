@@ -3,7 +3,6 @@ import random
 
 import numpy as np
 import pytest
-
 from pypulseq import Opts, calc_duration, make_extended_trapezoid, make_extended_trapezoid_area
 from pypulseq.utils.cumsum import cumsum
 

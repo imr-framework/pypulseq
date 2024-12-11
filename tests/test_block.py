@@ -1,6 +1,5 @@
-import pytest
-
 import pypulseq as pp
+import pytest
 
 # Gradient definitions used in tests
 gx_trap = pp.make_trapezoid('x', area=1000, duration=1e-3)

@@ -1,4 +1,4 @@
-extend = "../../pyproject.toml"
+extend = "../pyproject.toml"
 
 lint.extend-ignore = [
     "ARG001", #unused-argument

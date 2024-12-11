@@ -3,11 +3,11 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 import pypulseq as pp
+import pytest
 from pypulseq import Sequence
-from pypulseq.tests.base import Approx, compare_seq_file
+
+from .base import Approx, compare_seq_file
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
