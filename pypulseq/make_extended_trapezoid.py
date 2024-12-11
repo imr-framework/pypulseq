@@ -134,7 +134,7 @@ def make_extended_trapezoid(
         raise ValueError(f'Slew rate violation {max(abs(slew)) / max_slew * 100:.2f}%')
     if max(abs(grad.waveform)) >= max_grad:
         raise ValueError(f'Gradient amplitude violation {max(abs(grad.waveform)) / max_grad * 100:.2f}%')
-    
+
     if trace_enabled():
         grad.trace = trace()
 
