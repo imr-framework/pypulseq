@@ -116,7 +116,6 @@ def make_extended_trapezoid(
             raise ValueError(
                 'All time points must be on a gradient raster or "convert_to_arbitrary" option must be used.'
             )
-
         grad = SimpleNamespace()
         grad.type = 'grad'
         grad.channel = channel
@@ -128,6 +127,13 @@ def make_extended_trapezoid(
 
     grad.first = amplitudes[0]
     grad.last = amplitudes[-1]
+
+    slew = np.diff(grad.waveform) / np.diff(grad.tt)
+
+    if max(abs(slew)) > max_slew + eps:
+        raise ValueError(f'Slew rate violation {max(abs(slew)) / max_slew * 100:.2f}%')
+    if max(abs(grad.waveform)) > max_grad + eps:
+        raise ValueError(f'Gradient amplitude violation {max(abs(grad.waveform)) / max_grad * 100:.2f}%')
 
     if trace_enabled():
         grad.trace = trace()
