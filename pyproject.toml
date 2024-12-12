@@ -35,8 +35,11 @@ Homepage = "https://github.com/imr-framework/pypulseq"
 Issues = "https://github.com/imr-framework/pypulseq/issues"
 Documentation = "https://pypulseq.readthedocs.io/en/latest/"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.package-data]
-SAR = ["QGlobal.mat"]
+"pypulseq.SAR" = ["QGlobal.mat"]
 
 [tool.setuptools.dynamic]
 version = { attr = "version.__version__" }
