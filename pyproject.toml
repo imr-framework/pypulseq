@@ -35,8 +35,11 @@ Homepage = "https://github.com/imr-framework/pypulseq"
 Issues = "https://github.com/imr-framework/pypulseq/issues"
 Documentation = "https://pypulseq.readthedocs.io/en/latest/"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.package-data]
-SAR = ["QGlobal.mat"]
+"pypulseq.SAR" = ["QGlobal.mat"]
 
 [tool.setuptools.dynamic]
 version = { attr = "version.__version__" }
@@ -44,7 +47,7 @@ version = { attr = "version.__version__" }
 [tool.ruff]
 line-length = 120
 extend-exclude = ["__init__.py"]
-exclude = ["doc/**", "pypulseq/seq_examples/**"]
+exclude = ["doc/**", "examples/**"]
 
 # RUFF section
 [tool.ruff.lint]
@@ -112,11 +115,11 @@ skip-magic-trailing-comma = false
 
 [tool.typos.default]
 locale = "en-us"
-exclude = ["pypulseq/seq_examples/**"]
+exclude = ["examples/**"]
 
 # PyTest section
 [tool.pytest.ini_options]
-testpaths = ["pypulseq/tests"]
+testpaths = ["tests"]
 filterwarnings = ["error"]
 markers = [
   "matlab_seq_comp: comparison with matlab generated sequence",

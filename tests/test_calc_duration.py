@@ -1,8 +1,7 @@
 from itertools import combinations_with_replacement
 
-import pytest
-
 import pypulseq as pp
+import pytest
 
 """
 Tests calc_duration by feeding it some sample events with known durations.

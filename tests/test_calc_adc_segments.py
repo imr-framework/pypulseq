@@ -4,7 +4,6 @@ import math
 import os
 
 import numpy as np
-
 from pypulseq import Opts, calc_adc_segments
 
 system = Opts.default

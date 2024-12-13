@@ -4,9 +4,8 @@
 import importlib.util
 
 import numpy as np
-import pytest
-
 import pypulseq as pp
+import pytest
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
 
@@ -23,7 +22,6 @@ def test_sigpy_import():
 @pytest.mark.sigpy
 def test_slr():
     import sigpy.mri.rf as rf
-
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
     print('Testing SLR design')
@@ -81,7 +79,6 @@ def test_slr():
 @pytest.mark.sigpy
 def test_sms():
     import sigpy.mri.rf as rf
-
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
     print('Testing SMS design')
