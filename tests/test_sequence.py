@@ -77,17 +77,71 @@ class Approx(ApproxBase):
             return pytest.approx(self.expected, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)._repr_compare(actual)
 
 
-# Sequence which contains only a gauss pulse
-# TODO: Consider changing this to contain all types of RF pulses
-def seq_make_gauss_pulse():
+# Dummy sequence which contains only gaussian pulses with different parameters
+def seq_make_gauss_pulses():
     seq = Sequence()
     seq.add_block(pp.make_gauss_pulse(flip_angle=1))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=1, delay=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2, duration=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2, duration=2e-3, phase_offset=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2, duration=1e-3, phase_offset=math.pi / 2, freq_offset=1e3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2, duration=1e-3, time_bw_product=1))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_gauss_pulse(flip_angle=math.pi / 2, duration=1e-3, apodization=0.1))
 
     return seq
 
 
-# Basic sequence with gradients in all channels, some which are identical after
-# rounding.
+# Dummy sequence which contains only sinc pulses with different parameters
+def seq_make_sinc_pulses():
+    seq = Sequence()
+    seq.add_block(pp.make_sinc_pulse(flip_angle=1))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=1, delay=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2, duration=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2, duration=2e-3, phase_offset=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2, duration=1e-3, phase_offset=math.pi / 2, freq_offset=1e3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2, duration=1e-3, time_bw_product=1))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=math.pi / 2, duration=1e-3, apodization=0.1))
+
+    return seq
+
+
+# Dummy sequence which contains only block pulses with different parameters
+def seq_make_block_pulses():
+    seq = Sequence()
+    seq.add_block(pp.make_block_pulse(flip_angle=1))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=1, delay=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=1e-3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=2e-3, phase_offset=math.pi / 2))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=1e-3, phase_offset=math.pi / 2, freq_offset=1e3))
+    seq.add_block(pp.make_delay(1))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=1e-3, time_bw_product=1))
+
+    return seq
+
+
+# Basic sequence with gradients in all channels, some which are identical after rounding.
 def seq1():
     seq = Sequence()
     seq.add_block(pp.make_block_pulse(math.pi / 4, duration=1e-3))
@@ -150,15 +204,14 @@ def seq4():
     return seq
 
 
-# List of all sequence functions that will be tested with the test functions
-# below.
-sequence_zoo = [seq_make_gauss_pulse, seq1, seq2, seq3, seq4]
+# List of all sequence functions that will be tested with the test functions below.
+sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4]
 
 
-# This "test" rewrites the expected .seq output files when SAVE_EXPECTED is
-# set in the environment variables.
+# This "test" rewrites the expected .seq output files when SAVE_EXPECTED is set in the environment variables.
 # E.g. in a unix-based system, run: SAVE_EXPECTED=1 pytest test_sequence.py
 @pytest.mark.skipif(not os.environ.get('SAVE_EXPECTED'), reason='Only save sequence files when requested')
+@pytest.mark.filterwarnings('ignore:Using default')
 @pytest.mark.parametrize('seq_func', sequence_zoo)
 def test_sequence_save_expected(seq_func):
     seq_name = str(seq_func.__name__)
@@ -169,6 +222,7 @@ def test_sequence_save_expected(seq_func):
 
 
 # Test whether a sequence can be plotted.
+@pytest.mark.filterwarnings('ignore:Using default')
 @pytest.mark.parametrize('seq_func', sequence_zoo)
 @patch('matplotlib.pyplot.show')
 def test_plot(mock_show, seq_func):
@@ -178,8 +232,8 @@ def test_plot(mock_show, seq_func):
     seq.plot(show_blocks=True)
 
 
-# Test whether the sequence is the approximately the same after writing a .seq
-# file and reading it back in.
+# Test whether the sequence is the approximately the same after writing a .seq file and reading it back in.
+@pytest.mark.filterwarnings('ignore:Using default')
 @pytest.mark.parametrize('seq_func', sequence_zoo)
 def test_sequence_writeread(seq_func, tmp_path, compare_seq_file):
     seq_name = str(seq_func.__name__)
@@ -231,9 +285,9 @@ def test_sequence_writeread(seq_func, tmp_path, compare_seq_file):
         assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
 
 
-# Test whether the sequence is approximately the same after recreating it by
-# getting all blocks with get_block and inserting them into a new sequence
-# with add_block.
+# Test whether the sequence is approximately the same after recreating it by getting all blocks with
+# get_block and inserting them into a new sequence with add_block.
+@pytest.mark.filterwarnings('ignore:Using default')
 @pytest.mark.parametrize('seq_func', sequence_zoo)
 def test_sequence_recreate(seq_func):
     # Generate sequence
