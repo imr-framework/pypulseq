@@ -7,7 +7,6 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-
 from pypulseq import make_block_pulse
 
 

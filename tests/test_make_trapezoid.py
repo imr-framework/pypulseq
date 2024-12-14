@@ -6,7 +6,6 @@ Will Clarke, University of Oxford, 2023
 from types import SimpleNamespace
 
 import pytest
-
 from pypulseq import make_trapezoid
 
 
