@@ -120,7 +120,10 @@ exclude = ["examples/**"]
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
+filterwarnings = ["error",
+    # Suppress error in debugpy due to mpl deprecation to debug tests.
+    "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev",
+    ]
 markers = [
   "matlab_seq_comp: comparison with matlab generated sequence",
   "sigpy: tests that require sigpy",

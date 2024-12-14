@@ -80,16 +80,30 @@ def test_generation_methods():
         - flat_time and amplitude
         - flat_time, area and rise_time
     """
-    assert isinstance(make_trapezoid(channel='x', area=1), SimpleNamespace)
-
+    # Amplitude specified
+    # amplitude + duration
     assert isinstance(make_trapezoid(channel='x', amplitude=1, duration=1), SimpleNamespace)
-
-    assert isinstance(make_trapezoid(channel='x', flat_time=1, flat_area=1), SimpleNamespace)
-
+    # flat_time + amplitude
     assert isinstance(make_trapezoid(channel='x', flat_time=1, amplitude=1), SimpleNamespace)
 
-    assert isinstance(make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1), SimpleNamespace)
+    # Flat area specified
+    # flat_area + flat_time
+    assert isinstance(make_trapezoid(channel='x', flat_time=1, flat_area=1), SimpleNamespace)
+    # flat_area + duration
+    with pytest.raises(NotImplementedError, match=r'Flat Area \+ Duration input pair is not implemented yet.'):
+        make_trapezoid(channel='x', flat_area=1, duration=1)
+    # flat_area + amplitude
+    with pytest.raises(NotImplementedError, match=r'Flat Area \+ Amplitude input pair is not implemented yet.'):
+        make_trapezoid(channel='x', flat_area=1, amplitude=1)
 
-    # Test addition to minimum input cases
-
+    # Area specified
+    # area
+    assert isinstance(make_trapezoid(channel='x', area=1), SimpleNamespace)
+    # area + duration
+    assert isinstance(make_trapezoid(channel='x', area=1, duration=1), SimpleNamespace)
+    # area + amplitude
+    assert isinstance(make_trapezoid(channel='x', area=1, amplitude=1), SimpleNamespace)
+    # area + duration + rise_time
     assert isinstance(make_trapezoid(channel='x', area=1, duration=0.1, rise_time=0.01), SimpleNamespace)
+    # flat_time + area + rise_time
+    assert isinstance(make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1), SimpleNamespace)

@@ -127,6 +127,12 @@ def make_trapezoid(
     if area is None and flat_area is None and amplitude == 0:
         raise ValueError("Must supply either 'area', 'flat_area' or 'amplitude'.")
 
+    if flat_area is not None:
+        if duration > 0:
+            raise NotImplementedError('Flat Area + Duration input pair is not implemented yet.')
+        if amplitude != 0:
+            raise NotImplementedError('Flat Area + Amplitude input pair is not implemented yet.')
+
     if flat_time != -1:
         if amplitude != 0:
             amplitude2 = amplitude
