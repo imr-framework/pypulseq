@@ -199,7 +199,7 @@ def make_trapezoid(
     else:
         if area is None:
             raise ValueError('Must supply area or duration.')
-        if amplitude > 0:
+        if abs(amplitude) > 0:
             raise NotImplementedError('Amplitude + Area input pair is not implemented yet.')
         else:
             # Find the shortest possible duration.

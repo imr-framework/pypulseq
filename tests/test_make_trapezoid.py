@@ -77,7 +77,7 @@ def test_notimplemented_input_pairs():
     with pytest.raises(NotImplementedError, match=r'Flat Area \+ Amplitude input pair is not implemented yet.'):
         make_trapezoid(channel='x', flat_area=1, amplitude=1)
     # area + amplitude
-    with pytest.raises(NotImplementedError, match=r'Amplitude + Area input pair is not implemented yet.'):
+    with pytest.raises(NotImplementedError, match=r'Amplitude \+ Area input pair is not implemented yet.'):
         make_trapezoid(channel='x', area=1, amplitude=1)
         # compare_trap_out(trap, 1, 2e-5, 0, 2e-5)
 
