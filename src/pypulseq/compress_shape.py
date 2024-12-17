@@ -62,6 +62,6 @@ def compress_shape(decompressed_shape: np.ndarray, force_compression: bool = Fal
     if force_compression or compressed_shape.num_samples > len(v):
         compressed_shape.data = v
     else:
-        compressed_shape.data = decompressed_shape
+        compressed_shape.data = np.round(decompressed_shape / quant_factor) * quant_factor
 
     return compressed_shape
