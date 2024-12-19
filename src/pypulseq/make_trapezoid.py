@@ -33,16 +33,16 @@ def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_tim
 
 def make_trapezoid(
     channel: str,
-    amplitude: float = 0,
+    amplitude: Union[float, None] = None,
     area: Union[float, None] = None,
     delay: float = 0,
-    duration: float = 0,
-    fall_time: float = 0,
+    duration: Union[float, None] = None,
+    fall_time: Union[float, None] = None,
     flat_area: Union[float, None] = None,
-    flat_time: float = -1,
-    max_grad: float = 0,
-    max_slew: float = 0,
-    rise_time: float = 0,
+    flat_time: Union[float, None] = None,
+    max_grad: Union[float, None] = None,
+    max_slew: Union[float, None] = None,
+    rise_time: Union[float, None] = None,
     system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
@@ -65,23 +65,23 @@ def make_trapezoid(
     ----------
     channel : str
         Orientation of trapezoidal gradient event. Must be one of `x`, `y` or `z`.
-    amplitude : float, default=0
+    amplitude : float, default=None
         Peak amplitude (Hz/m).
     area : float, default=None
         Area (1/m).
     delay : float, default=0
         Delay in seconds (s).
-    duration : float, default=0
+    duration : float, default=None
         Duration in seconds (s). Duration is defined as rise_time + flat_time + fall_time.
-    fall_time : float, default=0
+    fall_time : float, default=None
         Fall time in seconds (s).
-    flat_area : float, default=0
+    flat_area : float, default=None
         Flat area (1/m).
-    flat_time : float, default=-1
+    flat_time : float, default=None
         Flat duration in seconds (s). Default is -1 to allow for triangular pulses.
-    max_grad : float, default=0
+    max_grad : float, default=None
         Maximum gradient strength (Hz/m).
-    max_slew : float, default=0
+    max_slew : float, default=None
         Maximum slew rate (Hz/m/s).
     rise_time : float, default=0
         Rise time in seconds (s).
@@ -107,36 +107,28 @@ def make_trapezoid(
     if channel not in ['x', 'y', 'z']:
         raise ValueError(f'Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}')
 
-    if max_grad <= 0:
+    if max_grad is None:
         max_grad = system.max_grad
 
-    if max_slew <= 0:
+    if max_slew is None:
         max_slew = system.max_slew
 
-    if rise_time <= 0:
-        rise_time = 0.0
+    if fall_time is not None and rise_time is None:
+        raise ValueError('Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.')
 
-    if fall_time > 0:
-        if rise_time == 0:
-            raise ValueError(
-                'Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.'
-            )
-    else:
-        fall_time = 0.0
-
-    if area is None and flat_area is None and amplitude == 0:
+    if area is None and flat_area is None and amplitude is None:
         raise ValueError("Must supply either 'area', 'flat_area' or 'amplitude'.")
 
     if flat_area is not None:
-        if duration > 0:
+        if duration is not None:
             raise NotImplementedError('Flat Area + Duration input pair is not implemented yet.')
-        if amplitude != 0:
+        if amplitude is not None:
             raise NotImplementedError('Flat Area + Amplitude input pair is not implemented yet.')
 
-    if flat_time != -1:
-        if amplitude != 0:
+    if flat_time is not None:
+        if amplitude is not None:
             amplitude2 = amplitude
-        elif area is not None and rise_time > 0:
+        elif area is not None and rise_time is not None:
             # We have rise_time, flat_time and area.
             amplitude2 = area / (rise_time + flat_time)
         elif flat_area is not None:
@@ -147,16 +139,16 @@ def make_trapezoid(
                 'or `amplitude`, or `rise_time` and `area` must be provided as well.'
             )
 
-        if rise_time == 0:
+        if rise_time is None:
             rise_time = abs(amplitude2) / max_slew
             rise_time = math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
             if rise_time == 0:
                 rise_time = system.grad_raster_time
-        if fall_time == 0:
+        if fall_time is None:
             fall_time = rise_time
-    elif duration > 0:
-        if amplitude == 0:
-            if rise_time == 0:
+    elif duration is not None:
+        if amplitude is None:
+            if rise_time is None:
                 _, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
                     area, max_slew, max_grad, system.grad_raster_time
                 )
@@ -172,38 +164,38 @@ def make_trapezoid(
                 if duration <= (rise_time + eps):
                     raise ValueError('The `duration` is too short for the given `rise_time`.')
 
-                if fall_time == 0:
+                if fall_time is None:
                     fall_time = rise_time
 
                 amplitude2 = area / (duration - 0.5 * rise_time - 0.5 * fall_time)
                 possible = duration >= (rise_time + fall_time) and abs(amplitude2) <= max_grad
                 assert possible, (
                     f'Requested area is too large for this gradient. Probably amplitude is violated '
-                    f'{round(abs(amplitude) / max_grad * 100)}'
+                    f'{round(abs(amplitude2) / max_grad * 100)}'
                 )
         else:
             amplitude2 = amplitude
 
-        if rise_time == 0:
+        if rise_time is None:
             rise_time = math.ceil(abs(amplitude2) / max_slew / system.grad_raster_time) * system.grad_raster_time
             if rise_time == 0:
                 rise_time = system.grad_raster_time
 
-        if fall_time == 0:
+        if fall_time is None:
             fall_time = rise_time
         flat_time = duration - rise_time - fall_time
 
-        if amplitude == 0:
+        if amplitude is None:
             # Adjust amplitude (after rounding) to match area
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
     else:
         if area is None:
             raise ValueError('Must supply area or duration.')
-        if abs(amplitude) > 0:
+        if amplitude is not None:
             raise NotImplementedError('Amplitude + Area input pair is not implemented yet.')
         else:
             # Find the shortest possible duration.
-            if rise_time > 0:
+            if rise_time is not None:
                 warnings.warn('Rise time is ignored when calculating the shortest duration from `area`.')
             amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
                 area, max_slew, max_grad, system.grad_raster_time
