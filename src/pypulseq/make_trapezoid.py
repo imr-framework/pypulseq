@@ -1,7 +1,7 @@
 import math
 import warnings
 from types import SimpleNamespace
-from typing import Union
+from typing import Literal, Union
 
 import numpy as np
 
@@ -31,6 +31,20 @@ def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_tim
     return amplitude, rise_time, flat_time, fall_time
 
 
+def set_rise_fall_time_ifnotset(rise_time, fall_time, amplitude, max_slew, grad_raster_time):
+    if rise_time is None and fall_time is not None:
+        rise_time = fall_time
+    elif fall_time is None and rise_time is not None:
+        fall_time = rise_time
+    elif rise_time is None and fall_time is None:
+        rise_time = abs(amplitude) / max_slew
+        rise_time = math.ceil(rise_time / grad_raster_time) * grad_raster_time
+        if rise_time == 0:
+            rise_time = grad_raster_time
+        fall_time = rise_time
+    return rise_time, fall_time
+
+
 def make_trapezoid(
     channel: str,
     amplitude: Union[float, None] = None,
@@ -48,12 +62,17 @@ def make_trapezoid(
     """
     Create a trapezoidal gradient event.
 
-    The user must supply as a minimum one of the following sets:
+    The user must supply any of the following sets of parameters:
+    Area based:
     - area
-    - amplitude and duration
-    - flat_time and flat_area
-    - flat_time and amplitude
+    - area and duration
+    - area and duration and rise_time
     - flat_time, area and rise_time
+    Amplitude based:
+    - amplitude and duration
+    - amplitude and flat_time
+    Flat area based:
+    - flat_area and flat_time
     Additional options may be supplied with the above.
 
     See Also
@@ -100,6 +119,8 @@ def make_trapezoid(
         If requested area is too large for this gradient
         If `flat_time`, `duration` and `area` are not supplied.
         Amplitude violation
+    NotImplementedError
+        If an input set that might be valid but not implemented is passed.
     """
     if system is None:
         system = Opts.default
@@ -113,41 +134,35 @@ def make_trapezoid(
     if max_slew is None:
         max_slew = system.max_slew
 
-    if fall_time is not None and rise_time is None:
-        raise ValueError('Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.')
+    # If either of rise_time or fall_time is not provided, set it to the other.
+    fall_time = rise_time if rise_time is not None and fall_time is None else fall_time
+    rise_time = fall_time if fall_time is not None and rise_time is None else rise_time
 
-    if area is None and flat_area is None and amplitude is None:
+    # Check which one of area, flat_area and amplitude is provided, and determine the calculation path accordingly.
+    calc_path: Literal['area', 'flat_area', 'amplitude'] = None
+    if area is not None and flat_area is None and amplitude is None:
+        calc_path = 'area'
+    elif area is None and flat_area is not None and amplitude is None:
+        calc_path = 'flat_area'
+    elif area is None and flat_area is None and amplitude is not None:
+        calc_path = 'amplitude'
+    elif area is None and flat_area is not None and amplitude is not None:
+        raise NotImplementedError('Flat Area + Amplitude input pair is not implemented yet.')
+    elif area is not None and flat_area is None and amplitude is not None:
+        raise NotImplementedError('Amplitude + Area input pair is not implemented yet.')
+    else:
         raise ValueError("Must supply either 'area', 'flat_area' or 'amplitude'.")
 
-    if flat_area is not None:
-        if duration is not None:
-            raise NotImplementedError('Flat Area + Duration input pair is not implemented yet.')
-        if amplitude is not None:
-            raise NotImplementedError('Flat Area + Amplitude input pair is not implemented yet.')
+    # Check if sufficient timing parameters are provided.
+    if flat_time is not None and flat_area is None and amplitude is None and (rise_time is None or area is None):
+        raise ValueError(
+            'When `flat_time` is provided, either `flat_area`, '
+            'or `amplitude`, or `rise_time` and `area` must be provided as well.'
+        )
 
-    if flat_time is not None:
-        if amplitude is not None:
-            amplitude2 = amplitude
-        elif area is not None and rise_time is not None:
-            # We have rise_time, flat_time and area.
-            amplitude2 = area / (rise_time + flat_time)
-        elif flat_area is not None:
-            amplitude2 = flat_area / flat_time
-        else:
-            raise ValueError(
-                'When `flat_time` is provided, either `flat_area`, '
-                'or `amplitude`, or `rise_time` and `area` must be provided as well.'
-            )
-
-        if rise_time is None:
-            rise_time = abs(amplitude2) / max_slew
-            rise_time = math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
-            if rise_time == 0:
-                rise_time = system.grad_raster_time
-        if fall_time is None:
-            fall_time = rise_time
-    elif duration is not None:
-        if amplitude is None:
+    if calc_path == 'area':
+        # We have area and duration.
+        if duration is not None and flat_time is None:
             if rise_time is None:
                 _, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
                     area, max_slew, max_grad, system.grad_raster_time
@@ -173,33 +188,49 @@ def make_trapezoid(
                     f'Requested area is too large for this gradient. Probably amplitude is violated '
                     f'{round(abs(amplitude2) / max_grad * 100)}'
                 )
-        else:
-            amplitude2 = amplitude
-
-        if rise_time is None:
-            rise_time = math.ceil(abs(amplitude2) / max_slew / system.grad_raster_time) * system.grad_raster_time
-            if rise_time == 0:
-                rise_time = system.grad_raster_time
-
-        if fall_time is None:
-            fall_time = rise_time
-        flat_time = duration - rise_time - fall_time
-
-        if amplitude is None:
-            # Adjust amplitude (after rounding) to match area
+            flat_time = duration - rise_time - fall_time
             amplitude2 = area / (rise_time / 2 + fall_time / 2 + flat_time)
-    else:
-        if area is None:
-            raise ValueError('Must supply area or duration.')
-        if amplitude is not None:
-            raise NotImplementedError('Amplitude + Area input pair is not implemented yet.')
+
+        elif flat_time is not None:
+            if rise_time is None:
+                raise ValueError('Must supply `rise_time` when `area` and `flat_time` is provided.')
+
+            amplitude2 = area / (rise_time + flat_time)
+
         else:
-            # Find the shortest possible duration.
-            if rise_time is not None:
-                warnings.warn('Rise time is ignored when calculating the shortest duration from `area`.')
+            if rise_time is not None or fall_time is not None:
+                warnings.warn('Rise time and fall time is ignored when calculating the shortest duration from `area`.')
+
             amplitude2, rise_time, flat_time, fall_time = calculate_shortest_params_for_area(
                 area, max_slew, max_grad, system.grad_raster_time
             )
+
+    elif calc_path == 'flat_area':
+        # Check and raise invalid input sets
+        if duration is not None:
+            raise NotImplementedError('Flat Area + Duration input pair is not implemented yet.')
+        elif flat_time is not None:
+            amplitude2 = flat_area / flat_time
+
+    elif calc_path == 'amplitude':
+        if rise_time is None:
+            rise_time = abs(amplitude) / max_slew
+            rise_time = math.ceil(rise_time / system.grad_raster_time) * system.grad_raster_time
+            if rise_time == 0:
+                rise_time = system.grad_raster_time
+            fall_time = rise_time
+
+        amplitude2 = amplitude
+        if duration is not None and flat_time is None:
+            flat_time = duration - rise_time - fall_time
+        elif flat_time is not None and duration is None:
+            pass
+        else:
+            raise ValueError('Must supply area or duration.')
+
+    rise_time, fall_time = set_rise_fall_time_ifnotset(
+        rise_time, fall_time, amplitude2, max_slew, system.grad_raster_time
+    )
 
     assert (
         abs(amplitude2) <= max_grad
