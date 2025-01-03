@@ -22,6 +22,8 @@
 
 ## 1. General Information
 
+This branch modifies the .seq creation, format and compression modes to deliver a more compatible file structure to vendor spectrometers relying on a base module framework
+
 Pulse sequence design is a significant component of MRI research. However, multi-vendor studies require researchers to
 be acquainted with each hardware platform's programming environment.
 
