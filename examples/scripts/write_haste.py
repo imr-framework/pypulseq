@@ -11,6 +11,7 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
+import pypulseq as pp
 
 
 def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
@@ -241,7 +242,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
             rfex.phase_offset = rfex_phase - 2 * math.pi * rfex.freq_offset * calc_rf_center(rfex)[0]
             rfref.phase_offset = rfref_phase - 2 * math.pi * rfref.freq_offset * calc_rf_center(rfref)[0]
 
-            seq.add_block(GS1)
+            seq.add_block(GS1, pp.make_label(label='TRID', type='SET', value=1))
             seq.add_block(GS2, rfex)
             seq.add_block(GS3, GR3)
 

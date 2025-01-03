@@ -233,7 +233,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
             rf_ex.phase_offset = rf_ex_phase - 2 * np.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
             rf_ref.phase_offset = rf_ref_phase - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
 
-            seq.add_block(gs1)
+            seq.add_block(gs1, pp.make_label(label='TRID', type='SET', value=1))
             seq.add_block(gs2, rf_ex)
             seq.add_block(gs3, gr3)
 
