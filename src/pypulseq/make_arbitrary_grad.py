@@ -81,10 +81,10 @@ def make_arbitrary_grad(
     if max(abs(waveform)) >= max_grad:
         raise ValueError(f'Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}')
 
-    if not first:
+    if first is None:
         first = (3 * waveform[0] - waveform[1]) * 0.5  # linear extrapolation
 
-    if not last:
+    if last is None:
         last = (3 * waveform[-1] - waveform[-2]) * 0.5  # linear extrapolation
 
     grad = SimpleNamespace()
