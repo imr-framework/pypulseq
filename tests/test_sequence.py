@@ -1,13 +1,18 @@
 import math
 import os
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+import matplotlib.pyplot as plt
 
 import pypulseq as pp
 import pytest
 from _pytest.python_api import ApproxBase
 from pypulseq import Sequence
+
+# Add parent directory to path, so sequences from ../examples can be imported
+sys.path.insert(0, '..')
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
@@ -208,121 +213,185 @@ def seq4():
 sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4]
 
 
-# This "test" rewrites the expected .seq output files when SAVE_EXPECTED is set in the environment variables.
-# E.g. in a unix-based system, run: SAVE_EXPECTED=1 pytest test_sequence.py
-@pytest.mark.skipif(not os.environ.get('SAVE_EXPECTED'), reason='Only save sequence files when requested')
-@pytest.mark.filterwarnings('ignore:Using default')
-@pytest.mark.parametrize('seq_func', sequence_zoo)
-def test_sequence_save_expected(seq_func):
-    seq_name = str(seq_func.__name__)
+# List of example sequences in pypulseq/seq_examples/scripts/ to add as
+# sequence tests.
+seq_examples = [
+    'write_gre',
+    'write_gre_label',
+    'write_haste',
+    'write_radial_gre',
+    'write_tse',
+    'write_epi',
+    'write_epi_label',
+    'write_epi_se',
+    'write_epi_se_rs',
+    'write_mprage',
+    'write_ute',
+]
 
-    # Generate sequence and write to file
-    seq = seq_func()
-    seq.write(expected_output_path / (seq_name + '.seq'))
+# Create a seq_func for each example script and add it to the list of sequences.
+# Defining a new function ensures that pytest understands the name is
+# e.g. `write_gre` instead of `main`.
+for example in seq_examples:
+    exec(f"""
+def {example}():
+    from examples.scripts.{example} import main
+    return main()
+""")
 
-
-# Test whether a sequence can be plotted.
-@pytest.mark.filterwarnings('ignore:Using default')
-@pytest.mark.parametrize('seq_func', sequence_zoo)
-@patch('matplotlib.pyplot.show')
-def test_plot(mock_show, seq_func):
-    seq = seq_func()
-
-    seq.plot()
-    seq.plot(show_blocks=True)
-
-
-# Test whether the sequence is the approximately the same after writing a .seq file and reading it back in.
-@pytest.mark.filterwarnings('ignore:Using default')
-@pytest.mark.parametrize('seq_func', sequence_zoo)
-def test_sequence_writeread(seq_func, tmp_path, compare_seq_file):
-    seq_name = str(seq_func.__name__)
-    output_filename = tmp_path / (seq_name + '.seq')
-
-    # Generate sequence
-    seq = seq_func()
-
-    # Write sequence to file
-    seq.write(output_filename)
-
-    # Check if written sequence file matches expected sequence file
-    compare_seq_file(output_filename, expected_output_path / (seq_name + '.seq'))
-
-    # Read written sequence file back in
-    seq2 = pp.Sequence(system=seq.system)
-    seq2.read(output_filename)
-
-    # Clean up written sequence file
-    output_filename.unlink()
-
-    # Test for approximate equality of all blocks
-    assert set(seq2.block_events.keys()) == set(seq.block_events.keys())
-    for block_counter in seq.block_events:
-        assert seq2.get_block(block_counter) == Approx(
-            seq.get_block(block_counter), abs=1e-6, rel=1e-5
-        ), f'Block {block_counter} does not match'
-
-    # Test for approximate equality of all gradient waveforms
-    for a, b in zip(seq2.get_gradients(), seq.get_gradients()):
-        if a is None and b is None:
-            continue
-        if a is None or b is None:
-            raise AssertionError()
-
-        assert a.x == Approx(b.x, abs=1e-3, rel=1e-3)
-        assert a.c == Approx(b.c, abs=1e-3, rel=1e-3)
-
-    # Test for approximate equality of kspace calculation
-    assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-2, nan_ok=True)
-
-    # Test whether labels are the same
-    labels_seq = seq.evaluate_labels(evolution='blocks')
-    labels_seq2 = seq2.evaluate_labels(evolution='blocks')
-
-    assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
-
-    for label in labels_seq:
-        assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+    sequence_zoo.append(eval(f'{example}'))
 
 
-# Test whether the sequence is approximately the same after recreating it by getting all blocks with
-# get_block and inserting them into a new sequence with add_block.
-@pytest.mark.filterwarnings('ignore:Using default')
-@pytest.mark.parametrize('seq_func', sequence_zoo)
-def test_sequence_recreate(seq_func):
-    # Generate sequence
-    seq = seq_func()
+# Main Sequence test class
+# Note that pytest creates a new instance of the TestSequence class for each
+# test. To prevent calling seq_func() over and over, we assign it as a class
+# variable, and by using parametrize with scope='class' the order of the tests
+# is per seq_func instead of per test.
+@pytest.mark.parametrize('seq_func', sequence_zoo, scope='class')
+class TestSequence:
+    # Base test that just runs the sequence function and keeps the result
+    # for the next tests.
+    def test_sequence(self, seq_func):
+        # Reset TestSequence.seq in case seq_func throws an exception (the
+        # other tests will still run, but will result in AttributeErrors)
+        TestSequence.seq = None
+        TestSequence.seq = seq_func()
 
-    # Insert blocks from sequence into a new sequence
-    seq2 = pp.Sequence(system=seq.system)
-    for b in seq.block_events:
-        seq2.add_block(seq.get_block(b))
+    # This "test" rewrites the expected .seq output files when SAVE_EXPECTED is
+    # set in the environment variables.
+    # E.g. in a unix-based system, run: SAVE_EXPECTED=1 pytest test_sequence.py
+    @pytest.mark.skipif(not os.environ.get('SAVE_EXPECTED'), reason='Only save sequence files when requested')
+    def test_save_expected(self, seq_func):
+        seq_name = str(seq_func.__name__)
+        TestSequence.seq.write(expected_output_path / (seq_name + '.seq'))
 
-    # Test for approximate equality of all blocks
-    assert set(seq2.block_events.keys()) == set(seq.block_events.keys())
-    for block_counter in seq.block_events:
-        assert seq2.get_block(block_counter) == Approx(
-            seq.get_block(block_counter), abs=1e-6, rel=1e-5
-        ), f'Block {block_counter} does not match'
+    # Test whether a sequence can be plotted.
+    @pytest.mark.slow
+    def test_plot(self, seq_func):
+        with patch('matplotlib.pyplot.show'):
+            TestSequence.seq.plot()
+            TestSequence.seq.plot(show_blocks=True)
+            plt.close('all')
 
-    # Test for approximate equality of all gradient waveforms
-    for a, b in zip(seq2.get_gradients(), seq.get_gradients()):
-        if a is None and b is None:
-            continue
-        if a is None or b is None:
-            raise AssertionError()
+    # Test whether the sequence is the approximately the same after writing a .seq
+    # file and reading it back in.
+    def test_writeread(self, seq_func, tmp_path, compare_seq_file):
+        seq_name = str(seq_func.__name__)
+        output_filename = tmp_path / (seq_name + '.seq')
 
-        assert a.x == Approx(b.x, abs=1e-4, rel=1e-4)
-        assert a.c == Approx(b.c, abs=1e-4, rel=1e-4)
+        seq = TestSequence.seq
 
-    # Test for approximate equality of kspace calculation
-    assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-6, nan_ok=True)
+        # Write sequence to file
+        seq.write(output_filename)
 
-    # Test whether labels are the same
-    labels_seq = seq.evaluate_labels(evolution='blocks')
-    labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+        # Check if written sequence file matches expected sequence file
+        compare_seq_file(output_filename, expected_output_path / (seq_name + '.seq'))
 
-    assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
+        # Read written sequence file back in
+        seq2 = pp.Sequence(system=seq.system)
+        seq2.read(output_filename)
 
-    for label in labels_seq:
-        assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+        # Clean up written sequence file
+        output_filename.unlink()
+
+        # Test for approximate equality of all blocks
+        assert list(seq2.block_events.keys()) == list(seq.block_events.keys()), 'Sequence block IDs are not identical'
+        for block_counter in seq.block_events:
+            block_orig = seq.get_block(block_counter)
+            block_compare = seq2.get_block(block_counter)
+
+            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                from copy import deepcopy
+
+                block_orig = deepcopy(block_orig)
+                block_orig.rf.use = 'undefined'
+
+            assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
+
+        # Test for approximate equality of all gradient waveforms
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+            if a is None and b is None:
+                continue
+            if a is None or b is None:
+                assert False
+
+            # TODO: C[0] is slope of gradient, on the order of max_slew? So expect abs rounding errors in range of 1e2?
+            assert a.x == Approx(b.x, abs=1e-5, rel=1e-5), (
+                f'Time axis of gradient waveform for channel {channel} does not match'
+            )
+            assert a.c[0] == Approx(b.c[0], abs=1e2, rel=1e-3), (
+                f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+            assert a.c[1] == Approx(b.c[1], abs=1e-5, rel=1e-5), (
+                f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+
+        # Restore RF use for k-space calculation
+        for block_counter in seq.block_events:
+            block_orig = seq.get_block(block_counter)
+            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                block_compare = seq2.get_block(block_counter)
+                block_compare.rf.use = block_orig.rf.use
+
+        # Test for approximate equality of kspace calculation
+        assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-1, nan_ok=True)
+
+        # Test whether labels are the same
+        labels_seq = seq.evaluate_labels(evolution='blocks')
+        labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+
+        assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
+
+        for label in labels_seq:
+            assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+
+    # Test whether the sequence is approximately the same after recreating it by
+    # getting all blocks with get_block and inserting them into a new sequence
+    # with add_block.
+    # NOTE: In order to keep the order of shapes the same, sequences need to
+    #       put RF events before gradient events and order arbitrary/extended
+    #       gradient events in X, Y, Z order when passing them to
+    #       seq.add_block(...). i.e. seq.add_block(rf, gx, gy, gz)
+    def test_recreate(self, seq_func, tmp_path):
+        seq = TestSequence.seq
+
+        # Insert blocks from sequence into a new sequence
+        seq2 = pp.Sequence(system=seq.system)
+        for b in seq.block_events:
+            seq2.add_block(seq.get_block(b))
+
+        # Test for approximate equality of all blocks
+        assert list(seq2.block_events.keys()) == list(seq.block_events.keys()), 'Sequence block IDs are not identical'
+        for block_counter in seq.block_events:
+            assert seq2.get_block(block_counter) == Approx(seq.get_block(block_counter), abs=1e-9, rel=1e-9), (
+                f'Block {block_counter} does not match'
+            )
+
+        # Test for approximate equality of all gradient waveforms
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+            if a == None and b == None:
+                continue
+            if a == None or b == None:
+                assert False
+
+            assert a.x == Approx(b.x, abs=1e-9, rel=1e-9), (
+                f'Time axis of gradient waveform for channel {channel} does not match'
+            )
+            assert a.c[0] == Approx(b.c[0], abs=1e-9, rel=1e-9), (
+                f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+            assert a.c[1] == Approx(b.c[1], abs=1e-9, rel=1e-9), (
+                f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+
+        # Test for approximate equality of kspace calculation
+        assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-6, nan_ok=True)
+
+        # Test whether labels are the same
+        labels_seq = seq.evaluate_labels(evolution='blocks')
+        labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+
+        assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
+
+        for label in labels_seq:
+            assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'

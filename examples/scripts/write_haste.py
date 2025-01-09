@@ -13,7 +13,7 @@ from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "haste_pypulseq.seq"):
     # ======
     # SETUP
     # ======
@@ -22,9 +22,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     # Set system limits
     system = Opts(
         max_grad=30,
-        grad_unit='mT/m',
+        grad_unit="mT/m",
         max_slew=170,
-        slew_unit='T/m/s',
+        slew_unit="T/m/s",
         rf_ringdown_time=100e-6,
         rf_dead_time=100e-6,
         adc_dead_time=10e-6,
@@ -33,7 +33,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     seq = Sequence(system=system)  # Create a new sequence object
     fov = 256e-3  # Define FOV and resolution
     Ny_pre = 8
-    Nx, Ny = 128, 128
+    Nx, Ny = 64, 64
     n_echo = int(Ny / 2 + Ny_pre)  # Number of echoes
     n_slices = 1
     rf_flip = 180  # Flip angle
@@ -71,9 +71,10 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         time_bw_product=4,
         phase_offset=rfex_phase,
         return_gz=True,
+        delay=system.rf_dead_time
     )
     GS_ex = make_trapezoid(
-        channel='z',
+        channel="z",
         system=system,
         amplitude=gz.amplitude,
         flat_time=t_ex_wd,
@@ -89,11 +90,12 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         apodization=0.5,
         time_bw_product=4,
         phase_offset=rfref_phase,
-        use='refocusing',
+        use="refocusing",
         return_gz=True,
+        delay=system.rf_dead_time
     )
     GS_ref = make_trapezoid(
-        channel='z',
+        channel="z",
         system=system,
         amplitude=GS_ex.amplitude,
         flat_time=tf_ref_wd,
@@ -102,28 +104,32 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
 
     AGS_ex = GS_ex.area / 2
     GS_spr = make_trapezoid(
-        channel='z',
+        channel="z",
         system=system,
         area=AGS_ex * (1 + fspS),
         duration=t_sp,
         rise_time=dG,
     )
-    GS_spex = make_trapezoid(channel='z', system=system, area=AGS_ex * fspS, duration=t_sp_ex, rise_time=dG)
+    GS_spex = make_trapezoid(
+        channel="z", system=system, area=AGS_ex * fspS, duration=t_sp_ex, rise_time=dG
+    )
 
     delta_k = 1 / fov
     k_width = Nx * delta_k
 
     GR_acq = make_trapezoid(
-        channel='x',
+        channel="x",
         system=system,
         flat_area=k_width,
         flat_time=readout_time,
         rise_time=dG,
     )
-    adc = make_adc(num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time)
-    GR_spr = make_trapezoid(channel='x', system=system, area=GR_acq.area * fspR, duration=t_sp, rise_time=dG)
+    adc = make_adc(num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time, system=system)
+    GR_spr = make_trapezoid(
+        channel="x", system=system, area=GR_acq.area * fspR, duration=t_sp, rise_time=dG
+    )
     GR_spex = make_trapezoid(
-        channel='x',
+        channel="x",
         system=system,
         area=GR_acq.area * (1 + fspR),
         duration=t_sp_ex,
@@ -132,7 +138,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
 
     AGR_spr = GR_spr.area
     AGR_preph = GR_acq.area / 2 + AGR_spr
-    GR_preph = make_trapezoid(channel='x', system=system, area=AGR_preph, duration=t_sp_ex, rise_time=dG)
+    GR_preph = make_trapezoid(
+        channel="x", system=system, area=AGR_preph, duration=t_sp_ex, rise_time=dG
+    )
 
     n_ex = 1
     PE_order = np.arange(-Ny_pre, Ny + 1).T
@@ -141,11 +149,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     # Split gradients and recombine into blocks
     GS1_times = np.array([0, GS_ex.rise_time])
     GS1_amp = np.array([0, GS_ex.amplitude])
-    GS1 = make_extended_trapezoid(channel='z', times=GS1_times, amplitudes=GS1_amp)
+    GS1 = make_extended_trapezoid(channel="z", times=GS1_times, amplitudes=GS1_amp)
 
     GS2_times = np.array([0, GS_ex.flat_time])
     GS2_amp = np.array([GS_ex.amplitude, GS_ex.amplitude])
-    GS2 = make_extended_trapezoid(channel='z', times=GS2_times, amplitudes=GS2_amp)
+    GS2 = make_extended_trapezoid(channel="z", times=GS2_times, amplitudes=GS2_amp)
 
     GS3_times = np.array(
         [
@@ -155,12 +163,14 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
             GS_spex.rise_time + GS_spex.flat_time + GS_spex.fall_time,
         ]
     )
-    GS3_amp = np.array([GS_ex.amplitude, GS_spex.amplitude, GS_spex.amplitude, GS_ref.amplitude])
-    GS3 = make_extended_trapezoid(channel='z', times=GS3_times, amplitudes=GS3_amp)
+    GS3_amp = np.array(
+        [GS_ex.amplitude, GS_spex.amplitude, GS_spex.amplitude, GS_ref.amplitude]
+    )
+    GS3 = make_extended_trapezoid(channel="z", times=GS3_times, amplitudes=GS3_amp)
 
     GS4_times = np.array([0, GS_ref.flat_time])
     GS4_amp = np.array([GS_ref.amplitude, GS_ref.amplitude])
-    GS4 = make_extended_trapezoid(channel='z', times=GS4_times, amplitudes=GS4_amp)
+    GS4 = make_extended_trapezoid(channel="z", times=GS4_times, amplitudes=GS4_amp)
 
     GS5_times = np.array(
         [
@@ -171,7 +181,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         ]
     )
     GS5_amp = np.array([GS_ref.amplitude, GS_spr.amplitude, GS_spr.amplitude, 0])
-    GS5 = make_extended_trapezoid(channel='z', times=GS5_times, amplitudes=GS5_amp)
+    GS5 = make_extended_trapezoid(channel="z", times=GS5_times, amplitudes=GS5_amp)
 
     GS7_times = np.array(
         [
@@ -182,7 +192,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         ]
     )
     GS7_amp = np.array([0, GS_spr.amplitude, GS_spr.amplitude, GS_ref.amplitude])
-    GS7 = make_extended_trapezoid(channel='z', times=GS7_times, amplitudes=GS7_amp)
+    GS7 = make_extended_trapezoid(channel="z", times=GS7_times, amplitudes=GS7_amp)
 
     # Readout gradient
     GR3 = GR_preph
@@ -196,11 +206,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         ]
     )
     GR5_amp = np.array([0, GR_spr.amplitude, GR_spr.amplitude, GR_acq.amplitude])
-    GR5 = make_extended_trapezoid(channel='x', times=GR5_times, amplitudes=GR5_amp)
+    GR5 = make_extended_trapezoid(channel="x", times=GR5_times, amplitudes=GR5_amp)
 
     GR6_times = np.array([0, readout_time])
     GR6_amp = np.array([GR_acq.amplitude, GR_acq.amplitude])
-    GR6 = make_extended_trapezoid(channel='x', times=GR6_times, amplitudes=GR6_amp)
+    GR6 = make_extended_trapezoid(channel="x", times=GR6_times, amplitudes=GR6_amp)
 
     GR7_times = np.array(
         [
@@ -211,7 +221,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
         ]
     )
     GR7_amp = np.array([GR_acq.amplitude, GR_spr.amplitude, GR_spr.amplitude, 0])
-    GR7 = make_extended_trapezoid(channel='x', times=GR7_times, amplitudes=GR7_amp)
+    GR7 = make_extended_trapezoid(channel="x", times=GR7_times, amplitudes=GR7_amp)
 
     # Fill-times
     tex = GS1.shape_dur + GS2.shape_dur + GS3.shape_dur
@@ -223,9 +233,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     TR_fill = system.grad_raster_time * round(TR_fill / system.grad_raster_time)
     if TR_fill < 0:
         TR_fill = 1e-3
-        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (TE_train + TR_fill)} ms')
+        warnings.warn(
+            f"TR too short, adapted to include all slices to: {1000 * n_slices * (TE_train + TR_fill)} ms"
+        )
     else:
-        print(f'TR fill: {1000 * TR_fill} ms')
+        print(f"TR fill: {1000 * TR_fill} ms")
     delay_TR = make_delay(TR_fill)
     delay_end = make_delay(5)
 
@@ -235,14 +247,22 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     # Define sequence blocks
     for k_ex in range(n_ex):
         for s in range(n_slices):
-            rfex.freq_offset = GS_ex.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
-            rfref.freq_offset = GS_ref.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            rfex.freq_offset = (
+                GS_ex.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            )
+            rfref.freq_offset = (
+                GS_ref.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
+            )
             # Align the phase for off-center slices
-            rfex.phase_offset = rfex_phase - 2 * math.pi * rfex.freq_offset * calc_rf_center(rfex)[0]
-            rfref.phase_offset = rfref_phase - 2 * math.pi * rfref.freq_offset * calc_rf_center(rfref)[0]
+            rfex.phase_offset = (
+                rfex_phase - 2 * math.pi * rfex.freq_offset * calc_rf_center(rfex)[0]
+            )
+            rfref.phase_offset = (
+                rfref_phase - 2 * math.pi * rfref.freq_offset * calc_rf_center(rfref)[0]
+            )
 
             seq.add_block(GS1)
-            seq.add_block(GS2, rfex)
+            seq.add_block(rfex, GS2)
             seq.add_block(GS3, GR3)
 
             for k_ech in range(n_echo):
@@ -252,29 +272,29 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
                     phase_area = 0
 
                 GP_pre = make_trapezoid(
-                    channel='y',
+                    channel="y",
                     system=system,
                     area=phase_area,
                     duration=t_sp,
                     rise_time=dG,
                 )
                 GP_rew = make_trapezoid(
-                    channel='y',
+                    channel="y",
                     system=system,
                     area=-phase_area,
                     duration=t_sp,
                     rise_time=dG,
                 )
 
-                seq.add_block(GS4, rfref)
-                seq.add_block(GS5, GR5, GP_pre)
+                seq.add_block(rfref, GS4)
+                seq.add_block(GR5, GP_pre, GS5)
 
                 if k_ex >= 0:
                     seq.add_block(GR6, adc)
                 else:
                     seq.add_block(GR6)
 
-                seq.add_block(GS7, GR7, GP_rew)
+                seq.add_block(GR7, GP_rew, GS7)
 
             seq.add_block(GS4)
             seq.add_block(GS5)
@@ -285,9 +305,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     # Check whether the timing of the sequence is correct
     ok, error_report = seq.check_timing()
     if ok:
-        print('Timing check passed successfully')
+        print("Timing check passed successfully")
     else:
-        print('Timing check failed. Error listing follows:')
+        print("Timing check failed. Error listing follows:")
         [print(e) for e in error_report]
 
     # ======
@@ -302,7 +322,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'haste_pypulseq.seq'):
     if write_seq:
         seq.write(seq_filename)
 
+    return seq
+
 
 # SETUPeq")
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(plot=True, write_seq=True)
