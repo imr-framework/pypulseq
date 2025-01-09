@@ -3,46 +3,40 @@ import warnings
 from types import SimpleNamespace
 from typing import Literal, Union
 
-import numpy as np
-
 from pypulseq import eps
 from pypulseq.opts import Opts
 from pypulseq.utils.tracing import trace, trace_enabled
 
 
-def calculate_shortest_params_for_area(area, max_slew, max_grad, grad_raster_time):
+def calculate_shortest_params_for_area(area: float, max_slew: float, max_grad: float, grad_raster_time: float):
+    """Calculate the shortest possible rise_time, flat_time, and fall_time for a given area."""
+
+    # Calculate initial rise time constrained by max slew rate
     rise_time = math.ceil(math.sqrt(abs(area) / max_slew) / grad_raster_time) * grad_raster_time
-    if rise_time < grad_raster_time:  # Area was almost 0 maybe
-        rise_time = grad_raster_time
-    amplitude = np.divide(area, rise_time)  # To handle nan
-    t_eff = rise_time
+    rise_time = max(rise_time, grad_raster_time)
 
+    # Calculate initial amplitude
+    amplitude = area / rise_time
+    effective_time = rise_time
+
+    # Adjust for max gradient constraint
     if abs(amplitude) > max_grad:
-        t_eff = math.ceil(abs(area) / max_grad / grad_raster_time) * grad_raster_time
-        amplitude = area / t_eff
+        effective_time = math.ceil(abs(area) / max_grad / grad_raster_time) * grad_raster_time
+        amplitude = area / effective_time
         rise_time = math.ceil(abs(amplitude) / max_slew / grad_raster_time) * grad_raster_time
+        rise_time = max(rise_time, grad_raster_time)
 
-        if rise_time == 0:
-            rise_time = grad_raster_time
-
-    flat_time = t_eff - rise_time
+    # Calculate flat and fall times
+    flat_time = effective_time - rise_time
     fall_time = rise_time
 
     return amplitude, rise_time, flat_time, fall_time
 
 
-def set_rise_fall_time_ifnotset(rise_time, fall_time, amplitude, max_slew, grad_raster_time):
-    if rise_time is None and fall_time is not None:
-        rise_time = fall_time
-    elif fall_time is None and rise_time is not None:
-        fall_time = rise_time
-    elif rise_time is None and fall_time is None:
-        rise_time = abs(amplitude) / max_slew
-        rise_time = math.ceil(rise_time / grad_raster_time) * grad_raster_time
-        if rise_time == 0:
-            rise_time = grad_raster_time
-        fall_time = rise_time
-    return rise_time, fall_time
+def calculate_shortest_rise_time(amplitude: float, max_slew: float, grad_raster_time: float):
+    """Calculate the shortest possible rise / fall time for a given amplitude and slew rate."""
+
+    return math.ceil(max(abs(amplitude) / max_slew, grad_raster_time) / grad_raster_time) * grad_raster_time
 
 
 def make_trapezoid(
@@ -135,11 +129,11 @@ def make_trapezoid(
         max_slew = system.max_slew
 
     # If either of rise_time or fall_time is not provided, set it to the other.
-    fall_time = rise_time if rise_time is not None and fall_time is None else fall_time
-    rise_time = fall_time if fall_time is not None and rise_time is None else rise_time
+    rise_time = rise_time or fall_time
+    fall_time = fall_time or rise_time
 
     # Check which one of area, flat_area and amplitude is provided, and determine the calculation path accordingly.
-    calc_path: Literal['area', 'flat_area', 'amplitude'] = None
+    calc_path: Literal['area', 'flat_area', 'amplitude']
     if area is not None and flat_area is None and amplitude is None:
         calc_path = 'area'
     elif area is None and flat_area is not None and amplitude is None:
@@ -228,21 +222,21 @@ def make_trapezoid(
         else:
             raise ValueError('Must supply area or duration.')
 
-    rise_time, fall_time = set_rise_fall_time_ifnotset(
-        rise_time, fall_time, amplitude2, max_slew, system.grad_raster_time
-    )
+    if rise_time is None and fall_time is None:
+        rise_time = fall_time = calculate_shortest_rise_time(amplitude2, max_slew, system.grad_raster_time)
 
-    assert (
-        abs(amplitude2) <= max_grad
-    ), f'Refined amplitude ({abs(amplitude2):0.0f} Hz/m) is larger than max ({max_grad:0.0f} Hz/m).'
+    if abs(amplitude2) > max_grad:
+        raise ValueError(f'Refined amplitude ({abs(amplitude2):0.0f} Hz/m) is larger than max ({max_grad:0.0f} Hz/m).')
 
-    assert (
-        abs(amplitude2) / rise_time <= max_slew
-    ), f'Refined slew rate ({abs(amplitude2)/rise_time:0.0f} Hz/m/s) for ramp up is larger than max ({max_slew:0.0f} Hz/m/s).'
+    if abs(amplitude2) / rise_time > max_slew:
+        raise ValueError(
+            f'Refined slew rate ({abs(amplitude2)/rise_time:0.0f} Hz/m/s) for ramp up is larger than max ({max_slew:0.0f} Hz/m/s).'
+        )
 
-    assert (
-        abs(amplitude2) / fall_time <= max_slew
-    ), f'Refined slew rate ({abs(amplitude2)/fall_time:0.0f} Hz/m/s) for ramp down is larger than max ({max_slew:0.0f} Hz/m/s).'
+    if abs(amplitude2) / fall_time > max_slew:
+        raise ValueError(
+            f'Refined slew rate ({abs(amplitude2)/fall_time:0.0f} Hz/m/s) for ramp down is larger than max ({max_slew:0.0f} Hz/m/s).'
+        )
 
     grad = SimpleNamespace()
     grad.type = 'trap'
