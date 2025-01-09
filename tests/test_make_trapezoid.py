@@ -58,7 +58,7 @@ def test_no_area_no_duration_error():
 def test_amplitude_too_large_error():
     errstr = r'Refined amplitude \(\d+ Hz/m\) is larger than max \(\d+ Hz/m\).'
 
-    with pytest.raises(AssertionError, match=errstr):
+    with pytest.raises(ValueError, match=errstr):
         make_trapezoid(channel='x', amplitude=1e10, duration=1)
 
 
