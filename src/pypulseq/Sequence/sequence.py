@@ -916,7 +916,7 @@ class Sequence:
         if grad_disp not in valid_grad_units:
             raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-        fig1, fig2 = plt.figure(1), plt.figure(2)
+        fig1, fig2 = plt.figure(), plt.figure()
         sp11 = fig1.add_subplot(311)
         sp12 = fig1.add_subplot(312, sharex=sp11)
         sp13 = fig1.add_subplot(313, sharex=sp11)
