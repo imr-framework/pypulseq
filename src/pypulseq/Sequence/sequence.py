@@ -329,7 +329,7 @@ class Sequence:
             gm_pp.append(gw_pp[i].antiderivative())
             tc.append(gm_pp[i].x)
             # "Sample" ramps for display purposes.  Otherwise piecewise-linear display (plot) fails
-            ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
+            ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > 1e-7 * self.system.max_slew)
 
             # Do nothing if there are no ramps
             if ii.shape[0] == 0:
