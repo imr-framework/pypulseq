@@ -237,7 +237,7 @@ for example in seq_examples:
 def {example}():
     from examples.scripts.{example} import main
     return main()
-""") # noqa: S102
+""")  # noqa: S102
 
     sequence_zoo.append(eval(f'{example}'))
 
@@ -267,7 +267,7 @@ class TestSequence:
 
     # Test whether a sequence can be plotted.
     @pytest.mark.slow
-    def test_plot(self, seq_func): # noqa: ARG002
+    def test_plot(self, seq_func):  # noqa: ARG002
         with patch('matplotlib.pyplot.show'):
             TestSequence.seq.plot()
             TestSequence.seq.plot(show_blocks=True)
@@ -351,7 +351,7 @@ class TestSequence:
     #       put RF events before gradient events and order arbitrary/extended
     #       gradient events in X, Y, Z order when passing them to
     #       seq.add_block(...). i.e. seq.add_block(rf, gx, gy, gz)
-    def test_recreate(self, seq_func): # noqa: ARG002
+    def test_recreate(self, seq_func):  # noqa: ARG002
         seq = TestSequence.seq
 
         # Insert blocks from sequence into a new sequence
