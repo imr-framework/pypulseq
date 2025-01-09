@@ -211,7 +211,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
     # ======
     # Define sequence blocks
     for s in range(n_slices):
-        seq.add_block(rf_fs, gz_fs)
+        seq.add_block(rf_fs, gz_fs, pp.make_label(label='TRID', type='SET', value=1))
         rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         rf180.freq_offset = gz180.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         seq.add_block(rf, gz, trig)

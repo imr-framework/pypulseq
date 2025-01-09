@@ -82,7 +82,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
     # CONSTRUCT SEQUENCE
     # ======
     # Define sequence blocks
-    seq.add_block(rf, gz)
+    seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1))
     seq.add_block(gx_pre, gy_pre, gz_reph)
     seq.add_block(pp.make_delay(delay_TE1))
     seq.add_block(gz_spoil)

@@ -8,7 +8,7 @@ import numpy as np
 
 import pypulseq as pp
 from pypulseq import calc_rf_center
-
+# Not working
 
 def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.seq'):
     # ======

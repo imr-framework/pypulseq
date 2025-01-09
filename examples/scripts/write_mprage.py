@@ -132,7 +132,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'mprage_pypulseq.seq')
 
     # Sequence
     for j in range(N[ax.n3]):
-        seq.add_block(rf180)
+        seq.add_block(rf180, pp.make_label(label='TRID', type='SET', value=1))
         seq.add_block(pp.make_delay(TI_delay), gsl_sp)
         rf_phase = 0
         rf_inc = 0

@@ -3,7 +3,7 @@ from math import pi
 import numpy as np
 
 import pypulseq as pp
-
+# Throwing errors in timing!
 Nx = 128
 Ny = 128
 n_slices = 3

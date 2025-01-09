@@ -77,13 +77,13 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
     # Define sequence blocks
     for s in range(n_slices):
         rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
-        seq.add_block(rf, gz)
+        seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1))
         seq.add_block(gx_pre, gy_pre, gz_reph)
         for i in range(Ny):
             seq.add_block(gx, adc)  # Read one line of k-space
             seq.add_block(gy)  # Phase blip
             gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
-
+        seq.plot()
     ok, error_report = seq.check_timing()
     if ok:
         print('Timing check passed successfully')
@@ -95,7 +95,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
     # VISUALIZATION
     # ======
     if plot:
-        seq.plot()  # Plot sequence waveforms
+        seq.plot(time_range=(0, 0.0515))  # Plot sequence waveforms
 
     # =========
     # WRITE .SEQ

@@ -84,7 +84,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_radial_pypulseq.s
         rf_inc = divmod(rf_inc + rf_spoiling_inc, 360.0)[1]
         rf_phase = divmod(rf_inc + rf_phase, 360.0)[1]
 
-        seq.add_block(rf, gz)
+        seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1))
         phi = delta * (i - 1)
         seq.add_block(*pp.rotate(gx_pre, gz_reph, angle=phi, axis='z'))
         seq.add_block(pp.make_delay(delay_TE))

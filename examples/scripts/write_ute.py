@@ -104,7 +104,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
             gz.amplitude = -gz.amplitude  # Alternate GZ amplitude
             gz_reph.amplitude = -gz_reph.amplitude
 
-            seq.add_block(rf, gz)
+            seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1))
             phi = delta * i
 
             gpc = copy(gx_pre)

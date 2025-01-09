@@ -284,7 +284,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
     # VISUALIZATION
     # ======
     if plot:
-        seq.plot()
+        seq.plot(time_range=(TR, 2 * TR))
 
     # =========
     # WRITE .SEQ
