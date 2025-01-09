@@ -12,7 +12,7 @@ from _pytest.python_api import ApproxBase
 from pypulseq import Sequence
 
 # Add parent directory to path, so sequences from ../examples can be imported
-sys.path.insert(0, '..')
+sys.path.insert(0, Path(__file__).parent.parent)
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
