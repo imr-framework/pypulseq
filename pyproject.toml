@@ -122,6 +122,6 @@ exclude = ["examples/**"]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 markers = [
-  "matlab_seq_comp: comparison with matlab generated sequence",
+  "slow: mark test as slow",
   "sigpy: tests that require sigpy",
 ]
