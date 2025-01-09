@@ -237,7 +237,7 @@ for example in seq_examples:
 def {example}():
     from examples.scripts.{example} import main
     return main()
-""")
+""") # noqa: S102
 
     sequence_zoo.append(eval(f'{example}'))
 
@@ -267,7 +267,7 @@ class TestSequence:
 
     # Test whether a sequence can be plotted.
     @pytest.mark.slow
-    def test_plot(self, seq_func):
+    def test_plot(self, seq_func): # noqa: ARG002
         with patch('matplotlib.pyplot.show'):
             TestSequence.seq.plot()
             TestSequence.seq.plot(show_blocks=True)
@@ -312,8 +312,7 @@ class TestSequence:
         for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
             if a is None and b is None:
                 continue
-            if a is None or b is None:
-                assert False
+            assert a is not None and b is not None
 
             # TODO: C[0] is slope of gradient, on the order of max_slew? So expect abs rounding errors in range of 1e2?
             assert a.x == Approx(
@@ -352,7 +351,7 @@ class TestSequence:
     #       put RF events before gradient events and order arbitrary/extended
     #       gradient events in X, Y, Z order when passing them to
     #       seq.add_block(...). i.e. seq.add_block(rf, gx, gy, gz)
-    def test_recreate(self, seq_func, tmp_path):
+    def test_recreate(self, seq_func): # noqa: ARG002
         seq = TestSequence.seq
 
         # Insert blocks from sequence into a new sequence
@@ -369,10 +368,9 @@ class TestSequence:
 
         # Test for approximate equality of all gradient waveforms
         for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
-            if a == None and b == None:
+            if a is None and b is None:
                 continue
-            if a == None or b == None:
-                assert False
+            assert a is not None and b is not None
 
             assert a.x == Approx(
                 b.x, abs=1e-9, rel=1e-9

@@ -433,7 +433,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
 
     # Reverse the order of labels, because extensions are saved as a reversed linked list
     if block.label is not None:
-        block.label = {i: label for i, label in enumerate(reversed(block.label.values()))}
+        block.label = dict(enumerate(reversed(block.label.values())))
 
     block.block_duration = self.block_durations[block_index]
 
