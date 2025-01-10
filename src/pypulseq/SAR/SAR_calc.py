@@ -98,7 +98,7 @@ def _SAR_from_seq(seq: Sequence, Qtmf: np.ndarray, Qhmf: np.ndarray) -> Tuple[np
         block_dur = calc_duration(block)
         t[block_counter - 1] = t_prev + block_dur
         t_prev = t[block_counter - 1]
-        if hasattr(block, 'rf'):  # has rf
+        if hasattr(block, 'rf') and block.rf is not None:  # has rf event
             rf = block.rf
             signal = rf.signal
             # This rf could be parallel transmit as well
