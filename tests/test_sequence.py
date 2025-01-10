@@ -244,7 +244,7 @@ def make_test_func(example):
     return test_func
 
 for example in seq_examples:
-    sequence_zoo.append(make_test_func(example)
+    sequence_zoo.append(make_test_func(example))
 
 
 # Main Sequence test class
