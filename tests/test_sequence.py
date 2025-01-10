@@ -1,6 +1,6 @@
+import importlib
 import math
 import os
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -10,9 +10,6 @@ import pypulseq as pp
 import pytest
 from _pytest.python_api import ApproxBase
 from pypulseq import Sequence
-
-# Add parent directory to path, so sequences from ../examples can be imported
-sys.path.insert(0, Path(__file__).parent.parent)
 
 expected_output_path = Path(__file__).parent / 'expected_output'
 
@@ -129,11 +126,11 @@ def seq_make_sinc_pulses():
 # Dummy sequence which contains only block pulses with different parameters
 def seq_make_block_pulses():
     seq = Sequence()
-    seq.add_block(pp.make_block_pulse(flip_angle=1))
+    seq.add_block(pp.make_block_pulse(flip_angle=1, duration=4e-3))
     seq.add_block(pp.make_delay(1))
-    seq.add_block(pp.make_block_pulse(flip_angle=1, delay=1e-3))
+    seq.add_block(pp.make_block_pulse(flip_angle=1, delay=1e-3, duration=4e-3))
     seq.add_block(pp.make_delay(1))
-    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2))
+    seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=4e-3))
     seq.add_block(pp.make_delay(1))
     seq.add_block(pp.make_block_pulse(flip_angle=math.pi / 2, duration=1e-3))
     seq.add_block(pp.make_delay(1))
@@ -232,14 +229,19 @@ seq_examples = [
 # Create a seq_func for each example script and add it to the list of sequences.
 # Defining a new function ensures that pytest understands the name is
 # e.g. `write_gre` instead of `main`.
-for example in seq_examples:
-    exec(f"""
-def {example}():
-    from examples.scripts.{example} import main
-    return main()
-""")  # noqa: S102
+# Derive the relative path from the test file to the examples folder
+examples_dir = Path(__file__).resolve().parents[1] / 'examples' / 'scripts'
 
-    sequence_zoo.append(eval(f'{example}'))
+for example in seq_examples:
+
+    def test_func(module_name=f'examples.{example}'):
+        spec = importlib.util.spec_from_file_location(module_name, examples_dir / f'{example}.py')  # noqa: B023
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.main()
+
+    test_func.__name__ = example
+    sequence_zoo.append(test_func)
 
 
 # Main Sequence test class
