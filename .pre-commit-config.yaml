@@ -1,0 +1,39 @@
+﻿default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        exclude: ^tests/expected_output/pulseq_calcAdcSeg.txt
+      # - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+        exclude: ^.vscode/
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff # linter
+        args: [--fix]
+      - id: ruff-format # formatter
+
+  - repo: https://github.com/crate-ci/typos
+    rev: dictgen-v0.3.1
+    hooks:
+      - id: typos
+        exclude: ^examples/|paper.md
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit] auto fixes from pre-commit hooks
+  autofix_prs: true
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit] pre-commit autoupdate"
+  autoupdate_schedule: monthly
+  skip: []
+  submodules: false

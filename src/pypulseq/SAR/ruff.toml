@@ -1,0 +1,5 @@
+extend = "../../../pyproject.toml"
+
+lint.extend-ignore = [
+    "E741", #ambiguous-variable-name
+]

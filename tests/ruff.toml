@@ -1,0 +1,6 @@
+extend = "../pyproject.toml"
+
+lint.extend-ignore = [
+    "ARG001", #unused-argument
+    "E741",   #ambiguous-variable-name
+]
