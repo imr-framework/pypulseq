@@ -232,9 +232,10 @@ seq_examples = [
 # Derive the relative path from the test file to the examples folder
 examples_dir = Path(__file__).resolve().parents[1] / 'examples' / 'scripts'
 
+
 def make_test_func(example):
     def test_func(module_name=f'examples.{example}'):
-        spec = importlib.util.spec_from_file_location(module_name, examples_dir / f'{example}.py')  # noqa: B023
+        spec = importlib.util.spec_from_file_location(module_name, examples_dir / f'{example}.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module.main()
@@ -242,6 +243,7 @@ def make_test_func(example):
     test_func.__name__ = example
 
     return test_func
+
 
 for example in seq_examples:
     sequence_zoo.append(make_test_func(example))
