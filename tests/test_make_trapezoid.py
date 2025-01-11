@@ -1,7 +1,4 @@
-"""Tests for the make_trapezoid module
-
-Will Clarke, University of Oxford, 2023
-"""
+"""Tests for the make_trapezoid module"""
 
 import pytest
 from pypulseq import Opts, eps, make_trapezoid
