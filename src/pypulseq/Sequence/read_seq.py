@@ -287,8 +287,10 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         grad.last = self.grad_library.data[amplitude_ID][5]
                     continue
 
+                time_id = self.grad_library.data[amplitude_ID][2]
+
                 grad.first = grad_prev_last[j]
-                if grad.time_id != 0:
+                if time_id != 0:
                     grad.last = grad.waveform[-1]
                     grad_duration = grad.delay + grad.tt[-1]
                 else:
@@ -307,10 +309,11 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     grad_prev_last[j] = 0
 
                 amplitude = self.grad_library.data[amplitude_ID][0]
+                shape_id = self.grad_library.data[amplitude_ID][1]
                 new_data = (
                     amplitude,
-                    grad.shape_id,
-                    grad.time_id,
+                    shape_id,
+                    time_id,
                     grad.delay,
                     grad.first,
                     grad.last,

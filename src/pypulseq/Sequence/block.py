@@ -431,6 +431,10 @@ def get_block(self, block_index: int) -> SimpleNamespace:
 
             next_ext_id = ext_data[2]
 
+    # Reverse the order of labels, because extensions are saved as a reversed linked list
+    if block.label is not None:
+        block.label = dict(enumerate(reversed(block.label.values())))
+
     block.block_duration = self.block_durations[block_index]
 
     # Enter block into the block cache

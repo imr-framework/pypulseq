@@ -1,7 +1,6 @@
 """
 A very basic UTE-like sequence, without ramp-sampling, ramp-RF. Achieves TE in the range of 300-400 us
 """
-
 from copy import copy
 
 import numpy as np
@@ -10,17 +9,16 @@ from matplotlib import pyplot as plt
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "ute_pypulseq.seq"):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 250e-3  # Define FOV and resolution
-    Nx = 256
+    Nx = 64
     alpha = 10  # Flip angle
     slice_thickness = 3e-3  # Slice thickness
-    TR = 10e-3  # Repetition time
-    Nr = 128  # Number of radial spokes
+    TR = 10e-3  # Repetition tme
+    Nr = 32  # Number of radial spokes
     delta = 2 * np.pi / Nr  # Angular increment
     ro_duration = 2.56e-3  # Read-out time: controls RO bandwidth and T2-blurring
     ro_os = 2  # Oversampling
@@ -31,13 +29,15 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
     # Set system limits
     system = pp.Opts(
         max_grad=28,
-        grad_unit='mT/m',
+        grad_unit="mT/m",
         max_slew=100,
-        slew_unit='T/m/s',
+        slew_unit="T/m/s",
         rf_ringdown_time=20e-6,
         rf_dead_time=100e-6,
         adc_dead_time=10e-6,
     )
+
+    seq = pp.Sequence(system)  # Create a new sequence object
 
     # ======
     # CREATE EVENTS
@@ -52,6 +52,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
         center_pos=1,
         system=system,
         return_gz=True,
+        delay=system.rf_dead_time
     )
 
     # Align RO asymmetry to ADC samples
@@ -61,29 +62,45 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
     # Define other gradients and ADC events
     delta_k = 1 / fov / (1 + ro_asymmetry)
     ro_area = Nx * delta_k
-    gx = pp.make_trapezoid(channel='x', flat_area=ro_area, flat_time=ro_duration, system=system)
-    adc = pp.make_adc(num_samples=Nxo, duration=gx.flat_time, delay=gx.rise_time, system=system)
+    gx = pp.make_trapezoid(
+        channel="x", flat_area=ro_area, flat_time=ro_duration, system=system
+    )
+    adc = pp.make_adc(
+        num_samples=Nxo, duration=gx.flat_time, delay=gx.rise_time, system=system
+    )
     gx_pre = pp.make_trapezoid(
-        channel='x',
-        area=-(gx.area - ro_area) / 2 - gx.amplitude * adc.dwell / 2 - ro_area / 2 * (1 - ro_asymmetry),
+        channel="x",
+        area=-(gx.area - ro_area) / 2
+        - gx.amplitude * adc.dwell / 2
+        - ro_area / 2 * (1 - ro_asymmetry),
         system=system,
     )
 
     # Gradient spoiling
-    gx_spoil = pp.make_trapezoid(channel='x', area=0.2 * Nx * delta_k, system=system)
+    gx_spoil = pp.make_trapezoid(channel="x", area=0.2 * Nx * delta_k, system=system)
 
     # Calculate timing
-    TE = gz.fall_time + pp.calc_duration(gx_pre, gz_reph) + gx.rise_time + adc.dwell * Nxo / 2 * (1 - ro_asymmetry)
+    TE = (
+        gz.fall_time
+        + pp.calc_duration(gx_pre, gz_reph)
+        + gx.rise_time
+        + adc.dwell * Nxo / 2 * (1 - ro_asymmetry)
+    )
     delay_TR = (
         np.ceil(
-            (TR - pp.calc_duration(gx_pre, gz_reph) - pp.calc_duration(gz) - pp.calc_duration(gx))
+            (
+                TR
+                - pp.calc_duration(gx_pre, gz_reph)
+                - pp.calc_duration(gz)
+                - pp.calc_duration(gx)
+            )
             / seq.grad_raster_time
         )
         * seq.grad_raster_time
     )
     assert np.all(delay_TR >= pp.calc_duration(gx_spoil))
 
-    print(f'TE = {TE * 1e6:.0f} us')
+    print(f"TE = {TE * 1e6:.0f} us")
 
     if pp.calc_duration(gz_reph) > pp.calc_duration(gx_pre):
         gx_pre.delay = pp.calc_duration(gz_reph) - pp.calc_duration(gx_pre)
@@ -111,19 +128,19 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
             gps = copy(gx_pre)
             gpc.amplitude = gx_pre.amplitude * np.cos(phi)
             gps.amplitude = gx_pre.amplitude * np.sin(phi)
-            gps.channel = 'y'
+            gps.channel = "y"
 
             grc = copy(gx)
             grs = copy(gx)
             grc.amplitude = gx.amplitude * np.cos(phi)
             grs.amplitude = gx.amplitude * np.sin(phi)
-            grs.channel = 'y'
+            grs.channel = "y"
 
             gsc = copy(gx_spoil)
             gss = copy(gx_spoil)
             gsc.amplitude = gx_spoil.amplitude * np.cos(phi)
             gss.amplitude = gx_spoil.amplitude * np.sin(phi)
-            gss.channel = 'y'
+            gss.channel = "y"
 
             seq.add_block(gpc, gps, gz_reph)
             seq.add_block(grc, grs, adc)
@@ -132,9 +149,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
     # Check whether the timing of the sequence is correct
     ok, error_report = seq.check_timing()
     if ok:
-        print('Timing check passed successfully')
+        print("Timing check passed successfully")
     else:
-        print('Timing check failed. Error listing follows:')
+        print("Timing check failed. Error listing follows:")
         [print(e) for e in error_report]
 
     # ======
@@ -155,11 +172,13 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
     # =========
     if write_seq:
         # Prepare the sequence output for the scanner
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
-        seq.set_definition(key='Name', value='UTE')
+        seq.set_definition(key="FOV", value=[fov, fov, slice_thickness])
+        seq.set_definition(key="Name", value="UTE")
 
         seq.write(seq_filename)
 
+    return seq
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(plot=True, write_seq=True)

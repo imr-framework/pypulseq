@@ -58,6 +58,7 @@ def test_slr():
         return_gz=True,
         pulse_cfg=pulse_cfg,
         plot=False,
+        delay=system.rf_dead_time,
     )
 
     seq = pp.Sequence()
@@ -116,6 +117,7 @@ def test_sms():
         return_gz=True,
         pulse_cfg=pulse_cfg,
         plot=False,
+        delay=system.rf_dead_time,
     )
 
     seq = pp.Sequence()

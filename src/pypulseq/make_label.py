@@ -49,6 +49,7 @@ def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleN
         out.type = 'labelinc'
 
     out.label = label
-    out.value = value
+    # Force value to an integer, because that is how it will be written to the sequence file
+    out.value = int(value)
 
     return out
