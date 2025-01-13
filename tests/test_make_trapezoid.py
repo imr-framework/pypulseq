@@ -9,13 +9,6 @@ def test_channel_error():
         make_trapezoid(channel='p')
 
 
-# def test_falltime_risetime_error():
-#     with pytest.raises(
-#         ValueError, match=r'Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.'
-#     ):
-#         make_trapezoid(channel='x', fall_time=10)
-
-
 def test_area_flatarea_amplitude_error():
     with pytest.raises(ValueError, match=r"Must supply either 'area', 'flat_area' or 'amplitude'."):
         make_trapezoid(channel='x')
