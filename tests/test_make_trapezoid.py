@@ -1,24 +1,12 @@
-"""Tests for the make_trapezoid module
-
-Will Clarke, University of Oxford, 2023
-"""
-
-from types import SimpleNamespace
+"""Tests for the make_trapezoid module"""
 
 import pytest
-from pypulseq import make_trapezoid
+from pypulseq import Opts, eps, make_trapezoid
 
 
 def test_channel_error():
     with pytest.raises(ValueError, match=r'Invalid channel. Must be one of `x`, `y` or `z`. Passed:'):
         make_trapezoid(channel='p')
-
-
-def test_falltime_risetime_error():
-    with pytest.raises(
-        ValueError, match=r'Invalid arguments. Must always supply `rise_time` if `fall_time` is specified explicitly.'
-    ):
-        make_trapezoid(channel='x', fall_time=10)
 
 
 def test_area_flatarea_amplitude_error():
@@ -60,8 +48,39 @@ def test_no_area_no_duration_error():
 def test_amplitude_too_large_error():
     errstr = r'Refined amplitude \(\d+ Hz/m\) is larger than max \(\d+ Hz/m\).'
 
-    with pytest.raises(AssertionError, match=errstr):
+    with pytest.raises(ValueError, match=errstr):
         make_trapezoid(channel='x', amplitude=1e10, duration=1)
+
+
+def test_duration_too_short_error():
+    errstr = 'The `duration` is too short for the given `rise_time`.'
+
+    with pytest.raises(ValueError, match=errstr):
+        make_trapezoid(channel='x', area=1, duration=0.1, rise_time=0.1)
+
+
+def test_notimplemented_input_pairs():
+    # flat_area + duration
+    with pytest.raises(NotImplementedError, match=r'Flat Area \+ Duration input pair is not implemented yet.'):
+        make_trapezoid(channel='x', flat_area=1, duration=1)
+    # flat_area + amplitude
+    with pytest.raises(NotImplementedError, match=r'Flat Area \+ Amplitude input pair is not implemented yet.'):
+        make_trapezoid(channel='x', flat_area=1, amplitude=1)
+    # area + amplitude
+    with pytest.raises(NotImplementedError, match=r'Amplitude \+ Area input pair is not implemented yet.'):
+        make_trapezoid(channel='x', area=1, amplitude=1)
+        # compare_trap_out(trap, 1, 2e-5, 0, 2e-5)
+
+
+def round2raster(x, raster=1e-5):
+    return round(x / raster) * raster
+
+
+def compare_trap_out(trap, amplitude, rise_time, flat_time, fall_time):
+    assert abs(trap.amplitude - amplitude) < eps
+    assert abs(trap.rise_time - rise_time) < eps
+    assert abs(trap.flat_time - flat_time) < eps
+    assert abs(trap.fall_time - fall_time) < eps
 
 
 def test_generation_methods():
@@ -73,12 +92,41 @@ def test_generation_methods():
         - flat_time and amplitude
         - flat_time, area and rise_time
     """
-    assert isinstance(make_trapezoid(channel='x', area=1), SimpleNamespace)
 
-    assert isinstance(make_trapezoid(channel='x', amplitude=1, duration=1), SimpleNamespace)
+    opts = Opts()
+    # Amplitude specified
+    # amplitude + duration
+    trap = make_trapezoid(channel='x', amplitude=1, duration=1)
+    compare_trap_out(trap, 1, 1e-5, 1 - 2e-5, 1e-5)
 
-    assert isinstance(make_trapezoid(channel='x', flat_time=1, flat_area=1), SimpleNamespace)
+    # flat_time + amplitude
+    trap = make_trapezoid(channel='x', flat_time=1, amplitude=1)
+    compare_trap_out(trap, 1, 1e-5, 1, 1e-5)
 
-    assert isinstance(make_trapezoid(channel='x', flat_time=1, amplitude=1), SimpleNamespace)
+    # Flat area specified
+    # flat_area + flat_time
+    trap = make_trapezoid(channel='x', flat_time=1, flat_area=1)
+    compare_trap_out(trap, 1, 1e-5, 1, 1e-5)
 
-    assert isinstance(make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1), SimpleNamespace)
+    # Area specified
+    # area
+    # triangle case
+    trap = make_trapezoid(channel='x', area=1)
+    compare_trap_out(trap, 50000, 2e-5, 0, 2e-5)
+    # trap case
+    trap = make_trapezoid(channel='x', area=opts.max_grad * 2)
+    time_to_max = round2raster(opts.max_grad / opts.max_slew)
+    compare_trap_out(
+        trap, opts.max_grad, time_to_max, (opts.max_grad * 2 - time_to_max * opts.max_grad) / opts.max_grad, time_to_max
+    )
+
+    # area + duration
+    trap = make_trapezoid(channel='x', area=1, duration=1)
+    compare_trap_out(trap, 1.00002, 2e-5, 1 - 4e-5, 2e-5)
+
+    # area + duration + rise_time
+    trap = make_trapezoid(channel='x', area=1, duration=1, rise_time=0.01)
+    compare_trap_out(trap, 1 / 0.99, 0.01, 0.98, 0.01)
+    # flat_time + area + rise_time
+    trap = make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1)
+    compare_trap_out(trap, 1 / 0.6, 0.1, 0.5, 0.1)
