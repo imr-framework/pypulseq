@@ -305,7 +305,15 @@ class PhilipsTranslator():
                 if block_num > 1:
                     previous_block = tr_blocks.get_block(block_num - 1)  
                     if previous_block.adc is not None: # ADC, gradient and then the next block
-                        xbase_flag = True
+                        if previous_block.gx is not None or previous_block.gy is not None or previous_block.gz is not None:
+                            if (previous_block.gx is not None and previous_block.gx.type == 'grad') or \
+                               (previous_block.gy is not None and previous_block.gy.type == 'grad') or \
+                               (previous_block.gz is not None and previous_block.gz.type == 'grad'):
+                                xbase_flag = False
+                            else:
+                                xbase_flag = True
+                           
+
                             
                 if xbase_flag:
                     SQ_label.append('XBASE')      
