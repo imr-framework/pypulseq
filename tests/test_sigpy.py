@@ -49,9 +49,10 @@ def test_slr():
         band_sep=20,
         phs_0_pt='None',
     )
-    rfp, gz, _, pulse = sigpy_n_seq(
+    rfp, gz, gzr = sigpy_n_seq(
         flip_angle=flip_angle,
         system=system,
+        delay=100e-6,
         duration=3e-3,
         slice_thickness=slice_thickness,
         time_bw_product=4,
@@ -59,6 +60,8 @@ def test_slr():
         pulse_cfg=pulse_cfg,
         plot=False,
     )
+
+    pulse = (rfp.signal * system.rf_raster_time * 2 * np.pi) / flip_angle
 
     seq = pp.Sequence()
     seq.add_block(rfp)
@@ -107,9 +110,10 @@ def test_sms():
         band_sep=20,
         phs_0_pt='None',
     )
-    rfp, gz, _, pulse = sigpy_n_seq(
+    rfp, gz, gzr = sigpy_n_seq(
         flip_angle=flip_angle,
         system=system,
+        delay=100e-6,
         duration=3e-3,
         slice_thickness=slice_thickness,
         time_bw_product=4,
@@ -117,6 +121,8 @@ def test_sms():
         pulse_cfg=pulse_cfg,
         plot=False,
     )
+
+    pulse = (rfp.signal * system.rf_raster_time * 2 * np.pi) / flip_angle
 
     seq = pp.Sequence()
     seq.add_block(rfp)

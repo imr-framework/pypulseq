@@ -45,16 +45,14 @@ def sigpy_n_seq(
     ----------
     flip_angle : float
         Flip angle in radians.
-    apodization : float, optional, default=0
-        Apodization.
-    center_pos : float, optional, default=0.5
-        Position of peak.5 (midway).
     delay : float, optional, default=0
         Delay in seconds (s).
     duration : float, optional, default=4e-3
         Duration in seconds (s).
     freq_offset : float, optional, default=0
         Frequency offset in Hertz (Hz).
+    center_pos : float, optional, default=0.5
+        Position of peak.5 (midway).
     max_grad : float, optional, default=0
         Maximum gradient strength of accompanying slice select trapezoidal event.
     max_slew : float, optional, default=0
@@ -70,6 +68,26 @@ def sigpy_n_seq(
         System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, optional, default=4
         Time-bandwidth product.
+    pulse_cfg: SigpyPulseOpts, optional, default=None
+        Pulse configuration options. Possible keys are:
+        - pulse_type: str, optional, default='slr'
+            Pulse type. Must be one of 'slr' or 'sms'.
+        - ptype: str, optional, default='st'
+            Pulse design method. Must be one of 'st', 'ex', 'inv', 'sat', 'se', 'fi', 'fs', 'se'.
+        - ftype: str, optional, default='ls'
+            Filter type. Must be one of 'ls', 'pm', 'min', 'max', 'ap'.
+        - d1: float, optional, default=0.01
+            Passband ripple.
+        - d2: float, optional, default=0.01
+            Stopband ripple.
+        - cancel_alpha_phs: bool, optional, default=False
+            Cancel alpha phase.
+        - n_bands: int, optional, default=3
+            Number of bands. SMS only.
+        - band_sep: float, optional, default=20
+            Band separation. SMS only.
+        - phs_0_pt: str, optional, default='None'
+            Phase 0 point. SMS only.
     use : str, optional, default=str()
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
     plot: bool, optional, default=True
