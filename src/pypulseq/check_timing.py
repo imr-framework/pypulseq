@@ -76,7 +76,7 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                 continue
 
             if hasattr(e, 'type') and e.type == 'adc':
-                raster = seq.system.adc_raster_time
+                raster = seq.system.rf_raster_time
                 raster_str = 'adc_raster_time'
             elif hasattr(e, 'type') and e.type == 'rf':
                 raster = seq.system.rf_raster_time
