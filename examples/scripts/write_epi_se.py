@@ -71,7 +71,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
 
     # Refocusing pulse with spoiling gradients
     rf180 = pp.make_block_pulse(
-        flip_angle=np.pi, system=system, duration=500e-6, use="refocusing"
+        flip_angle=np.pi, delay=system.rf_dead_time,system=system, duration=500e-6, use="refocusing",
     )
     gz_spoil = pp.make_trapezoid(
         channel="z", system=system, area=gz.area * 2, duration=3 * pre_time
