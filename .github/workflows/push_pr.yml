@@ -100,7 +100,7 @@ jobs:
         run: pip install --upgrade --upgrade-strategy eager .[test]
 
       - name: Run only sequence tests (labeled as 'slow')
-        run: pytest -m "slow" --cov=sequences --cov-report=term-missing:skip-covered
+        run: pytest -m "slow or required_for_slow" --cov=sequences --cov-report=term-missing:skip-covered
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
