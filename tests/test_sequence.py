@@ -258,6 +258,7 @@ for example in seq_examples:
 class TestSequence:
     # Base test that just runs the sequence function and keeps the result
     # for the next tests.
+    @pytest.mark.required_for_slow
     def test_sequence(self, seq_func):
         # Reset TestSequence.seq in case seq_func throws an exception (the
         # other tests will still run, but will result in AttributeErrors)
