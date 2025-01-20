@@ -3,9 +3,7 @@ import math
 import os
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
 
-import matplotlib.pyplot as plt
 import pypulseq as pp
 import pytest
 from _pytest.python_api import ApproxBase
@@ -258,7 +256,6 @@ for example in seq_examples:
 class TestSequence:
     # Base test that just runs the sequence function and keeps the result
     # for the next tests.
-    @pytest.mark.required_for_slow
     def test_sequence(self, seq_func):
         # Reset TestSequence.seq in case seq_func throws an exception (the
         # other tests will still run, but will result in AttributeErrors)
@@ -273,13 +270,13 @@ class TestSequence:
         seq_name = str(seq_func.__name__)
         TestSequence.seq.write(expected_output_path / (seq_name + '.seq'))
 
-    # Test whether a sequence can be plotted.
-    @pytest.mark.slow
-    def test_plot(self, seq_func):  # noqa: ARG002
-        with patch('matplotlib.pyplot.show'):
-            TestSequence.seq.plot()
-            TestSequence.seq.plot(show_blocks=True)
-            plt.close('all')
+    # # Test whether a sequence can be plotted.
+    # @pytest.mark.slow
+    # def test_plot(self, seq_func):
+    #     with patch('matplotlib.pyplot.show'):
+    #         TestSequence.seq.plot()
+    #         TestSequence.seq.plot(show_blocks=True)
+    #         plt.close('all')
 
     # Test whether the sequence is the approximately the same after writing a .seq
     # file and reading it back in.

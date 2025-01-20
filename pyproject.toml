@@ -132,8 +132,4 @@ filterwarnings = [
   # Suppress error in debugpy due to mpl deprecation to debug tests.
   "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev",
 ]
-markers = [
-  "slow: mark test as slow",
-  "required_for_slow: required to run tests marked as slow",
-  "sigpy: tests that require sigpy",
-]
+markers = ["sigpy: tests that require sigpy"]

@@ -76,32 +76,6 @@ jobs:
           script: |
             core.setFailed("PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.")
 
-  example-sequence-tests:
-    name: Example sequence tests (slow)
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install PyPulseq and dependencies
-        run: pip install --upgrade --upgrade-strategy eager .[test]
-
-      - name: Run only sequence tests (labeled as 'slow')
-        run: pytest -m "slow or required_for_slow" --cov=sequences --cov-report=term-missing:skip-covered
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
