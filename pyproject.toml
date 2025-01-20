@@ -54,7 +54,7 @@ version = { attr = "version.__version__" }
 [tool.ruff]
 line-length = 120
 extend-exclude = ["__init__.py"]
-exclude = ["doc/**", "examples/**"]
+exclude = ["doc/**"]
 
 # RUFF section
 [tool.ruff.lint]

@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 import pypulseq as pp
 
 """
-Read a sequence into MATLAB. The `Sequence` class provides an implementation of the _open file format_ for MR sequences 
-described here: http://pulseq.github.io/specification.pdf. This example demonstrates parsing an MRI sequence stored in 
+Read a sequence into MATLAB. The `Sequence` class provides an implementation of the _open file format_ for MR sequences
+described here: http://pulseq.github.io/specification.pdf. This example demonstrates parsing an MRI sequence stored in
 this format, accessing sequence parameters and visualizing the sequence.
 """
 
@@ -21,8 +21,8 @@ seq.write('read_test.seq')
 # os_system(f'diff -s -u {seq_name} read_test.seq -echo')  # Linux only
 
 """
-Access sequence parameters and blocks. Parameters defined with in the `[DEFINITIONS]` section of the sequence file 
-are accessed with the `get_definition()` method. These are user-specified definitions and do not effect the execution of 
+Access sequence parameters and blocks. Parameters defined with in the `[DEFINITIONS]` section of the sequence file
+are accessed with the `get_definition()` method. These are user-specified definitions and do not effect the execution of
 the sequence.
 """
 seq_name = seq.get_definition('Name')
@@ -60,15 +60,15 @@ b4 = seq.get_block(4)
 # seq.plot()
 
 """
-The details of individual pulses are not well-represented when the entire sequence is visualized. Interactive zooming 
-is helpful here. Alternatively, a time range can be specified. An additional parameter also allows the display units to 
+The details of individual pulses are not well-represented when the entire sequence is visualized. Interactive zooming
+is helpful here. Alternatively, a time range can be specified. An additional parameter also allows the display units to
 be changed for easy reading. Further, the handle of the created figure can be returned if required.
 """
 # seq.plot(time_range=[0, 16e-3], time_disp='ms')
 
 """
-Modifying sequence blocks. In addition to loading a sequence and accessing sequence blocks, blocks # can be modified. 
-In this example, a Hamming window is applied to the # first RF pulse of the sequence and the flip angle is changed to 
+Modifying sequence blocks. In addition to loading a sequence and accessing sequence blocks, blocks # can be modified.
+In this example, a Hamming window is applied to the # first RF pulse of the sequence and the flip angle is changed to
 45 degrees. The remaining RF pulses are unchanged.
 """
 rf2 = rf
