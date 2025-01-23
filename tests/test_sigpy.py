@@ -58,7 +58,7 @@ def test_slr():
         delay=system.rf_dead_time,
     )
 
-    seq = pp.Sequence()
+    seq = pp.Sequence(system=system)
     seq.add_block(rfp)
 
     assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
@@ -118,7 +118,7 @@ def test_sms():
         delay=system.rf_dead_time,
     )
 
-    seq = pp.Sequence()
+    seq = pp.Sequence(system=system)
     seq.add_block(rfp)
 
     assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
