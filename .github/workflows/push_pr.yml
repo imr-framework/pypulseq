@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -46,20 +46,13 @@ jobs:
       - name: Run PyTest and Generate Coverage Report
         run: |
           if [ ${{ matrix.include-sigpy }} == "true" ]; then
-            pytest --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
+            (set -o pipefail && pytest --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt)
           else
-            pytest -m "not sigpy" --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
+            (set -o pipefail && pytest -m "not sigpy" --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt)
           fi
-        continue-on-error: ${{ matrix.include-sigpy }}
-
-      - name: Verify PyTest XML Output
-        run: |
-          if [ ! -f pytest.xml ]; then
-            echo "PyTest XML report not found. Please check the previous 'Run PyTest' step for errors."
-            exit 1
-          fi
+        shell: bash
 
       - name: Post PyTest Coverage Comment
         id: coverageComment
