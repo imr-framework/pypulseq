@@ -272,13 +272,16 @@ class TestSequence:
         seq_name = str(seq_func.__name__)
         TestSequence.seq.write(expected_output_path / (seq_name + '.seq'))
 
-    # Test whether a sequence can be plotted.
-    @pytest.mark.slow
-    def test_plot(self, seq_func):  # noqa: ARG002
-        with patch('matplotlib.pyplot.show'):
-            TestSequence.seq.plot()
-            TestSequence.seq.plot(show_blocks=True)
-            plt.close('all')
+    # Test sequence.plot() method
+    def test_plot(self, seq_func):
+        if seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4']:
+            with patch('matplotlib.pyplot.show'):
+                TestSequence.seq.plot()
+                TestSequence.seq.plot(show_blocks=True)
+                TestSequence.seq.plot(time_range=(0, 1e-3))
+                TestSequence.seq.plot(time_disp='ms')
+                TestSequence.seq.plot(grad_disp='mT/m')
+                plt.close('all')
 
     # Test whether the sequence is the approximately the same after writing a .seq
     # file and reading it back in.
