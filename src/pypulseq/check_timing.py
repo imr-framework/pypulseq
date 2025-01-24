@@ -75,10 +75,7 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                 # For now this is only the case for arrays of extensions, but we cannot actually check extensions anyway...
                 continue
 
-            if hasattr(e, 'type') and e.type == 'adc':
-                raster = seq.system.adc_raster_time
-                raster_str = 'adc_raster_time'
-            elif hasattr(e, 'type') and e.type == 'rf':
+            if hasattr(e, 'type') and (e.type == 'rf' or e.type == 'adc'):
                 raster = seq.system.rf_raster_time
                 raster_str = 'rf_raster_time'
             else:
