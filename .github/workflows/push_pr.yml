@@ -1,14 +1,13 @@
 name: Run code tests on push and pull requests
 on:
+  pull_request:
   push:
     branches:
       - master
-  pull_request:
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -47,11 +46,11 @@ jobs:
       - name: Run PyTest and Generate Coverage Report
         run: |
           if [ ${{ matrix.include-sigpy }} == "true" ]; then
-            pytest -m "not slow" --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=sequences | tee pytest-coverage.txt
+            pytest --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           else
-            pytest -m "not slow and not sigpy" --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=sequences | tee pytest-coverage.txt
+            pytest -m "not sigpy" --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           fi
         continue-on-error: ${{ matrix.include-sigpy }}
 
