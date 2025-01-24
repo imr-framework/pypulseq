@@ -121,7 +121,7 @@ def test_sms():
     seq = pp.Sequence(system=system)
     seq.add_block(rfp)
 
-    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time * 10)
+    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
 
     # [a, b] = rf.sim.abrm(
     #     rfp.signal,
