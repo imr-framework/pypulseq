@@ -20,6 +20,7 @@ def test_gradient_continuity1():
     seq.add_block(gx_trap)
     seq.add_block(gx_extended)
     seq.add_block(gx_trap)
+    assert False
 
 
 def test_gradient_continuity2():
