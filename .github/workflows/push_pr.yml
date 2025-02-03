@@ -63,23 +63,6 @@ jobs:
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
-      - name: Post Failure Comment if Coverage Comment failed
-        # if there is no data the comment action does not fail but has an empty output
-        if: steps.coverageComment.outputs.coverageHtml == ''
-        uses: edumserrano/find-create-or-update-comment@v3
-        with:
-          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
-          # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
-          # for the generation of the unique id for comment
-          # in this particular case, there is no additional watermarkUniqueId
-          body-includes: "<!-- Pytest Coverage Comment: ${{ github.job }} -->"
-          comment-author: "github-actions[bot]"
-          body: |
-            <!-- Pytest Coverage Comment: ${{ github.job }} -->
-            ### :x: PyTest Coverage Report was not found
-            Check the PyTest Workflow
-          edit-mode: replace
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
