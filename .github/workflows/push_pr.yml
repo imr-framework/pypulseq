@@ -44,29 +44,40 @@ jobs:
         run: pip install pytest-github-actions-annotate-failures
 
       - name: Run PyTest and Generate Coverage Report
+        shell: bash
         run: |
           if [ ${{ matrix.include-sigpy }} == "true" ]; then
-            (set -o pipefail && pytest --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt)
+            pytest --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           else
-            (set -o pipefail && pytest -m "not sigpy" --junitxml=pytest.xml \
-              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt)
+            pytest -m "not sigpy" --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           fi
-        shell: bash
 
       - name: Post PyTest Coverage Comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
 
-      - name: Set Pipeline Status Based on Test Results
-        if: steps.coverageComment.outputs.errors != 0 || steps.coverageComment.outputs.failures != 0
-        uses: actions/github-script@v7
+      - name: Post Failure Comment if Coverage Comment failed
+        # if there is no data the comment action does not fail but has an empty output
+        if: steps.coverageComment.outputs.coverageHtml == ''
+        uses: edumserrano/find-create-or-update-comment@v3
         with:
-          script: |
-            core.setFailed("PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.")
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
+          # for the generation of the unique id for comment
+          # in this particular case, there is no additional watermarkUniqueId
+          body-includes: "<!-- Pytest Coverage Comment: ${{ github.job }} -->"
+          comment-author: "github-actions[bot]"
+          body: |
+            <!-- Pytest Coverage Comment: ${{ github.job }} -->
+            ### :x: PyTest Coverage Report was not found
+            Check the PyTest Workflow
+          edit-mode: replace
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
