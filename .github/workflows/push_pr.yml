@@ -55,6 +55,7 @@ jobs:
           fi
 
       - name: Post PyTest Coverage Comment
+        if: always()
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
