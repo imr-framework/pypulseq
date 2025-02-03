@@ -51,8 +51,8 @@ def compare_gradient_sets(
         grad_B_dict = grad_B.__dict__
         if len(grad_A_dict) != len(grad_B_dict):
             return False
-        for key in grad_A_dict.keys():
-            if not key in grad_B_dict.keys():
+        for key in grad_A_dict:
+            if not key in grad_B_dict:
                 return False
             elif (type(grad_A_dict[key]) == float and type(grad_B_dict[key]) == float) or (
                 type(grad_A_dict[key]) == np.float64 and type(grad_B_dict[key]) == np.float64
@@ -123,7 +123,7 @@ def test_rotation3D_vs_rotation():
     ]
 
     for angle_degree in (
-        [0.0, 0.1, 1, 2, 3, 60, 90, 180, 360] + list(range(10, 450, 30)) + [-0.1, -1, -90, -180, -360, -400]
+        [0.0, 0.1, 1, 2, 3, 60, 90, 180, 360, *list(range(10, 450, 30)), -0.1, -1, -90, -180, -360, -400]
     ):
         print('angle_degree:', angle_degree)
         angle_radians = angle_degree * math.pi / 180
