@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from typing import List, Union
 
 import numpy as np
-from numpy import typing as npt
 
 from pypulseq.add_gradients import add_gradients
 from pypulseq.opts import Opts
@@ -16,7 +15,9 @@ def __get_grad_abs_mag(grad: SimpleNamespace) -> np.ndarray:
     return np.max(np.abs(grad.waveform))
 
 
-def rotate3D(*args: SimpleNamespace, rotation_matrix: np.ndarray[np.float64], system: Union[Opts, None] = None) -> List[SimpleNamespace]:
+def rotate3D(
+    *args: SimpleNamespace, rotation_matrix: np.ndarray[np.float64], system: Union[Opts, None] = None
+) -> List[SimpleNamespace]:
     """
     Rotates the corresponding gradient(s) by the provided rotation matrix. Non-gradient(s) are not affected.
 
@@ -49,7 +50,7 @@ def rotate3D(*args: SimpleNamespace, rotation_matrix: np.ndarray[np.float64], sy
 
     for i in range(len(args)):
         event = args[i]
-        if (event.type != 'grad' and event.type != 'trap'):
+        if event.type != 'grad' and event.type != 'trap':
             i_bypass.append(i)
         else:
             if event.channel not in axes:
