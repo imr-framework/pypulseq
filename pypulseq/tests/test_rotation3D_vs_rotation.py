@@ -122,9 +122,24 @@ def test_rotation3D_vs_rotation():
         pypulseq.make_extended_trapezoid('z', [0, 3, 2, 3], convert_to_arbitrary=False, times=[1, 2, 3, 4]),
     ]
 
-    for angle_degree in (
-        [0.0, 0.1, 1, 2, 3, 60, 90, 180, 360, *list(range(10, 450, 30)), -0.1, -1, -90, -180, -360, -400]
-    ):
+    for angle_degree in [
+        0.0,
+        0.1,
+        1,
+        2,
+        3,
+        60,
+        90,
+        180,
+        360,
+        *list(range(10, 450, 30)),
+        -0.1,
+        -1,
+        -90,
+        -180,
+        -360,
+        -400,
+    ]:
         print('angle_degree:', angle_degree)
         angle_radians = angle_degree * math.pi / 180
 
