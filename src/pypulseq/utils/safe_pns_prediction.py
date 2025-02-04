@@ -382,9 +382,9 @@ def safe_plot(pns, dt=None, envelope=True, envelope_points=500):
 
     plt.legend(
         [
-            f'X ({max(pns[:,0]):0.0f}%)',
-            f'Y ({max(pns[:,1]):0.0f}%)',
-            f'Z ({max(pns[:,2]):0.0f}%)',
+            f'X ({max(pns[:, 0]):0.0f}%)',
+            f'Y ({max(pns[:, 1]):0.0f}%)',
+            f'Z ({max(pns[:, 2]):0.0f}%)',
             f'nrm ({max(pnsnorm):0.0f}%)',
         ],
         loc='best',
