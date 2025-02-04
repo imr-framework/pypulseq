@@ -63,9 +63,9 @@ jobs:
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
-      - name: Post Failure Comment if Coverage Comment failed
+      - name: Post Failure Comment if Coverage Comment or PyTest failed
         # if there is no data the comment action does not fail but has an empty output
-        if: steps.coverageComment.outputs.coverageHtml == ''
+        if: failure() || (steps.coverageComment.outputs.coverageHtml == '')
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
