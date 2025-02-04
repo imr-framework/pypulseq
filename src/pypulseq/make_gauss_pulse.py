@@ -125,7 +125,7 @@ def make_gauss_pulse(
 
     if rf.dead_time > rf.delay:
         warn(
-            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
             stacklevel=2,
         )
         rf.delay = rf.dead_time
