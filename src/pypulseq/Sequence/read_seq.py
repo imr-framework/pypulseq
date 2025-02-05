@@ -262,7 +262,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
         # repeated entries so searching by content will fail
         event_idx = self.block_events[block_counter]
-        # Update the objects by filling in the fields not contained in the PyPulseq file
+        # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
         for j in range(len(grad_channels)):
             grad = getattr(block, grad_channels[j])
             if grad is None:
@@ -273,41 +273,44 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 if grad.delay > 0:
                     grad_prev_last[j] = 0
 
-                if hasattr(grad, 'first'):
+                # go to next channel, if grad.first and grad.last are already set
+                if hasattr(grad, 'first') and hasattr(grad, 'last'):
                     grad_prev_last[j] = grad.last
                     continue
 
+                # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
                 amplitude_ID = event_idx[j + 2]
-                if (
-                    amplitude_ID in event_idx[2 : (j + 2)]
-                ):  # We did this update for the previous channels, don't do it again.
+                if amplitude_ID in event_idx[2 : (j + 2)]:
                     if self.use_block_cache:
-                        # Update block cache in-place using the first/last values that should now be in the grad_library
                         grad.first = self.grad_library.data[amplitude_ID][4]
                         grad.last = self.grad_library.data[amplitude_ID][5]
                     continue
 
+                # get time_id from grad_library
                 time_id = self.grad_library.data[amplitude_ID][2]
 
+                # if grad.first is not set, set it to the last value of the previous gradient
                 grad.first = grad_prev_last[j]
+
+                # extended trapezoid: use last value of the gradient waveform as grad.last
                 if time_id != 0:
                     grad.last = grad.waveform[-1]
                     grad_duration = grad.delay + grad.tt[-1]
+                # arbitrary gradients: interpolate grad.last from the gradient waveform
                 else:
-                    # Restore samples on the edges of the gradient raster intervals for that we need the first sample
-                    # TODO: This code does not always restore reasonable values for grad.last
-                    odd_step1 = [grad.first, *2 * grad.waveform]
-                    odd_step2 = odd_step1 * (np.mod(range(len(odd_step1)), 2) * 2 - 1)
-                    waveform_odd_rest = np.cumsum(odd_step2) * (np.mod(len(odd_step2), 2) * 2 - 1)
-                    grad.last = waveform_odd_rest[-1]
+                    # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
+                    grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
                     grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
 
-                # Bookkeeping
-                grad_prev_last[j] = grad.last
+                # Set grad_prev_last to 0 if gradient does not end at block boundary
                 eps = np.finfo(np.float64).eps
                 if grad_duration + eps < block_duration:
                     grad_prev_last[j] = 0
+                # Update grad_prev_last for the next iteration if gradient ends at block boundary
+                else:
+                    grad_prev_last[j] = grad.last
 
+                # Update the grad_library with the new grad.first and grad.last values
                 amplitude = self.grad_library.data[amplitude_ID][0]
                 shape_id = self.grad_library.data[amplitude_ID][1]
                 new_data = (
