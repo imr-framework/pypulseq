@@ -60,7 +60,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_TARGET_REPO: ${{ github.repository }}
-          PR_BRANCH: ${{ github.event.pull_request.head.repo.full_name }}:${{ github.event.pull_request.head.ref }}
+          PR_BRANCH: ${{ github.event.pull_request.head.repo.full_name != github.repository && format('{0}:{1}', github.event.pull_request.head.repo.owner.login, github.event.pull_request.head.ref) || github.event.pull_request.head.ref }}
         run: |
           gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" \
               --json 'number' --jq '"number=\(.number)"' \
