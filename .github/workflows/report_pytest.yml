@@ -29,9 +29,9 @@ jobs:
         env:
           # Token required for GH CLI:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Best practice for scripts is to reference via ENV at runtime. Avoid using the expression syntax in the script content directly:
+          # Best practice for scripts is to reference via ENV at runtime.
           PR_TARGET_REPO: ${{ github.repository }}
-          # If the PR is from a fork, prefix it with `<owner-login>:`, otherwise only the PR branch name is relevant:
+          # If the PR is from a fork, prefix it with `<owner-login>:`
           PR_BRANCH: |-
             ${{
               (github.event.workflow_run.head_repository.owner.login != github.event.workflow_run.repository.owner.login)
