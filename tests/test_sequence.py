@@ -325,15 +325,15 @@ class TestSequence:
             assert a is not None and b is not None
 
             # TODO: C[0] is slope of gradient, on the order of max_slew? So expect abs rounding errors in range of 1e2?
-            assert a.x == Approx(
-                b.x, abs=1e-5, rel=1e-5
-            ), f'Time axis of gradient waveform for channel {channel} does not match'
-            assert a.c[0] == Approx(
-                b.c[0], abs=1e2, rel=1e-3
-            ), f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
-            assert a.c[1] == Approx(
-                b.c[1], abs=1e-5, rel=1e-5
-            ), f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            assert a.x == Approx(b.x, abs=1e-5, rel=1e-5), (
+                f'Time axis of gradient waveform for channel {channel} does not match'
+            )
+            assert a.c[0] == Approx(b.c[0], abs=1e2, rel=1e-3), (
+                f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+            assert a.c[1] == Approx(b.c[1], abs=1e-5, rel=1e-5), (
+                f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
 
         # Restore RF use for k-space calculation
         for block_counter in seq.block_events:
@@ -372,9 +372,9 @@ class TestSequence:
         # Test for approximate equality of all blocks
         assert list(seq2.block_events.keys()) == list(seq.block_events.keys()), 'Sequence block IDs are not identical'
         for block_counter in seq.block_events:
-            assert seq2.get_block(block_counter) == Approx(
-                seq.get_block(block_counter), abs=1e-9, rel=1e-9
-            ), f'Block {block_counter} does not match'
+            assert seq2.get_block(block_counter) == Approx(seq.get_block(block_counter), abs=1e-9, rel=1e-9), (
+                f'Block {block_counter} does not match'
+            )
 
         # Test for approximate equality of all gradient waveforms
         for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
@@ -382,15 +382,15 @@ class TestSequence:
                 continue
             assert a is not None and b is not None
 
-            assert a.x == Approx(
-                b.x, abs=1e-9, rel=1e-9
-            ), f'Time axis of gradient waveform for channel {channel} does not match'
-            assert a.c[0] == Approx(
-                b.c[0], abs=1e-9, rel=1e-9
-            ), f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
-            assert a.c[1] == Approx(
-                b.c[1], abs=1e-9, rel=1e-9
-            ), f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            assert a.x == Approx(b.x, abs=1e-9, rel=1e-9), (
+                f'Time axis of gradient waveform for channel {channel} does not match'
+            )
+            assert a.c[0] == Approx(b.c[0], abs=1e-9, rel=1e-9), (
+                f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
+            assert a.c[1] == Approx(b.c[1], abs=1e-9, rel=1e-9), (
+                f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+            )
 
         # Test for approximate equality of kspace calculation
         assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-6, nan_ok=True)
