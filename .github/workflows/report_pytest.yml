@@ -13,8 +13,8 @@ jobs:
     if: ${{ github.event.workflow_run.event == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      pull-requests: write
+      actions: read # Required for downloading artifacts
+      pull-requests: write # Required for posting PR comments
     steps:
       # use the results of python 3.12, consider this as target platform
       - name: Download PyTest report artifact for Python 3.12
@@ -71,6 +71,8 @@ jobs:
     name: Coverage report PUSH
     if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' }}
     runs-on: ubuntu-latest
+    permissions:
+      actions: read # Required for downloading artifacts
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4

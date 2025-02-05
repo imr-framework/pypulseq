@@ -12,8 +12,7 @@ jobs:
     name: Code tests
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     strategy:
       fail-fast: false
