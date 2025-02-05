@@ -47,10 +47,10 @@ jobs:
         shell: bash
         run: |
           if [ ${{ matrix.include-sigpy }} == "true" ]; then
-            pytests --junitxml=pytest.xml \
+            pytest --junitxml=pytest.xml \
               --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           else
-            pytests -m "not sigpy" --junitxml=pytest.xml \
+            pytest -m "not sigpy" --junitxml=pytest.xml \
               --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           fi
 
