@@ -37,9 +37,9 @@ def compare_gradient_sets(
         for grad in gradient_set:
             assert hasattr(grad, 'channel'), 'Gradients must have attribute "channel".'
             assert grad.channel in channel_list, 'Gradients must have channel "x", "y" or "z".'
-            assert (
-                grad.channel not in channel_grad_dict
-            ), 'There must not be two gradients with the same channel in each set.'
+            assert grad.channel not in channel_grad_dict, (
+                'There must not be two gradients with the same channel in each set.'
+            )
             channel_grad_dict[grad.channel] = grad
         return channel_grad_dict
 
@@ -163,15 +163,15 @@ def test_rotation3D_vs_rotation():
                 # print("grads_rotated_double:", grads_rotated_double)
                 # print("grads_rotated3D_double:", grads_rotated3D_double)
                 # print("grads_rotated3D_double_2:", grads_rotated3D_double_2)
-                assert compare_gradient_sets(
-                    grads_rotated, grads_rotated3D, tolerance=1e-6
-                ), 'Result of rotate and rotate3D should be the same!'
-                assert compare_gradient_sets(
-                    grads_rotated_double, grads_rotated3D_double, tolerance=1e-6
-                ), 'Result of double rotate and rotate3D should be the same!'
-                assert compare_gradient_sets(
-                    grads_rotated_double, grads_rotated3D_double_2, tolerance=1e-6
-                ), 'Result of second double rotate and rotate3D should be the same!'
+                assert compare_gradient_sets(grads_rotated, grads_rotated3D, tolerance=1e-6), (
+                    'Result of rotate and rotate3D should be the same!'
+                )
+                assert compare_gradient_sets(grads_rotated_double, grads_rotated3D_double, tolerance=1e-6), (
+                    'Result of double rotate and rotate3D should be the same!'
+                )
+                assert compare_gradient_sets(grads_rotated_double, grads_rotated3D_double_2, tolerance=1e-6), (
+                    'Result of second double rotate and rotate3D should be the same!'
+                )
 
     print('Tests ok.')
 
