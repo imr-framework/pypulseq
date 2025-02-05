@@ -47,19 +47,36 @@ jobs:
         shell: bash
         run: |
           if [ ${{ matrix.include-sigpy }} == "true" ]; then
-            pytest --junitxml=pytest.xml \
+            pytests --junitxml=pytest.xml \
               --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           else
-            pytest -m "not sigpy" --junitxml=pytest.xml \
+            pytests -m "not sigpy" --junitxml=pytest.xml \
               --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
           fi
+
+      - name: Get PR number
+        id: pr-context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TARGET_REPO: ${{ github.repository }}
+          # If the PR is from a fork, prefix it with `<owner-login>:`, otherwise only the PR branch name is relevant:
+          PR_BRANCH: |-
+            ${{
+              (github.event.workflow_run.head_repository.owner.login != github.event.workflow_run.repository.owner.login)
+                && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch)
+                || github.event.workflow_run.head_branch
+            }}
+        run: |
+          gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" \
+              --json 'number' --jq '"number=\(.number)"' \
+              >> "${GITHUB_OUTPUT}"
 
       - name: Post PyTest Coverage Comment
         if: always()
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
-          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          issue-number: ${{ steps.pr-context.outputs.number }}
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
@@ -68,7 +85,7 @@ jobs:
         if: failure() || (steps.coverageComment.outputs.coverageHtml == '')
         uses: edumserrano/find-create-or-update-comment@v3
         with:
-          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          issue-number: ${{ steps.pr-context.outputs.number }}
           # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
           # for the generation of the unique id for comment
           # in this particular case, there is no additional watermarkUniqueId
