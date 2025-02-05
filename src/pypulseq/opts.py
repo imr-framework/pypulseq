@@ -76,7 +76,7 @@ class Opts:
 
         if grad_unit not in valid_grad_units:
             raise ValueError(
-                f"Invalid gradient unit. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'. " f'Passed: {grad_unit}'
+                f"Invalid gradient unit. Must be one of 'Hz/m', 'mT/m' or 'rad/ms/mm'. Passed: {grad_unit}"
             )
 
         if slew_unit not in valid_slew_units:

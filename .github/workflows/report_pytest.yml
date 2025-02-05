@@ -1,0 +1,101 @@
+name: Report PyTest
+
+on:
+  workflow_run:
+    workflows:
+      - PyTest
+    types:
+      - completed
+
+jobs:
+  coverage_report_pr:
+    name: Coverage report PR
+    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # Required for downloading artifacts
+      pull-requests: write # Required for posting PR comments
+    steps:
+      # use the results of python 3.12, consider this as target platform
+      - name: Download PyTest report artifact for Python 3.12
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-report-3.12-true
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR number
+        id: pr-context
+        env:
+          # Token required for GH CLI:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Best practice for scripts is to reference via ENV at runtime.
+          PR_TARGET_REPO: ${{ github.repository }}
+          # If the PR is from a fork, prefix it with `<owner-login>:`
+          PR_BRANCH: |-
+            ${{
+              (github.event.workflow_run.head_repository.owner.login != github.event.workflow_run.repository.owner.login)
+                && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch)
+                || github.event.workflow_run.head_branch
+            }}
+        # Query the PR number by repo + branch, then assign to step output:
+        run: |
+          gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" \
+              --json 'number' --jq '"number=\(.number)"' \
+              >> "${GITHUB_OUTPUT}"
+
+      - name: Post PyTest Coverage Comment
+        id: coverage_comment
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        with:
+          issue-number: ${{ steps.pr-context.outputs.number }}
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
+
+      - name: Post Failure Comment if Coverage Comment failed
+        # if there is no data the comment action does not fail but has an empty output
+        if: steps.coverage_comment.outputs.coverageHtml == ''
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ steps.pr-context.outputs.number }}
+          body-includes: "<!-- Pytest Coverage Comment: ${{ github.job }} -->"
+          comment-author: "github-actions[bot]"
+          body: |
+            <!-- Pytest Coverage Comment: ${{ github.job }} -->
+            ### :x: PyTest Coverage Report was not found
+
+            Check the PyTest Workflow
+          edit-mode: replace
+
+  coverage_report_push:
+    name: Coverage report PUSH
+    if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # Required for downloading artifacts
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: pytest-report-3.12-true
+
+      - name: Post PyTest Coverage Comment on push
+        id: coverage_comment
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        with:
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
+
+      # Todo: create a GIST and GIST secret to enable badge creation
+      # - name: Create Coverage Badge on push to master
+      #   uses: schneegans/dynamic-badges-action@v1.7.0
+      #   with:
+      #     auth: ${{ secrets.GIST_SECRET }}
+      #     gistID: xxx
+      #     filename: coverage.json
+      #     label: Coverage Report
+      #     message: ${{ steps.coverage_comment.outputs.coverage }}
+      #     color: ${{ steps.coverage_comment.outputs.color }}
+      #     namedLogo: python
