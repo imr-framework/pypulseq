@@ -5,7 +5,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_pypulseq.seq"):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
     # ======
     # SETUP
     # ======
@@ -22,9 +22,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_p
 
     system = pp.Opts(
         max_grad=28,
-        grad_unit="mT/m",
+        grad_unit='mT/m',
         max_slew=150,
-        slew_unit="T/m/s",
+        slew_unit='T/m/s',
         rf_ringdown_time=20e-6,
         rf_dead_time=100e-6,
         adc_dead_time=10e-6,
@@ -43,51 +43,31 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_p
         time_bw_product=4,
         system=system,
         return_gz=True,
-        delay=system.rf_dead_time
+        delay=system.rf_dead_time,
     )
     # Define other gradients and ADC events
     delta_k = 1 / fov
-    gx = pp.make_trapezoid(
-        channel="x", flat_area=Nx * delta_k, flat_time=3.2e-3, system=system
-    )
-    adc = pp.make_adc(
-        num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system
-    )
-    gx_pre = pp.make_trapezoid(
-        channel="x", area=-gx.area / 2, duration=1e-3, system=system
-    )
-    gz_reph = pp.make_trapezoid(
-        channel="z", area=-gz.area / 2, duration=1e-3, system=system
-    )
+    gx = pp.make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=3.2e-3, system=system)
+    adc = pp.make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
+    gx_pre = pp.make_trapezoid(channel='x', area=-gx.area / 2, duration=1e-3, system=system)
+    gz_reph = pp.make_trapezoid(channel='z', area=-gz.area / 2, duration=1e-3, system=system)
     phase_areas = (np.arange(Ny) - Ny / 2) * delta_k
 
     # gradient spoiling
-    gx_spoil = pp.make_trapezoid(channel="x", area=2 * Nx * delta_k, system=system)
-    gz_spoil = pp.make_trapezoid(channel="z", area=4 / slice_thickness, system=system)
+    gx_spoil = pp.make_trapezoid(channel='x', area=2 * Nx * delta_k, system=system)
+    gz_spoil = pp.make_trapezoid(channel='z', area=4 / slice_thickness, system=system)
 
     # Calculate timing
     delay_TE = (
         np.ceil(
-            (
-                TE
-                - pp.calc_duration(gx_pre)
-                - gz.fall_time
-                - gz.flat_time / 2
-                - pp.calc_duration(gx) / 2
-            )
+            (TE - pp.calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - pp.calc_duration(gx) / 2)
             / seq.grad_raster_time
         )
         * seq.grad_raster_time
     )
     delay_TR = (
         np.ceil(
-            (
-                TR
-                - pp.calc_duration(gz)
-                - pp.calc_duration(gx_pre)
-                - pp.calc_duration(gx)
-                - delay_TE
-            )
+            (TR - pp.calc_duration(gz) - pp.calc_duration(gx_pre) - pp.calc_duration(gx) - delay_TE)
             / seq.grad_raster_time
         )
         * seq.grad_raster_time
@@ -111,7 +91,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_p
 
         seq.add_block(rf, gz)
         gy_pre = pp.make_trapezoid(
-            channel="y",
+            channel='y',
             area=phase_areas[i],
             duration=pp.calc_duration(gx_pre),
             system=system,
@@ -125,9 +105,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_p
     # Check whether the timing of the sequence is correct
     ok, error_report = seq.check_timing()
     if ok:
-        print("Timing check passed successfully")
+        print('Timing check passed successfully')
     else:
-        print("Timing check failed. Error listing follows:")
+        print('Timing check failed. Error listing follows:')
         [print(e) for e in error_report]
 
     # ======
@@ -148,13 +128,13 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "gre_p
     # =========
     if write_seq:
         # Prepare the sequence output for the scanner
-        seq.set_definition(key="FOV", value=[fov, fov, slice_thickness])
-        seq.set_definition(key="Name", value="gre")
+        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+        seq.set_definition(key='Name', value='gre')
 
         seq.write(seq_filename)
 
     return seq
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(plot=False, write_seq=True)
