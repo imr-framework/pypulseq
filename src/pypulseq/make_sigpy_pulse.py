@@ -137,7 +137,7 @@ def sigpy_n_seq(
 
     if rfp.dead_time > rfp.delay:
         warn(
-            f'Specified RF delay {rfp.delay*1e6:.2f} us is less than the dead time {rfp.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            f'Specified RF delay {rfp.delay * 1e6:.2f} us is less than the dead time {rfp.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
             stacklevel=2,
         )
         rfp.delay = rfp.dead_time

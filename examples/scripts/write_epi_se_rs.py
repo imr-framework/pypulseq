@@ -1,7 +1,8 @@
 """
-This is an experimental high-performance EPI sequence which uses split gradients to overlap blips with the readout 
+This is an experimental high-performance EPI sequence which uses split gradients to overlap blips with the readout
 gradients combined with ramp-sampling.
 """
+
 import math
 
 import numpy as np
@@ -9,7 +10,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_se_rs_pypulseq.seq"):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_se_rs_pypulseq.seq'):
     # ======
     # SETUP
     # ======
@@ -33,9 +34,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     # Set system limits
     system = pp.Opts(
         max_grad=32,
-        grad_unit="mT/m",
+        grad_unit='mT/m',
         max_slew=130,
-        slew_unit="T/m/s",
+        slew_unit='T/m/s',
         rf_ringdown_time=30e-6,
         rf_dead_time=100e-6,
     )
@@ -55,11 +56,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
         duration=8e-3,
         bandwidth=np.abs(sat_freq),
         freq_offset=sat_freq,
-        delay=system.rf_dead_time
+        delay=system.rf_dead_time,
     )
-    gz_fs = pp.make_trapezoid(
-        channel="z", system=system, delay=pp.calc_duration(rf_fs), area=1 / 1e-4
-    )
+    gz_fs = pp.make_trapezoid(channel='z', system=system, delay=pp.calc_duration(rf_fs), area=1 / 1e-4)
 
     # Create 90 degree slice selection pulse and gradient
     rf, gz, gz_reph = pp.make_sinc_pulse(
@@ -70,7 +69,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
-        delay=system.rf_dead_time
+        delay=system.rf_dead_time,
     )
 
     # Create 90 degree slice refocusing pulse and gradients
@@ -82,19 +81,19 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
         apodization=0.5,
         time_bw_product=4,
         phase_offset=np.pi / 2,
-        use="refocusing",
+        use='refocusing',
         return_gz=True,
-        delay=system.rf_dead_time
+        delay=system.rf_dead_time,
     )
     _, gzr1_t, gzr1_a = pp.make_extended_trapezoid_area(
-        channel="z",
+        channel='z',
         grad_start=0,
         grad_end=gz180.amplitude,
         area=spoil_factor * gz.area,
         system=system,
     )
     _, gzr2_t, gzr2_a = pp.make_extended_trapezoid_area(
-        channel="z",
+        channel='z',
         grad_start=gz180.amplitude,
         grad_end=0,
         area=-gz_reph.area + spoil_factor * gz.area,
@@ -105,14 +104,14 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     else:
         rf180.delay += (gzr1_t[3] - gz180.rise_time) - gz180.delay
     gz180n = pp.make_extended_trapezoid(
-        channel="z",
+        channel='z',
         system=system,
         times=np.array([*gzr1_t, *gzr1_t[3] + gz180.flat_time + gzr2_t]) + gz180.delay,
         amplitudes=np.array([*gzr1_a, *gzr2_a]),
     )
 
     # Define the output trigger to play out with every slice excitation
-    trig = pp.make_digital_output_pulse(channel="osc0", duration=100e-6)
+    trig = pp.make_digital_output_pulse(channel='osc0', duration=100e-6)
 
     # Define other gradients and ADC events
     delta_k = 1 / fov
@@ -120,31 +119,22 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
 
     # Phase blip in shortest possible time
     # Round up the duration to 2x gradient raster time
-    blip_duration = (
-        np.ceil(2 * np.sqrt(delta_k / system.max_slew) / 10e-6 / 2) * 10e-6 * 2
-    )
+    blip_duration = np.ceil(2 * np.sqrt(delta_k / system.max_slew) / 10e-6 / 2) * 10e-6 * 2
     # Use negative blips to save one k-space line on our way to center of k-space
-    gy = pp.make_trapezoid(
-        channel="y", system=system, area=-delta_k, duration=blip_duration
-    )
+    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_k, duration=blip_duration)
 
     # Readout gradient is a truncated trapezoid with dead times at the beginning and at the end each equal to a half of
     # blip duration. The area between the blips should be defined by k_width. We do a two-step calculation: we first
     # increase the area assuming maximum slew rate and then scale down the amplitude to fix the area
     extra_area = blip_duration / 2 * blip_duration / 2 * system.max_slew
     gx = pp.make_trapezoid(
-        channel="x",
+        channel='x',
         system=system,
         area=k_width + extra_area,
         duration=readout_time + blip_duration,
     )
-    actual_area = (
-        gx.area
-        - gx.amplitude / gx.rise_time * blip_duration / 2 * blip_duration / 2 / 2
-    )
-    actual_area -= (
-        gx.amplitude / gx.fall_time * blip_duration / 2 * blip_duration / 2 / 2
-    )
+    actual_area = gx.area - gx.amplitude / gx.rise_time * blip_duration / 2 * blip_duration / 2 / 2
+    actual_area -= gx.amplitude / gx.fall_time * blip_duration / 2 * blip_duration / 2 / 2
     gx.amplitude = gx.amplitude / actual_area * k_width
     gx.area = gx.amplitude * (gx.flat_time + gx.rise_time / 2 + gx.fall_time / 2)
     gx.flat_area = gx.amplitude * gx.flat_time
@@ -167,9 +157,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     # real hardware this misalignment is much stronger anyways due to the gradient delays
 
     # Split the blip into two halves and produce a combined synthetic gradient
-    gy_parts = pp.split_gradient_at(
-        grad=gy, time_point=blip_duration / 2, system=system
-    )
+    gy_parts = pp.split_gradient_at(grad=gy, time_point=blip_duration / 2, system=system)
     gy_blipup, gy_blipdown, _ = pp.align(right=gy_parts[0], left=[gy_parts[1], gx])
     gy_blipdownup = pp.add_gradients((gy_blipdown, gy_blipup), system=system)
 
@@ -186,14 +174,12 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     Ny_meas = Ny_pre + Ny_post
 
     # Pre-phasing gradients
-    gx_pre = pp.make_trapezoid(channel="x", system=system, area=-gx.area / 2)
-    gy_pre = pp.make_trapezoid(channel="y", system=system, area=Ny_pre * delta_k)
+    gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2)
+    gy_pre = pp.make_trapezoid(channel='y', system=system, area=Ny_pre * delta_k)
 
     gx_pre, gy_pre = pp.align(right=gx_pre, left=gy_pre)
     # Relax the PE prephaser to reduce stimulation
-    gy_pre = pp.make_trapezoid(
-        "y", system=system, area=gy_pre.area, duration=pp.calc_duration(gx_pre, gy_pre)
-    )
+    gy_pre = pp.make_trapezoid('y', system=system, area=gy_pre.area, duration=pp.calc_duration(gx_pre, gy_pre))
     gy_pre.amplitude = gy_pre.amplitude * pe_enable
 
     # Calculate delay times
@@ -202,24 +188,14 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     rf180_center_incl_delay = rf180.delay + pp.calc_rf_center(rf180)[0]
     delay_TE1 = (
         math.ceil(
-            (
-                TE / 2
-                - pp.calc_duration(rf, gz)
-                + rf_center_incl_delay
-                - rf180_center_incl_delay
-            )
+            (TE / 2 - pp.calc_duration(rf, gz) + rf_center_incl_delay - rf180_center_incl_delay)
             / system.grad_raster_time
         )
         * system.grad_raster_time
     )
     delay_TE2 = (
         math.ceil(
-            (
-                TE / 2
-                - pp.calc_duration(rf180, gz180n)
-                + rf180_center_incl_delay
-                - duration_to_center
-            )
+            (TE / 2 - pp.calc_duration(rf180, gz180n) + rf180_center_incl_delay - duration_to_center)
             / system.grad_raster_time
         )
         * system.grad_raster_time
@@ -260,9 +236,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     # Check whether the timing of the sequence is correct
     ok, error_report = seq.check_timing()
     if ok:
-        print("Timing check passed successfully")
+        print('Timing check passed successfully')
     else:
-        print("Timing check failed. Error listing follows:")
+        print('Timing check failed. Error listing follows:')
         [print(e) for e in error_report]
 
     # Very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within
@@ -281,13 +257,13 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = "epi_s
     # =========
     if write_seq:
         # Prepare the sequence output for the scanner
-        seq.set_definition(key="FOV", value=[fov, fov, slice_thickness])
-        seq.set_definition(key="Name", value="epi")
+        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+        seq.set_definition(key='Name', value='epi')
 
         seq.write(seq_filename)
 
     return seq
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(plot=True, write_seq=True)
