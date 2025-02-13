@@ -1,5 +1,4 @@
-# sms - check MB
-# slr - check slice profile
+"""Tests for SigPy pulse generation."""
 
 import importlib.util
 
@@ -21,11 +20,13 @@ def test_sigpy_import():
 
 @pytest.mark.sigpy
 def test_slr():
+    import sigpy.mri.rf as sigpy_rf
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
     slice_thickness = 3e-3
     flip_angle = np.pi / 2
     duration = 3e-3
+    time_bw_product = 4
 
     system = Opts(
         max_grad=32,
@@ -35,6 +36,7 @@ def test_slr():
         rf_ringdown_time=30e-6,
         rf_dead_time=100e-6,
     )
+
     pulse_cfg = SigpyPulseOpts(
         pulse_type='slr',
         ptype='st',
@@ -46,47 +48,49 @@ def test_slr():
         band_sep=20,
         phs_0_pt='None',
     )
+
     rfp, _, _ = sigpy_n_seq(  # type: ignore
         flip_angle=flip_angle,
-        system=system,
+        delay=100e-6,
         duration=duration,
-        slice_thickness=slice_thickness,
-        time_bw_product=4,
         return_gz=True,
+        slice_thickness=slice_thickness,
+        system=system,
+        time_bw_product=time_bw_product,
         pulse_cfg=pulse_cfg,
         plot=False,
-        delay=system.rf_dead_time,
     )
 
+    # Check that the number of samples in the pulse is correct
+    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
+
+    # Check that the pulse can be added to a PyPulseq Sequence
     seq = pp.Sequence(system=system)
     seq.add_block(rfp)
 
-    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
-
-    # [a, b] = rf.sim.abrm(
-    #     rfp.signal,
-    #     np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
-    #     True,
-    # )
-    # mag_xy = 2 * np.multiply(np.conj(a), b)
-    # # pl.LinePlot(Mxy)
-    # # print(np.sum(np.abs(Mxy)))
-    # # peaks, dict = sis.find_peaks(np.abs(Mxy),threshold=0.5, plateau_size=40)
-    # plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
-    # assert plateau_widths == 29
+    # Check that the pulse shape is correct
+    pulse = (rfp.signal * system.rf_raster_time * 2 * np.pi) / flip_angle
+    [a, b] = sigpy_rf.sim.abrm(
+        pulse,
+        np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
+        True,
+    )
+    mag_xy = 2 * np.multiply(np.conj(a), b)
+    plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
+    assert plateau_widths == 29
 
 
 @pytest.mark.sigpy
 def test_sms():
+    import sigpy.mri.rf as sigpy_rf
     from pypulseq.make_sigpy_pulse import sigpy_n_seq
 
-    print('Testing SMS design')
-
-    slice_thickness = 3e-3  # Slice thickness
+    slice_thickness = 3e-3
     flip_angle = np.pi / 2
     duration = 3e-3
     n_bands = 3
-    # Set system limits
+    time_bw_product = 4
+
     system = Opts(
         max_grad=32,
         grad_unit='mT/m',
@@ -95,6 +99,7 @@ def test_sms():
         rf_ringdown_time=30e-6,
         rf_dead_time=100e-6,
     )
+
     pulse_cfg = SigpyPulseOpts(
         pulse_type='sms',
         ptype='st',
@@ -106,32 +111,34 @@ def test_sms():
         band_sep=20,
         phs_0_pt='None',
     )
+
     rfp, _, _ = sigpy_n_seq(  # type: ignore
         flip_angle=flip_angle,
-        system=system,
+        delay=100e-6,
         duration=duration,
-        slice_thickness=slice_thickness,
-        time_bw_product=4,
         return_gz=True,
+        slice_thickness=slice_thickness,
+        system=system,
+        time_bw_product=time_bw_product,
         pulse_cfg=pulse_cfg,
         plot=False,
-        delay=system.rf_dead_time,
     )
 
+    # Check that the number of samples in the pulse is correct
+    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
+
+    # Check that the pulse can be added to a PyPulseq Sequence
     seq = pp.Sequence(system=system)
     seq.add_block(rfp)
 
-    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
-
-    # [a, b] = rf.sim.abrm(
-    #     rfp.signal,
-    #     np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
-    #     True,
-    # )
-    # mag_xy = 2 * np.multiply(np.conj(a), b)
-    # # pl.LinePlot(Mxy)
-    # # print(np.sum(np.abs(Mxy)))
-    # # peaks, dict = sis.find_peaks(np.abs(Mxy),threshold=0.5, plateau_size=40)
-    # plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
-    # # if slr has 29 > 0.8, then sms with MB = n_bands
-    # assert (29 * n_bands) == plateau_widths
+    # Check that the pulse shape is correct
+    pulse = (rfp.signal * system.rf_raster_time * 2 * np.pi) / flip_angle
+    [a, b] = sigpy_rf.sim.abrm(
+        pulse,
+        np.arange(-20 * time_bw_product, 20 * time_bw_product, 40 * time_bw_product / 2000),
+        True,
+    )
+    mag_xy = 2 * np.multiply(np.conj(a), b)
+    plateau_widths = np.sum(np.abs(mag_xy) > 0.8)
+    # if slr has 29 > 0.8, then sms with MB = n_bands
+    assert (29 * n_bands) == plateau_widths
