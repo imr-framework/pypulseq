@@ -10,17 +10,16 @@ from matplotlib import pyplot as plt
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'ute_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 250e-3  # Define FOV and resolution
-    Nx = 256
+    Nx = 64
     alpha = 10  # Flip angle
     slice_thickness = 3e-3  # Slice thickness
-    TR = 10e-3  # Repetition time
-    Nr = 128  # Number of radial spokes
+    TR = 10e-3  # Repetition tme
+    Nr = 32  # Number of radial spokes
     delta = 2 * np.pi / Nr  # Angular increment
     ro_duration = 2.56e-3  # Read-out time: controls RO bandwidth and T2-blurring
     ro_os = 2  # Oversampling
@@ -39,6 +38,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
         adc_dead_time=10e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -52,6 +53,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
         center_pos=1,
         system=system,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Align RO asymmetry to ADC samples
@@ -95,7 +97,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
     # CONSTRUCT SEQUENCE
     # ======
     for i in range(Nr):
-        for c in range(2):
+        for _c in range(2):
             rf.phase_offset = rf_phase / 180 * np.pi
             adc.phase_offset = rf_phase / 180 * np.pi
             rf_inc = np.mod(rf_inc + rf_spoiling_inc, 360.0)
@@ -159,6 +161,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'ute_pypulseq.seq'):
         seq.set_definition(key='Name', value='UTE')
 
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

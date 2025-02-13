@@ -66,7 +66,7 @@ def make_block_pulse(
 
     valid_use_pulses = get_supported_rf_uses()
     if use != '' and use not in valid_use_pulses:
-        raise ValueError('Invalid use parameter. ' f'Must be one of {valid_use_pulses}. Passed: {use}')
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_use_pulses}. Passed: {use}')
 
     if duration is None and bandwidth is None:
         warn('Using default 4 ms duration for block pulse.')
@@ -109,6 +109,10 @@ def make_block_pulse(
         rf.use = use
 
     if rf.dead_time > rf.delay:
+        warn(
+            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
         rf.delay = rf.dead_time
 
     if trace_enabled():

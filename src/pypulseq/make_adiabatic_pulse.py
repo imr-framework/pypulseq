@@ -215,23 +215,14 @@ def make_adiabatic_pulse(
     rf.use = use if use != '' else 'inversion'
     if rf.dead_time > rf.delay:
         warn(
-            f'Specified RF delay {rf.delay*1e6:.2f} us is less than the dead time {rf.dead_time*1e6:.0f} us. Delay was increased to the dead time.',
+            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
             stacklevel=2,
         )
         rf.delay = rf.dead_time
 
     if return_gz:
-        if max_grad is not None:
-            max_grad_slice_select = max_grad
-        else:
-            # Set to zero, not None for compatibility with existing make_trapezoid
-            max_grad_slice_select = 0
-
-        if max_slew is not None:
-            max_slew_slice_select = max_slew
-        else:
-            # Set to zero, not None for compatibility with existing make_trapezoid
-            max_slew_slice_select = 0
+        max_grad_slice_select = max_grad
+        max_slew_slice_select = max_slew
 
         if pulse_type == 'hypsec':
             bandwidth = mu * beta / np.pi

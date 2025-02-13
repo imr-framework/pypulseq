@@ -7,11 +7,10 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     # Define FOV and resolution
     fov = 220e-3
     Nx = 64
@@ -29,6 +28,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
         rf_dead_time=100e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -41,6 +42,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Define other gradients and ADC events
@@ -79,7 +81,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
         rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         seq.add_block(rf, gz)
         seq.add_block(gx_pre, gy_pre, gz_reph)
-        for i in range(Ny):
+        for _ in range(Ny):
             seq.add_block(gx, adc)  # Read one line of k-space
             seq.add_block(gy)  # Phase blip
             gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
@@ -102,6 +104,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_pypulseq.seq'):
     # =========
     if write_seq:
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

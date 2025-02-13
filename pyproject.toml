@@ -28,7 +28,14 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
-test = ["pytest", "pre-commit"]
+test = [
+  "coverage",
+  "codecov",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "pytest-xdist",
+]
 
 [project.urls]
 Homepage = "https://github.com/imr-framework/pypulseq"
@@ -47,7 +54,7 @@ version = { attr = "version.__version__" }
 [tool.ruff]
 line-length = 120
 extend-exclude = ["__init__.py"]
-exclude = ["doc/**", "examples/**"]
+exclude = ["doc/**"]
 
 # RUFF section
 [tool.ruff.lint]
@@ -120,8 +127,9 @@ exclude = ["examples/**"]
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
-markers = [
-  "matlab_seq_comp: comparison with matlab generated sequence",
-  "sigpy: tests that require sigpy",
+filterwarnings = [
+  "error",
+  # Suppress error in debugpy due to mpl deprecation to debug tests.
+  "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev",
 ]
+markers = ["sigpy: tests that require sigpy"]

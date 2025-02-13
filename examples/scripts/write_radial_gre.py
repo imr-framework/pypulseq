@@ -3,18 +3,17 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_radial_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_radial_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 260e-3
-    Nx = 320  # Define FOV and resolution
+    Nx = 64  # Define FOV and resolution
     alpha = 10  # Flip angle
     slice_thickness = 3e-3  # Slice thickness
     TE = 8e-3  # Echo time
     TR = 20e-3  # Repetition time
-    Nr = 256  # Number of radial spokes
+    Nr = 60  # Number of radial spokes
     N_dummy = 20  # Number of dummy scans
     delta = np.pi / Nr  # Angular increment
 
@@ -31,6 +30,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_radial_pypulseq.s
         adc_dead_time=10e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -43,6 +44,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_radial_pypulseq.s
         system=system,
         time_bw_product=4,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Define other gradients and ADC events
@@ -114,6 +116,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_radial_pypulseq.s
         seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
         seq.set_definition(key='Name', value='gre_rad')
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

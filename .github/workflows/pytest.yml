@@ -1,0 +1,61 @@
+name: PyTest
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Code tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        include-sigpy: [true]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install PyPulseq and dependencies
+        run: |
+          pip install --upgrade --upgrade-strategy eager .[test]
+          if [ ${{ matrix.include-sigpy }} == "true" ]; then
+            pip install sigpy
+          fi
+
+      - name: Install PyTest GitHub Annotation Plugin
+        run: pip install pytest-github-actions-annotate-failures
+
+      - name: Run PyTest and Generate Coverage Report
+        shell: bash
+        run: |
+          if [ ${{ matrix.include-sigpy }} == "true" ]; then
+            pytest --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
+          else
+            pytest -m "not sigpy" --junitxml=pytest.xml \
+              --cov-report=term-missing:skip-covered --cov=pypulseq | tee pytest-coverage.txt
+          fi
+
+      - name: Upload PyTest Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-${{ matrix.python-version }}-${{ matrix.include-sigpy }}
+          path: |
+            pytest-coverage.txt
+            pytest.xml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true

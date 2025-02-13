@@ -10,14 +10,13 @@ import pypulseq as pp
 from pypulseq import calc_rf_center
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_lable_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 220e-3  # Define FOV and resolution
-    Nx = 96
-    Ny = 96
+    Nx = 64
+    Ny = 64
     slice_thickness = 3e-3  # Slice thickness
     n_slices = 7
     n_reps = 4
@@ -33,6 +32,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.se
         rf_dead_time=100e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -45,6 +46,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.se
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Define trigger
@@ -84,7 +86,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.se
     # CONSTRUCT SEQUENCE
     # ======
     # Define sequence blocks
-    for r in range(n_reps):
+    for _r in range(n_reps):
         seq.add_block(trig, pp.make_label(type='SET', label='SLC', value=0))
         for s in range(n_slices):
             rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
@@ -119,7 +121,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.se
                 pp.make_label(type='SET', label='AVG', value=0),
             )
 
-            for i in range(Ny):
+            for _ in range(Ny):
                 seq.add_block(
                     pp.make_label(type='SET', label='REV', value=gx.amplitude < 0),
                     pp.make_label(type='SET', label='SEG', value=gx.amplitude < 0),
@@ -160,6 +162,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_label_pypulseq.se
         seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
         seq.set_definition(key='Name', value='epi_lbl')
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

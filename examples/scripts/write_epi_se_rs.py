@@ -10,11 +10,10 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_se_rs_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 250e-3  # Define FOV and resolution
     Nx = 64
     Ny = 64
@@ -42,6 +41,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         rf_dead_time=100e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -55,6 +56,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         duration=8e-3,
         bandwidth=np.abs(sat_freq),
         freq_offset=sat_freq,
+        delay=system.rf_dead_time,
     )
     gz_fs = pp.make_trapezoid(channel='z', system=system, delay=pp.calc_duration(rf_fs), area=1 / 1e-4)
 
@@ -67,6 +69,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Create 90 degree slice refocusing pulse and gradients
@@ -80,6 +83,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         phase_offset=np.pi / 2,
         use='refocusing',
         return_gz=True,
+        delay=system.rf_dead_time,
     )
     _, gzr1_t, gzr1_a = pp.make_extended_trapezoid_area(
         channel='z',
@@ -257,6 +261,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         seq.set_definition(key='Name', value='epi')
 
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

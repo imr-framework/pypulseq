@@ -5,15 +5,14 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
     # ======
     # SETUP
     # ======
     # Create a new sequence object
-    seq = pp.Sequence()
     fov = 256e-3  # Define FOV and resolution
-    Nx = 256
-    Ny = 256
+    Nx = 64
+    Ny = 64
     alpha = 10  # flip angle
     slice_thickness = 3e-3  # slice
     TR = 12e-3  # Repetition time
@@ -31,6 +30,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         adc_dead_time=10e-6,
     )
 
+    seq = pp.Sequence(system)
+
     # ======
     # CREATE EVENTS
     # ======
@@ -42,6 +43,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         time_bw_product=4,
         system=system,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
     # Define other gradients and ADC events
     delta_k = 1 / fov
@@ -130,6 +132,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         seq.set_definition(key='Name', value='gre')
 
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

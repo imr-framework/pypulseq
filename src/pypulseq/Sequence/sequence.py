@@ -329,7 +329,7 @@ class Sequence:
             gm_pp.append(gw_pp[i].antiderivative())
             tc.append(gm_pp[i].x)
             # "Sample" ramps for display purposes.  Otherwise piecewise-linear display (plot) fails
-            ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > eps)
+            ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > 1e-7 * self.system.max_slew)
 
             # Do nothing if there are no ramps
             if ii.shape[0] == 0:
@@ -916,7 +916,7 @@ class Sequence:
         if grad_disp not in valid_grad_units:
             raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-        fig1, fig2 = plt.figure(1), plt.figure(2)
+        fig1, fig2 = plt.figure(), plt.figure()
         sp11 = fig1.add_subplot(311)
         sp12 = fig1.add_subplot(312, sharex=sp11)
         sp13 = fig1.add_subplot(313, sharex=sp11)

@@ -5,11 +5,10 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_se_pypulseq.seq'):
     # ======
     # SETUP
     # ======
-    seq = pp.Sequence()  # Create a new sequence object
     fov = 256e-3  # Define FOV and resolution
     Nx = 64
     Ny = 64
@@ -25,6 +24,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
         adc_dead_time=20e-6,
     )
 
+    seq = pp.Sequence(system)  # Create a new sequence object
+
     # ======
     # CREATE EVENTS
     # ======
@@ -37,6 +38,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
 
     # Define other gradients and ADC events
@@ -58,7 +60,13 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
     gy = pp.make_trapezoid(channel='y', system=system, area=delta_k, duration=dur)
 
     # Refocusing pulse with spoiling gradients
-    rf180 = pp.make_block_pulse(flip_angle=np.pi, system=system, duration=500e-6, use='refocusing')
+    rf180 = pp.make_block_pulse(
+        flip_angle=np.pi,
+        delay=system.rf_dead_time,
+        system=system,
+        duration=500e-6,
+        use='refocusing',
+    )
     gz_spoil = pp.make_trapezoid(channel='z', system=system, area=gz.area * 2, duration=3 * pre_time)
 
     # Calculate delay time
@@ -89,7 +97,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
     seq.add_block(rf180)
     seq.add_block(gz_spoil)
     seq.add_block(pp.make_delay(delay_TE2))
-    for i in range(Ny):
+    for _ in range(Ny):
         seq.add_block(gx, adc)  # Read one line of k-space
         seq.add_block(gy)  # Phase blip
         gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
@@ -113,6 +121,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
     # =========
     if write_seq:
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':

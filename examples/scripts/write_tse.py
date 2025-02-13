@@ -6,7 +6,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_pypulseq.seq'):
     # ======
     # SETUP
     # ======
@@ -25,7 +25,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
 
     seq = pp.Sequence(system)  # Create a new sequence object
     fov = 256e-3  # Define FOV and resolution
-    Nx, Ny = 128, 128
+    Nx, Ny = 64, 64
     n_echo = 16  # Number of echoes
     n_slices = 1
     rf_flip = 180  # Flip angle
@@ -62,6 +62,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
         time_bw_product=4,
         phase_offset=rf_ex_phase,
         return_gz=True,
+        delay=system.rf_dead_time,
     )
     gs_ex = pp.make_trapezoid(
         channel='z',
@@ -82,6 +83,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
         phase_offset=rf_ref_phase,
         use='refocusing',
         return_gz=True,
+        delay=system.rf_dead_time,
     )
     gs_ref = pp.make_trapezoid(
         channel='z',
@@ -111,7 +113,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
         flat_time=readout_time,
         rise_time=dG,
     )
-    adc = pp.make_adc(num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time)
+    adc = pp.make_adc(num_samples=Nx, duration=sampling_time, delay=system.adc_dead_time, system=system)
     gr_spr = pp.make_trapezoid(
         channel='x',
         system=system,
@@ -234,7 +236,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
             rf_ref.phase_offset = rf_ref_phase - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
 
             seq.add_block(gs1)
-            seq.add_block(gs2, rf_ex)
+            seq.add_block(rf_ex, gs2)
             seq.add_block(gs3, gr3)
 
             for k_echo in range(n_echo):
@@ -257,14 +259,14 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
                     duration=t_sp,
                     rise_time=dG,
                 )
-                seq.add_block(gs4, rf_ref)
-                seq.add_block(gs5, gr5, gp_pre)
+                seq.add_block(rf_ref, gs4)
+                seq.add_block(gr5, gp_pre, gs5)
                 if k_ex > 0:
                     seq.add_block(gr6, adc)
                 else:
                     seq.add_block(gr6)
 
-                seq.add_block(gs7, gr7, gp_rew)
+                seq.add_block(gr7, gp_rew, gs7)
 
             seq.add_block(gs4)
             seq.add_block(gs5)
@@ -291,6 +293,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
     # =========
     if write_seq:
         seq.write(seq_filename)
+
+    return seq
 
 
 if __name__ == '__main__':
