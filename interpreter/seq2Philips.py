@@ -3,6 +3,8 @@ import numpy as np
 import pypulseq as pp
 from util_seq2philips import *
 from colorama import Fore, Style
+from pathlib import Path
+np.set_printoptions(legacy='1.25')
 
 
 # Read the sequence file
@@ -12,6 +14,13 @@ class PhilipsTranslator():
 # READ SEQ FILE 
 # ======
     def __init__(self, seq_file):
+        # Version information
+        self.version_major = 0.0
+        self.version_minor = 0.0
+        self.version_revision = 0.0
+        # Definitions
+        self.definitions = {}
+        # Sequence information
         self.seq = pp.Sequence()
         self.seq.read(seq_file)
         self.num_blocks = len(self.seq.block_events)
@@ -290,36 +299,34 @@ class PhilipsTranslator():
         elif num_adc_blocks > 1:
             print(Fore.YELLOW + 'Multiple ADC blocks found in SQ, multi-echo sequence, setting SQ_base and SQ_xbase' + Style.RESET_ALL)
 
-            xbase_flag = False
-            adc_events = 0
-            for block_num in range(num_blocks):
-                block = tr_blocks.get_block(block_num + 1)
-                if block.adc is not None:
-                    adc_events += 1
-                    if block_num < num_blocks - 1:
-                        next_block = tr_blocks.get_block(block_num + 2)
-                        if next_block.adc is not None: # if the next block is also an adc block then we are in the xbase
-                            adc_events += 1
+        xbase_flag = False
+        adc_events = 0
+        for block_num in range(num_blocks):
+            block = tr_blocks.get_block(block_num + 1)
+            if block.adc is not None:
+                adc_events += 1
+                if block_num < num_blocks - 1:
+                    next_block = tr_blocks.get_block(block_num + 2)
+                    if next_block.adc is not None: # if the next block is also an adc block then we are in the xbase
+                        adc_events += 1
+                        xbase_flag = True
+                        
+            if block_num > 1:
+                previous_block = tr_blocks.get_block(block_num - 1)  
+                if previous_block.adc is not None: # ADC, gradient and then the next block
+                    if previous_block.gx is not None or previous_block.gy is not None or previous_block.gz is not None:
+                        if (previous_block.gx is not None and previous_block.gx.type == 'grad') or \
+                            (previous_block.gy is not None and previous_block.gy.type == 'grad') or \
+                            (previous_block.gz is not None and previous_block.gz.type == 'grad'):
+                            xbase_flag = False
+                        else:
                             xbase_flag = True
-                            
-                if block_num > 1:
-                    previous_block = tr_blocks.get_block(block_num - 1)  
-                    if previous_block.adc is not None: # ADC, gradient and then the next block
-                        if previous_block.gx is not None or previous_block.gy is not None or previous_block.gz is not None:
-                            if (previous_block.gx is not None and previous_block.gx.type == 'grad') or \
-                               (previous_block.gy is not None and previous_block.gy.type == 'grad') or \
-                               (previous_block.gz is not None and previous_block.gz.type == 'grad'):
-                                xbase_flag = False
-                            else:
-                                xbase_flag = True
-                           
-
-                            
-                if xbase_flag:
-                    SQ_label.append('XBASE')      
-                else:
-                    SQ_label.append('BASE')
-                   
+                        
+            if xbase_flag:
+                SQ_label.append('XBASE')      
+            else:
+                SQ_label.append('BASE')
+                
         self.SQ_label = SQ_label
         if len(SQ_label) != len(SOR_TR):
             print(Fore.RED + 'SQ labels are not aligned with SOR - this is an issue!' + Style.RESET_ALL)
@@ -342,6 +349,7 @@ class PhilipsTranslator():
         # for each TR, check what is different from the base TR
         # self.SQ_TR_base, self.SOR_TR_base, self.SQ_base_event_list
         tr_updates = []
+        num_shots = len(self.tr_blocks)
         for trid, tr_blocks in self.tr_blocks.items(): # for each TR indexed by trid
             if trid != self.base_tr:
 
@@ -367,10 +375,13 @@ class PhilipsTranslator():
                 
                     SQ_base_block = self.SQ_TR_base.get_block(SQ_event_list.index(events) + 1)
                     SQ_block = SQ.get_block(SQ_event_list.index(events) + 1)
-                    
-                    # get event wise update and store it in a new set of blocks in SQ_updates_blocks
-                    SQ_updates = get_event_updates(SQ_base_block, SQ_block, events_different_indices)
-                    tr_updates.append(SQ_updates)
+                    if trid == 1: # to avoid duplicates filtering later on - MRF?
+                        # get event wise update and store it in a new set of blocks in SQ_updates_blocks
+                        type, id, name, unit, strength, step, factor = get_event_updates(SQ_base_block, SQ_block, events_different_indices, 
+                                                    trid, base_events, num_shots)
+                        tr_updates.append([type, id, name, unit, strength, step, factor])
+                        print(Fore.YELLOW + 'TR {} updates: {}'.format(trid + 1, [id, type, name, unit, strength, step, factor]) + Style.RESET_ALL)
+                        
                 
             else:
                 print(Fore.GREEN + 'No differences found between TR {} and the base TR'.format(trid + 1) + Style.RESET_ALL)
@@ -378,6 +389,223 @@ class PhilipsTranslator():
         
         self.tr_updates = tr_updates
         print(Fore.GREEN + 'TR updates generated' + Style.RESET_ALL)
+        
+
 # ======
 # WRITE THE PHILIPS DESCRIPTION FILE - JSON?
 # ======
+    def write_philips_seq(self, file_name):
+        
+        file_name = Path(file_name)
+        if file_name.suffix != '.Philips-seq':
+        # Append .Philips-seq suffix
+            file_name = file_name.with_suffix(file_name.suffix + '.Philips-seq')
+            
+        # If removing duplicates, make a copy of the sequence with the duplicate
+        # # events removed.
+        # if remove_duplicates:
+        #     self = self.remove_duplicates()
+        
+        # Define headers including computed values from .seq file and other definitions
+        with open(file_name, 'w') as output_file:
+            output_file.write('# Philips Pulseq sequence file\n')
+            output_file.write('# Created by PyPulseq\n\n')
+
+            output_file.write('[VERSION]\n')
+            output_file.write(f'major {self.version_major}\n')
+            output_file.write(f'minor {self.version_minor}\n')
+            output_file.write(f'revision {self.version_revision}\n')
+            output_file.write('\n')
+
+            if len(self.definitions) != 0:
+                output_file.write('[DEFINITIONS]\n')
+                keys = sorted(self.definitions.keys())
+                values = [self.definitions[k] for k in keys]
+                for block_counter in range(len(keys)):
+                    output_file.write(f'{keys[block_counter]} ')
+                    if isinstance(values[block_counter], str):
+                        output_file.write(values[block_counter] + ' ')
+                    elif isinstance(values[block_counter], (int, float)):
+                        output_file.write(f'{values[block_counter]:0.9g} ')
+                    elif isinstance(values[block_counter], (list, tuple, np.ndarray)):  # e.g. [FOV_x, FOV_y, FOV_z]
+                        for i in range(len(values[block_counter])):
+                            if isinstance(values[block_counter][i], (int, float)):
+                                output_file.write(f'{values[block_counter][i]:0.9g} ')
+                            else:
+                                output_file.write(f'{values[block_counter][i]} ')
+                    else:
+                        raise RuntimeError('Unsupported definition')
+                    output_file.write('\n')
+                output_file.write('\n')
+                
+            # Zero/First level combined : SOR/SQ
+            # Each line represents one SQ object in order of the SOR
+            # #SQ, #RF, #GR, #AQ, RF_FE, AQ_FE
+            output_file.write('# Format of first level hierarchy - BLOCKS:\n')
+            output_file.write('SQ-NAME id RF RF_FE GX GY GZ AQ AQ_FE\n') # need to reclarify with Ganji on FE
+            output_file.write('[BLOCKS]\n')
+            
+            rf_id = 0
+            gr_id = 0
+            aq_id = 0
+            
+            gr_wf = []
+            rf_wf = []
+            adc_wf = []
+            
+            for block in self.base_tr_blocks:
+                # Each line represents one block
+                # #, Set Attributes - ID, Update attributes - ID, Read attributes ID
+                id = self.base_tr_blocks.index(block) 
+                sq_name = self.SQ_label[id]
+                output_file.write(f'{sq_name}\t {id + 1}\t') # seq block count starts from 1
+            
+                if block.rf is not None:
+                    rf_id  += 1
+                    rf_wf.append(block.rf)
+                    output_file.write(f'{rf_id}\t')
+                    output_file.write(f'{1}\t') # turn on RF_FE because we have an RF event
+                else:
+                    output_file.write(f'{0}\t')
+                    output_file.write(f'{0}\t') # turn off RF_FE because we DONT have an RF event
+                    
+                if block.gx is not None or block.gy is not None or block.gz is not None:
+                    if block.gx is not None:
+                        gr_id += 1
+                        gr_wf.append(block.gx)
+                        output_file.write(f'{gr_id}\t')
+                    else:
+                        output_file.write(f'{0}\t')
+                        
+                    if block.gy is not None:
+                        gr_id += 1
+                        gr_wf.append(block.gy)
+                        output_file.write(f'{gr_id}\t')
+                    else:
+                        output_file.write(f'{0}\t')
+                        
+                    if block.gz is not None:
+                        gr_id += 1
+                        gr_wf.append(block.gz)
+                        output_file.write(f'{gr_id}\t')
+                    else:
+                        output_file.write(f'{0}\t')
+                        
+                    
+                    
+                if block.adc is not None:
+                    aq_id += 1
+                    adc_wf.append(block.adc)
+                    output_file.write(f'{aq_id}\t')
+                    output_file.write(f'{1}\t') # turn on AQ_FE because we have an ADC event
+                else:
+                    output_file.write(f'{0}\t')
+                    output_file.write(f'{0}\t') # turn off AQ_FE because we DONT have an ADC event
+                
+                output_file.write('\n')
+            
+            
+            output_file.write('\n# Format of first level hierarchy - TR UPDATES:\n')
+            output_file.write('# Value in an iteration = strength + factor[iteration] * step\n')
+            output_file.write('# Event_type event_id attribute_name attribute_unit strength step factor\n')
+            output_file.write('[TR_UPDATES]\n')
+            
+            for update in range(1, len(self.tr_updates)): # trid starts from 1, so 0 is empty
+                update_info = self.tr_updates[update]
+                update_info_flat = [item for sublist in update_info for item in sublist]
+                output_file.write('\t'.join(map(str, update_info_flat)) + '\n')
+                # output_file.write(f'{str(update_info[0][0])}\t{update_info[1][0]}\t{str(update_info[2][0])}\t {update_info[3][0]}\t {str(update_info[4][0])}\t {str(update_info[5][0])}\t {update_info[6][0]}\n')
+
+            
+            
+            # Second level -  RF
+            # Each line represents one RF object in order of the RF objects in the SQ
+            # #, Set Attributes - ID, Update attributes - ID, Read attributes ID
+            output_file.write('\n# Format of second level hierarchy - RF:\n')
+            output_file.write('# Format of RF events:\n')
+            output_file.write('# id max_amplitude delay freq phase\n')
+            output_file.write('# ..        uT      us   Hz   rad\n')
+            output_file.write('[RF]\n')
+           
+            for rf_event in rf_wf:
+                rf_event = self.pp2philups_rf(rf_event)
+                rf_event_id = rf_wf.index(rf_event) + 1
+                output_file.write(f'{rf_event_id}\t{rf_event.amplitude}\t{rf_event.delay}\t{rf_event.freq_offset}\t{rf_event.phase_offset}\n')
+        
+        # Second level -  GR
+        # Each line represents one GR object in order of the GR objects in the SQ
+        # #, Set Attributes - ID, Update attributes - ID, Read attributes ID
+            output_file.write('\n# Format of second level hierarchy - GR:\n')
+            output_file.write('# Format of trapezoid gradients:\n')
+            output_file.write('# id axis amplitude rise flat fall delay\n')
+            output_file.write('# ..      mT   us   us   us    us\n')
+            output_file.write('[TRAP]\n')
+            
+            for gr_event in gr_wf:
+                gr_event = self.pp2philips_gr(gr_event)
+                gr_event_id = gr_wf.index(gr_event) + 1
+                output_file.write(f'{gr_event_id}\t{gr_event.channel}\t{gr_event.amplitude}\t{gr_event.rise_time}\t{gr_event.flat_time}\t{gr_event.fall_time}\t {gr_event.delay}\n')
+            
+        # Second level -  AQ
+        # Each line represents one AQ object in order of the AQ objects in the SQ
+        # #, Set Attributes - ID, Update attributes - ID, Read attributes ID
+            output_file.write('\n# Format of second level hierarchy - AQ:\n')
+            output_file.write('# Format of ADC events:\n')
+            output_file.write('# id num dwell delay freq phase\n')
+            output_file.write('# ..  ..    ns    us   Hz   rad\n')
+            output_file.write('[ADC]\n')
+            
+            for adc_event in adc_wf:
+                adc_event_id = adc_wf.index(adc_event) + 1
+                adc_event = self.pp2philips_adc(adc_event)
+                output_file.write(f'{adc_event_id}\t{adc_event.num_samples}\t{adc_event.dwell}\t{adc_event.delay}\t{adc_event.freq_offset}\t{adc_event.phase_offset}\n')
+         
+            # Third level -  RF - arbitrary waveforms 
+            output_file.write('\n# Format of third level hierarchy - RF shapes: arbitrary:\n')  
+            output_file.write(f'[SHAPES]\n')
+            
+            for rf_event in rf_wf:
+                rf_event_id = rf_wf.index(rf_event) + 1
+                output_file.write(f'\nshape id \t{rf_event_id}\n')
+                output_file.write(f'num_samples\t{len(rf_event.t)}\n')
+                output_file.write(f'time\tvalue\n')
+                output_file.write(f'us\t uT\n')
+                
+                for instant in range(len(rf_event.signal)):
+                    output_file.write(f'{rf_event.t[instant]}\t {rf_event.signal[instant]}\n')
+         
+            # Third level -  GR - arbitrary waveforms 
+            # output_file.write('\n# Format of third level hierarchy - GR shapes: arbitrary:\n')  
+            # output_file.write(f'[SHAPES]\n')
+            
+        
+        output_file.close()
+        pass
+    
+    def pp2philips_gr(self, gr):
+        gammabar = 42.576e6
+        # Convert a PyPulseq trapezoid gradient object to a Philips gradient object
+        gr.amplitude = np.round(gr.amplitude * 1e3 / gammabar, decimals=3) # convert to mT/m
+        gr.rise_time = np.round(gr.rise_time * 1e6, decimals=0)
+        gr.flat_time = np.round(gr.flat_time * 1e6, decimals=0)
+        gr.fall_time = np.round(gr.fall_time * 1e6, decimals=0)
+        gr.delay = np.round(gr.delay * 1e6, decimals=0)
+
+        return gr
+    
+    def pp2philups_rf(self, rf):
+        gammabar = 42.576e6
+        # Convert a PyPulseq sinc pulse object to a Philips RF object
+        rf.delay = np.round(rf.delay * 1e6, decimals=0)
+        rf.signal = np.round(rf.signal * 1e6 / gammabar, decimals=2) # uT 
+        rf.amplitude = np.max(rf.signal)
+        rf.t = np.round(rf.t * 1e6, decimals=1) # us
+        return rf
+    
+    def pp2philips_adc(self, adc):
+        # Convert a PyPulseq ADC object to a Philips ADC object
+        adc.dwell = np.round(adc.dwell * 1e9, decimals=0)
+        adc.delay = np.round(adc.delay * 1e6, decimals=0)
+        return adc
+    
+    
