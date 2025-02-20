@@ -24,9 +24,11 @@ def make_adiabatic_pulse(
     freq_offset: float = 0,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
-    n_fac: int = 40,
     mu: float = 4.9,
+    n_fac: int = 40,
+    overdrive: float = 1.0,
     phase_offset: float = 0,
+    pwr: float = 1.0,
     return_gz: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
@@ -61,6 +63,22 @@ def make_adiabatic_pulse(
             Baum, J., Tycko, R. and Pines, A. (1985). 'Broadband and adiabatic
             inversion of a two-level system by phase-modulated pulses'.
             Phys. Rev. A., 32:3435-3447.
+
+    hypsec_n(n=512, beta=400, mu=9.8, dur=0.012, pwr=4)
+        Design a generalized hyperbolic secant (HSN) adiabatic pulse. `mu` * `beta` becomes the amplitude of the frequency sweep.
+
+        Args:
+            - n (int): number of samples (should be a multiple of 4).
+            - beta (float): AM waveform parameter.
+            - mu (float): a constant, determines amplitude of frequency sweep.
+            - pwr (int): order of the hyperbolic secant pulse.
+            - dur (float): pulse time (s).
+
+    Returns
+    -------
+            2-element tuple containing
+            - **a** (*array*): AM waveform.
+            - **om** (*array*): FM waveform (radians/s).
 
     wurst(n=512, n_fac=40, bw=40000.0, dur=0.002)
         Design a WURST (wideband, uniform rate, smooth truncation) adiabatic inversion pulse
@@ -106,8 +124,12 @@ def make_adiabatic_pulse(
         Constant determining amplitude of frequency sweep.
     n_fac : int, default=40
         Power to exponentiate to within AM term. ~20 or greater is typical.
+    overdrive : float, default=1
+        Overdrive factor.
     phase_offset : float, default=0
         Phase offset.
+    pwr: float, default=1.0,
+        Order of the generalized hyperbolic secant (HSN) adiabatic pulse.
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
@@ -155,6 +177,8 @@ def make_adiabatic_pulse(
 
     if pulse_type == 'hypsec':
         amp_mod, freq_mod = _hypsec(n=n_samples, beta=beta, mu=mu, dur=duration)
+    elif pulse_type == "hypsec_n":
+        amp_mod, freq_mod = _hypsec_n(n=n_samples, beta=beta, mu=mu, pwr=pwr, dur=duration)
     elif pulse_type == 'wurst':
         amp_mod, freq_mod = _wurst(n=n_samples, n_fac=n_fac, bw=bandwidth, dur=duration)
 
@@ -189,7 +213,7 @@ def make_adiabatic_pulse(
     amp = np.sqrt(rate_of_freq_change * adiabaticity) / (2 * np.pi * amp_at_zero_freq)
 
     # Create the modulated signal
-    signal = amp * amp_mod * np.exp(1j * phase_mod)
+    signal = amp * amp_mod * np.exp(1j * phase_mod) * overdrive
 
     # Adjust the number of samples if needed
     if n_samples != n_raw:
@@ -224,7 +248,7 @@ def make_adiabatic_pulse(
         max_grad_slice_select = max_grad
         max_slew_slice_select = max_slew
 
-        if pulse_type == 'hypsec':
+        if pulse_type in ['hypsec', 'hypsec_n']:
             bandwidth = mu * beta / np.pi
         elif pulse_type == 'wurst':
             bandwidth = bandwidth
@@ -504,3 +528,41 @@ def _bloch_siegert_fm(
     om = np.concatenate((om, om[::-1]))
 
     return om
+
+
+def _hypsec_n(
+    n: int = 512,
+    beta: float = 800.0,
+    mu: float = 4.9,
+    pwr: float = 1.0,
+    dur: float = 0.012,
+):
+    r"""
+    Design a generalized hyperbolic secant (HSN) adiabatic pulse.
+
+    Extends the traditional hyperbolic secant pulse to allow control over the shape
+    via the `pwr` parameter, which adjusts the exponent of the hyperbolic argument.
+
+    Args:
+        n (int): Number of samples (should be a multiple of 4).
+        beta (float): AM waveform parameter (steepness of the envelope).
+        mu (float): Constant determining amplitude of frequency sweep.
+        pwr (float): Order of the hyperbolic secant function. Default is 1 (standard hyperbolic secant).
+        dur (float): Pulse duration (s).
+
+    Returns
+    -------
+        tuple:
+        - **a** (numpy.ndarray): AM waveform (envelope).
+        - **om** (numpy.ndarray): FM waveform (frequency modulation in radians/s).
+
+    References
+    ----------
+
+    """
+    t = np.arange(-n // 2, n // 2) / n * dur
+
+    a = np.cosh((beta * t) ** pwr) ** -1
+    om = -2 * mu * beta * (np.cumsum(a**2) / np.sum(a**2) - 0.5)
+
+    return a, om
