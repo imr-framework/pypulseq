@@ -293,7 +293,7 @@ class Sequence:
 
         total_duration = sum(self.block_durations.values())
 
-        t_excitation, fp_excitation, t_refocusing, _ = self.rf_times()
+        t_excitation, fp_excitation, t_refocusing, _, _, _ = self.rf_times()
         t_adc, _ = self.adc_times()
 
         # Convert data to piecewise polynomials
@@ -1239,8 +1239,8 @@ class Sequence:
         self, time_range: Union[List[float], None] = None
     ) -> Tuple[List[float], np.ndarray, List[float], np.ndarray, np.ndarray]:
         """
-        Return time points of excitations and refocusings.
-
+        Return time points of excitations, refocusings and inversions.
+    
         Returns
         -------
         t_excitation : List[float]
@@ -1250,13 +1250,19 @@ class Sequence:
         t_refocusing : List[float]
             Contains time moments of the refocusing RF pulses
         fp_refocusing : np.ndarray
-            Contains frequency and phase offsets of the excitation RF pulses
+            Contains frequency and phase offsets of the refocusing RF pulses
+        t_inversion : List[float]
+            Contains time moments of the inversion RF pulses
+        fp_inversion : np.ndarray
+            Contains frequency and phase offsets of the inversion RF pulses
         """
         # Collect RF timing data
         t_excitation = []
         fp_excitation = []
         t_refocusing = []
         fp_refocusing = []
+        t_inversion = []
+        fp_inversion = []
 
         curr_dur = 0
         if time_range is None:
@@ -1292,6 +1298,9 @@ class Sequence:
                 elif block.rf.use == 'refocusing':
                     t_refocusing.append(curr_dur + t)
                     fp_refocusing.append([block.rf.freq_offset, block.rf.phase_offset])
+                elif block.rf.use == 'inversion':
+                    t_inversion.append(curr_dur + t)
+                    fp_inversion.append([block.rf.freq_offset, block.rf.phase_offset])
 
             curr_dur += self.block_durations[block_counter]
 
@@ -1305,7 +1314,19 @@ class Sequence:
         else:
             fp_refocusing = np.empty((2, 0))
 
-        return t_excitation, fp_excitation, t_refocusing, fp_refocusing
+        if len(t_inversion) != 0:
+            fp_inversion = np.array(fp_inversion).T
+        else:
+            fp_inversion = np.empty((2, 0))
+
+        return (
+            t_excitation,
+            fp_excitation,
+            t_refocusing,
+            fp_refocusing,
+            t_inversion,
+            fp_inversion,
+        )
 
     def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         """
@@ -1578,7 +1599,7 @@ class Sequence:
             Contains frequency and phase offsets of each ADC object (not samples).
         """
         wave_data = self.waveforms(append_RF=append_RF, time_range=time_range)
-        t_excitation, fp_excitation, t_refocusing, fp_refocusing = self.rf_times(time_range=time_range)
+        t_excitation, fp_excitation, t_refocusing, fp_refocusing, _, _ = self.rf_times(time_range=time_range)
         t_adc, fp_adc = self.adc_times(time_range=time_range)
 
         # Join times, frequency and phases of RF pulses for compatibility with previous implementation
