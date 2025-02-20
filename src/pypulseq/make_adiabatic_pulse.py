@@ -26,9 +26,9 @@ def make_adiabatic_pulse(
     max_slew: Union[float, None] = None,
     mu: float = 4.9,
     n_fac: int = 40,
+    order: float = 1.0,
     overdrive: float = 1.0,
     phase_offset: float = 0,
-    pwr: float = 1.0,
     return_gz: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
@@ -64,14 +64,14 @@ def make_adiabatic_pulse(
             inversion of a two-level system by phase-modulated pulses'.
             Phys. Rev. A., 32:3435-3447.
 
-    hypsec_n(n=512, beta=400, mu=9.8, dur=0.012, pwr=4)
+    hypsec_n(n=512, beta=400, mu=9.8, order=4, dur=0.012)
         Design a generalized hyperbolic secant (HSN) adiabatic pulse. `mu` * `beta` becomes the amplitude of the frequency sweep.
 
         Args:
             - n (int): number of samples (should be a multiple of 4).
             - beta (float): AM waveform parameter.
             - mu (float): a constant, determines amplitude of frequency sweep.
-            - pwr (int): order of the hyperbolic secant pulse.
+            - order (float): order of the hyperbolic secant pulse.
             - dur (float): pulse time (s).
 
     Returns
@@ -128,7 +128,7 @@ def make_adiabatic_pulse(
         Overdrive factor.
     phase_offset : float, default=0
         Phase offset.
-    pwr: float, default=1.0,
+    order: float, default=1.0,
         Order of the generalized hyperbolic secant (HSN) adiabatic pulse.
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
@@ -160,7 +160,7 @@ def make_adiabatic_pulse(
     if return_gz and slice_thickness <= 0:
         raise ValueError('Slice thickness must be provided')
 
-    valid_pulse_types = ['hypsec', 'wurst']
+    valid_pulse_types = ['hypsec', 'hypsec_n', 'wurst']
     if (not pulse_type) or (pulse_type not in valid_pulse_types):
         raise ValueError(f'Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}')
     valid_rf_use_labels = get_supported_rf_uses()
@@ -178,7 +178,7 @@ def make_adiabatic_pulse(
     if pulse_type == 'hypsec':
         amp_mod, freq_mod = _hypsec(n=n_samples, beta=beta, mu=mu, dur=duration)
     elif pulse_type == "hypsec_n":
-        amp_mod, freq_mod = _hypsec_n(n=n_samples, beta=beta, mu=mu, pwr=pwr, dur=duration)
+        amp_mod, freq_mod = _hypsec_n(n=n_samples, beta=beta, mu=mu, order=order, dur=duration)
     elif pulse_type == 'wurst':
         amp_mod, freq_mod = _wurst(n=n_samples, n_fac=n_fac, bw=bandwidth, dur=duration)
 
@@ -534,20 +534,20 @@ def _hypsec_n(
     n: int = 512,
     beta: float = 800.0,
     mu: float = 4.9,
-    pwr: float = 1.0,
+    order: float = 1.0,
     dur: float = 0.012,
 ):
     r"""
     Design a generalized hyperbolic secant (HSN) adiabatic pulse.
 
     Extends the traditional hyperbolic secant pulse to allow control over the shape
-    via the `pwr` parameter, which adjusts the exponent of the hyperbolic argument.
+    via the `order` parameter, which adjusts the exponent of the hyperbolic argument.
 
     Args:
         n (int): Number of samples (should be a multiple of 4).
         beta (float): AM waveform parameter (steepness of the envelope).
         mu (float): Constant determining amplitude of frequency sweep.
-        pwr (float): Order of the hyperbolic secant function. Default is 1 (standard hyperbolic secant).
+        order (float): Order of the hyperbolic secant function. Default is 1 (standard hyperbolic secant).
         dur (float): Pulse duration (s).
 
     Returns
@@ -562,7 +562,7 @@ def _hypsec_n(
     """
     t = np.arange(-n // 2, n // 2) / n * dur
 
-    a = np.cosh((beta * t) ** pwr) ** -1
+    a = np.cosh((beta * t) ** order) ** -1
     om = -2 * mu * beta * (np.cumsum(a**2) / np.sum(a**2) - 0.5)
 
     return a, om
