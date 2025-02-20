@@ -1,14 +1,14 @@
 # import the libraries
 import numpy as np
 import pypulseq as pp
-from util_seq2philips import *
+from util_seq2lite import *
 from colorama import Fore, Style
 from pathlib import Path
 np.set_printoptions(legacy='1.25')
 
 
 # Read the sequence file
-class PhilipsTranslator():
+class seqlite():
     
 # ======
 # READ SEQ FILE 
@@ -392,14 +392,14 @@ class PhilipsTranslator():
         
 
 # ======
-# WRITE THE PHILIPS DESCRIPTION FILE - JSON?
+# WRITE THE lite DESCRIPTION FILE - JSON?
 # ======
-    def write_philips_seq(self, file_name):
+    def write_seqlite(self, file_name):
         
         file_name = Path(file_name)
-        if file_name.suffix != '.Philips-seq':
-        # Append .Philips-seq suffix
-            file_name = file_name.with_suffix(file_name.suffix + '.Philips-seq')
+        if file_name.suffix != '.seq-lite':
+        # Append .lite-seq suffix
+            file_name = file_name.with_suffix(file_name.suffix + '.seq-lite')
             
         # If removing duplicates, make a copy of the sequence with the duplicate
         # # events removed.
@@ -408,7 +408,7 @@ class PhilipsTranslator():
         
         # Define headers including computed values from .seq file and other definitions
         with open(file_name, 'w') as output_file:
-            output_file.write('# Philips Pulseq sequence file\n')
+            output_file.write('# Pulseq lite sequence file\n')
             output_file.write('# Created by PyPulseq\n\n')
 
             output_file.write('[VERSION]\n')
@@ -542,7 +542,7 @@ class PhilipsTranslator():
             output_file.write('[TRAP]\n')
             
             for gr_event in gr_wf:
-                gr_event = self.pp2philips_gr(gr_event)
+                gr_event = self.pp2lite_gr(gr_event)
                 gr_event_id = gr_wf.index(gr_event) + 1
                 output_file.write(f'{gr_event_id}\t{gr_event.channel}\t{gr_event.amplitude}\t{gr_event.rise_time}\t{gr_event.flat_time}\t{gr_event.fall_time}\t {gr_event.delay}\n')
             
@@ -557,7 +557,7 @@ class PhilipsTranslator():
             
             for adc_event in adc_wf:
                 adc_event_id = adc_wf.index(adc_event) + 1
-                adc_event = self.pp2philips_adc(adc_event)
+                adc_event = self.pp2lite_adc(adc_event)
                 output_file.write(f'{adc_event_id}\t{adc_event.num_samples}\t{adc_event.dwell}\t{adc_event.delay}\t{adc_event.freq_offset}\t{adc_event.phase_offset}\n')
          
             # Third level -  RF - arbitrary waveforms 
@@ -582,9 +582,9 @@ class PhilipsTranslator():
         output_file.close()
         pass
     
-    def pp2philips_gr(self, gr):
+    def pp2lite_gr(self, gr):
         gammabar = 42.576e6
-        # Convert a PyPulseq trapezoid gradient object to a Philips gradient object
+        # Convert a PyPulseq trapezoid gradient object to a lite gradient object
         gr.amplitude = np.round(gr.amplitude * 1e3 / gammabar, decimals=3) # convert to mT/m
         gr.rise_time = np.round(gr.rise_time * 1e6, decimals=0)
         gr.flat_time = np.round(gr.flat_time * 1e6, decimals=0)
@@ -595,15 +595,15 @@ class PhilipsTranslator():
     
     def pp2philups_rf(self, rf):
         gammabar = 42.576e6
-        # Convert a PyPulseq sinc pulse object to a Philips RF object
+        # Convert a PyPulseq sinc pulse object to a lite RF object
         rf.delay = np.round(rf.delay * 1e6, decimals=0)
         rf.signal = np.round(rf.signal * 1e6 / gammabar, decimals=2) # uT 
         rf.amplitude = np.max(rf.signal)
         rf.t = np.round(rf.t * 1e6, decimals=1) # us
         return rf
     
-    def pp2philips_adc(self, adc):
-        # Convert a PyPulseq ADC object to a Philips ADC object
+    def pp2lite_adc(self, adc):
+        # Convert a PyPulseq ADC object to a lite ADC object
         adc.dwell = np.round(adc.dwell * 1e9, decimals=0)
         adc.delay = np.round(adc.delay * 1e6, decimals=0)
         return adc

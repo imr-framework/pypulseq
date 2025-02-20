@@ -1,14 +1,14 @@
 # import the libraries
 import numpy as np
 import pypulseq as pp
-from seq2Philips import PhilipsTranslator
+from seq2seqlite import seqlite
 
 # ======
 # INITIATE THE PHILIPS INTERPRETER OBJECT
 # ======
 # Read the sequence file
 seq_file = './gre_pypulseq.seq'
-Philips_seq_file = './gre_pypulseq.Philips-seq'
-ffe = PhilipsTranslator(seq_file)
+Philips_seq_file = './gre_pypulseq.seq-lite'
+ffe = seqlite(seq_file)
 ffe.view_base_TR(mode='blocks')
-ffe.write_philips_seq(Philips_seq_file)
+ffe.write_seqlite(Philips_seq_file)
