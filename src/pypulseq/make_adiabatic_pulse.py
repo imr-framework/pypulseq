@@ -177,7 +177,7 @@ def make_adiabatic_pulse(
 
     if pulse_type == 'hypsec':
         amp_mod, freq_mod = _hypsec(n=n_samples, beta=beta, mu=mu, dur=duration)
-    elif pulse_type == "hypsec_n":
+    elif pulse_type == 'hypsec_n':
         amp_mod, freq_mod = _hypsec_n(n=n_samples, beta=beta, mu=mu, order=order, dur=duration)
     elif pulse_type == 'wurst':
         amp_mod, freq_mod = _wurst(n=n_samples, n_fac=n_fac, bw=bandwidth, dur=duration)

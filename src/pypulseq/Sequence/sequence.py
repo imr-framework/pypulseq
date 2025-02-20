@@ -1240,7 +1240,7 @@ class Sequence:
     ) -> Tuple[List[float], np.ndarray, List[float], np.ndarray, np.ndarray]:
         """
         Return time points of excitations, refocusings and inversions.
-    
+
         Returns
         -------
         t_excitation : List[float]
