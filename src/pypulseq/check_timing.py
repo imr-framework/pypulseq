@@ -75,7 +75,12 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                 # For now this is only the case for arrays of extensions, but we cannot actually check extensions anyway...
                 continue
 
-            if hasattr(e, 'type') and (e.type == 'rf' or e.type == 'adc'):
+            if hasattr(e, 'type') and e.type == 'rf':
+                raster = seq.system.rf_raster_time
+                raster_str = 'rf_raster_time'
+            elif hasattr(e, 'type') and e.type == 'adc':
+                # note that ADC samples must be on ADC raster time, but the ADC start time must be on RF raster time!
+                # see https://github.com/pulseq/pulseq/blob/master/doc%2Fpulseq_shapes_and_times.pdf for details
                 raster = seq.system.rf_raster_time
                 raster_str = 'rf_raster_time'
             else:
