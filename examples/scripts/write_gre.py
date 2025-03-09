@@ -10,7 +10,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
     # SETUP
     # ======
     # Create a new sequence object
-    seq = pp.Sequence()
+    
     fov = 256e-3  # Define FOV and resolution
     Nx = 256
     Ny = 256
@@ -29,8 +29,9 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         rf_ringdown_time=20e-6, # note down values from Sandeep - 
         rf_dead_time=100e-6,
         adc_dead_time=10e-6,
+        rf_raster_time=2e-6,
     )
-
+    seq = pp.Sequence(system=system)
     # ======
     # CREATE EVENTS
     # ======
@@ -42,6 +43,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         time_bw_product=4,
         system=system,
         return_gz=True,
+        use = 'excitation',
     )
     # Define other gradients and ADC events
     delta_k = 1 / fov

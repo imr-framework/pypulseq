@@ -120,6 +120,7 @@ def make_sinc_pulse(
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
 
+
     if use != str():
         rf.use = use
 

@@ -14,15 +14,21 @@ class seqlite():
 # READ SEQ FILE 
 # ======
     def __init__(self, seq_file):
+        
+        
+        
         # Version information
         self.version_major = 0.0
         self.version_minor = 0.0
         self.version_revision = 0.0
+        
         # Definitions
         self.definitions = {}
         # Sequence information
         self.seq = pp.Sequence()
-        self.seq.read(seq_file)
+        self.seq.read(seq_file, detect_rf_use=True)
+        self.definitions = self.seq.definitions
+        self.system = self.seq.system
         self.num_blocks = len(self.seq.block_events)
         print(Fore.GREEN + 'Sequence read successfully' + Style.RESET_ALL)
         print(Fore.YELLOW + 'The sequence has a total of {} blocks'.format(self.num_blocks) + Style.RESET_ALL)
@@ -35,7 +41,6 @@ class seqlite():
         self.get_TR_updates() # Compare each TR and figure out the differences between the SQ objects - SOR remains the same
  
        
-        
         
 # ======
 # GROUP BLOCKS INTO TRs
@@ -523,14 +528,14 @@ class seqlite():
             # #, Set Attributes - ID, Update attributes - ID, Read attributes ID
             output_file.write('\n# Format of second level hierarchy - RF:\n')
             output_file.write('# Format of RF events:\n')
-            output_file.write('# id max_amplitude delay freq phase\n')
-            output_file.write('# ..        uT      us   Hz   rad\n')
+            output_file.write('# id  flip delay freq phase use\n')
+            output_file.write('# ..   deg    us   Hz   rad  excitation | refocusing | inversion\n')
             output_file.write('[RF]\n')
            
             for rf_event in rf_wf:
-                rf_event = self.pp2philups_rf(rf_event)
+                rf_event = self.pp2lite_rf(rf_event)
                 rf_event_id = rf_wf.index(rf_event) + 1
-                output_file.write(f'{rf_event_id}\t{rf_event.amplitude}\t{rf_event.delay}\t{rf_event.freq_offset}\t{rf_event.phase_offset}\n')
+                output_file.write(f'{rf_event_id}\t{rf_event.FA}\t {rf_event.delay}\t{rf_event.freq_offset}\t{rf_event.phase_offset}\t {rf_event.use}\n')
         
         # Second level -  GR
         # Each line represents one GR object in order of the GR objects in the SQ
@@ -569,10 +574,10 @@ class seqlite():
                 output_file.write(f'\nshape id \t{rf_event_id}\n')
                 output_file.write(f'num_samples\t{len(rf_event.t)}\n')
                 output_file.write(f'time\tvalue\n')
-                output_file.write(f'us\t uT\n')
+                output_file.write(f'us\t a.u\n')
                 
                 for instant in range(len(rf_event.signal)):
-                    output_file.write(f'{rf_event.t[instant]}\t {rf_event.signal[instant]}\n')
+                    output_file.write(f'{rf_event.t[instant]}\t {rf_event.signal_rescaled[instant]}\n')
          
             # Third level -  GR - arbitrary waveforms 
             # output_file.write('\n# Format of third level hierarchy - GR shapes: arbitrary:\n')  
@@ -593,12 +598,16 @@ class seqlite():
 
         return gr
     
-    def pp2philups_rf(self, rf):
+    def pp2lite_rf(self, rf):
         gammabar = 42.576e6
         # Convert a PyPulseq sinc pulse object to a lite RF object
         rf.delay = np.round(rf.delay * 1e6, decimals=0)
-        rf.signal = np.round(rf.signal * 1e6 / gammabar, decimals=2) # uT 
-        rf.amplitude = np.max(rf.signal)
+        rf.amplitude = np.abs(np.max(rf.signal))
+        rf.signal_rescaled = rf.signal / rf.amplitude # we know that waveforms were designed for unit amplitude max.
+        if np.imag(rf.signal_rescaled).all() == 0:
+            rf.signal_rescaled = np.real(rf.signal_rescaled)
+        flip = np.abs(np.sum(rf.signal_rescaled) * self.definitions['RadiofrequencyRasterTime'] * 2 * np.pi)
+        rf.FA = np.int16(np.round(np.rad2deg(rf.amplitude * flip), decimals=0))
         rf.t = np.round(rf.t * 1e6, decimals=1) # us
         return rf
     
