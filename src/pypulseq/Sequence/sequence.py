@@ -1378,6 +1378,45 @@ class Sequence:
         self.extension_string_idx.append(extension_str)
         assert len(self.extension_numeric_idx) == len(self.extension_string_idx)
 
+    def apply_soft_delay(self, **kwargs):
+        """
+        Applies soft delays to the sequence by modifying the block durations of the respective blocks.
+        Input parameters are pairs of soft delays and values, whereas the soft delay is identified by its string hint and the value is the duration in seconds.
+        Not all soft delays defined in the sequence need to be specified.
+        Examples:
+           seq.apply_soft_delay(TE=40e-3) # set TE to 40ms
+           seq.applySoftDelay(TE=50e-3, TR=2) # set TE to 50ms and TR to 2 s
+
+        Parameters:
+        -----------
+        **kwargs : dict
+            Keyword arguments of the form (string hint, value) pairs
+            The string hint is the name of the soft delay to be modified.
+            The value is the new duration of the soft delay in seconds.
+        Raises:
+        -------
+        ValueError
+            If the given soft delay is not defined in the sequence.
+        ValueError
+            If the calculated delay is negative.
+        ValueError
+            If the string hint and numeric ID is inconsistent.
+        See Also
+        --------
+        pypulseq.make_soft_delay()
+        """
+        for _keys, _values in kwargs.items():
+            pass
+        # TODO: implement
+        return
+
+    def get_default_soft_delay_values(self) -> Tuple[bool, List[SimpleNamespace]]:
+        """
+        Go through all the blocks checking the consistency of the soft delays
+        TODO/FIXME
+        """
+        return
+
     def test_report(self) -> str:
         """
         Analyze the sequence and return a text report.
