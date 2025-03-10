@@ -32,6 +32,7 @@ from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
+from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
@@ -1730,7 +1731,12 @@ class Sequence:
         return all_waveforms
 
     def write(
-        self, name: str, create_signature: bool = True, remove_duplicates: bool = True, check_timing: bool = True
+        self,
+        name: str,
+        create_signature: bool = True,
+        remove_duplicates: bool = True,
+        check_timing: bool = True,
+        v141_compat: bool = False,
     ) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
@@ -1745,6 +1751,8 @@ class Sequence:
             Boolean flag to indicate if the file has to be signed.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
+        v141_compat: bool, default=False
+            Write the sequence in v1.4.1 compatible file format.
 
         Returns
         -------
@@ -1783,7 +1791,10 @@ class Sequence:
                 warn(warn_msg, stacklevel=2)
 
         # Write the sequence
-        signature = write_seq(self, name, create_signature, remove_duplicates)
+        if v141_compat:
+            signature = write_seq_v141(self, name, create_signature, remove_duplicates)
+        else:
+            signature = write_seq(self, name, create_signature, remove_duplicates)
 
         # Return the sequence md5 signature if requested
         if signature is not None:
