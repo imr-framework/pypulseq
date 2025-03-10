@@ -8,7 +8,7 @@ from seq2seqlite import seqlite
 # ======
 # Read the sequence file
 seq_file = './gre_pypulseq.seq'
-Philips_seq_file = './gre_pypulseq.seq-lite'
+Seq_lite_file = './gre_pypulseq.seq-lite'
 ffe = seqlite(seq_file)
 ffe.view_base_TR(mode='blocks')
-ffe.write_seqlite(Philips_seq_file)
+ffe.write_seqlite(Seq_lite_file)

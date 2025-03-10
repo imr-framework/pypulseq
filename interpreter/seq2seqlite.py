@@ -6,6 +6,11 @@ from colorama import Fore, Style
 from pathlib import Path
 np.set_printoptions(legacy='1.25')
 
+# ======
+# TODO section here
+# 1. Include defintions for repetitions: Shots, Slices, Averages, Echoes, Dynamics, Cardiac Phases, Respiratory Phases
+# 2. Include definitions for the RF, GR, ADC events
+
 
 # Read the sequence file
 class seqlite():
