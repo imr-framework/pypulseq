@@ -40,6 +40,41 @@ from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 major, minor, revision = __version__.split('.')[:3]
 
 
+class BiDict:
+    """
+    A bidirectional dictionary that allows for fast lookups in both directions.
+    """
+
+    def __init__(self):
+        self.forward = {}
+        self.backward = {}
+
+    def insert(self, key, value):
+        if key in self.forward or value in self.backward:
+            raise ValueError('Key or value already exists in the dictionary')
+        self.forward[key] = value
+        self.backward[value] = key
+
+    def remove_by_key(self, key):
+        if key in self.forward:
+            value = self.forward.pop(key)
+            del self.backward[value]
+
+    def remove_by_value(self, value):
+        if value in self.backward:
+            key = self.backward.pop(value)
+            del self.forward[key]
+
+    def get_by_key(self, key):
+        return self.forward.get(key)
+
+    def get_by_value(self, value):
+        return self.backward.get(value)
+
+    def __repr__(self):
+        return f'BiDict({self.forward})'
+
+
 class Sequence:
     """
     Generate sequences and read/write sequence files. This class defines properties and methods to define a complete MR
@@ -69,6 +104,7 @@ class Sequence:
         self.rf_library = EventLibrary()
         self.shape_library = EventLibrary(numpy_data=True)
         self.trigger_library = EventLibrary()
+        self.soft_delay_library = EventLibrary()
 
         # =========
         # OTHER
@@ -97,6 +133,7 @@ class Sequence:
         self.block_durations = {}
         self.extension_numeric_idx = []
         self.extension_string_idx = []
+        self.soft_delay_hints = BiDict()
 
     def __str__(self) -> str:
         s = 'Sequence:'
