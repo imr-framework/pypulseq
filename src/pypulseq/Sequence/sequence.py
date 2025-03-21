@@ -1144,7 +1144,10 @@ class Sequence:
     def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         return block.register_rf_event(self, event)
 
-    def remove_duplicates(self, in_place: bool = False) -> Self:
+    def register_soft_delay_event(self, event: SimpleNamespace) -> int:
+        return block.register_soft_delay_event(self, event)
+
+    def remove_duplicates(self, in_place: bool = False) -> 'Sequence':
         """
         Removes duplicate events from the shape and event libraries contained
         in this sequence.
