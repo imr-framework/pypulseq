@@ -3,7 +3,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from warnings import warn
 
 try:
@@ -1442,17 +1442,176 @@ class Sequence:
         --------
         pypulseq.make_soft_delay()
         """
-        for _keys, _values in kwargs.items():
-            pass
-        # TODO: implement
-        return
 
-    def get_default_soft_delay_values(self) -> Tuple[bool, List[SimpleNamespace]]:
+        # TODO: check if this works
+        # Go through all the blocks and update durations, at the same time checking the consistency of the soft delays
+        sd_str2numID = {}
+        sd_numID2hint = {}
+        sd_warns = {}
+        for block_counters in self.block_events:
+            block = self.get_block(block_counters)
+            if hasattr(block, 'soft_delay') and block.soft_delay is not None:
+                # Check the numeric ID consistency
+                if block.soft_delay.hint not in sd_str2numID:
+                    sd_str2numID[block.soft_delay.hint] = block.soft_delay.numID
+                else:
+                    if sd_str2numID[block.soft_delay.hint] != block.soft_delay.numID:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same string hint"
+                        )
+
+                if block.soft_delay.numID not in sd_numID2hint:
+                    sd_numID2hint[block.soft_delay.numID] = block.soft_delay.hint
+                else:
+                    if sd_numID2hint[block.soft_delay.numID] != block.soft_delay.hint:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same numeric ID"
+                        )
+
+                if block.soft_delay.hint in kwargs:
+                    # Calculate the new block duration
+                    new_dur_ru = (
+                        kwargs[block.soft_delay.hint] / block.soft_delay.factor + block.soft_delay.offset
+                    ) / self.system.block_duration_raster
+                    new_dur = round(new_dur_ru) * self.system.block_duration_raster
+                    if (
+                        abs(new_dur - new_dur_ru * self.system.block_duration_raster) > 0.5e-6
+                        and block.soft_delay.numID not in sd_warns
+                    ):
+                        warn(
+                            f"Block duration for block {block_counters}, soft delay '{block.soft_delay.hint}', had to be substantially rounded to become aligned to the raster time. This warning is only displayed for the first block where it occurs."
+                        )
+                        sd_warns[block.soft_delay.numID] = True
+
+                    if new_dur < 0:
+                        raise ValueError(
+                            f'Calculated new duration of the block {block_counters}, soft delay {block.soft_delay.hint}/{block.soft_delay.numID} is negative ({new_dur} s)'
+                        )
+
+                    self.block_durations[block_counters] = new_dur
+
+        # Now check if there are some input soft delays which haven't been found in the sequence
+        all_input_hints = kwargs.keys()
+        for hint in all_input_hints:
+            if hint not in sd_str2numID:
+                raise ValueError(f"Specified soft delay '{hint}' does not exist in the sequence")
+
+    def get_default_soft_delay_values(
+        self,
+    ) -> Tuple[Dict[str, float], List[SimpleNamespace], Dict[int, SimpleNamespace]]:
         """
         Go through all the blocks checking the consistency of the soft delays
-        TODO/FIXME
+        TODO/FIXME:
+        - check if this works
+        - Modify print error functions to make error reporting work?
+        Returns
+        -------
+        -------
+        delays_by_hints : dict
+            Dictionary of soft delay hints and their default values.
+        error_report : list
+            List of error messages for any inconsistencies found in the soft delays.
+        soft_delay_state : dict
+            Dictionary of soft delay states, containing the default value, hint, block number, min and max delays for each numeric ID.
+
         """
-        return
+
+        # soft_delay_error_messages = {
+        #     'SOFT_DELAY_FACTOR': 'Soft delay factor is zero, which is invalid.',
+        #     'SOFT_DELAY_DUR_INCONSISTENCY': 'default duration derived from this block is inconsistent with the previous default.',
+        #     'SOFT_DELAY_HINT_INCONSISTENCY': 'Soft delays with the same numeric ID are expected to share the same text hint but previous hint recorded in block.',
+        # }
+        error_report: List[SimpleNamespace] = []
+        soft_delay_state = {}
+
+        # Loop over all blocks
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            if hasattr('soft_delay', block) and block.soft_delay is not None:
+                if block.soft_delay.factor == 0:
+                    error_report.append(
+                        SimpleNamespace(
+                            block=block_counter,
+                            event='soft_delay',
+                            field='delay',
+                            error_type='SOFT_DELAY_FACTOR',
+                            value=block.soft_delay.factor,
+                        )
+                    )
+                # Calculate default delay based on the current block duration
+                default_delay = (
+                    self.block_durations[block_counter] - block.soft_delay.offset
+                ) * block.soft_delay.factor
+                if block.soft_delay.numID >= 0:
+                    # Remember of check for consistency
+                    if soft_delay_state[block.soft_delay.numID] is None:
+                        dly_state_ = SimpleNamespace(
+                            default=default_delay,
+                            hint=block.soft_delay.hint,
+                            blk=block_counter,
+                            min_delay=0.0,
+                            max_delay=np.inf,
+                        )
+
+                        soft_delay_state[block.soft_delay.numID] = dly_state_
+                    else:
+                        if (
+                            abs(default_delay - soft_delay_state[block.soft_delay.numID].default) > 1e-7
+                        ):  # What is a reasonable threshold?
+                            error_report.append(
+                                SimpleNamespace(
+                                    block=block_counter,
+                                    event='soft_delay',
+                                    field='delay',
+                                    error_type='SOFT_DELAY_DUR_INCONSISTENCY',
+                                    value=default_delay,
+                                )
+                            )
+                        if block.soft_delay.hint != soft_delay_state[block.soft_delay.numID].hint:
+                            error_report.append(
+                                SimpleNamespace(
+                                    block=block_counter,
+                                    event='soft_delay',
+                                    field='hint',
+                                    error_type='SOFT_DELAY_HINT_INCONSISTENCY',
+                                    value=block.soft_delay.hint,
+                                )
+                            )
+                    # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
+                    lim_delay = -block.soft_delay.offset * block.soft_delay.factor
+                    if block.soft_delay.factor > 0:
+                        # lim_delay corresponds to the minimum
+                        if lim_delay > soft_delay_state[block.soft_delay.numID].min_delay:
+                            soft_delay_state[block.soft_delay.numID].min_delay = lim_delay
+                    else:
+                        # lim_delay corresponds to the maximum
+                        if lim_delay < soft_delay_state[block.soft_delay.numID].max_delay:
+                            soft_delay_state[block.soft_delay.numID].max_delay = lim_delay
+                else:
+                    # Numeric ID is invalid
+                    error_report.append(
+                        SimpleNamespace(
+                            block=block_counter,
+                            event='soft_delay',
+                            field='numID',
+                            error_type='SOFT_DELAY_NUMID_INVALID',
+                            value=block.soft_delay.numID,
+                        )
+                    )
+
+        numIDs_ = np.array(soft_delay_state.keys())
+        delays_by_hints = {}
+        if numIDs_[0] != 0 or np.any(np.diff(numIDs_) != 1):
+            warn('Soft delay numeric IDs are not continuous, which is unexpected.')
+        for numID_, delay_state_ in soft_delay_state.items():
+            if delay_state_.hint not in delays_by_hints:
+                delays_by_hints[delay_state_.hint] = delay_state_.default
+            else:
+                raise ValueError(
+                    f'SoftDelay with numeric ID {numID_} uses the same hint "{delay_state_.hint}" as some previous soft delay'
+                )
+
+        return delays_by_hints, error_report, soft_delay_state
 
     def test_report(self) -> str:
         """
