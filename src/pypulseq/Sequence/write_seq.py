@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 from typing import Union
+from warnings import warn
 
 import numpy as np
 
@@ -214,6 +215,22 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
                 value = self.label_inc_library.data[k][0]
                 label_id = labels[self.label_inc_library.data[k][1] - 1]  # label_id is +1 in add_block()
                 s = id_format_str.format(k, value, label_id)
+                output_file.write(s)
+            output_file.write('\n')
+
+        if len(self.soft_delay_library.data) != 0:
+            output_file.write('# Extension specification for soft delays:\n')
+            output_file.write('# id num offset factor hint\n')
+            output_file.write('# ..  ..     us     ..   ..\n')
+
+            tid = self.get_extension_type_ID('SOFTDELAY')
+            output_file.write(f'extension DELAYS {tid}\n')
+            id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {}\n'
+
+            for k in self.soft_delay_library.data:
+                data = self.soft_delay_library.data[k]
+                data[2] = np.round(data[1] * 1e6)  # Convert to us
+                s = id_format_str.format(k, *data)
                 output_file.write(s)
             output_file.write('\n')
 
@@ -465,6 +482,11 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
                 s = id_format_str.format(k, value, label_id)
                 output_file.write(s)
             output_file.write('\n')
+
+        if len(self.soft_delay_library.data) != 0:
+            warn(
+                'WARNING! The sequence in memory uses "soft delay" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is only partially valid and may fail to load or operate in some cases.'
+            )
 
         if len(self.shape_library.data) != 0:
             output_file.write('# Sequence Shapes\n')
