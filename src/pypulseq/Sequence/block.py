@@ -40,6 +40,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If two consecutive gradients to not have the same amplitude at the connection point.
         If the first gradient in the block does not start with 0.
         If a gradient that doesn't end at zero is not aligned to the block boundary.
+        If multiple soft_delay extensions are used in a block.
+        If a soft delay extension is used in a block of zero duration.
+        If a soft delay extension is used in a block containing conventional events.
     """
     events = block_to_events(*args)
     new_block = np.zeros(7, dtype=np.int32)
@@ -150,6 +153,15 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     'ref': label_id,
                 }
                 extensions.append(ext)
+            elif event.type == 'soft_delay':
+                if hasattr(event, 'id'):
+                    event_id = event.id
+                else:
+                    event_id = register_soft_delay_event(self, event)
+                ext = {'type': self.get_extension_type_ID('DELAYS'), 'ref': event_id}
+                extensions.append(ext)
+            else:
+                raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
             # Floating point number given as delay
             duration = max(duration, event)
@@ -184,6 +196,20 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 if not found:
                     self.extensions_library.insert(extension_id, data)
 
+        # Sanity checks for the soft delays
+        n_soft_delays = sum([1 for e in extensions if e['type'] == self.get_extension_type_ID('DELAYS')])
+        if n_soft_delays:
+            if n_soft_delays > 1:
+                raise RuntimeError('Only one soft delay extension is allowed per block.')
+            if not duration:
+                raise RuntimeError(
+                    'Soft delay extension can only be used in conjunstion with blocks of non-zero duration.'
+                )  # otherwise the gradient checks get tedious
+            event_check_ = [True for e in events if e.type != 'soft_delay']
+            if len(event_check_):
+                raise RuntimeError(
+                    'Soft delay extension can only be used in empty blocks (blocks containing no conventional events such as RF, adc or gradients).'
+                )
         # Now we add the ID
         new_block[6] = extension_id
 
@@ -268,7 +294,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     self.block_durations[block_index] = float(duration)
 
 
-def get_block(self, block_index: int) -> SimpleNamespace:
+def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
     """
     Returns PyPulseq block at `block_index` position in `self.block_events`.
 
@@ -380,7 +406,6 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         adc.type = 'adc'
         block.adc = adc
 
-    # Triggers
     if event_ind[6] > 0:
         # We have extensions - triggers, labels, etc.
         next_ext_id = event_ind[6]
@@ -389,6 +414,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             # Format: ext_type, ext_id, next_ext_id
             ext_type = self.get_extension_type_string(ext_data[0])
 
+            # Triggers
             if ext_type == 'TRIGGERS':
                 trigger_types = ['output', 'trigger']
                 data = self.trigger_library.data[ext_data[1]]
@@ -426,6 +452,21 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                     block.label[len(block.label)] = label
                 else:
                     block.label = {0: label}
+            elif ext_type == 'DELAYS':
+                data = self.soft_delay_library.data[ext_data[1]]
+
+                # TODO: Check for multiple soft delays
+
+                block.soft_delay = SimpleNamespace(
+                    type='soft_delay',
+                    numID=data[0],
+                    offset=data[1],
+                    factor=data[2],
+                    hint=self.soft_delay_hints.get_by_value(data[3]),
+                )
+                if add_ids:
+                    block.soft_delay.id = ext_data[1]
+
             else:
                 raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
 
@@ -611,6 +652,29 @@ def register_label_event(self, event: SimpleNamespace) -> int:
         self.block_cache.clear()
 
     return label_id
+
+
+def register_soft_delay_event(self, event: SimpleNamespace) -> int:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        ID of soft delay event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered soft delay event.
+    """
+    try:
+        hint_id = self.soft_delay_hints.get_by_key(event.hint)
+    except KeyError:
+        hint_id = len(self.soft_delay_hints)
+        self.soft_delay_hints.insert(event.hint, hint_id)
+
+    data = (event.numID, event.offset, event.factor, hint_id)
+    soft_delay_id, _ = self.soft_delay_library.find_or_insert(new_data=data)
+    return soft_delay_id
 
 
 def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
