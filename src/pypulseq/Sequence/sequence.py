@@ -1519,11 +1519,6 @@ class Sequence:
 
         """
 
-        # soft_delay_error_messages = {
-        #     'SOFT_DELAY_FACTOR': 'Soft delay factor is zero, which is invalid.',
-        #     'SOFT_DELAY_DUR_INCONSISTENCY': 'default duration derived from this block is inconsistent with the previous default.',
-        #     'SOFT_DELAY_HINT_INCONSISTENCY': 'Soft delays with the same numeric ID are expected to share the same text hint but previous hint recorded in block.',
-        # }
         error_report: List[SimpleNamespace] = []
         soft_delay_state = {}
 
@@ -1539,6 +1534,8 @@ class Sequence:
                             field='delay',
                             error_type='SOFT_DELAY_FACTOR',
                             value=block.soft_delay.factor,
+                            hint=block.soft_delay.hint,
+                            numID=block.soft_delay.numID,
                         )
                     )
                 # Calculate default delay based on the current block duration
@@ -1568,6 +1565,8 @@ class Sequence:
                                     field='delay',
                                     error_type='SOFT_DELAY_DUR_INCONSISTENCY',
                                     value=default_delay,
+                                    hint=block.soft_delay.hint,
+                                    numID=block.soft_delay.numID,
                                 )
                             )
                         if block.soft_delay.hint != soft_delay_state[block.soft_delay.numID].hint:
@@ -1578,6 +1577,7 @@ class Sequence:
                                     field='hint',
                                     error_type='SOFT_DELAY_HINT_INCONSISTENCY',
                                     value=block.soft_delay.hint,
+                                    prev_hint=soft_delay_state[block.soft_delay.numID].hint,
                                 )
                             )
                     # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
