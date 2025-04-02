@@ -217,11 +217,9 @@ def make_extended_trapezoid_area(
         times = cumsum(0, time_ramp_up, time_ramp_down)
         amplitudes = np.array([grad_start, grad_amp, grad_end])
 
-    grad = make_extended_trapezoid(channel=channel,
-                                   amplitudes=amplitudes,
-                                   convert_to_arbitrary=convert_to_arbitrary,
-                                   system=system,
-                                   times=times)
+    grad = make_extended_trapezoid(
+        channel=channel, amplitudes=amplitudes, convert_to_arbitrary=convert_to_arbitrary, system=system, times=times
+    )
 
     # Overwrite trace
     if trace_enabled():

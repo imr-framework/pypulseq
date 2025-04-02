@@ -103,10 +103,15 @@ def test_make_extended_trapezoid_area_convert_to_arb(grad_start, grad_end, area)
 
     assert pytest.approx(g.area) == g_arb.area, 'Area of extended trapz and arb gradient do not match'
     assert pytest.approx(g.shape_dur) == g_arb.shape_dur, 'Duration of extended trapz and arb gradient do not match'
-    assert g.tt.shape[0] <= g_arb.tt.shape[0], 'Extended trapezoid should have less or equal number of points than arb gradient'
-    assert g.waveform.shape[0] <= g_arb.waveform.shape[0], 'Extended trapezoid should have less or equal number of points than arb gradient'
+    assert g.tt.shape[0] <= g_arb.tt.shape[0], (
+        'Extended trapezoid should have less or equal number of points than arb gradient'
+    )
+    assert g.waveform.shape[0] <= g_arb.waveform.shape[0], (
+        'Extended trapezoid should have less or equal number of points than arb gradient'
+    )
     assert grad_ok == grad_arb_ok, 'Gradient strength violation between extended trapz and arb gradient'
     assert slew_ok == slew_arb_ok, 'Slew rate violation between extended trapz and arb gradient'
+
 
 random.seed(0)
 test_zoo_random = [
