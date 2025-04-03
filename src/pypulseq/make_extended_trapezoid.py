@@ -130,7 +130,7 @@ def make_extended_trapezoid(
 
     slew = np.diff(grad.waveform) / np.diff(grad.tt)
 
-    if max(abs(slew)) > max_slew + eps:
+    if max(abs(slew)) > max_slew * (1 + eps):
         raise ValueError(f'Slew rate violation {max(abs(slew)) / max_slew * 100:.2f}%')
     if max(abs(grad.waveform)) > max_grad + eps:
         raise ValueError(f'Gradient amplitude violation {max(abs(grad.waveform)) / max_grad * 100:.2f}%')
