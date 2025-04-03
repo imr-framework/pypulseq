@@ -46,7 +46,7 @@ test_zoo = [
 ]
 
 
-@pytest.mark.parametrize('grad_start,grad_end,area', test_zoo)
+@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo)
 def test_make_extended_trapezoid_area(grad_start, grad_end, area):
     g, _, _ = make_extended_trapezoid_area(
         channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
@@ -71,7 +71,7 @@ test_zoo_random = [
 ]
 
 
-@pytest.mark.parametrize('grad_start,grad_end,area', test_zoo_random)
+@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
 def test_make_extended_trapezoid_area_random_cases(grad_start, grad_end, area):
     g, _, _ = make_extended_trapezoid_area(
         channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
@@ -85,6 +85,34 @@ def test_make_extended_trapezoid_area_random_cases(grad_start, grad_end, area):
     assert slew_ok, 'Maximum slew rate violated'
 
 
+@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
+def test_make_extended_trapezoid_area_convert_to_arb(grad_start, grad_end, area):
+    g, _, _ = make_extended_trapezoid_area(
+        channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
+    )
+
+    g_arb, _, _ = make_extended_trapezoid_area(
+        channel='x', grad_start=grad_start, grad_end=grad_end, area=area, convert_to_arbitrary=True, system=system
+    )
+
+    grad_ok = all(abs(g.waveform) <= system.max_grad)
+    slew_ok = all(abs(np.diff(g.waveform) / np.diff(g.tt)) <= system.max_slew)
+
+    grad_arb_ok = all(abs(g_arb.waveform) <= system.max_grad)
+    slew_arb_ok = all(abs(np.diff(g_arb.waveform) / np.diff(g_arb.tt)) <= system.max_slew)
+
+    assert pytest.approx(g.area) == g_arb.area, 'Area of extended trapz and arb gradient do not match'
+    assert pytest.approx(g.shape_dur) == g_arb.shape_dur, 'Duration of extended trapz and arb gradient do not match'
+    assert g.tt.shape[0] <= g_arb.tt.shape[0], (
+        'Extended trapezoid should have less or equal number of points than arb gradient'
+    )
+    assert g.waveform.shape[0] <= g_arb.waveform.shape[0], (
+        'Extended trapezoid should have less or equal number of points than arb gradient'
+    )
+    assert grad_ok == grad_arb_ok, 'Gradient strength violation between extended trapz and arb gradient'
+    assert slew_ok == slew_arb_ok, 'Slew rate violation between extended trapz and arb gradient'
+
+
 random.seed(0)
 test_zoo_random = [
     (
@@ -96,7 +124,7 @@ test_zoo_random = [
 ]
 
 
-@pytest.mark.parametrize('grad_start,grad_end,grad_amp', test_zoo_random)
+@pytest.mark.parametrize('grad_start, grad_end, grad_amp', test_zoo_random)
 def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
     def _to_raster(time: float) -> float:
         return np.ceil(time / system.grad_raster_time) * system.grad_raster_time
