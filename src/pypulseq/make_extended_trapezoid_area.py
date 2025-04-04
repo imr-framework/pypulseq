@@ -3,6 +3,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.utils.cumsum import cumsum
@@ -84,7 +85,7 @@ def make_extended_trapezoid_area(
 
         # Check if gradient amplitude exceeds max_grad, if so, adjust ramp
         # times for a trapezoidal gradient with maximum slew rate.
-        if grad_start + ramp_up_time * max_slew * raster_time > max_grad:
+        if grad_start + ramp_up_time * max_slew * raster_time > max_grad + eps:
             ramp_up_time = round(_calc_ramp_time(grad_start, max_grad) / raster_time)
             ramp_down_time = round(_calc_ramp_time(grad_end, max_grad) / raster_time)
         else:
@@ -102,7 +103,7 @@ def make_extended_trapezoid_area(
 
         # Check if gradient amplitude exceeds -max_grad, if so, adjust ramp
         # times for a trapezoidal gradient with maximum slew rate.
-        if grad_start - ramp_up_time * max_slew * raster_time < -max_grad:
+        if grad_start - ramp_up_time * max_slew * raster_time < -max_grad - eps:
             ramp_up_time = round(_calc_ramp_time(grad_start, -max_grad) / raster_time)
             ramp_down_time = round(_calc_ramp_time(grad_end, -max_grad) / raster_time)
         else:
