@@ -20,7 +20,7 @@ def calculate_shortest_params_for_area(area: float, max_slew: float, max_grad: f
     effective_time = rise_time
 
     # Adjust for max gradient constraint
-    if abs(amplitude) > max_grad:
+    if abs(amplitude) > max_grad + eps:
         effective_time = math.ceil(abs(area) / max_grad / grad_raster_time) * grad_raster_time
         amplitude = area / effective_time
         rise_time = math.ceil(abs(amplitude) / max_slew / grad_raster_time) * grad_raster_time
@@ -225,15 +225,15 @@ def make_trapezoid(
     if rise_time is None and fall_time is None:
         rise_time = fall_time = calculate_shortest_rise_time(amplitude2, max_slew, system.grad_raster_time)
 
-    if abs(amplitude2) > max_grad:
+    if abs(amplitude2) > max_grad + eps:
         raise ValueError(f'Refined amplitude ({abs(amplitude2):0.0f} Hz/m) is larger than max ({max_grad:0.0f} Hz/m).')
 
-    if abs(amplitude2) / rise_time > max_slew:
+    if abs(amplitude2) / rise_time > max_slew + eps:
         raise ValueError(
             f'Refined slew rate ({abs(amplitude2) / rise_time:0.0f} Hz/m/s) for ramp up is larger than max ({max_slew:0.0f} Hz/m/s).'
         )
 
-    if abs(amplitude2) / fall_time > max_slew:
+    if abs(amplitude2) / fall_time > max_slew + eps:
         raise ValueError(
             f'Refined slew rate ({abs(amplitude2) / fall_time:0.0f} Hz/m/s) for ramp down is larger than max ({max_slew:0.0f} Hz/m/s).'
         )
