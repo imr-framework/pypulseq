@@ -3,6 +3,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.utils.cumsum import cumsum
@@ -14,6 +15,7 @@ def make_extended_trapezoid_area(
     channel: str,
     grad_start: float,
     grad_end: float,
+    convert_to_arbitrary: bool = False,
     system: Union[Opts, None] = None,
 ) -> Tuple[SimpleNamespace, np.array, np.array]:
     """Make the shortest possible extended trapezoid for given area and gradient start and end point.
@@ -28,6 +30,8 @@ def make_extended_trapezoid_area(
         Starting non-zero gradient value.
     grad_end : float
         Ending non-zero gradient value.
+    convert_to_arbitrary : bool, default=False
+        Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
     system: Opts, optional
         System limits.
 
@@ -84,7 +88,7 @@ def make_extended_trapezoid_area(
 
         # Check if gradient amplitude exceeds max_grad, if so, adjust ramp
         # times for a trapezoidal gradient with maximum slew rate.
-        if grad_start + ramp_up_time * max_slew * raster_time > max_grad:
+        if grad_start + ramp_up_time * max_slew * raster_time > max_grad + eps:
             ramp_up_time = round(_calc_ramp_time(grad_start, max_grad) / raster_time)
             ramp_down_time = round(_calc_ramp_time(grad_end, max_grad) / raster_time)
         else:
@@ -102,7 +106,7 @@ def make_extended_trapezoid_area(
 
         # Check if gradient amplitude exceeds -max_grad, if so, adjust ramp
         # times for a trapezoidal gradient with maximum slew rate.
-        if grad_start - ramp_up_time * max_slew * raster_time < -max_grad:
+        if grad_start - ramp_up_time * max_slew * raster_time < -max_grad - eps:
             ramp_up_time = round(_calc_ramp_time(grad_start, -max_grad) / raster_time)
             ramp_down_time = round(_calc_ramp_time(grad_end, -max_grad) / raster_time)
         else:
@@ -214,7 +218,9 @@ def make_extended_trapezoid_area(
         times = cumsum(0, time_ramp_up, time_ramp_down)
         amplitudes = np.array([grad_start, grad_amp, grad_end])
 
-    grad = make_extended_trapezoid(channel=channel, system=system, times=times, amplitudes=amplitudes)
+    grad = make_extended_trapezoid(
+        channel=channel, amplitudes=amplitudes, convert_to_arbitrary=convert_to_arbitrary, system=system, times=times
+    )
 
     # Overwrite trace
     if trace_enabled():
@@ -223,4 +229,4 @@ def make_extended_trapezoid_area(
     if not abs(grad.area - area) < 1e-8:
         raise ValueError(f'Could not find a solution for area={area}.')
 
-    return grad, np.array(times), amplitudes
+    return grad, grad.tt, grad.waveform
