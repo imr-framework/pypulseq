@@ -233,7 +233,7 @@ def make_trapezoid(
             f'Refined slew rate ({abs(amplitude2) / rise_time:0.0f} Hz/m/s) for ramp up is larger than max ({max_slew:0.0f} Hz/m/s).'
         )
 
-    if abs(amplitude2) / fall_time > max_slew  * (1 + eps):
+    if abs(amplitude2) / fall_time > max_slew * (1 + eps):
         raise ValueError(
             f'Refined slew rate ({abs(amplitude2) / fall_time:0.0f} Hz/m/s) for ramp down is larger than max ({max_slew:0.0f} Hz/m/s).'
         )
