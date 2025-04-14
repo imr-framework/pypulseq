@@ -988,14 +988,12 @@ class Sequence:
                         t = t0 + adc.delay + (adc.num_samples - 1) / 2 * adc.dwell
                         _t = [t_factor * t] * len(lbl_vals)
                         # Plot each label individually to retrieve each corresponding Line2D object
-                        itertools.chain.from_iterable(
-                            [
-                                sp11.text(__t, 0.01 + 0.015 * _count, _label_str + str(_lbl_vals))
-                                for __t, _lbl_vals, _label_str, _count in zip(
-                                    _t, lbl_vals, label_legend_to_plot, range(len(lbl_vals))
-                                )
-                            ]
+                        p = itertools.chain.from_iterable(
+                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
                         )
+                        if len(label_legend_to_plot) != 0:
+                            sp11.legend(p, label_legend_to_plot, loc='upper left')
+                            label_legend_to_plot = []
 
                 if getattr(block, 'rf', None) is not None:  # RF
                     rf = block.rf
