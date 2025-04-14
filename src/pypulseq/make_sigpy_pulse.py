@@ -187,11 +187,6 @@ def sigpy_n_seq(
         if rfp.delay < (gz.rise_time + gz.delay):
             rfp.delay = gz.rise_time + gz.delay
 
-    if rfp.ringdown_time > 0:
-        t_fill = np.arange(1, round(rfp.ringdown_time / 1e-6) + 1) * 1e-6
-        rfp.t = np.concatenate((rfp.t, rfp.t[-1] + t_fill))
-        rfp.signal = np.concatenate((rfp.signal, np.zeros(len(t_fill))))
-
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rfp.signal == -0.0)
     rfp.signal[negative_zero_indices] = 0
@@ -219,7 +214,7 @@ def make_slr(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    n_samples = int(round(duration / 1e-6))
+    n_samples = round(duration / 1e-6)
     t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
@@ -271,7 +266,7 @@ def make_sms(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    n_samples = int(round(duration / 1e-6))
+    n_samples = round(duration / 1e-6)
     t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy

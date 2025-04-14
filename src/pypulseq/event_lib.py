@@ -279,7 +279,7 @@ class EventLibrary:
             format specifier if N > 0, and similar to {.0f} otherwise.
             """
             return tuple(
-                round(d, dig - int(math.ceil(math.log10(abs(d) + 1e-12))) if dig > 0 else -dig)
+                round(d, dig - math.ceil(math.log10(abs(d) + 1e-12)) if dig > 0 else -dig)
                 for d, dig in zip(data, digits)
             )
 

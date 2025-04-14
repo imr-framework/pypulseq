@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypulseq"
-version = "1.4.2"
+version = "1.4.2.post1"
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
 maintainers = [
   { name = "Bilal Tasdelen" },
@@ -33,7 +33,7 @@ test = [
   "codecov",
   "pre-commit",
   "pytest",
-  "pytest-cov",
+  "pytest-cov<6.1",
   "pytest-xdist",
 ]
 
