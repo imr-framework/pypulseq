@@ -59,12 +59,13 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
     # Calculate timing
     delay_TE = (
-        np.ceil(
+        math.ceil(
             (
                 TE
+                - (pp.calc_duration(gz, rf) - pp.calc_rf_center(rf)[0] - rf.delay)
                 - pp.calc_duration(gx_pre)
-                - max(gz.fall_time + gz.flat_time / 2, rf.ringdown_time + rf.shape_dur / 2)
                 - pp.calc_duration(gx) / 2
+                - pp.eps
             )
             / seq.grad_raster_time
         )
