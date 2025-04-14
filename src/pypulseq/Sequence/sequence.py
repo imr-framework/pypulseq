@@ -992,7 +992,7 @@ class Sequence:
                             [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
                         )
                         if len(label_legend_to_plot) != 0:
-                            sp11.legend(p, label_legend_to_plot, loc='upper left')
+                            sp11.legend(list(p), label_legend_to_plot, loc='upper left')
                             label_legend_to_plot = []
 
                 if getattr(block, 'rf', None) is not None:  # RF
