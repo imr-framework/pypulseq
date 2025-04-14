@@ -62,7 +62,7 @@ def test_slr():
     )
 
     # Check that the number of samples in the pulse is correct
-    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
+    assert rfp.signal.shape[0] == pytest.approx(duration / system.rf_raster_time)
 
     # Check that the pulse can be added to a PyPulseq Sequence
     seq = pp.Sequence(system=system)
@@ -125,7 +125,7 @@ def test_sms():
     )
 
     # Check that the number of samples in the pulse is correct
-    assert rfp.signal.shape[0] == pytest.approx((duration + system.rf_ringdown_time) / system.rf_raster_time)
+    assert rfp.signal.shape[0] == pytest.approx(duration / system.rf_raster_time)
 
     # Check that the pulse can be added to a PyPulseq Sequence
     seq = pp.Sequence(system=system)
