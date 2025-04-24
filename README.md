@@ -4,6 +4,11 @@
 
 </p>
 
+<p align = "left">
+    
+[![FAIR checklist badge](https://fairsoftwarechecklist.net/badge.svg)](https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=32322&r=133)
+
+</p>
 # PyPulseq: A Python Package for MRI Pulse Sequence Design
 
 ## PyPulseq (v1.4.2) is compatible with all Pulseq interpreter sequences with version >= 1.4.0
