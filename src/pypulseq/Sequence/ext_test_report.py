@@ -199,8 +199,8 @@ def ext_test_report(self) -> str:
         else:
             report += 'Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n'
 
-    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m')
-    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s')
+    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
+    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
     report += (
         'Max gradient: '
         + ('{:.0f} ' * len(ga)).format(*ga)
@@ -216,8 +216,8 @@ def ext_test_report(self) -> str:
         + 'T/m/s\n'
     )
 
-    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m')
-    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s')
+    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
+    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
     report += f'Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n'
     report += f'Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s'
 
