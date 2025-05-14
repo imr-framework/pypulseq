@@ -281,6 +281,8 @@ class Sequence:
             K-space trajectory sampled at `t_adc` timepoints.
         k_traj : numpy.array
             K-space trajectory of the entire pulse sequence.
+        t_ktraj : numpy.array
+            K-space trajectory timepoints.
         t_excitation : List[float]
             Excitation timepoints.
         t_refocusing : List[float]
@@ -429,7 +431,7 @@ class Sequence:
         k_traj[:, i_period_end] = k_traj[:, i_period_end] + dk
         k_traj_adc = k_traj[:, i_adc]
 
-        return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
+        return k_traj_adc, k_traj, t_ktraj, t_excitation, t_refocusing, t_adc
 
     def calculate_kspacePP(
         self,
