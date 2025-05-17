@@ -188,6 +188,12 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     return get_supported_labels().index(s) + 1
 
                 self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
+            elif section[:18] == 'extension DELAYS':
+                extension_id = int(section[18:])
+                self.set_extension_numeric_ID('DELAYS', extension_id)
+                self.soft_delay_library = __read_and_parse_events(
+                    input_file, int, lambda ofs: 1e-6 * int(ofs), int, lambda s: __parse_soft_delay_hint(s, self)
+                )
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
@@ -613,6 +619,31 @@ def __skip_comments(input_file, stop_before_section: bool = False) -> str:
         next_line = -1
 
     return next_line
+
+
+def __parse_soft_delay_hint(s: str, seq) -> int:
+    """
+    Parse the soft delay hint and return its ID. If the hint does not exist, create a new ID for it.
+
+    Parameters
+    ----------
+    s : str
+        The soft delay hint.
+    seq : Sequence
+        The sequence object containing soft delay hints.
+
+    Returns
+    -------
+    int
+        The ID of the soft delay hint.
+    """
+    try:
+        numID = seq.soft_delay_hints.getByValue(s)
+    except KeyError:
+        numID = len(seq.soft_delay_hints) + 1
+        seq.soft_delay_hints.insert(numID, s)
+
+    return numID
 
 
 def __strip_line(input_file) -> str:
