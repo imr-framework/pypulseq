@@ -749,7 +749,7 @@ class Sequence:
             gradient_delays = [trajectory_delay] * ng
         else:
             assert len(trajectory_delay) == ng  # Need to have same number of gradient channels
-            gradient_delays = trajectory_delay * ng
+            gradient_delays = trajectory_delay
 
         # Gradient offset handling
         if isinstance(gradient_offset, (int, float)):
