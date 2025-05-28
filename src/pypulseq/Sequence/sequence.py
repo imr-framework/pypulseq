@@ -1000,6 +1000,12 @@ class Sequence:
                     tc, ic = calc_rf_center(rf)
                     time = rf.t
                     signal = rf.signal
+
+                    if signal.shape[0] == 2 and rf.freq_offset != 0:
+                        num_samples = min(int(abs(rf.freq_offset)), 256)
+                        time = np.linspace(time[0], time[-1], num_samples)
+                        signal = np.linspace(signal[0], signal[-1], num_samples)
+
                     if abs(signal[0]) != 0:
                         signal = np.concatenate(([0], signal))
                         time = np.concatenate(([time[0]], time))
