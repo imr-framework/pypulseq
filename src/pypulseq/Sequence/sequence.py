@@ -270,10 +270,16 @@ class Sequence:
 
         Parameters
         ----------
-        trajectory_delay : float or list, default=0
+        trajectory_delay : float or list or numpy.ndarray, default=0
             Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
-        gradient_offset : float or list, default=0
+            If trajectory_delay is a single value, this value will be used for all gradient channels.
+            If trajectory_delay is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        gradient_offset : float or list or numpy.ndarray, default=0
             Simulates background gradients (specified in Hz/m)
+            If gradient_offset is a single value, this value will be used for all gradient channels.
+            If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
 
         Returns
         -------
@@ -725,10 +731,16 @@ class Sequence:
 
         Parameters
         ----------
-        trajectory_delay : float or list, default=0
+        trajectory_delay : float or list or numpy.ndarray, default=0
             Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
-        gradient_offset : float or list, default=0
+            If trajectory_delay is a single value, this value will be used for all gradient channels.
+            If trajectory_delay is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        gradient_offset : float or list or numpy.ndarray, default=0
             Simulates background gradients (specified in Hz/m)
+            If gradient_offset is a single value, this value will be used for all gradient channels.
+            If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
 
         Returns
         -------
