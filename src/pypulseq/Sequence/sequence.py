@@ -1027,30 +1027,45 @@ class Sequence:
                         sp12.plot(time_with_delay, np.real(signal))
 
                         # Include sign(real(signal)) factor like MATLAB
-                        phase_corrected = signal * np.sign(np.real(signal)) * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
-                        sc_corrected = signal[index_center] * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        phase_corrected = (
+                            signal
+                            * np.sign(np.real(signal))
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
 
                         sp13.plot(
                             time_with_delay,
                             np.angle(phase_corrected),
                             time_center_with_delay,
                             np.angle(sc_corrected),
-                            'xb'
+                            'xb',
                         )
                     else:
                         # Plot magnitude of complex signal
                         sp12.plot(time_with_delay, np.abs(signal))
 
                         # Plot angle of complex signal
-                        phase_corrected = signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
-                        sc_corrected = signal[index_center] * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        phase_corrected = (
+                            signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
 
                         sp13.plot(
                             time_with_delay,
                             np.angle(phase_corrected),
                             time_center_with_delay,
                             np.angle(sc_corrected),
-                            'xb'
+                            'xb',
                         )
 
                 grad_channels = ['gx', 'gy', 'gz']
