@@ -72,7 +72,7 @@ The latest features and minor bug fixes might not be included in the latest rele
 
 ## 4. 🏃‍♂ Example scripts
 
-The PyPulseq repository contains several example sequences in the [seq_examples](/pypulseq/seq_examples/) folder. Every example script or example notebook creates a pulse sequence, plots the pulse timing diagram and finally saves the sequence as a `.seq` file to disk.
+The PyPulseq repository contains several example sequences in the [examples](/examples/) folder. Every example script or example notebook creates a pulse sequence, plots the pulse timing diagram and finally saves the sequence as a `.seq` file to disk.
 
 ---
 
