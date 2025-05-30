@@ -270,10 +270,16 @@ class Sequence:
 
         Parameters
         ----------
-        trajectory_delay : float or list, default=0
+        trajectory_delay : float or list or numpy.ndarray, default=0
             Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
-        gradient_offset : float or list, default=0
+            If trajectory_delay is a single value, this value will be used for all gradient channels.
+            If trajectory_delay is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        gradient_offset : float or list or numpy.ndarray, default=0
             Simulates background gradients (specified in Hz/m)
+            If gradient_offset is a single value, this value will be used for all gradient channels.
+            If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
 
         Returns
         -------
@@ -725,10 +731,16 @@ class Sequence:
 
         Parameters
         ----------
-        trajectory_delay : float or list, default=0
+        trajectory_delay : float or list or numpy.ndarray, default=0
             Compensation factor in seconds (s) to align ADC and gradients in the reconstruction.
-        gradient_offset : float or list, default=0
+            If trajectory_delay is a single value, this value will be used for all gradient channels.
+            If trajectory_delay is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        gradient_offset : float or list or numpy.ndarray, default=0
             Simulates background gradients (specified in Hz/m)
+            If gradient_offset is a single value, this value will be used for all gradient channels.
+            If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
+            channels and the first element is applied to the first gradient channel, the second to the second, and so on.
 
         Returns
         -------
@@ -749,7 +761,7 @@ class Sequence:
             gradient_delays = [trajectory_delay] * ng
         else:
             assert len(trajectory_delay) == ng  # Need to have same number of gradient channels
-            gradient_delays = trajectory_delay * ng
+            gradient_delays = trajectory_delay
 
         # Gradient offset handling
         if isinstance(gradient_offset, (int, float)):
@@ -997,32 +1009,76 @@ class Sequence:
 
                 if getattr(block, 'rf', None) is not None:  # RF
                     rf = block.rf
-                    tc, ic = calc_rf_center(rf)
+                    time_center, index_center = calc_rf_center(rf)
                     time = rf.t
                     signal = rf.signal
+
+                    if signal.shape[0] == 2 and rf.freq_offset != 0:
+                        num_samples = min(int(abs(rf.freq_offset)), 256)
+                        time = np.linspace(time[0], time[-1], num_samples)
+                        signal = np.linspace(signal[0], signal[-1], num_samples)
+
                     if abs(signal[0]) != 0:
                         signal = np.concatenate(([0], signal))
                         time = np.concatenate(([time[0]], time))
-                        ic += 1
+                        index_center += 1
 
                     if abs(signal[-1]) != 0:
                         signal = np.concatenate((signal, [0]))
                         time = np.concatenate((time, [time[-1]]))
 
-                    sp12.plot(t_factor * (t0 + time + rf.delay), np.abs(signal))
-                    sp13.plot(
-                        t_factor * (t0 + time + rf.delay),
-                        np.angle(
-                            signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
-                        ),
-                        t_factor * (t0 + tc + rf.delay),
-                        np.angle(
-                            signal[ic]
+                    signal_is_real = max(np.abs(np.imag(signal))) / max(np.abs(np.real(signal))) < 1e-6
+
+                    # Compute time vector with delay applied
+                    time_with_delay = t_factor * (t0 + time + rf.delay)
+                    time_center_with_delay = t_factor * (t0 + time_center + rf.delay)
+
+                    # Choose plot behavior based on realness of signal
+                    if signal_is_real:
+                        # Plot real part of signal
+                        sp12.plot(time_with_delay, np.real(signal))
+
+                        # Include sign(real(signal)) factor like MATLAB
+                        phase_corrected = (
+                            signal
+                            * np.sign(np.real(signal))
                             * np.exp(1j * rf.phase_offset)
-                            * np.exp(1j * 2 * math.pi * time[ic] * rf.freq_offset)
-                        ),
-                        'xb',
-                    )
+                            * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
+
+                        sp13.plot(
+                            time_with_delay,
+                            np.angle(phase_corrected),
+                            time_center_with_delay,
+                            np.angle(sc_corrected),
+                            'xb',
+                        )
+                    else:
+                        # Plot magnitude of complex signal
+                        sp12.plot(time_with_delay, np.abs(signal))
+
+                        # Plot angle of complex signal
+                        phase_corrected = (
+                            signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
+
+                        sp13.plot(
+                            time_with_delay,
+                            np.angle(phase_corrected),
+                            time_center_with_delay,
+                            np.angle(sc_corrected),
+                            'xb',
+                        )
 
                 grad_channels = ['gx', 'gy', 'gz']
                 for x in range(len(grad_channels)):  # Gradients
