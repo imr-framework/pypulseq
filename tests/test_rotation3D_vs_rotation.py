@@ -75,11 +75,16 @@ def compare_gradient_sets(
                 if abs(val_A - val_B) > tolerance:
                     return False
             elif isinstance(val_A, np.ndarray) and isinstance(val_B, np.ndarray):
-                if val_A.dtype in (np.float64, np.float32) and val_B.dtype in (np.float64, np.float32): # check if they are float arrays
-                    if not np.allclose(val_A, val_B, atol=tolerance, rtol=0): # Using rtol=0 for pure absolute tolerance
+                if val_A.dtype in (np.float64, np.float32) and val_B.dtype in (
+                    np.float64,
+                    np.float32,
+                ):  # check if they are float arrays
+                    if not np.allclose(
+                        val_A, val_B, atol=tolerance, rtol=0
+                    ):  # Using rtol=0 for pure absolute tolerance
                         return False
-                elif val_A.shape != val_B.shape or (val_A != val_B).any(): # For non-float arrays or if shapes differ
-                        return False
+                elif val_A.shape != val_B.shape or (val_A != val_B).any():  # For non-float arrays or if shapes differ
+                    return False
             elif val_A != val_B:
                 return False
         return True
@@ -94,6 +99,7 @@ def compare_gradient_sets(
                 return False
 
     return True
+
 
 angle_deg_list = [0.0, 0.1, 1, 60, 90, 180, 360, 400.1, -0.1, -1, -90, -180, -360]
 
@@ -115,6 +121,7 @@ grad_list = [
     pypulseq.make_extended_trapezoid('z', [0, 3, 2, 3], convert_to_arbitrary=False, times=[1, 2, 3, 4]),
 ]
 
+
 @pytest.mark.filterwarnings('ignore:When using rotate():UserWarning')
 @pytest.mark.parametrize('angle_deg', angle_deg_list)
 def test_rotation3D_vs_rotation(angle_deg):
@@ -133,6 +140,7 @@ def test_rotation3D_vs_rotation(angle_deg):
             assert compare_gradient_sets(grads_rotated, grads_rotated3D, tolerance=1e-4), (
                 f'Result of rotate and rotate3D should be the same! Angle: {angle_deg}, Axis: {rotation_axis}, Grad: {grad}'
             )
+
 
 @pytest.mark.filterwarnings('ignore:When using rotate():UserWarning')
 @pytest.mark.parametrize('angle_deg', angle_deg_list)
@@ -156,6 +164,7 @@ def test_rotation3D_vs_rotation_double(angle_deg):
                 f'Result of double rotate and rotate3D should be the same! Angle: {angle_deg}, Axis: {rotation_axis}, Grad: {grad}'
             )
 
+
 @pytest.mark.filterwarnings('ignore:When using rotate():UserWarning')
 @pytest.mark.parametrize('angle_deg', angle_deg_list)
 def test_rotation3D_vs_rotation_double_2(angle_deg):
@@ -172,7 +181,6 @@ def test_rotation3D_vs_rotation_double_2(angle_deg):
 
             grads_rotated_double = rotate(*grads_rotated, angle=angle_rad, axis=rotation_axis)
             grads_rotated3D_double_2 = rotate3D(*[grad], rotation_matrix=rotation_matrix @ rotation_matrix)
-
 
             assert compare_gradient_sets(grads_rotated_double, grads_rotated3D_double_2, tolerance=1e-4), (
                 f'Result of second double rotate and rotate3D should be the same! Angle: {angle_deg}, Axis: {rotation_axis}, Grad: {grad}'
