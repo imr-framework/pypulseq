@@ -1,11 +1,12 @@
 import math
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, sim_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
     # ======
     # SETUP
     # ======
@@ -133,8 +134,20 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
         seq.write(seq_filename)
 
+    if sim_seq:
+        sig = seq.sim_mr0(no_clean_up=True)
+        sig2d = sig.reshape((Ny, Nx)).flip(0)
+        reco = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(sig2d)))
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.imshow(abs(sig2d), cmap='gray')
+        plt.title('Simulated k-space (log)')
+        plt.subplot(1, 2, 2)
+        plt.imshow(abs(reco), cmap='gray')
+        plt.title('Reconstructed Image')
+
     return seq
 
 
 if __name__ == '__main__':
-    main(plot=False, write_seq=True)
+    main(plot=False, write_seq=True, sim_seq=True)

@@ -31,6 +31,7 @@ from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.sim_mr0 import sim_seq_mr0
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
@@ -485,6 +486,25 @@ class Sequence:
             Time axis for the pns_norm and pns_components arrays
         """
         return calc_pns(self, hardware, time_range=time_range, do_plots=do_plots)
+
+    def sim_mr0(self, work_path: str = '', base_name: str = 'mr0sim', no_clean_up: bool = False):
+        """
+        Simulate the sequence using MRzero.
+        Parameters
+        ----------
+        work_path : str, optional
+            Working directory for the simulation. The default is /dev/shm.
+        base_name : str, optional
+            Base name for the output files. The default is 'mr0sim'.
+        no_clean_up : bool, optional
+            If True, the temporary files are not deleted after the simulation. The default is False.
+
+        Returns
+        -------
+        signal : torch.Tensor
+            Result of the MRzero simulation.
+        """
+        return sim_seq_mr0(self, work_path=work_path, base_name=base_name, no_clean_up=no_clean_up)
 
     def check_timing(self, print_errors=False) -> Tuple[bool, List[SimpleNamespace]]:
         """
