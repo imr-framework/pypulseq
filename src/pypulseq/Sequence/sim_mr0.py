@@ -1,15 +1,15 @@
-from pathlib import Path
 import shutil
 import tempfile
 import urllib.request
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
+
 from pypulseq import Sequence
 
 
 def sim_seq_mr0(seq: Sequence, work_path: Optional[str] = '', base_name: str = 'mr0sim', no_clean_up: bool = False):
-
     # Import inside function to avoid circular import
     import MRzeroCore as mr0
 
