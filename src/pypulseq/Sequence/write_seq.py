@@ -223,14 +223,15 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             output_file.write('# id num offset factor hint\n')
             output_file.write('# ..  ..     us     ..   ..\n')
 
-            tid = self.get_extension_type_ID('SOFTDELAY')
+            tid = self.get_extension_type_ID('DELAYS')
             output_file.write(f'extension DELAYS {tid}\n')
             id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {}\n'
 
             for k in self.soft_delay_library.data:
                 data = self.soft_delay_library.data[k]
-                data[2] = np.round(data[1] * 1e6)  # Convert to us
-                s = id_format_str.format(k, *data)
+                s = id_format_str.format(
+                    k, data[0], np.round(data[1] * 1e6), data[2], self.soft_delay_hints.get_by_value(data[3])
+                )
                 output_file.write(s)
             output_file.write('\n')
 

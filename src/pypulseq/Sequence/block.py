@@ -13,7 +13,7 @@ from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.tracing import trace_enabled
 
 
-def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
+def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> None:
     """
     Replace block at index with new block provided as block structure, add sequence block, or create a new block
     from events and store at position specified by index. The block or events are provided in uncompressed form and
@@ -47,6 +47,8 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     events = block_to_events(*args)
     new_block = np.zeros(7, dtype=np.int32)
     duration = 0
+
+    required_duration = None
 
     check_g = {
         0: SimpleNamespace(idx=2, start=(0, 0), stop=(0, 0)),
@@ -164,7 +166,11 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
             # Floating point number given as delay
-            duration = max(duration, event)
+            # interpret the single numeric parameter as a requested duration, but throw an error if multiple numbers are provided
+            if required_duration is None:
+                required_duration = event
+            else:
+                raise RuntimeError('More than one numeric parameter given to setBlock()')
 
     # =========
     # ADD EXTENSIONS
@@ -202,12 +208,11 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             if n_soft_delays:
                 if n_soft_delays > 1:
                     raise RuntimeError('Only one soft delay extension is allowed per block.')
-                if not duration:
+                if not duration and (required_duration is None):
                     raise RuntimeError(
-                        'Soft delay extension can only be used in conjunstion with blocks of non-zero duration.'
+                        'Soft delay extension can only be used in conjunction with blocks of non-zero duration.'
                     )  # otherwise the gradient checks get tedious
-                event_check_ = [True for e in events if e.type != 'soft_delay']
-                if len(event_check_):
+                if new_block[1:5].any():
                     raise RuntimeError(
                         'Soft delay extension can only be used in empty blocks (blocks containing no conventional events such as RF, adc or gradients).'
                     )
@@ -290,6 +295,13 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             and abs(grad_to_check.stop[0] - duration) > 1e-7
         ):
             raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
+
+    if required_duration:
+        if duration - required_duration > eps:
+            raise RuntimeError(
+                f'Required block duration is {required_duration} s but the actual block duration is {duration} s.'
+            )
+        duration = required_duration
 
     self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)

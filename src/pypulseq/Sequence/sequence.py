@@ -66,13 +66,26 @@ class BiDict:
             del self.forward[key]
 
     def get_by_key(self, key):
-        return self.forward.get(key)
+        val = self.forward.get(key)
+        if val is None:
+            raise KeyError(f'Key {key} not found in the dictionary')
+        return val
 
     def get_by_value(self, value):
-        return self.backward.get(value)
+        key = self.backward.get(value)
+        if key is None:
+            raise KeyError(f'Value {value} not found in the dictionary')
+        return key
 
     def __repr__(self):
         return f'BiDict({self.forward})'
+
+    def __len__(self):
+        len_forward = len(self.forward)
+        len_backward = len(self.backward)
+        if len_forward != len_backward:
+            raise ValueError('Forward and backward dictionaries are not of the same length.')
+        return len(self.forward)
 
 
 class Sequence:
@@ -201,7 +214,7 @@ class Sequence:
 
         return t_adc, fp_adc
 
-    def add_block(self, *args: SimpleNamespace) -> None:
+    def add_block(self, *args: Union[SimpleNamespace, float]) -> None:
         """
         Add a new block/multiple events to the sequence. Adds a sequence block with provided as a block structure
 
@@ -1481,7 +1494,7 @@ class Sequence:
         Not all soft delays defined in the sequence need to be specified.
         Examples:
            seq.apply_soft_delay(TE=40e-3) # set TE to 40ms
-           seq.applySoftDelay(TE=50e-3, TR=2) # set TE to 50ms and TR to 2 s
+           seq.apply_soft_delay(TE=50e-3, TR=2) # set TE to 50ms and TR to 2 s
 
         Parameters:
         -----------
