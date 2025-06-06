@@ -3,6 +3,7 @@ from typing import Union
 
 import numpy as np
 
+from pypulseq import eps
 from pypulseq.opts import Opts
 from pypulseq.utils.tracing import trace, trace_enabled
 
@@ -76,9 +77,9 @@ def make_arbitrary_grad(
         raise ValueError(f'Invalid channel. Must be one of x, y or z. Passed: {channel}')
 
     slew_rate = np.diff(waveform) / system.grad_raster_time
-    if max(abs(slew_rate)) >= max_slew:
+    if max(abs(slew_rate)) > max_slew * (1 + eps):
         raise ValueError(f'Slew rate violation {max(abs(slew_rate)) / max_slew * 100}')
-    if max(abs(waveform)) >= max_grad:
+    if max(abs(waveform)) > max_grad + eps:
         raise ValueError(f'Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}')
 
     if first is None:
