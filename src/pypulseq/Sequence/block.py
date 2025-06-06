@@ -197,19 +197,20 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     self.extensions_library.insert(extension_id, data)
 
         # Sanity checks for the soft delays
-        n_soft_delays = sum([1 for e in extensions if e['type'] == self.get_extension_type_ID('DELAYS')])
-        if n_soft_delays:
-            if n_soft_delays > 1:
-                raise RuntimeError('Only one soft delay extension is allowed per block.')
-            if not duration:
-                raise RuntimeError(
-                    'Soft delay extension can only be used in conjunstion with blocks of non-zero duration.'
-                )  # otherwise the gradient checks get tedious
-            event_check_ = [True for e in events if e.type != 'soft_delay']
-            if len(event_check_):
-                raise RuntimeError(
-                    'Soft delay extension can only be used in empty blocks (blocks containing no conventional events such as RF, adc or gradients).'
-                )
+        if 'DELAYS' in self.extension_string_idx:
+            n_soft_delays = sum([1 for e in extensions if e['type'] == self.get_extension_type_ID('DELAYS')])
+            if n_soft_delays:
+                if n_soft_delays > 1:
+                    raise RuntimeError('Only one soft delay extension is allowed per block.')
+                if not duration:
+                    raise RuntimeError(
+                        'Soft delay extension can only be used in conjunstion with blocks of non-zero duration.'
+                    )  # otherwise the gradient checks get tedious
+                event_check_ = [True for e in events if e.type != 'soft_delay']
+                if len(event_check_):
+                    raise RuntimeError(
+                        'Soft delay extension can only be used in empty blocks (blocks containing no conventional events such as RF, adc or gradients).'
+                    )
         # Now we add the ID
         new_block[6] = extension_id
 
