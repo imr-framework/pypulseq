@@ -5,7 +5,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pypulseq import Opts
+from pypulseq.opts import Opts
 from pypulseq.calc_rf_center import calc_rf_center
 
 

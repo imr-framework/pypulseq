@@ -118,6 +118,11 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     f'{version_major}.{version_minor}.{version_revision}) some code may function not as '
                     f'expected'
                 )
+                
+            if version_combined < 1005000 and detect_rf_use:
+                warnings.warn('Option ''detectRFuse'' is not supported for file format version 1.5.0 and above')
+                detect_rf_use = False
+                
         elif section == '[BLOCKS]':
             if version_major == 0:
                 raise RuntimeError('Pulseq file MUST include [VERSION] section prior to [BLOCKS] section')
@@ -131,7 +136,13 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             if jemris_generated:
                 self.rf_library = __read_events(input_file, (1, 1, 1, 1, 1), event_library=self.rf_library)
             else:
-                if version_combined >= 1004000:  # 1.4.x format
+                if version_combined >= 1005000:  # 1.5.x format
+                    self.rf_library = __read_events(
+                        input_file,
+                        (1, 1, 1, 1, 1e-6, 1e-6, 1, 1, 1),
+                        event_library=self.rf_library,
+                    )
+                elif version_combined >= 1004000:  # 1.4.x format
                     self.rf_library = __read_events(
                         input_file,
                         (1, 1, 1, 1, 1e-6, 1, 1),
@@ -150,9 +161,14 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             else:
                 self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
-            self.adc_library = __read_events(
-                input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
-            )
+            if version_combined >= 1005000:  # 1.5.x format
+                self.adc_library = __read_events(
+                    input_file, (1, 1e-9, 1e-6, 1, 1, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
+                )
+            else:  # 1.4.x format and below
+                self.adc_library = __read_events(
+                    input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
+                )
         elif section == '[DELAYS]':
             if version_combined >= 1004000:
                 raise RuntimeError('Pulseq file revision 1.4.0 and above MUST NOT contain [DELAYS] section')
@@ -204,8 +220,20 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             f'Unsupported version {version_combined}, only file format revision 1.2.0 (1002000) and above '
             f'are supported.'
         )
-
-    # Fix blocks, gradients and RF objects imported from older versions
+        
+    # A special case for ADCs as the format for them has only been updated once (in v1.5.0)
+    # we have to do it first because seq.get_block is used in the next version porting code section (version_combined < 1004000)
+    if version_combined < 1005000:
+        # Scan though the ADCs and add empty phase shape IDs
+        for i in self.adc_library.data:
+            d = self.adc_library.data[i]
+            self.adc_library.data.update(
+                i,
+                None,
+                (d[:3], 0, 0, d[3:5], 0), # add empty freq_ppm, phase_ppm and phase_id fields
+            )
+            
+    # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
     if version_combined < 1004000:
         # Scan through RF objects
         for i in self.rf_library.data:
@@ -258,79 +286,104 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             block = self.get_block(block_counter)
             # Calculate actual block duration
             self.block_durations[block_counter] = calc_duration(block)
-
-    # TODO: Is it possible to avoid expensive get_block calls here?
-    grad_channels = ['gx', 'gy', 'gz']
-    grad_prev_last = np.zeros(len(grad_channels))
-    for block_counter in self.block_events:
-        block = self.get_block(block_counter)
-        block_duration = block.block_duration
-        # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
-        # repeated entries so searching by content will fail
-        event_idx = self.block_events[block_counter]
-        # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
-        for j in range(len(grad_channels)):
-            grad = getattr(block, grad_channels[j])
-            if grad is None:
-                grad_prev_last[j] = 0
-                continue
-
-            if grad.type == 'grad':
-                if grad.delay > 0:
+    elif version_combined < 1005000:
+        # Port from v1.4.x : RF, ADC and GRAD objects need to be updated
+        # this needs to be done on the level of the libraries, because get_block will fail
+        
+        # Scan though the RFs and add center, freq_ppm, phase_ppm and use fields
+        obj.rfLibrary.type(obj.rfLibrary.keys) = 'u'; # undefined for now, we'll attemp the type detection later (see below)
+        for i=1:length(obj.rfLibrary.data)
+            # use goes into the type field, and this is done separately
+            rf=rmfield(obj.rfFromLibData([obj.rfLibrary.data(i).array(1:4) 0 obj.rfLibrary.data(i).array(5) 0 0 obj.rfLibrary.data(i).array(6:7)],'u'),'center');
+            center=mr.calcRfCenter(rf);
+            obj.rfLibrary.update_data(...
+                obj.rfLibrary.keys(i), ...
+                obj.rfLibrary.data(i).array, ...
+                [obj.rfLibrary.data(i).array(1:4) center obj.rfLibrary.data(i).array(5) 0 0 obj.rfLibrary.data(i).array(6:7)]); % 0 between (5) and (6:7) are the freqPPM and phasePPM 
+        
+        # Scan through the gradient objects and update 'g'-s (free-shape gradients)
+        for i=1:length(obj.gradLibrary.data)
+            if obj.gradLibrary.type(i)=='g'
+                obj.gradLibrary.update_data(...
+                    obj.gradLibrary.keys(i), ...
+                    obj.gradLibrary.data(i).array, ...
+                    [obj.gradLibrary.data(i).array(1) NaN NaN obj.gradLibrary.data(i).array(2:4)], ... % we use NaNs to label the non-initialized first/last fields. These will be restored in the code below
+                    'g');
+        
+    # Another run through for all older versions
+    if version_combined < 1005000:
+        # TODO: Is it possible to avoid expensive get_block calls here?
+        grad_channels = ['gx', 'gy', 'gz']
+        grad_prev_last = np.zeros(len(grad_channels))
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            block_duration = block.block_duration
+            # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
+            # repeated entries so searching by content will fail
+            event_idx = self.block_events[block_counter]
+            # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
+            for j in range(len(grad_channels)):
+                grad = getattr(block, grad_channels[j])
+                if grad is None:
                     grad_prev_last[j] = 0
-
-                # go to next channel, if grad.first and grad.last are already set
-                if hasattr(grad, 'first') and hasattr(grad, 'last'):
-                    grad_prev_last[j] = grad.last
                     continue
-
-                # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
-                amplitude_ID = event_idx[j + 2]
-                if amplitude_ID in event_idx[2 : (j + 2)]:
-                    if self.use_block_cache:
-                        grad.first = self.grad_library.data[amplitude_ID][4]
-                        grad.last = self.grad_library.data[amplitude_ID][5]
-                    continue
-
-                # get time_id from grad_library
-                time_id = self.grad_library.data[amplitude_ID][2]
-
-                # if grad.first is not set, set it to the last value of the previous gradient
-                grad.first = grad_prev_last[j]
-
-                # extended trapezoid: use last value of the gradient waveform as grad.last
-                if time_id != 0:
-                    grad.last = grad.waveform[-1]
-                    grad_duration = grad.delay + grad.tt[-1]
-                # arbitrary gradients: interpolate grad.last from the gradient waveform
+    
+                if grad.type == 'grad':
+                    if grad.delay > 0:
+                        grad_prev_last[j] = 0
+    
+                    # go to next channel, if grad.first and grad.last are already set
+                    if hasattr(grad, 'first') and hasattr(grad, 'last'):
+                        grad_prev_last[j] = grad.last
+                        continue
+    
+                    # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
+                    amplitude_ID = event_idx[j + 2]
+                    if amplitude_ID in event_idx[2 : (j + 2)]:
+                        if self.use_block_cache:
+                            grad.first = self.grad_library.data[amplitude_ID][4]
+                            grad.last = self.grad_library.data[amplitude_ID][5]
+                        continue
+    
+                    # get time_id from grad_library
+                    time_id = self.grad_library.data[amplitude_ID][2]
+    
+                    # if grad.first is not set, set it to the last value of the previous gradient
+                    grad.first = grad_prev_last[j]
+    
+                    # extended trapezoid: use last value of the gradient waveform as grad.last
+                    if time_id != 0:
+                        grad.last = grad.waveform[-1]
+                        grad_duration = grad.delay + grad.tt[-1]
+                    # arbitrary gradients: interpolate grad.last from the gradient waveform
+                    else:
+                        # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
+                        grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
+                        grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
+    
+                    # Set grad_prev_last to 0 if gradient does not end at block boundary
+                    eps = np.finfo(np.float64).eps
+                    if grad_duration + eps < block_duration:
+                        grad_prev_last[j] = 0
+                    # Update grad_prev_last for the next iteration if gradient ends at block boundary
+                    else:
+                        grad_prev_last[j] = grad.last
+    
+                    # Update the grad_library with the new grad.first and grad.last values
+                    amplitude = self.grad_library.data[amplitude_ID][0]
+                    shape_id = self.grad_library.data[amplitude_ID][1]
+                    new_data = (
+                        amplitude,
+                        shape_id,
+                        time_id,
+                        grad.delay,
+                        grad.first,
+                        grad.last,
+                    )
+                    self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
+    
                 else:
-                    # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
-                    grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
-                    grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
-
-                # Set grad_prev_last to 0 if gradient does not end at block boundary
-                eps = np.finfo(np.float64).eps
-                if grad_duration + eps < block_duration:
                     grad_prev_last[j] = 0
-                # Update grad_prev_last for the next iteration if gradient ends at block boundary
-                else:
-                    grad_prev_last[j] = grad.last
-
-                # Update the grad_library with the new grad.first and grad.last values
-                amplitude = self.grad_library.data[amplitude_ID][0]
-                shape_id = self.grad_library.data[amplitude_ID][1]
-                new_data = (
-                    amplitude,
-                    shape_id,
-                    time_id,
-                    grad.delay,
-                    grad.first,
-                    grad.last,
-                )
-                self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
-
-            else:
-                grad_prev_last[j] = 0
 
     if detect_rf_use:
         # Find the RF pulses, list flip angles, and work around the current (rev 1.2.0) Pulseq file format limitation
