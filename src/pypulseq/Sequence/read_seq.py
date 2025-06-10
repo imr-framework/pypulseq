@@ -291,7 +291,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         # this needs to be done on the level of the libraries, because get_block will fail
         
         # Scan though the RFs and add center, freq_ppm, phase_ppm and use fields
-        obj.rfLibrary.type(obj.rfLibrary.keys) = 'u'; # undefined for now, we'll attemp the type detection later (see below)
+        obj.rfLibrary.type(obj.rfLibrary.keys) = 'u'; # undefined for now, we'll attempt the type detection later (see below)
         for i=1:length(obj.rfLibrary.data)
             # use goes into the type field, and this is done separately
             rf=rmfield(obj.rfFromLibData([obj.rfLibrary.data(i).array(1:4) 0 obj.rfLibrary.data(i).array(5) 0 0 obj.rfLibrary.data(i).array(6:7)],'u'),'center');
