@@ -469,7 +469,6 @@ def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
                 data = self.soft_delay_library.data[ext_data[1]]
 
                 # TODO: Check for multiple soft delays
-
                 block.soft_delay = SimpleNamespace(
                     type='soft_delay',
                     numID=data[0],
@@ -682,7 +681,7 @@ def register_soft_delay_event(self, event: SimpleNamespace) -> int:
     try:
         hint_id = self.soft_delay_hints.get_by_key(event.hint)
     except KeyError:
-        hint_id = len(self.soft_delay_hints)
+        hint_id = len(self.soft_delay_hints) + 1
         self.soft_delay_hints.insert(event.hint, hint_id)
 
     data = (event.numID, event.offset, event.factor, hint_id)

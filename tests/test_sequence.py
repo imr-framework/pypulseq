@@ -206,8 +206,29 @@ def seq4():
     return seq
 
 
+# Basic GRE sequence with Soft Delay
+def seq5():
+    seq = Sequence()
+
+    for i in range(10):
+        seq.add_block(pp.make_block_pulse(math.pi / 8, duration=1e-3))
+        seq.add_block(pp.make_trapezoid('x', area=1000))
+        seq.add_block(pp.make_trapezoid('y', area=-500 + i * 100))
+        seq.add_block(pp.make_trapezoid('x', area=-500))
+        seq.add_block(
+            10e-6,  # Add a small delay as we can't have soft_delay in an 0 duration block.
+            pp.make_soft_delay(numID=0, hint='TE', offset=1, factor=1.0),
+        )
+        seq.add_block(
+            pp.make_trapezoid('x', area=1000, duration=10e-3),
+            pp.make_adc(num_samples=100, duration=10e-3),
+        )
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4]
+sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
@@ -274,7 +295,7 @@ class TestSequence:
 
     # Test sequence.plot() method
     def test_plot(self, seq_func):
-        if seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4']:
+        if seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4', 'seq5']:
             with patch('matplotlib.pyplot.show'):
                 TestSequence.seq.plot()
                 TestSequence.seq.plot(show_blocks=True)

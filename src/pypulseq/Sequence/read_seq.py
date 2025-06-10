@@ -188,9 +188,9 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     return get_supported_labels().index(s) + 1
 
                 self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
-            elif section[:18] == 'extension DELAYS':
-                extension_id = int(section[18:])
-                self.set_extension_numeric_ID('DELAYS', extension_id)
+            elif section[:16] == 'extension DELAYS':
+                extension_id = int(section[16:])
+                self.set_extension_string_ID('DELAYS', extension_id)
                 self.soft_delay_library = __read_and_parse_events(
                     input_file, int, lambda ofs: 1e-6 * int(ofs), int, lambda s: __parse_soft_delay_hint(s, self)
                 )
@@ -638,10 +638,10 @@ def __parse_soft_delay_hint(s: str, seq) -> int:
         The ID of the soft delay hint.
     """
     try:
-        numID = seq.soft_delay_hints.getByValue(s)
+        numID = seq.soft_delay_hints.get_by_value(s)
     except KeyError:
         numID = len(seq.soft_delay_hints) + 1
-        seq.soft_delay_hints.insert(numID, s)
+        seq.soft_delay_hints.insert(s, numID)
 
     return numID
 
