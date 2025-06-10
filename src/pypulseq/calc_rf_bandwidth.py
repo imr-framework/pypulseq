@@ -53,7 +53,9 @@ def calc_rf_bandwidth(
 
     if return_spectrum and not return_axis:
         return bw, spectrum
-    if return_axis:
+    elif return_axis and not return_spectrum:
+        return bw, w
+    elif return_spectrum and return_axis:
         return bw, spectrum, w
 
     return bw

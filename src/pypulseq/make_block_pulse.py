@@ -19,6 +19,8 @@ def make_block_pulse(
     phase_offset: float = 0,
     system: Union[Opts, None] = None,
     use: str = str(),
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
 ) -> SimpleNamespace:
     """
     Create a block (RECT or hard) pulse.
@@ -48,6 +50,10 @@ def make_block_pulse(
         System limits.
     use : str, default=str()
         Use of radio-frequency block pulse event.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     Returns
     -------
@@ -101,9 +107,12 @@ def make_block_pulse(
     rf.shape_dur = t[-1]
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
+    rf.center = rf.shape_dur / 2
 
     if use != '':
         rf.use = use

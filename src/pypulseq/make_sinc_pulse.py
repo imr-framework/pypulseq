@@ -28,6 +28,8 @@ def make_sinc_pulse(
     system: Union[Opts, None] = None,
     time_bw_product: float = 4,
     use: str = str(),
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -68,6 +70,10 @@ def make_sinc_pulse(
         Time-bandwidth product.
     use : str, default=str()
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     See also `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
@@ -116,9 +122,12 @@ def make_sinc_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
+    rf.center = duration * center_pos
 
     if use != str():
         rf.use = use
