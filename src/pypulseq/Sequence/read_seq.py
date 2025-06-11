@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 from pypulseq.calc_duration import calc_duration
+from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
@@ -118,11 +119,11 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     f'{version_major}.{version_minor}.{version_revision}) some code may function not as '
                     f'expected'
                 )
-                
+
             if version_combined < 1005000 and detect_rf_use:
-                warnings.warn('Option ''detectRFuse'' is not supported for file format version 1.5.0 and above')
+                warnings.warn('Option detectRFuse is not supported for file format version 1.5.0 and above')
                 detect_rf_use = False
-                
+
         elif section == '[BLOCKS]':
             if version_major == 0:
                 raise RuntimeError('Pulseq file MUST include [VERSION] section prior to [BLOCKS] section')
@@ -139,7 +140,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 if version_combined >= 1005000:  # 1.5.x format
                     self.rf_library = __read_events(
                         input_file,
-                        (1, 1, 1, 1, 1e-6, 1e-6, 1, 1, 1),
+                        (1, 1, 1, 1, 1e-6, 1e-6, 1, 1, 1, 1, np.nan),
                         event_library=self.rf_library,
                     )
                 elif version_combined >= 1004000:  # 1.4.x format
@@ -151,7 +152,9 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 else:  # 1.3.x and below
                     self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
         elif section == '[GRADIENTS]':
-            if version_combined >= 1004000:  # 1.4.x format
+            if version_combined >= 1005000:  # 1.5.x format
+                self.grad_library = __read_events(input_file, (1, 1, 1, 1, 1, 1e-6), 'g', self.grad_library)
+            elif version_combined >= 1004000:  # 1.4.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1e-6), 'g', self.grad_library)
             else:  # 1.3.x and below
                 self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
@@ -163,7 +166,10 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         elif section == '[ADC]':
             if version_combined >= 1005000:  # 1.5.x format
                 self.adc_library = __read_events(
-                    input_file, (1, 1e-9, 1e-6, 1, 1, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
+                    input_file,
+                    (1, 1e-9, 1e-6, 1, 1, 1, 1, 1),
+                    event_library=self.adc_library,
+                    append=self.system.adc_dead_time,
                 )
             else:  # 1.4.x format and below
                 self.adc_library = __read_events(
@@ -220,7 +226,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             f'Unsupported version {version_combined}, only file format revision 1.2.0 (1002000) and above '
             f'are supported.'
         )
-        
+
     # A special case for ADCs as the format for them has only been updated once (in v1.5.0)
     # we have to do it first because seq.get_block is used in the next version porting code section (version_combined < 1004000)
     if version_combined < 1005000:
@@ -230,14 +236,22 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             self.adc_library.data.update(
                 i,
                 None,
-                (d[:3], 0, 0, d[3:5], 0), # add empty freq_ppm, phase_ppm and phase_id fields
+                (d[:3], 0, 0, d[3:5], 0),  # add empty freq_ppm, phase_ppm and phase_id fields
             )
-            
+
     # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
     if version_combined < 1004000:
         # Scan through RF objects
+        self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
         for i in self.rf_library.data:
-            self.rf_library.update(i, None, (*self.rf_library.data[i][:3], 0, *self.rf_library.data[i][3:]))
+            d = self.rf_library.data[i]
+            rf = self.rf_from_lib_data((d[:3], 0, 0, d[3], 0, 0, d[4:6], 'u')).__delattr__('center')
+            center = calc_rf_center(rf)
+            self.rf_library.update(
+                i,
+                None,
+                (d[:3], 0, center, d[3], 0, 0, d[4:6], 'u'),
+            )  # 0 between [3] and [4:6] are the freq_ppm and phase_ppm
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
@@ -267,12 +281,15 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     i,
                     None,
                     (
-                        self.grad_library.data[i][:2],
+                        self.grad_library.data[i][0],
+                        None,
+                        None,
+                        self.grad_library.data[i][1],
                         0,
-                        self.grad_library.data[i][2:],
+                        self.grad_library.data[i][2],
                     ),
                     self.grad_library.type[i],
-                )
+                )  # We use None to label the non-initialized first/last fields. These will be restored in the code below
 
         # For versions prior to 1.4.0 block_durations have not been initialized
         self.block_durations = {}
@@ -289,27 +306,35 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     elif version_combined < 1005000:
         # Port from v1.4.x : RF, ADC and GRAD objects need to be updated
         # this needs to be done on the level of the libraries, because get_block will fail
-        
+
         # Scan though the RFs and add center, freq_ppm, phase_ppm and use fields
-        obj.rfLibrary.type(obj.rfLibrary.keys) = 'u'; # undefined for now, we'll attemp the type detection later (see below)
-        for i=1:length(obj.rfLibrary.data)
-            # use goes into the type field, and this is done separately
-            rf=rmfield(obj.rfFromLibData([obj.rfLibrary.data(i).array(1:4) 0 obj.rfLibrary.data(i).array(5) 0 0 obj.rfLibrary.data(i).array(6:7)],'u'),'center');
-            center=mr.calcRfCenter(rf);
-            obj.rfLibrary.update_data(...
-                obj.rfLibrary.keys(i), ...
-                obj.rfLibrary.data(i).array, ...
-                [obj.rfLibrary.data(i).array(1:4) center obj.rfLibrary.data(i).array(5) 0 0 obj.rfLibrary.data(i).array(6:7)]); % 0 between (5) and (6:7) are the freqPPM and phasePPM 
-        
+        self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
+        for i in self.rf_library.data:
+            # Use goes into the type field, and this is done separately
+            d = self.rf_library.data[i]
+            rf = self.rf_from_lib_data((d[:4], 0, d[4], 0, 0, d[5:7], 'u')).__delattr__('center')
+            center = calc_rf_center(rf)
+            self.rf_library.update(
+                i,
+                None,
+                (d[:4], center, d[4], 0, 0, d[5:7], 'u'),
+            )  # 0 between [4] and [5:7] are the freq_ppm and phase_ppm
+
         # Scan through the gradient objects and update 'g'-s (free-shape gradients)
-        for i=1:length(obj.gradLibrary.data)
-            if obj.gradLibrary.type(i)=='g'
-                obj.gradLibrary.update_data(...
-                    obj.gradLibrary.keys(i), ...
-                    obj.gradLibrary.data(i).array, ...
-                    [obj.gradLibrary.data(i).array(1) NaN NaN obj.gradLibrary.data(i).array(2:4)], ... % we use NaNs to label the non-initialized first/last fields. These will be restored in the code below
-                    'g');
-        
+        for i in self.grad_library.data:
+            if self.grad_library.type[i] == 'g':
+                self.grad_library.update(
+                    i,
+                    None,
+                    (
+                        self.grad_library.data[i][0],
+                        None,
+                        None,
+                        self.grad_library.data[i][1:4],
+                    ),
+                    self.grad_library.type[i],
+                )  # We use None to label the non-initialized first/last fields. These will be restored in the code below
+
     # Another run through for all older versions
     if version_combined < 1005000:
         # TODO: Is it possible to avoid expensive get_block calls here?
@@ -327,16 +352,16 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 if grad is None:
                     grad_prev_last[j] = 0
                     continue
-    
+
                 if grad.type == 'grad':
                     if grad.delay > 0:
                         grad_prev_last[j] = 0
-    
+
                     # go to next channel, if grad.first and grad.last are already set
                     if hasattr(grad, 'first') and hasattr(grad, 'last'):
                         grad_prev_last[j] = grad.last
                         continue
-    
+
                     # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
                     amplitude_ID = event_idx[j + 2]
                     if amplitude_ID in event_idx[2 : (j + 2)]:
@@ -344,13 +369,13 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                             grad.first = self.grad_library.data[amplitude_ID][4]
                             grad.last = self.grad_library.data[amplitude_ID][5]
                         continue
-    
+
                     # get time_id from grad_library
                     time_id = self.grad_library.data[amplitude_ID][2]
-    
+
                     # if grad.first is not set, set it to the last value of the previous gradient
                     grad.first = grad_prev_last[j]
-    
+
                     # extended trapezoid: use last value of the gradient waveform as grad.last
                     if time_id != 0:
                         grad.last = grad.waveform[-1]
@@ -360,7 +385,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
                         grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
                         grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
-    
+
                     # Set grad_prev_last to 0 if gradient does not end at block boundary
                     eps = np.finfo(np.float64).eps
                     if grad_duration + eps < block_duration:
@@ -368,7 +393,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     # Update grad_prev_last for the next iteration if gradient ends at block boundary
                     else:
                         grad_prev_last[j] = grad.last
-    
+
                     # Update the grad_library with the new grad.first and grad.last values
                     amplitude = self.grad_library.data[amplitude_ID][0]
                     shape_id = self.grad_library.data[amplitude_ID][1]
@@ -381,7 +406,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         grad.last,
                     )
                     self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
-    
+
                 else:
                     grad_prev_last[j] = 0
 
@@ -545,18 +570,47 @@ def __read_events(
     """
     if event_library is None:
         event_library = EventLibrary()
+
+    scale = np.asarray(scale, dtype=float)
+
+    # New in v1.5.0 : generate format string; NaN labels character param(s)
+    format_spec = __read_format(scale)
+    data_mask = np.isfinite(scale)
+    type_idx = np.where(np.logical_not(data_mask))[0]
+
+    if len(type_idx) > 1:
+        raise ValueError('Only one type field (marked as NaN) can be provided in scale.')
+    if len(type_idx) == 0:
+        type_idx = None
+        data_mask = None
+    else:
+        type_idx = type_idx.item()
+
     line = __strip_line(input_file)
 
     while line != '' and line != '#':
-        data = np.fromstring(line, dtype=float, sep=' ')
+        data = __fromstring(line, format_spec)
         event_id = data[0]
-        data = tuple(data[1:] * scale)
+
+        if type_idx is not None:
+            event_type = data[type_idx + 1]  # Need +1 because of the event_id in the first position
+
+        data = tuple(data[n] * scale[n] if isinstance(data[n], str) is False else data[n] for n in range(1, len(data)))
+
         if append is not None:
             data = (*data, append)
-        if event_type == '':
-            event_library.insert(key_id=event_id, new_data=data)
+
+        if event_type == '' and type_idx is None:
+            if data_mask is None:
+                event_library.insert(key_id=event_id, new_data=data)
+            else:
+                event_library.insert(key_id=event_id, new_data=data[data_mask])
         else:
-            event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+            if data_mask is None:
+                event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+            else:
+                event_library.insert(key_id=event_id, new_data=data[data_mask], data_type=event_type)
+
         line = __strip_line(input_file)
 
     return event_library
@@ -701,7 +755,7 @@ def __parse_soft_delay_hint(s: str, seq) -> int:
 
 def __strip_line(input_file) -> str:
     """
-    Removes spaces and newline whitespaces.
+    Remove spaces and newline whitespaces.
 
     Parameters
     ----------
@@ -715,3 +769,62 @@ def __strip_line(input_file) -> str:
     """
     line = input_file.readline()  # If line is an empty string, end of the file has been reached
     return line.strip() if line != '' else -1
+
+
+def __read_format(scale: Tuple) -> List:
+    """
+    Generate a format specifier list based on the scale vector.
+
+    '%f' for numeric values, '%s' for string (NaN in scale).
+
+    Parameters
+    ----------
+    scale : list, default=(1,)
+        Scale elements according to column vector scale.
+
+    Returns
+    -------
+    format : list[str]
+        List of format tokens for each field (excluding the event ID).
+
+    """
+    scale = np.array(scale, dtype=float)
+    is_num = np.where(np.logical_not(np.isfinite(scale)))[0]
+    format_spec = ['%f' if value else '%s' for value in is_num]
+
+    return format_spec
+
+
+def __fromstring(line, format_spec: List) -> List:
+    """
+    Parse a line of text using a dynamic format specification.
+
+    Parameters
+    ----------
+    line : str
+        Input line (e.g., '23 1.0 2.0 ADC 3.0')
+    format_spec : list[str]
+        Format list like ['%f', '%f', '%s', '%f']
+
+    Returns
+    -------
+    data : list
+        Parsed data.
+
+    """
+    tok = line.strip().split()
+    if len(tok) != len(format_spec) + 1:
+        raise ValueError('Mismatch between number of tokens and format spec')
+
+    data = []
+
+    for i, fmt in enumerate(format_spec):
+        tok = tok[i + 1]
+        if fmt == '%f':
+            data.append(float(tok))
+        elif fmt == '%s':
+            data.append(tok)
+        else:
+            raise ValueError(f'Unsupported format: {fmt}')
+
+    return data
