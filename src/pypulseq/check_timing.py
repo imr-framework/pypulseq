@@ -17,11 +17,18 @@ error_messages = {
     'SOFT_DELAY_DUR_INCONSISTENCY': 'Soft delay {hint}/{numID} default duration derived from this block ({value*1e6} us) is inconsistent with the previous default.',
     'SOFT_DELAY_HINT_INCONSISTENCY': 'Soft delay {hint}/{numID}: Soft delays with the same numeric ID are expected to share the same text hint but previous hint recorded is {prev_hint}.',
     'SOFT_DELAY_INVALID_NUMID': 'Soft delay {hint}/{numID} has an invalid numeric ID {numID}. Numeric IDs must be positive integers.',
+    'ADC_DWELL_RASTER': 'ADC: dwell time ({dwell:.2f} {unit}) is not a multiple of sys.adc_raster_time ({value*multiplier:.2f} {unit})',
+    'ADC_NUM_SAMPLES_DIV': 'ADC: num_samples ({num_samples} {unit}) is not a multiple of sys.adc_samples_divisor ({value})',
+    'GRAD_START_NONZERO': '{channel} gradient starts at non-zero {first:.3f} but no continuation',
+    'GRAD_END_NONZERO_DURATION': '{channel} gradient ends at non-zero {last:.3f}us but does not reach block end',
+    'GRAD_PREV_BLOCK_NOT_CONSUMED': 'Previous block gradient in {channel} not consumed before this block',
 }
 
 
 def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
     error_report: List[SimpleNamespace] = []
+    grad_book = {}
+    soft_delay_state = {}
 
     def div_check(a: float, b: float, event: str, field: str, raster: str):
         """
@@ -145,7 +152,7 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                     )
                 )
 
-        # Check ADC dead times
+        # Check ADC dead times, dwell times and number of samples
         if block.adc is not None:
             if block.adc.delay - seq.system.adc_dead_time < -eps:
                 error_report.append(
@@ -173,6 +180,165 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                         dead_time=seq.system.adc_dead_time,
                     )
                 )
+
+            if (
+                abs(block.adc.dwell / seq.sys.adc_raster_time - round(block.adc.dwell / seq.sys.adc_raster_time))
+                > 1e-10
+            ):
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='adc',
+                        field='duration',
+                        error_type='ADC_DWELL_RASTER',
+                        value=seq.system.adc_raster_time,
+                    )
+                )
+
+            if (
+                abs(
+                    block.adc.num_samples / seq.sys.adc_samples_divisor
+                    - round(block.adc.num_samples / seq.sys.adc_samples_divisor)
+                )
+                > eps
+            ):
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='adc',
+                        field='duration',
+                        error_type='ADC_NUM_SAMPLES_DIV',
+                        value=seq.system.adc_samples_divisor,
+                    )
+                )
+
+        # Gradient continuity checks
+        grad_book_curr = {}
+        for e in block.__dict__.values():
+            if hasattr(e, 'type') and e.type == 'grad':
+                ch = e.channel
+                if e.first != 0:
+                    if ch not in grad_book or grad_book[ch] != e.first:
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='grad',
+                                channel=ch,
+                                error_type='GRAD_START_NONZERO',
+                                first=e.first,
+                            )
+                        )
+                    elif getattr(e, 'delay', 0) != 0:
+                        # unexpected delay
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='grad',
+                                channel=ch,
+                                error_type='GRAD_START_NONZERO',
+                                first=e.first,
+                            )
+                        )
+                    grad_book[ch] = 0
+                if e.last != 0:
+                    if abs((getattr(e, 'delay', 0) + getattr(e, 'shape_dur', duration)) - duration) > eps:
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='grad',
+                                channel=ch,
+                                error_type='GRAD_END_NONZERO_DURATION',
+                                last=e.last,
+                            )
+                        )
+                    grad_book_curr[ch] = e.last
+
+        if duration != 0:
+            for ch, val in grad_book.items():
+                if val != 0:
+                    error_report.append(
+                        SimpleNamespace(
+                            block=block_counter,
+                            event='grad',
+                            channel=ch,
+                            error_type='GRAD_PREV_BLOCK_NOT_CONSUMED',
+                            first=val,
+                        )
+                    )
+            grad_book = grad_book_curr
+
+        # Soft delay logic
+        if hasattr(block, 'soft_delay') and block.soft_delay is not None:
+            if block.soft_delay.factor == 0:
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='soft_delay',
+                        error_type='SOFT_DELAY_FACTOR',
+                        hint=block.soft_delay.hint,
+                        numID=block.soft_delay.numID,
+                    )
+                )
+
+            # Calculate default delay value based on the current block duration
+            def_del = (seq.block_durations[block_counter] - block.soft_delay.offset) * block.soft_delay.factor
+
+            if block.soft_delay.numID >= 0:
+                numID = block.soft_delay.numID  # index as dict key
+
+                if numID not in soft_delay_state:
+                    soft_delay_state[numID] = SimpleNamespace(
+                        def_del=def_del,
+                        hint=block.soft_delay.hint,
+                    )
+                else:
+                    prev = soft_delay_state[numID]
+                    if abs(def_del - prev.def_del) > 1e-7:
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='soft_delay',
+                                error_type='SOFT_DELAY_DUR_INCONSISTENCY',
+                                hint=block.soft_delay.hint,
+                                numID=block.soft_delay.numID,
+                                value=prev.def_del,
+                            )
+                        )
+
+                    if block.soft_delay.hint != prev.hint:
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='soft_delay',
+                                error_type='SOFT_DELAY_HINT_INCONSISTENCY',
+                                hint=block.soft_delay.hint,
+                                numID=block.soft_delay.numID,
+                                prev_hint=prev.hint,
+                            )
+                        )
+            else:
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='soft_delay',
+                        error_type='SOFT_DELAY_INVALID_NUMID',
+                        hint=block.soft_delay.hint,
+                        numID=block.soft_delay.num,
+                    )
+                )
+
+    # Final: make sure gradients ramped down in the last block
+    for ch, val in grad_book.items():
+        if val != 0:
+            error_report.append(
+                SimpleNamespace(
+                    block=block_counter,
+                    event='grad',
+                    channel=ch,
+                    error_type='GRAD_END_NONZERO_DURATION',
+                    last=val,
+                )
+            )
 
     return len(error_report) == 0, error_report
 
