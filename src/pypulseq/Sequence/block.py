@@ -222,79 +222,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
-    for grad_to_check in check_g.values():
-        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:  # noqa: SIM102
-            if grad_to_check.start[0] > eps:
-                raise RuntimeError('No delay allowed for gradients which start with a non-zero amplitude')
-
-        # Check whether any blocks exist in the sequence
-        if self.next_free_block_ID > 1:
-            # Look up the previous block (and the next block in case of a set_block call)
-            if block_index == self.next_free_block_ID:
-                # New block inserted
-                prev_block_index = next(reversed(self.block_events))
-                next_block_index = None
-            else:
-                blocks = list(self.block_events)
-                try:
-                    # Existing block overwritten
-                    idx = blocks.index(block_index)
-                    prev_block_index = blocks[idx - 1] if idx > 0 else None
-                    next_block_index = blocks[idx + 1] if idx < len(blocks) - 1 else None
-                except ValueError:
-                    # Inserting a new block with non-contiguous numbering
-                    prev_block_index = next(reversed(self.block_events))
-                    next_block_index = None
-
-            # Look up the last gradient value in the previous block
-            last = 0
-            if prev_block_index is not None:
-                prev_id = self.block_events[prev_block_index][grad_to_check.idx]
-                if prev_id != 0:
-                    prev_lib = self.grad_library.get(prev_id)
-                    prev_type = prev_lib['type']
-
-                    if prev_type == 't':
-                        last = 0
-                    elif prev_type == 'g':
-                        last = prev_lib['data'][5]
-
-            # Check whether the difference between the last gradient value and
-            # the first value of the new gradient is achievable with the
-            # specified slew rate.
-            if abs(last - grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
-                raise RuntimeError('Two consecutive gradients need to have the same amplitude at the connection point')
-
-            # Look up the first gradient value in the next block
-            # (this only happens when using set_block to patch a block)
-            if next_block_index is not None:
-                next_id = self.block_events[next_block_index][grad_to_check.idx]
-                if next_id != 0:
-                    next_lib = self.grad_library.get(next_id)
-                    next_type = next_lib['type']
-
-                    if next_type == 't':
-                        first = 0
-                    elif next_type == 'g':
-                        first = next_lib['data'][4]
-                else:
-                    first = 0
-
-                # Check whether the difference between the first gradient value
-                # in the next block and the last value of the new gradient is
-                # achievable with the specified slew rate.
-                if abs(first - grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time:
-                    raise RuntimeError(
-                        'Two consecutive gradients need to have the same amplitude at the connection point'
-                    )
-        elif abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
-            raise RuntimeError('First gradient in the the first block has to start at 0.')
-
-        if (
-            grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
-            and abs(grad_to_check.stop[0] - duration) > 1e-7
-        ):
-            raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
+    _gradient_continuity_check(self, block_index, check_g, duration)
 
     if required_duration:
         if duration - required_duration > eps:
@@ -815,3 +743,106 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         self.rf_id_to_name_map[rf_id] = event.name
 
     return rf_id, shape_IDs
+
+
+def _gradient_continuity_check(self, block_index, check_g, duration):
+    """
+    Check if connection to the previous block is correct.
+
+    Parameters
+    ----------
+    block_index : int
+        Current block index.
+    check_g : SimpleNamespace
+        Structure containing current gradient start and end (t, g) values for each
+        axis.
+    duration : float
+        Current block duration.
+    rot_event : SimpleNamespace
+        Current block rotation event.
+
+    Raises
+    ------
+    RuntimeError
+        If either 1) initial block start with non-zero amplitude;
+        2) gradients starting with non-zero amplitude have a delay;
+        3) gradients starting with non-zero amplitude have different initial
+           amplitude value than the previous block at connecting point;
+        4) gradients ending with non-zero amplitude are not aligned with block raster;
+        4) gradients ending with non-zero amplitude are not aligned have different initial
+           amplitude value than the next block at connecting point.
+
+    """
+    for grad_to_check in check_g.values():
+        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:  # noqa: SIM102
+            if grad_to_check.start[0] > eps:
+                raise RuntimeError('No delay allowed for gradients which start with a non-zero amplitude')
+
+        # Check whether any blocks exist in the sequence
+        if self.next_free_block_ID > 1:
+            # Look up the previous block (and the next block in case of a set_block call)
+            if block_index == self.next_free_block_ID:
+                # New block inserted
+                prev_block_index = next(reversed(self.block_events))
+                next_block_index = None
+            else:
+                blocks = list(self.block_events)
+                try:
+                    # Existing block overwritten
+                    idx = blocks.index(block_index)
+                    prev_block_index = blocks[idx - 1] if idx > 0 else None
+                    next_block_index = blocks[idx + 1] if idx < len(blocks) - 1 else None
+                except ValueError:
+                    # Inserting a new block with non-contiguous numbering
+                    prev_block_index = next(reversed(self.block_events))
+                    next_block_index = None
+
+            # Look up the last gradient value in the previous block
+            last = 0
+            if prev_block_index is not None:
+                prev_id = self.block_events[prev_block_index][grad_to_check.idx]
+                if prev_id != 0:
+                    prev_lib = self.grad_library.get(prev_id)
+                    prev_type = prev_lib['type']
+
+                    if prev_type == 't':
+                        last = 0
+                    elif prev_type == 'g':
+                        last = prev_lib['data'][5]
+
+            # Check whether the difference between the last gradient value and
+            # the first value of the new gradient is achievable with the
+            # specified slew rate.
+            if abs(last - grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+                raise RuntimeError('Two consecutive gradients need to have the same amplitude at the connection point')
+
+            # Look up the first gradient value in the next block
+            # (this only happens when using set_block to patch a block)
+            if next_block_index is not None:
+                next_id = self.block_events[next_block_index][grad_to_check.idx]
+                if next_id != 0:
+                    next_lib = self.grad_library.get(next_id)
+                    next_type = next_lib['type']
+
+                    if next_type == 't':
+                        first = 0
+                    elif next_type == 'g':
+                        first = next_lib['data'][4]
+                else:
+                    first = 0
+
+                # Check whether the difference between the first gradient value
+                # in the next block and the last value of the new gradient is
+                # achievable with the specified slew rate.
+                if abs(first - grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time:
+                    raise RuntimeError(
+                        'Two consecutive gradients need to have the same amplitude at the connection point'
+                    )
+        elif abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
+            raise RuntimeError('First gradient in the the first block has to start at 0.')
+
+        if (
+            grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
+            and abs(grad_to_check.stop[0] - duration) > 1e-7
+        ):
+            raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
