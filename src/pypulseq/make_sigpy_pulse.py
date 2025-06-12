@@ -36,6 +36,8 @@ def sigpy_n_seq(
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     use: str = str(),
     plot: bool = True,
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
     """
     Creates a radio-frequency sinc pulse event using the sigpy rf pulse library and optionally accompanying slice select, slice select rephasing
@@ -92,6 +94,10 @@ def sigpy_n_seq(
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
     plot: bool, optional, default=True
         Show sigpy plot outputs
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     Returns
     -------
@@ -146,9 +152,12 @@ def sigpy_n_seq(
     rfp.shape_dur = t[-1]
     rfp.freq_offset = freq_offset
     rfp.phase_offset = phase_offset
+    rfp.freq_ppm = freq_ppm
+    rfp.phase_ppm = phase_ppm
     rfp.dead_time = system.rf_dead_time
     rfp.ringdown_time = system.rf_ringdown_time
     rfp.delay = delay
+    rfp.center = center_pos * rfp.shape_dur
 
     if use != '':
         rfp.use = use

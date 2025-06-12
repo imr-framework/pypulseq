@@ -31,6 +31,8 @@ def make_adiabatic_pulse(
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
     use: str = str(),
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -115,6 +117,10 @@ def make_adiabatic_pulse(
         System limits.
     use : str
         Whether it is a 'refocusing' pulse (for k-space calculation).
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     Returns
     -------
@@ -209,9 +215,12 @@ def make_adiabatic_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
+    rf.center, _ = calc_rf_center(rf)
     rf.use = use if use != '' else 'inversion'
     if rf.dead_time > rf.delay:
         warn(
