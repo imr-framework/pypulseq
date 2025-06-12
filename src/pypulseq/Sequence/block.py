@@ -497,7 +497,7 @@ def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
     return block
 
 
-def register_adc_event(self, event: EventLibrary) -> int:
+def register_adc_event(self, event: EventLibrary) -> Tuple[int, List[int]]:
     """
 
     Parameters
@@ -507,25 +507,51 @@ def register_adc_event(self, event: EventLibrary) -> int:
 
     Returns
     -------
-    int
-        ID of registered ADC event.
+    int, [int, ...]
+        ID of registered RF event, list of shape IDs
     """
+    surely_new = False
+
+    # Handle phase modulation
+    if not hasattr(event, 'phase_modulation') or event.phase_modulation is None or len(event.phase_modulation) == 0:
+        shape_id = 0
+    else:
+        if hasattr(event, 'shape_id'):
+            shape_id = event.shape_id
+        else:
+            phase_shape = compress_shape(np.asarray(event.phase_modulation).flatten())
+            shape_data = np.concatenate(([phase_shape.num_samples], phase_shape.data))
+            shape_id, shape_found = self.shape_library.find_or_insert(shape_data)
+            if not shape_found:
+                surely_new = True
+
+    # Construct the ADC event data
     data = (
         event.num_samples,
         event.dwell,
-        event.delay,
+        max(event.delay, event.dead_time),
+        event.freq_ppm,
+        event.phase_ppm,
         event.freq_offset,
         event.phase_offset,
-        event.dead_time,
+        shape_id,
     )
-    adc_id, found = self.adc_library.find_or_insert(new_data=data)
 
-    # Clear block cache because ADC was overwritten
-    # TODO: Could find only the blocks that are affected by the changes
-    if self.use_block_cache and found:
-        self.block_cache.clear()
+    # Insert or find/insert into library
+    if surely_new:
+        adc_id = self.adc_library.insert(0, data)
+    else:
+        adc_id, found = self.adc_library.find_or_insert(data)
 
-    return adc_id
+        # Clear block cache if overwritten
+        if self.use_block_cache and found:
+            self.block_cache.clear()
+
+    # Optional mapping
+    if hasattr(event, 'name'):
+        self.adc_id_to_name_map[adc_id] = event.name
+
+    return adc_id, shape_id
 
 
 def register_control_event(self, event: SimpleNamespace) -> int:
@@ -578,37 +604,45 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     """
     may_exist = True
     any_changed = False
+
     if event.type == 'grad':
-        amplitude = np.abs(event.waveform).max()
+        amplitude = np.max(np.abs(event.waveform))
         if amplitude > 0:
             fnz = event.waveform[np.nonzero(event.waveform)[0][0]]
-            amplitude *= np.sign(fnz) if fnz != 0 else 1  # Workaround for np.sign(0) = 0
+            amplitude *= np.sign(fnz) if fnz != 0 else 1
 
+        # Shape ID initialization
         if hasattr(event, 'shape_IDs'):
             shape_IDs = event.shape_IDs
         else:
             shape_IDs = [0, 0]
-            if amplitude != 0:
-                g = event.waveform / amplitude
-            else:
-                g = event.waveform
+
+            # Shape for waveform
+            g = event.waveform / amplitude if amplitude != 0 else event.waveform
             c_shape = compress_shape(g)
             s_data = np.concatenate(([c_shape.num_samples], c_shape.data))
             shape_IDs[0], found = self.shape_library.find_or_insert(s_data)
-            may_exist = may_exist & found
+            may_exist = may_exist and found
             any_changed = any_changed or found
 
-            # Check whether tt == np.arange(len(event.tt)) * self.grad_raster_time + 0.5
-            tt_regular = (np.floor(event.tt / self.grad_raster_time) == np.arange(len(event.tt))).all()
+            # Shape for timing
+            c_time = compress_shape(event.tt / self.grad_raster_time)
+            t_data = np.concatenate(([c_time.num_samples], c_time.data))
 
-            if not tt_regular:
-                c_time = compress_shape(event.tt / self.grad_raster_time)
-                t_data = np.concatenate(([c_time.num_samples], c_time.data))
+            if len(c_time.data) == 4 and np.allclose(c_time.data, [0.5, 1, 1, c_time.num_samples - 3]):
+                # Standard raster → leave shape_IDs[1] as 0
+                pass
+            elif len(c_time.data) == 3 and np.allclose(c_time.data, [0.5, 0.5, c_time.num_samples - 2]):
+                # Half-raster → set to -1 as special flag
+                shape_IDs[1] = -1
+            else:
                 shape_IDs[1], found = self.shape_library.find_or_insert(t_data)
-                may_exist = may_exist & found
+                may_exist = may_exist and found
                 any_changed = any_changed or found
 
-        data = (amplitude, *shape_IDs, event.delay, event.first, event.last)
+        # Updated data layout to match MATLAB v1.5.0 ordering
+        data = (amplitude, event.first, event.last, *shape_IDs, event.delay)
+
     elif event.type == 'trap':
         data = (
             event.amplitude,
@@ -630,6 +664,9 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     # TODO: Could find only the blocks that are affected by the changes
     if self.use_block_cache and any_changed:
         self.block_cache.clear()
+
+    if hasattr(event, 'name'):
+        self.grad_id_to_name_map[grad_id] = event.name
 
     if event.type == 'grad':
         return grad_id, shape_IDs
@@ -739,6 +776,7 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
 
     use = 'u'  # Undefined
     if hasattr(event, 'use'):
+        # TODO: fixme : use map built from pp.get_supported_rf_uses()
         if event.use in [
             'excitation',
             'refocusing',
@@ -749,8 +787,19 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             use = event.use[0]
         else:
             use = 'u'
+    else:
+        raise ValueError('Parameter "use" is not optional since v1.5.0')
 
-    data = (amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset)
+    data = (
+        amplitude,
+        *shape_IDs,
+        event.center,
+        event.delay,
+        event.freq_ppm,
+        event.phase_ppm,
+        event.freq_offset,
+        event.phase_offset,
+    )
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)
@@ -761,5 +810,8 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             self.block_cache.clear()
     else:
         rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
+
+    if hasattr(event, 'name'):
+        self.rf_id_to_name_map[rf_id] = event.name
 
     return rf_id, shape_IDs
