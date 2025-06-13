@@ -173,4 +173,16 @@ def test_gradient_continuity_setblock7():
     assert list(seq.block_events.keys()) == [10, 5, 7]
 
 
+def test_gradient_continuity_setblock8():
+    # Add new gradient after valid override
+    seq = pp.Sequence()
+    seq.add_block(gx_endshigh)
+    seq.add_block(gx_allhigh)
+    seq.add_block(gx_startshigh)
+    seq.set_block(2, gx_allhigh)
+    seq.add_block(gx_endshigh)
+    seq.add_block(gx_allhigh)
+    seq.add_block(gx_startshigh)
+
+
 # TODO: Add other block functionality tests

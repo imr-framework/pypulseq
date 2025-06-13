@@ -92,6 +92,8 @@ class Sequence:
         self.signature_type = ''
         self.signature_file = ''
         self.signature_value = ''
+        self.grad_check_data_prev = SimpleNamespace(valid_for_block_num=0, last_grad_vals=[0, 0, 0])
+        self.grad_check_data_next = SimpleNamespace(valid_for_block_num=0, first_grad_vals=[0, 0, 0])
 
         self.block_durations = {}
         self.extension_numeric_idx = []
