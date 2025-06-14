@@ -48,8 +48,6 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
     new_block = np.zeros(7, dtype=np.int32)
     duration = 0
 
-    required_duration = None
-
     check_g = {
         0: SimpleNamespace(idx=2, start=(0, 0), stop=(0, 0)),
         1: SimpleNamespace(idx=3, start=(0, 0), stop=(0, 0)),
@@ -160,17 +158,15 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                     event_id = event.id
                 else:
                     event_id = register_soft_delay_event(self, event)
+
+                duration = max(duration, event.default_duration)
                 ext = {'type': self.get_extension_type_ID('DELAYS'), 'ref': event_id}
                 extensions.append(ext)
             else:
                 raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
             # Floating point number given as delay
-            # interpret the single numeric parameter as a requested duration, but throw an error if multiple numbers are provided
-            if required_duration is None:
-                required_duration = event
-            else:
-                raise RuntimeError('More than one numeric parameter given to setBlock()')
+            duration = max(duration, event)
 
     # =========
     # ADD EXTENSIONS
@@ -208,7 +204,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
             if n_soft_delays:
                 if n_soft_delays > 1:
                     raise RuntimeError('Only one soft delay extension is allowed per block.')
-                if not duration and (required_duration is None):
+                if not duration:
                     raise RuntimeError(
                         'Soft delay extension can only be used in conjunction with blocks of non-zero duration.'
                     )  # otherwise the gradient checks get tedious
@@ -296,18 +292,11 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
         ):
             raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
 
-    if required_duration:
-        if duration - required_duration > eps:
-            raise RuntimeError(
-                f'Required block duration is {required_duration} s but the actual block duration is {duration} s.'
-            )
-        duration = required_duration
-
     self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)
 
 
-def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
+def get_block(self, block_index: int) -> SimpleNamespace:
     """
     Returns PyPulseq block at `block_index` position in `self.block_events`.
 
@@ -334,7 +323,7 @@ def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
         return self.block_cache[block_index]
 
     block = SimpleNamespace()
-    attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label']
+    attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label', 'soft_delay']
     values = [None] * len(attrs)
     for att, val in zip(attrs, values):
         setattr(block, att, val)
@@ -475,9 +464,8 @@ def get_block(self, block_index: int, add_ids: bool = False) -> SimpleNamespace:
                     offset=data[1],
                     factor=data[2],
                     hint=self.soft_delay_hints.get_by_value(data[3]),
+                    default_duration=self.block_durations[block_index],
                 )
-                if add_ids:
-                    block.soft_delay.id = ext_data[1]
 
             else:
                 raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
@@ -685,7 +673,9 @@ def register_soft_delay_event(self, event: SimpleNamespace) -> int:
         self.soft_delay_hints.insert(event.hint, hint_id)
 
     data = (event.numID, event.offset, event.factor, hint_id)
-    soft_delay_id, _ = self.soft_delay_library.find_or_insert(new_data=data)
+    soft_delay_id, found = self.soft_delay_library.find_or_insert(new_data=data)
+    if self.use_block_cache and found:
+        self.block_cache.clear()
     return soft_delay_id
 
 

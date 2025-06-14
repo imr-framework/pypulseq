@@ -1,7 +1,11 @@
 from types import SimpleNamespace
 
+from pypulseq.utils.tracing import trace, trace_enabled
 
-def make_soft_delay(numID: int, hint: str, offset: float = 0.0, factor: float = 1.0) -> SimpleNamespace:
+
+def make_soft_delay(
+    numID: int, hint: str, offset: float = 0.0, factor: float = 1.0, default_duration: float = 10e-6
+) -> SimpleNamespace:
     """
     Creates a soft delay extension event.
 
@@ -48,4 +52,9 @@ def make_soft_delay(numID: int, hint: str, offset: float = 0.0, factor: float = 
     soft_delay.hint = hint
     soft_delay.offset = offset
     soft_delay.factor = factor
+    soft_delay.default_duration = default_duration
+
+    if trace_enabled():
+        soft_delay.trace = trace()
+
     return soft_delay

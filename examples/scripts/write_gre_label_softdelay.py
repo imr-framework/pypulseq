@@ -107,10 +107,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
             )
             seq.add_block(gx_pre, gy_pre, gz_reph)
             # seq.add_block(pp.make_delay(delay_TE))
-            seq.add_block(
-                10e-6,  # Add a small delay as we can't have soft_delay in an 0 duration block.
-                pp.make_soft_delay(numID=0, hint='TE', offset=-min_TE, factor=1.0),
-            )
+            seq.add_block(pp.make_soft_delay(numID=0, hint='TE', offset=-min_TE, factor=1.0))
             seq.add_block(gx, adc)
             gy_pre.amplitude = -gy_pre.amplitude
             spoil_block_contents = [pp.make_delay(delay_TR), gx_spoil, gy_pre, gz_spoil]

@@ -1522,7 +1522,7 @@ class Sequence:
         sd_warns = {}
         for block_counters in self.block_events:
             block = self.get_block(block_counters)
-            if hasattr(block, 'soft_delay') and block.soft_delay is not None:
+            if block.soft_delay is not None:
                 # Check the numeric ID consistency
                 if block.soft_delay.hint not in sd_str2numID:
                     sd_str2numID[block.soft_delay.hint] = block.soft_delay.numID
@@ -1594,7 +1594,7 @@ class Sequence:
         # Loop over all blocks
         for block_counter in self.block_events:
             block = self.get_block(block_counter)
-            if hasattr('soft_delay', block) and block.soft_delay is not None:
+            if block.soft_delay is not None:
                 if block.soft_delay.factor == 0:
                     error_report.append(
                         SimpleNamespace(
