@@ -30,6 +30,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
         Index at which block is replaced.
     args : SimpleNamespace
         Block or events to be replaced/added or created at `block_index`.
+        If a floating point number is provided, it is interpreted as the duration of the block.
 
     Raises
     ------
@@ -165,7 +166,8 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
             else:
                 raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
-            # Floating point number given as delay
+            # Delay given as floating number
+            # TODO: It would be cleaner to not have a floating number as input to the set_block() function.
             duration = max(duration, event)
 
     # =========

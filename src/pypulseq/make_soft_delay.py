@@ -47,6 +47,9 @@ def make_soft_delay(
     if ' ' in hint:
         raise ValueError("Parameter 'hint' may not contain white space characters.")
 
+    if default_duration <= 0:
+        raise ValueError('Default duration must be greater than 0.')
+
     soft_delay.type = 'soft_delay'
     soft_delay.numID = numID
     soft_delay.hint = hint
