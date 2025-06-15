@@ -173,6 +173,20 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                         dead_time=seq.system.adc_dead_time,
                     )
                 )
+        if block.soft_delay is not None:  # noqa: SIM102
+            # TODO: expand these checks with default duration
+            if block.soft_delay.factor == 0:
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='soft_delay',
+                        field='delay',
+                        error_type='SOFT_DELAY_FACTOR',
+                        value=block.soft_delay.factor,
+                        hint=block.soft_delay.hint,
+                        numID=block.soft_delay.numID,
+                    )
+                )
 
     return len(error_report) == 0, error_report
 

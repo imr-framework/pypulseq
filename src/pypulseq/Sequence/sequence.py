@@ -1526,8 +1526,7 @@ class Sequence:
         """
         Go through all the blocks checking the consistency of the soft delays
         TODO/FIXME:
-        - check if this works
-        - Modify print error functions to make error reporting work?
+        - This is currently not functional.
         Returns
         -------
         -------
@@ -1547,85 +1546,51 @@ class Sequence:
         for block_counter in self.block_events:
             block = self.get_block(block_counter)
             if block.soft_delay is not None:
-                if block.soft_delay.factor == 0:
-                    error_report.append(
-                        SimpleNamespace(
-                            block=block_counter,
-                            event='soft_delay',
-                            field='delay',
-                            error_type='SOFT_DELAY_FACTOR',
-                            value=block.soft_delay.factor,
-                            hint=block.soft_delay.hint,
-                            numID=block.soft_delay.numID,
-                        )
-                    )
                 # Calculate default delay based on the current block duration
                 default_delay = (
                     self.block_durations[block_counter] - block.soft_delay.offset
                 ) * block.soft_delay.factor
-                if block.soft_delay.numID >= 0:
-                    # Remember of check for consistency
-                    if soft_delay_state[block.soft_delay.numID] is None:
-                        dly_state_ = SimpleNamespace(
-                            default=default_delay,
-                            hint=block.soft_delay.hint,
-                            blk=block_counter,
-                            min_delay=0.0,
-                            max_delay=np.inf,
-                        )
 
-                        soft_delay_state[block.soft_delay.numID] = dly_state_
-                    else:
-                        if (
-                            abs(default_delay - soft_delay_state[block.soft_delay.numID].default) > 1e-7
-                        ):  # What is a reasonable threshold?
-                            error_report.append(
-                                SimpleNamespace(
-                                    block=block_counter,
-                                    event='soft_delay',
-                                    field='delay',
-                                    error_type='SOFT_DELAY_DUR_INCONSISTENCY',
-                                    value=default_delay,
-                                    hint=block.soft_delay.hint,
-                                    numID=block.soft_delay.numID,
-                                )
-                            )
-                        if block.soft_delay.hint != soft_delay_state[block.soft_delay.numID].hint:
-                            error_report.append(
-                                SimpleNamespace(
-                                    block=block_counter,
-                                    event='soft_delay',
-                                    field='hint',
-                                    error_type='SOFT_DELAY_HINT_INCONSISTENCY',
-                                    value=block.soft_delay.hint,
-                                    prev_hint=soft_delay_state[block.soft_delay.numID].hint,
-                                )
-                            )
-                    # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
-                    lim_delay = -block.soft_delay.offset * block.soft_delay.factor
-                    if block.soft_delay.factor > 0:
-                        # lim_delay corresponds to the minimum
-                        if lim_delay > soft_delay_state[block.soft_delay.numID].min_delay:
-                            soft_delay_state[block.soft_delay.numID].min_delay = lim_delay
-                    else:
-                        # lim_delay corresponds to the maximum
-                        if lim_delay < soft_delay_state[block.soft_delay.numID].max_delay:
-                            soft_delay_state[block.soft_delay.numID].max_delay = lim_delay
-                else:
-                    # Numeric ID is invalid
-                    error_report.append(
-                        SimpleNamespace(
-                            block=block_counter,
-                            event='soft_delay',
-                            field='numID',
-                            error_type='SOFT_DELAY_NUMID_INVALID',
-                            value=block.soft_delay.numID,
-                        )
+                if soft_delay_state[block.soft_delay.numID] is None:
+                    dly_state_ = SimpleNamespace(
+                        default=default_delay,
+                        hint=block.soft_delay.hint,
+                        blk=block_counter,
+                        min_delay=0.0,
+                        max_delay=np.inf,
                     )
+
+                    soft_delay_state[block.soft_delay.numID] = dly_state_
+                else:
+                    if (
+                        abs(default_delay - soft_delay_state[block.soft_delay.numID].default) > 1e-7
+                    ):  # What is a reasonable threshold?
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='soft_delay',
+                                field='delay',
+                                error_type='SOFT_DELAY_DUR_INCONSISTENCY',
+                                value=default_delay,
+                                hint=block.soft_delay.hint,
+                                numID=block.soft_delay.numID,
+                            )
+                        )
+                # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
+                lim_delay = -block.soft_delay.offset * block.soft_delay.factor
+                if block.soft_delay.factor > 0:
+                    # lim_delay corresponds to the minimum
+                    if lim_delay > soft_delay_state[block.soft_delay.numID].min_delay:
+                        soft_delay_state[block.soft_delay.numID].min_delay = lim_delay
+                else:
+                    # lim_delay corresponds to the maximum
+                    if lim_delay < soft_delay_state[block.soft_delay.numID].max_delay:
+                        soft_delay_state[block.soft_delay.numID].max_delay = lim_delay
 
         numIDs_ = np.array(soft_delay_state.keys())
         delays_by_hints = {}
         if numIDs_[0] != 0 or np.any(np.diff(numIDs_) != 1):
+            # Interpreter seems to allow this, but why should we?
             warn('Soft delay numeric IDs are not continuous, which is unexpected.')
         for numID_, delay_state_ in soft_delay_state.items():
             if delay_state_.hint not in delays_by_hints:
