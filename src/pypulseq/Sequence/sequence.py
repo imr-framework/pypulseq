@@ -3,7 +3,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from warnings import warn
 
 try:
@@ -32,6 +32,7 @@ from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
+from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
@@ -68,6 +69,7 @@ class Sequence:
         self.rf_library = EventLibrary()
         self.shape_library = EventLibrary(numpy_data=True)
         self.trigger_library = EventLibrary()
+        self.soft_delay_library = EventLibrary()
 
         # =========
         # OTHER
@@ -96,6 +98,7 @@ class Sequence:
         self.block_durations = {}
         self.extension_numeric_idx = []
         self.extension_string_idx = []
+        self.soft_delay_hints = {}
 
     def __str__(self) -> str:
         s = 'Sequence:'
@@ -163,7 +166,7 @@ class Sequence:
 
         return t_adc, fp_adc
 
-    def add_block(self, *args: SimpleNamespace) -> None:
+    def add_block(self, *args: Union[SimpleNamespace, float]) -> None:
         """
         Add a new block/multiple events to the sequence. Adds a sequence block with provided as a block structure
 
@@ -1162,7 +1165,10 @@ class Sequence:
     def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         return block.register_rf_event(self, event)
 
-    def remove_duplicates(self, in_place: bool = False) -> Self:
+    def register_soft_delay_event(self, event: SimpleNamespace) -> int:
+        return block.register_soft_delay_event(self, event)
+
+    def remove_duplicates(self, in_place: bool = False) -> 'Sequence':
         """
         Removes duplicate events from the shape and event libraries contained
         in this sequence.
@@ -1432,6 +1438,169 @@ class Sequence:
         self.extension_numeric_idx.append(extension_id)
         self.extension_string_idx.append(extension_str)
         assert len(self.extension_numeric_idx) == len(self.extension_string_idx)
+
+    def apply_soft_delay(self, **kwargs):
+        """
+        Applies soft delays to the sequence by modifying the block durations of the respective blocks.
+        Input parameters are pairs of soft delays and values, whereas the soft delay is identified by its string hint and the value is the duration in seconds.
+        Not all soft delays defined in the sequence need to be specified.
+        Examples:
+           seq.apply_soft_delay(TE=40e-3) # set TE to 40ms
+           seq.apply_soft_delay(TE=50e-3, TR=2) # set TE to 50ms and TR to 2 s
+
+        Parameters:
+        -----------
+        **kwargs : dict
+            Keyword arguments of the form (string hint, value) pairs
+            The string hint is the name of the soft delay to be modified.
+            The value is the new duration of the soft delay in seconds.
+        Raises:
+        -------
+        ValueError
+            If the given soft delay is not defined in the sequence.
+        ValueError
+            If the calculated delay is negative.
+        ValueError
+            If the string hint and numeric ID is inconsistent.
+        See Also
+        --------
+        pypulseq.make_soft_delay()
+        """
+
+        # TODO: check if this works
+        # Go through all the blocks and update durations, at the same time checking the consistency of the soft delays
+        sd_str2numID = {}
+        sd_numID2hint = {}
+        sd_warns = {}
+        for block_counters in self.block_events:
+            block = self.get_block(block_counters)
+            if block.soft_delay is not None:
+                # Check the numeric ID consistency
+                if block.soft_delay.hint not in sd_str2numID:
+                    sd_str2numID[block.soft_delay.hint] = block.soft_delay.numID
+                else:
+                    if sd_str2numID[block.soft_delay.hint] != block.soft_delay.numID:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same string hint"
+                        )
+
+                if block.soft_delay.numID not in sd_numID2hint:
+                    sd_numID2hint[block.soft_delay.numID] = block.soft_delay.hint
+                else:
+                    if sd_numID2hint[block.soft_delay.numID] != block.soft_delay.hint:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same numeric ID"
+                        )
+
+                if block.soft_delay.hint in kwargs:
+                    # Calculate the new block duration
+                    new_dur_ru = (
+                        kwargs[block.soft_delay.hint] / block.soft_delay.factor + block.soft_delay.offset
+                    ) / self.system.block_duration_raster
+                    new_dur = round(new_dur_ru) * self.system.block_duration_raster
+                    if (
+                        abs(new_dur - new_dur_ru * self.system.block_duration_raster) > 0.5e-6
+                        and block.soft_delay.numID not in sd_warns
+                    ):
+                        warn(
+                            f"Block duration for block {block_counters}, soft delay '{block.soft_delay.hint}', had to be substantially rounded to become aligned to the raster time. This warning is only displayed for the first block where it occurs."
+                        )
+                        sd_warns[block.soft_delay.numID] = True
+
+                    if new_dur < 0:
+                        raise ValueError(
+                            f'Calculated new duration of the block {block_counters}, soft delay {block.soft_delay.hint}/{block.soft_delay.numID} is negative ({new_dur} s)'
+                        )
+
+                    self.block_durations[block_counters] = new_dur
+
+        # Now check if there are some input soft delays which haven't been found in the sequence
+        all_input_hints = kwargs.keys()
+        for hint in all_input_hints:
+            if hint not in sd_str2numID:
+                raise ValueError(f"Specified soft delay '{hint}' does not exist in the sequence")
+
+    def get_default_soft_delay_values(
+        self,
+    ) -> Tuple[Dict[str, float], List[SimpleNamespace], Dict[int, SimpleNamespace]]:
+        """
+        Go through all the blocks checking the consistency of the soft delays
+        TODO/FIXME:
+        - This is currently not functional.
+        Returns
+        -------
+        -------
+        delays_by_hints : dict
+            Dictionary of soft delay hints and their default values.
+        error_report : list
+            List of error messages for any inconsistencies found in the soft delays.
+        soft_delay_state : dict
+            Dictionary of soft delay states, containing the default value, hint, block number, min and max delays for each numeric ID.
+
+        """
+
+        error_report: List[SimpleNamespace] = []
+        soft_delay_state = {}
+
+        # Loop over all blocks
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            if block.soft_delay is not None:
+                # Calculate default delay based on the current block duration
+                default_delay = (
+                    self.block_durations[block_counter] - block.soft_delay.offset
+                ) * block.soft_delay.factor
+
+                if soft_delay_state[block.soft_delay.numID] is None:
+                    dly_state_ = SimpleNamespace(
+                        default=default_delay,
+                        hint=block.soft_delay.hint,
+                        blk=block_counter,
+                        min_delay=0.0,
+                        max_delay=np.inf,
+                    )
+
+                    soft_delay_state[block.soft_delay.numID] = dly_state_
+                else:
+                    if (
+                        abs(default_delay - soft_delay_state[block.soft_delay.numID].default) > 1e-7
+                    ):  # What is a reasonable threshold?
+                        error_report.append(
+                            SimpleNamespace(
+                                block=block_counter,
+                                event='soft_delay',
+                                field='delay',
+                                error_type='SOFT_DELAY_DUR_INCONSISTENCY',
+                                value=default_delay,
+                                hint=block.soft_delay.hint,
+                                numID=block.soft_delay.numID,
+                            )
+                        )
+                # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
+                lim_delay = -block.soft_delay.offset * block.soft_delay.factor
+                if block.soft_delay.factor > 0:
+                    # lim_delay corresponds to the minimum
+                    if lim_delay > soft_delay_state[block.soft_delay.numID].min_delay:
+                        soft_delay_state[block.soft_delay.numID].min_delay = lim_delay
+                else:
+                    # lim_delay corresponds to the maximum
+                    if lim_delay < soft_delay_state[block.soft_delay.numID].max_delay:
+                        soft_delay_state[block.soft_delay.numID].max_delay = lim_delay
+
+        numIDs_ = np.array(soft_delay_state.keys())
+        delays_by_hints = {}
+        if numIDs_[0] != 0 or np.any(np.diff(numIDs_) != 1):
+            # Interpreter seems to allow this, but why should we?
+            warn('Soft delay numeric IDs are not continuous, which is unexpected.')
+        for numID_, delay_state_ in soft_delay_state.items():
+            if delay_state_.hint not in delays_by_hints:
+                delays_by_hints[delay_state_.hint] = delay_state_.default
+            else:
+                raise ValueError(
+                    f'SoftDelay with numeric ID {numID_} uses the same hint "{delay_state_.hint}" as some previous soft delay'
+                )
+
+        return delays_by_hints, error_report, soft_delay_state
 
     def test_report(self) -> str:
         """
@@ -1786,7 +1955,12 @@ class Sequence:
         return all_waveforms
 
     def write(
-        self, name: str, create_signature: bool = True, remove_duplicates: bool = True, check_timing: bool = True
+        self,
+        name: str,
+        create_signature: bool = True,
+        remove_duplicates: bool = True,
+        check_timing: bool = True,
+        v141_compat: bool = False,
     ) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
@@ -1801,6 +1975,8 @@ class Sequence:
             Boolean flag to indicate if the file has to be signed.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
+        v141_compat: bool, default=False
+            Write the sequence in v1.4.1 compatible file format.
 
         Returns
         -------
@@ -1839,7 +2015,10 @@ class Sequence:
                 warn(warn_msg, stacklevel=2)
 
         # Write the sequence
-        signature = write_seq(self, name, create_signature, remove_duplicates)
+        if v141_compat:
+            signature = write_seq_v141(self, name, create_signature, remove_duplicates)
+        else:
+            signature = write_seq(self, name, create_signature, remove_duplicates)
 
         # Return the sequence md5 signature if requested
         if signature is not None:
