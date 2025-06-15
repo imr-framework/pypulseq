@@ -229,9 +229,7 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
             for k in self.soft_delay_library.data:
                 data = self.soft_delay_library.data[k]
-                s = id_format_str.format(
-                    k, data[0], np.round(data[1] * 1e6), data[2], self.soft_delay_hints.get_by_value(data[3])
-                )
+                s = id_format_str.format(k, data[0], np.round(data[1] * 1e6), data[2], data[3])
                 output_file.write(s)
             output_file.write('\n')
 

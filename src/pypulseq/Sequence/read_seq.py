@@ -192,8 +192,12 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 extension_id = int(section[16:])
                 self.set_extension_string_ID('DELAYS', extension_id)
                 self.soft_delay_library = __read_and_parse_events(
-                    input_file, int, lambda ofs: 1e-6 * int(ofs), int, lambda s: __parse_soft_delay_hint(s, self)
+                    input_file, int, lambda ofs: 1e-6 * int(ofs), int, str
                 )
+                # Map numIDs to soft delay hints
+                for d in self.soft_delay_library.data.values():
+                    if d[3] not in self.soft_delay_hints:
+                        self.soft_delay_hints[d[3]] = d[0]
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
@@ -531,13 +535,13 @@ def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
     while line != '' and line != '#':
         list_of_data_str = re.split(r'(\s+)', line)
         list_of_data_str = [d for d in list_of_data_str if d != ' ']
-        data = np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
+        data = []  # np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
         event_id = int(list_of_data_str[0])
         for i in range(1, len(list_of_data_str)):
             if i > len(args):
-                data[i - 1] = int(list_of_data_str[i])
+                data.append(int(list_of_data_str[i]))
             else:
-                data[i - 1] = args[i - 1](list_of_data_str[i])
+                data.append(args[i - 1](list_of_data_str[i]))
         event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 
@@ -619,31 +623,6 @@ def __skip_comments(input_file, stop_before_section: bool = False) -> str:
         next_line = -1
 
     return next_line
-
-
-def __parse_soft_delay_hint(s: str, seq) -> int:
-    """
-    Parse the soft delay hint and return its ID. If the hint does not exist, create a new ID for it.
-
-    Parameters
-    ----------
-    s : str
-        The soft delay hint.
-    seq : Sequence
-        The sequence object containing soft delay hints.
-
-    Returns
-    -------
-    int
-        The ID of the soft delay hint.
-    """
-    try:
-        numID = seq.soft_delay_hints.get_by_value(s)
-    except KeyError:
-        numID = len(seq.soft_delay_hints) + 1
-        seq.soft_delay_hints.insert(s, numID)
-
-    return numID
 
 
 def __strip_line(input_file) -> str:

@@ -4,7 +4,7 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_soft_delay(
-    numID: int, hint: str, offset: float = 0.0, factor: float = 1.0, default_duration: float = 10e-6
+    hint: str, numID: int | None = None, offset: float = 0.0, factor: float = 1.0, default_duration: float = 10e-6
 ) -> SimpleNamespace:
     """
     Creates a soft delay extension event.
@@ -23,10 +23,10 @@ def make_soft_delay(
 
     Parameters
     ----------
-    numID : int
-        Numeric ID of the soft delay event.
     hint : str
         Human readable text hint for the soft delay event to be shown at the interpreter.
+    numID : int or None, optional
+        Numeric ID of the soft delay event.
     offset : float, optional
         Offset in seconds, default is 0.
     factor : float, optional

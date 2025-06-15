@@ -40,54 +40,6 @@ from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 major, minor, revision = __version__.split('.')[:3]
 
 
-class BiDict:
-    """
-    A bidirectional dictionary that allows for fast lookups in both directions.
-    """
-
-    def __init__(self):
-        self.forward = {}
-        self.backward = {}
-
-    def insert(self, key, value):
-        if key in self.forward or value in self.backward:
-            raise ValueError('Key or value already exists in the dictionary')
-        self.forward[key] = value
-        self.backward[value] = key
-
-    def remove_by_key(self, key):
-        if key in self.forward:
-            value = self.forward.pop(key)
-            del self.backward[value]
-
-    def remove_by_value(self, value):
-        if value in self.backward:
-            key = self.backward.pop(value)
-            del self.forward[key]
-
-    def get_by_key(self, key):
-        val = self.forward.get(key)
-        if val is None:
-            raise KeyError(f'Key {key} not found in the dictionary')
-        return val
-
-    def get_by_value(self, value):
-        key = self.backward.get(value)
-        if key is None:
-            raise KeyError(f'Value {value} not found in the dictionary')
-        return key
-
-    def __repr__(self):
-        return f'BiDict({self.forward})'
-
-    def __len__(self):
-        len_forward = len(self.forward)
-        len_backward = len(self.backward)
-        if len_forward != len_backward:
-            raise ValueError('Forward and backward dictionaries are not of the same length.')
-        return len(self.forward)
-
-
 class Sequence:
     """
     Generate sequences and read/write sequence files. This class defines properties and methods to define a complete MR
@@ -146,7 +98,7 @@ class Sequence:
         self.block_durations = {}
         self.extension_numeric_idx = []
         self.extension_string_idx = []
-        self.soft_delay_hints = BiDict()
+        self.soft_delay_hints = {}
 
     def __str__(self) -> str:
         s = 'Sequence:'

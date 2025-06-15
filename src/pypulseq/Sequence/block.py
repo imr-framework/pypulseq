@@ -465,7 +465,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                     numID=data[0],
                     offset=data[1],
                     factor=data[2],
-                    hint=self.soft_delay_hints.get_by_value(data[3]),
+                    hint=data[3],
                     default_duration=self.block_durations[block_index],
                 )
 
@@ -668,13 +668,17 @@ def register_soft_delay_event(self, event: SimpleNamespace) -> int:
     int
         ID of registered soft delay event.
     """
-    try:
-        hint_id = self.soft_delay_hints.get_by_key(event.hint)
-    except KeyError:
-        hint_id = len(self.soft_delay_hints) + 1
-        self.soft_delay_hints.insert(event.hint, hint_id)
+    if event.hint in self.soft_delay_hints:
+        if event.numID and event.numID != self.soft_delay_hints[event.hint]:
+            raise ValueError('Given numID and hint is inconsistent for the soft delay.')
+        event.numID = self.soft_delay_hints[event.hint]
+    else:
+        if event.numID is None:
+            event.numID = max([-1, *self.soft_delay_hints.values()]) + 1
 
-    data = (event.numID, event.offset, event.factor, hint_id)
+        self.soft_delay_hints[event.hint] = event.numID
+
+    data = (event.numID, event.offset, event.factor, event.hint)
     soft_delay_id, found = self.soft_delay_library.find_or_insert(new_data=data)
     if self.use_block_cache and found:
         self.block_cache.clear()
