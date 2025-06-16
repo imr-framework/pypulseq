@@ -127,7 +127,7 @@ class EventLibrary:
 
         return key_id, found
 
-    def insert(self, key_id: int, new_data: np.ndarray, data_type: str = str()) -> int:
+    def insert(self, key_id: int, new_data: np.ndarray | list, data_type: str = str()) -> int:
         """
         Add event to library.
 
@@ -137,7 +137,7 @@ class EventLibrary:
         ----------
         key_id : int
             Key of `new_data`.
-        new_data : numpy.ndarray
+        new_data : numpy.ndarray or list
             Data to be inserted into event library.
         data_type : str, default=str()
             Data type of `new_data`.

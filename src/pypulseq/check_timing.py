@@ -13,6 +13,10 @@ error_messages = {
     'RF_DEAD_TIME': 'Delay of {value*multiplier:.2f} {unit} is smaller than the RF dead time {dead_time*multiplier:.0f} {unit}',
     'RF_RINGDOWN_TIME': 'Time between the end of the RF pulse at {value*multiplier:.2f} {unit} and the end of the block at {duration * multiplier:.2f} {unit} is shorter than rf_ringdown_time ({ringdown_time*multiplier:.0f} {unit})',
     'NEGATIVE_DELAY': 'Delay is negative {value*multiplier:.2f} {unit}',
+    'SOFT_DELAY_FACTOR': 'Soft delay {hint}/{numID} has the factor parameter as zero, which is invalid.',
+    'SOFT_DELAY_DUR_INCONSISTENCY': 'Soft delay {hint}/{numID} default duration derived from this block ({value*1e6} us) is inconsistent with the previous default.',
+    'SOFT_DELAY_HINT_INCONSISTENCY': 'Soft delay {hint}/{numID}: Soft delays with the same numeric ID are expected to share the same text hint but previous hint recorded is {prev_hint}.',
+    'SOFT_DELAY_INVALID_NUMID': 'Soft delay {hint}/{numID} has an invalid numeric ID {numID}. Numeric IDs must be positive integers.',
 }
 
 
@@ -167,6 +171,20 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
                         value=block.adc.delay + block.adc.num_samples * block.adc.dwell,
                         duration=duration,
                         dead_time=seq.system.adc_dead_time,
+                    )
+                )
+        if block.soft_delay is not None:  # noqa: SIM102
+            # TODO: expand these checks with default duration
+            if block.soft_delay.factor == 0:
+                error_report.append(
+                    SimpleNamespace(
+                        block=block_counter,
+                        event='soft_delay',
+                        field='delay',
+                        error_type='SOFT_DELAY_FACTOR',
+                        value=block.soft_delay.factor,
+                        hint=block.soft_delay.hint,
+                        numID=block.soft_delay.numID,
                     )
                 )
 

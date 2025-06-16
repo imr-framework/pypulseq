@@ -46,6 +46,7 @@ from pypulseq.make_arbitrary_grad import make_arbitrary_grad
 from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.make_block_pulse import make_block_pulse
 from pypulseq.make_delay import make_delay
+from pypulseq.make_soft_delay import make_soft_delay
 from pypulseq.make_digital_output_pulse import make_digital_output_pulse
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_extended_trapezoid_area import make_extended_trapezoid_area
