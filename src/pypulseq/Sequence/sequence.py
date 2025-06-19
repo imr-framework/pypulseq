@@ -92,6 +92,7 @@ class Sequence:
         self.signature_type = ''
         self.signature_file = ''
         self.signature_value = ''
+        self.rf_id_to_name_map = {}
 
         self.block_durations = {}
         self.extension_numeric_idx = []
@@ -1216,7 +1217,7 @@ class Sequence:
             seq_copy.block_events[block_id][4] = mapping[seq_copy.block_events[block_id][4]]
 
         # Filter duplicates in RF library
-        seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((6, 0, 0, 0, 6, 6, 6))
+        seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((6, 0, 0, 0, 6, 6, 6, 6, 6, 6))
 
         # Remap RF event IDs
         for block_id in seq_copy.block_events:
@@ -1272,22 +1273,25 @@ class Sequence:
             rf.t = (np.arange(1, len(rf.signal) + 1) - 0.5) * self.rf_raster_time
             rf.shape_dur = len(rf.signal) * self.rf_raster_time
 
-        rf.delay = lib_data[4]
-        rf.freq_offset = lib_data[5]
-        rf.phase_offset = lib_data[6]
+        rf.center = lib_data[4]  # new in v150
+        rf.delay = lib_data[5]  # changed in v150
+        rf.freq_ppm = lib_data[6]  # new in v150
+        rf.phase_ppm = lib_data[7]  # new in v150
+        rf.freq_offset = lib_data[8]  # changed in v150
+        rf.phase_offset = lib_data[9]  # changed in v150
 
         rf.dead_time = self.system.rf_dead_time
         rf.ringdown_time = self.system.rf_ringdown_time
 
-        if use != '':
-            use_cases = {
-                'e': 'excitation',
-                'r': 'refocusing',
-                'i': 'inversion',
-                's': 'saturation',
-                'p': 'preparation',
-            }
-            rf.use = use_cases.get(use, 'undefined')
+        # TODO: fixme : use map built from pp.get_supported_rf_uses()
+        use_cases = {
+            'e': 'excitation',
+            'r': 'refocusing',
+            'i': 'inversion',
+            's': 'saturation',
+            'p': 'preparation',
+        }
+        rf.use = use_cases.get(use, 'undefined')
 
         return rf
 
@@ -1308,6 +1312,13 @@ class Sequence:
         fp_refocusing : np.ndarray
             Contains frequency and phase offsets of the excitation RF pulses
         """
+        # tc = calc_rf_center(rf)
+        # t = rf.delay + tc
+        # if hasattr(rf,'use') is False or rf.use == 'excitation' or rf.use =='undefined':
+        #     tfp_excitation(:,end+1) = [curr_dur+t; full_freq_offset; full_phase_offset + 2* pi * full_freq_offset * tc]
+        # elif rf.use =='refocusing':
+        #     tfp_refocusing(:,end+1) = [curr_dur+t; full_freq_offset; full_phase_offset + 2 * pi * full_freq_offset * tc]
+
         # Collect RF timing data
         t_excitation = []
         fp_excitation = []
@@ -1338,16 +1349,23 @@ class Sequence:
 
             if block.rf is not None:
                 rf = block.rf
-                t = rf.delay + calc_rf_center(rf)[0]
+
+                tc = calc_rf_center(rf)[0]
+                t = rf.delay + tc
+
+                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
+                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
+                full_phase_offset = full_phase_offset + 2 * np.pi * full_freq_offset * tc
+
                 if not hasattr(rf, 'use') or block.rf.use in [
                     'excitation',
                     'undefined',
                 ]:
                     t_excitation.append(curr_dur + t)
-                    fp_excitation.append([block.rf.freq_offset, block.rf.phase_offset])
+                    fp_excitation.append([full_freq_offset, full_phase_offset])
                 elif block.rf.use == 'refocusing':
                     t_refocusing.append(curr_dur + t)
-                    fp_refocusing.append([block.rf.freq_offset, block.rf.phase_offset])
+                    fp_refocusing.append([full_freq_offset, full_phase_offset])
 
             curr_dur += self.block_durations[block_counter]
 
@@ -1560,11 +1578,13 @@ class Sequence:
 
             if block.rf is not None:  # RF
                 rf = block.rf
+                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
+                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
                 if append_RF:
                     rf_piece = np.array(
                         [
                             curr_dur + rf.delay + rf.t,
-                            rf.signal * np.exp(1j * (rf.phase_offset + 2 * np.pi * rf.freq_offset * rf.t)),
+                            rf.signal * np.exp(1j * (full_phase_offset + 2 * np.pi * full_freq_offset * rf.t)),
                         ]
                     )
                     out_len[-1] += len(rf.t)

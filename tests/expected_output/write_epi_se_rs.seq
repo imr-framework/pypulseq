@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 4
-revision 2
+minor 5
+revision 0
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -198,16 +198,17 @@ TotalDuration 0.21735
 180  48   0   8  10   0  1  0
 
 # Format of RF events:
-# id amplitude mag_id phase_id time_shape_id delay freq phase
-# ..        Hz   ....     ....          ....    us   Hz   rad
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      129.712 1 2 0 100 -424.504 0
-2      493.727 3 4 0 130 -2000 0
-3      987.454 3 4 0 1740 -2000 1.5708
-4      493.727 3 4 0 130 0 0
-5      987.454 3 4 0 1740 0 1.5708
-6      493.727 3 4 0 130 2000 0
-7      987.454 3 4 0 1740 2000 1.5708
+1      129.712 1 2 0 4000 100 0 0 -424.504 0 u
+2      493.727 3 4 0 1000 130 0 0 -2000 0 u
+3      987.454 3 4 0 1000 1740 0 0 -2000 1.5708 r
+4      493.727 3 4 0 1000 130 0 0 0 0 u
+5      987.454 3 4 0 1000 1740 0 0 0 1.5708 r
+6      493.727 3 4 0 1000 130 0 0 2000 0 u
+7      987.454 3 4 0 1000 1740 0 0 2000 1.5708 r
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
@@ -10335,4 +10336,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash a34c8de5a75831a58c38f69e0b1815fc
+Hash ae9d2b98e7fc357a1f15425a7fe6d952

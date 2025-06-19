@@ -27,7 +27,9 @@ def make_sinc_pulse(
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
     time_bw_product: float = 4,
-    use: str = str(),
+    use: str = 'undefined',
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -66,8 +68,12 @@ def make_sinc_pulse(
         System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, default=4
         Time-bandwidth product.
-    use : str, default=str()
+    use : str, default='undefined'
         Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     See also `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
@@ -116,12 +122,13 @@ def make_sinc_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-
-    if use != str():
-        rf.use = use
+    rf.center = duration * center_pos
+    rf.use = use
 
     if rf.dead_time > rf.delay:
         warn(

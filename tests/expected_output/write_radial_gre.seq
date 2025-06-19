@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 4
-revision 2
+minor 5
+revision 0
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -423,33 +423,34 @@ TotalDuration 1.62081
 405 923   0 180 135   7  0  0
 
 # Format of RF events:
-# id amplitude mag_id phase_id time_shape_id delay freq phase
-# ..        Hz   ....     ....          ....    us   Hz   rad
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      27.4293 1 2 0 100 0 0
-2      27.4293 1 2 0 100 0 2.04204
-3      27.4293 1 2 0 100 0 6.12611
-4      27.4293 1 2 0 100 0 5.96903
-5      27.4293 1 2 0 100 0 1.5708
-6      27.4293 1 2 0 100 0 5.49779
-7      27.4293 1 2 0 100 0 5.18363
-8      27.4293 1 2 0 100 0 0.628319
-9      27.4293 1 2 0 100 0 4.39823
-10      27.4293 1 2 0 100 0 3.92699
-11      27.4293 1 2 0 100 0 2.82743
-12      27.4293 1 2 0 100 0 2.19911
-13      27.4293 1 2 0 100 0 3.61283
-14      27.4293 1 2 0 100 0 0.785398
-15      27.4293 1 2 0 100 0 1.25664
-16      27.4293 1 2 0 100 0 4.55531
-17      27.4293 1 2 0 100 0 4.71239
-18      27.4293 1 2 0 100 0 0.471239
-19      27.4293 1 2 0 100 0 1.41372
-20      27.4293 1 2 0 100 0 3.14159
-21      27.4293 1 2 0 100 0 5.34071
-22      27.4293 1 2 0 100 0 2.35619
-23      27.4293 1 2 0 100 0 3.76991
-24      27.4293 1 2 0 100 0 2.98451
+1      27.4293 1 2 0 2000 100 0 0 0 0 u
+2      27.4293 1 2 0 2000 100 0 0 0 2.04204 u
+3      27.4293 1 2 0 2000 100 0 0 0 6.12611 u
+4      27.4293 1 2 0 2000 100 0 0 0 5.96903 u
+5      27.4293 1 2 0 2000 100 0 0 0 1.5708 u
+6      27.4293 1 2 0 2000 100 0 0 0 5.49779 u
+7      27.4293 1 2 0 2000 100 0 0 0 5.18363 u
+8      27.4293 1 2 0 2000 100 0 0 0 0.628319 u
+9      27.4293 1 2 0 2000 100 0 0 0 4.39823 u
+10      27.4293 1 2 0 2000 100 0 0 0 3.92699 u
+11      27.4293 1 2 0 2000 100 0 0 0 2.82743 u
+12      27.4293 1 2 0 2000 100 0 0 0 2.19911 u
+13      27.4293 1 2 0 2000 100 0 0 0 3.61283 u
+14      27.4293 1 2 0 2000 100 0 0 0 0.785398 u
+15      27.4293 1 2 0 2000 100 0 0 0 1.25664 u
+16      27.4293 1 2 0 2000 100 0 0 0 4.55531 u
+17      27.4293 1 2 0 2000 100 0 0 0 4.71239 u
+18      27.4293 1 2 0 2000 100 0 0 0 0.471239 u
+19      27.4293 1 2 0 2000 100 0 0 0 1.41372 u
+20      27.4293 1 2 0 2000 100 0 0 0 3.14159 u
+21      27.4293 1 2 0 2000 100 0 0 0 5.34071 u
+22      27.4293 1 2 0 2000 100 0 0 0 2.35619 u
+23      27.4293 1 2 0 2000 100 0 0 0 3.76991 u
+24      27.4293 1 2 0 2000 100 0 0 0 2.98451 u
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -4692,4 +4693,4 @@ num_samples 4000
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash bc6a5dca3453696e2a15de3cb78e83a0
+Hash e3f19fecfc981cdb6a36ac233f0f3cff

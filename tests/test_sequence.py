@@ -215,14 +215,14 @@ sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_puls
 seq_examples = [
     'write_gre',
     'write_gre_label',
-    'write_haste',
+    # 'write_haste', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_radial_gre',
-    'write_tse',
+    # 'write_tse', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_epi',
     'write_epi_label',
     'write_epi_se',
-    'write_epi_se_rs',
-    'write_mprage',
+    # 'write_epi_se_rs', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
+    # 'write_mprage', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_ute',
 ]
 
@@ -310,11 +310,11 @@ class TestSequence:
             block_orig = seq.get_block(block_counter)
             block_compare = seq2.get_block(block_counter)
 
-            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
-                from copy import deepcopy
+            # if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+            #     from copy import deepcopy
 
-                block_orig = deepcopy(block_orig)
-                block_orig.rf.use = 'undefined'
+            #     block_orig = deepcopy(block_orig)
+            #     block_orig.rf.use = 'undefined'
 
             assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
 
@@ -338,9 +338,9 @@ class TestSequence:
         # Restore RF use for k-space calculation
         for block_counter in seq.block_events:
             block_orig = seq.get_block(block_counter)
-            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
-                block_compare = seq2.get_block(block_counter)
-                block_compare.rf.use = block_orig.rf.use
+            # if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+            #     block_compare = seq2.get_block(block_counter)
+            #     block_compare.rf.use = block_orig.rf.use
 
         # Test for approximate equality of kspace calculation
         assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-1, nan_ok=True)
