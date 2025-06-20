@@ -41,10 +41,10 @@ TotalDuration 0.0142
  4       102459 240 9520 240   0
 
 # Format of ADC events:
-# id num dwell delay freq phase
-# ..  ..    ns    us   Hz   rad
+# id num dwell delay freqPPM phasePPM freq phase phase_id
+# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
 [ADC]
-1 100 100000 0 0 0
+1 100 100000 0 0 0 0 0 0
 
 # Sequence Shapes
 [SHAPES]
@@ -70,4 +70,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 7e8bfc27296bebb59901d7f6c2595b75
+Hash 84be8c860fdbebf68977a6779ae84cb4
