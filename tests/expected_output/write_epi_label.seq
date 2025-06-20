@@ -5658,13 +5658,13 @@ TotalDuration 4.32868
 # ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
 # Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      329.152 1 2 0 1500 100 0 0 -4000 6 u
-2      329.152 1 2 0 1500 100 0 0 -2666.67 4 u
-3      329.152 1 2 0 1500 100 0 0 -1333.33 2 u
-4      329.152 1 2 0 1500 100 0 0 0 -0 u
-5      329.152 1 2 0 1500 100 0 0 1333.33 -2 u
-6      329.152 1 2 0 1500 100 0 0 2666.67 -4 u
-7      329.152 1 2 0 1500 100 0 0 4000 -6 u
+1      329.152 1 2 0 1500 100 0 0 -4000 6 e
+2      329.152 1 2 0 1500 100 0 0 -2666.67 4 e
+3      329.152 1 2 0 1500 100 0 0 -1333.33 2 e
+4      329.152 1 2 0 1500 100 0 0 0 -0 e
+5      329.152 1 2 0 1500 100 0 0 1333.33 -2 e
+6      329.152 1 2 0 1500 100 0 0 2666.67 -4 e
+7      329.152 1 2 0 1500 100 0 0 4000 -6 e
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -8763,4 +8763,4 @@ num_samples 3000
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 29927123f2209f6b913d484970559fdd
+Hash 7094537c10608235728fd41a2c43ec07
