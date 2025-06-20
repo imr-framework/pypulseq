@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 4
-revision 2
+minor 5
+revision 0
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -5958,34 +5958,35 @@ TotalDuration 150
 5940 124807   0   0   0   5  0  3
 
 # Format of RF events:
-# id amplitude mag_id phase_id time_shape_id delay freq phase
-# ..        Hz   ....     ....          ....    us   Hz   rad
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      563.681 1 2 3 100 0 0
-2      194.444 4 5 6 610 0 0
-3      194.444 4 5 6 610 0 2.04204
-4      194.444 4 5 6 610 0 6.12611
-5      194.444 4 5 6 610 0 5.96903
-6      194.444 4 5 6 610 0 1.5708
-7      194.444 4 5 6 610 0 5.49779
-8      194.444 4 5 6 610 0 5.18363
-9      194.444 4 5 6 610 0 0.628319
-10      194.444 4 5 6 610 0 4.39823
-11      194.444 4 5 6 610 0 3.92699
-12      194.444 4 5 6 610 0 2.82743
-13      194.444 4 5 6 610 0 2.19911
-14      194.444 4 5 6 610 0 3.61283
-15      194.444 4 5 6 610 0 0.785398
-16      194.444 4 5 6 610 0 1.25664
-17      194.444 4 5 6 610 0 4.55531
-18      194.444 4 5 6 610 0 4.71239
-19      194.444 4 5 6 610 0 0.471239
-20      194.444 4 5 6 610 0 1.41372
-21      194.444 4 5 6 610 0 3.14159
-22      194.444 4 5 6 610 0 5.34071
-23      194.444 4 5 6 610 0 2.35619
-24      194.444 4 5 6 610 0 3.76991
-25      194.444 4 5 6 610 0 2.98451
+1      563.681 1 2 3 5125 100 0 0 0 0 i
+2      194.444 4 5 6 50 610 0 0 0 0 u
+3      194.444 4 5 6 50 610 0 0 0 2.04204 u
+4      194.444 4 5 6 50 610 0 0 0 6.12611 u
+5      194.444 4 5 6 50 610 0 0 0 5.96903 u
+6      194.444 4 5 6 50 610 0 0 0 1.5708 u
+7      194.444 4 5 6 50 610 0 0 0 5.49779 u
+8      194.444 4 5 6 50 610 0 0 0 5.18363 u
+9      194.444 4 5 6 50 610 0 0 0 0.628319 u
+10      194.444 4 5 6 50 610 0 0 0 4.39823 u
+11      194.444 4 5 6 50 610 0 0 0 3.92699 u
+12      194.444 4 5 6 50 610 0 0 0 2.82743 u
+13      194.444 4 5 6 50 610 0 0 0 2.19911 u
+14      194.444 4 5 6 50 610 0 0 0 3.61283 u
+15      194.444 4 5 6 50 610 0 0 0 0.785398 u
+16      194.444 4 5 6 50 610 0 0 0 1.25664 u
+17      194.444 4 5 6 50 610 0 0 0 4.55531 u
+18      194.444 4 5 6 50 610 0 0 0 4.71239 u
+19      194.444 4 5 6 50 610 0 0 0 0.471239 u
+20      194.444 4 5 6 50 610 0 0 0 1.41372 u
+21      194.444 4 5 6 50 610 0 0 0 3.14159 u
+22      194.444 4 5 6 50 610 0 0 0 5.34071 u
+23      194.444 4 5 6 50 610 0 0 0 2.35619 u
+24      194.444 4 5 6 50 610 0 0 0 3.76991 u
+25      194.444 4 5 6 50 610 0 0 0 2.98451 u
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
@@ -8262,4 +8263,4 @@ num_samples 4
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 8a2e143cc8c92f04e1d6676612fcac28
+Hash 92db8dfb899437b8caab1977b9c478f0

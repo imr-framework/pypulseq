@@ -54,6 +54,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'ute_p
         system=system,
         return_gz=True,
         delay=system.rf_dead_time,
+        use='excitation',
     )
 
     # Align RO asymmetry to ADC samples

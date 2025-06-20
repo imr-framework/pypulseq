@@ -44,6 +44,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
         system=system,
         return_gz=True,
         delay=system.rf_dead_time,
+        use='excitation',
     )
     # Define other gradients and ADC events
     delta_k = 1 / fov

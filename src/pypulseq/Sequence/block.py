@@ -187,6 +187,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         # Now we add the ID
         new_block[6] = extension_id
 
+    # TODO: replace with independent function (#PR 289)
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
@@ -263,11 +264,15 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             and abs(grad_to_check.stop[0] - duration) > 1e-7
         ):
             raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
+    # =========
+    # END GRADIENT CHECKS
+    # =========
 
     self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)
 
 
+# TODO: refactor to get_raw_block_content_id + get_block
 def get_block(self, block_index: int) -> SimpleNamespace:
     """
     Returns PyPulseq block at `block_index` position in `self.block_events`.
@@ -673,8 +678,19 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             use = event.use[0]
         else:
             use = 'u'
+    else:
+        raise ValueError('Parameter "use" is not optional since v1.5.0')
 
-    data = (amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset)
+    data = (
+        amplitude,
+        *shape_IDs,
+        event.center,
+        event.delay,
+        event.freq_ppm,
+        event.phase_ppm,
+        event.freq_offset,
+        event.phase_offset,
+    )
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)
@@ -685,5 +701,8 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             self.block_cache.clear()
     else:
         rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
+
+    if hasattr(event, 'name'):
+        self.rf_id_to_name_map[rf_id] = event.name
 
     return rf_id, shape_IDs

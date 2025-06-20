@@ -33,11 +33,11 @@ def get_supported_labels() -> Tuple[str, str, str, str, str, str, str, str, str,
     )
 
 
-def get_supported_rf_uses() -> Tuple[str, str, str, str, str]:
+def get_supported_rf_uses() -> Tuple[str, str, str, str, str, str, str]:
     """
     Returns
     -------
     tuple
         Supported RF use labels.
     """
-    return 'excitation', 'refocusing', 'inversion', 'saturation', 'preparation'
+    return 'excitation', 'refocusing', 'inversion', 'saturation', 'preparation', 'other', 'undefined'
