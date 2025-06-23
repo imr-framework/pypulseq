@@ -126,11 +126,15 @@ def seq_plot(
                 t = adc.delay + (np.arange(int(adc.num_samples)) + 0.5) * adc.dwell
                 sp11.plot(t_factor * (t0 + t), np.zeros(len(t)), 'rx')
 
-                # if adc.phase_modulation is None:
-                #     adc.phase_modulation = 0
+                if adc.phase_modulation is None or len(adc.phase_modulation) == 0:
+                    phase_modulation = 0
+                else:
+                    phase_modulation = adc.phase_modulation
 
-                full_freq_offset = adc.freq_offset  # + adc.freq_ppm * 1e-6 * seq.system.B0
-                full_phase_offset = adc.phase_offset  # + adc.phase_ppm * 1e-6 * seq.system.B0 + adc.phase_modulation
+                full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0)
+                full_phase_offset = np.atleast_1d(
+                    adc.phase_offset + adc.phase_offset * 1e-6 * seq.system.B0 + phase_modulation
+                )
 
                 sp13.plot(
                     t_factor * (t0 + t),
