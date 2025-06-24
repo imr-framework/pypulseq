@@ -129,7 +129,7 @@ class Approx(ApproxBase):
         return True
 
     def __repr__(self):
-        return super().__repr__()
+        return str(self.expected)
 
     def _repr_compare(self, actual):
         # populate errors
