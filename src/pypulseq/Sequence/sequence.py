@@ -1292,6 +1292,7 @@ class Sequence:
             'i': 'inversion',
             's': 'saturation',
             'p': 'preparation',
+            'o': 'other',
         }
         rf.use = use_cases.get(use, 'undefined')
 
