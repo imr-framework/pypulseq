@@ -82,7 +82,6 @@ def test_rotation3D_vs_rotation_double(angle_deg):
 @pytest.mark.parametrize('angle_deg', angle_deg_list)
 def test_rotation3D_vs_rotation_double_2(angle_deg):
     """Compare results of rotate and rotate3D."""
-    # print("Two steps vs single step")
     angle_rad = np.deg2rad(angle_deg)
 
     for rotation_axis in channel_list:
