@@ -89,16 +89,11 @@ def test_rotation3D_vs_rotation_double_2(angle_deg):
         rotation_matrix = get_rotation_matrix(rotation_axis, angle_rad)
 
         for grad in grad_list:
-            # print(f'Rotating about {rotation_axis} axis by {angle_deg} degrees')
             grads_rotated = rotate(grad, angle=angle_rad, axis=rotation_axis)
             grads_rotated_double = __list_to_dict(rotate(*grads_rotated, angle=angle_rad, axis=rotation_axis))
 
             grads_rotated3D_double = __list_to_dict(rotate3D(grad, rotation_matrix=rotation_matrix @ rotation_matrix))
 
-            for g in grads_rotated_double.values():
-                print(f'two steps {g.channel} area: {g.area}')
-            for g in grads_rotated3D_double.values():
-                print(f'single step {g.channel} area: {g.area}')
             assert grads_rotated3D_double == Approx(grads_rotated_double, abs=1e-4, rel=1e-4), (
                 f'Result of second double rotate and rotate3D should be the same! Angle: {angle_deg}, Axis: {rotation_axis}, Grad: {grad}'
             )
