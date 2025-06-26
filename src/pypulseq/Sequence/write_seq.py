@@ -162,12 +162,12 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
         if len(self.adc_library.data) != 0:
             output_file.write('# Format of ADC events:\n')
-            output_file.write('# id num dwell delay freq phase\n')
-            output_file.write('# ..  ..    ns    us   Hz   rad\n')
+            output_file.write('# id num dwell delay freqPPM phasePPM freq phase phase_id\n')
+            output_file.write('# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..\n')
             output_file.write('[ADC]\n')
-            id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g}\n'  # Refer lines 20-21
+            id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g} {:g} {:.0f}\n'  # Refer lines 20-21
             for k in self.adc_library.data:
-                data = np.multiply(self.adc_library.data[k][0:5], [1, 1e9, 1e6, 1, 1])
+                data = np.multiply(self.adc_library.data[k][0:8], [1, 1e9, 1e6, 1, 1, 1, 1, 1])
                 s = id_format_str.format(k, *data)
                 output_file.write(s)
             output_file.write('\n')

@@ -162,9 +162,17 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             else:
                 self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
-            self.adc_library = __read_events(
-                input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
-            )
+            if version_combined >= 1005000:  # 1.5.x format
+                self.adc_library = __read_events(
+                    input_file,
+                    (1, 1e-9, 1e-6, 1, 1, 1, 1, 1),
+                    event_library=self.adc_library,
+                    append=self.system.adc_dead_time,
+                )
+            else:  # 1.4.x format and below
+                self.adc_library = __read_events(
+                    input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
+                )
         elif section == '[DELAYS]':
             if version_combined >= 1004000:
                 raise RuntimeError('Pulseq file revision 1.4.0 and above MUST NOT contain [DELAYS] section')

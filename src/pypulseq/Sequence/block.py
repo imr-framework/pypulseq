@@ -121,7 +121,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 if hasattr(event, 'id'):
                     adc_id = event.id
                 else:
-                    adc_id = register_adc_event(self, event)
+                    adc_id, _ = register_adc_event(self, event)
 
                 new_block[5] = adc_id
                 duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
@@ -318,6 +318,8 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         else:
             block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], 'u')  # Undefined type/use
 
+        # TODO: add optional rf ID from raw_block
+
     # Gradients
     grad_channels = ['gx', 'gy', 'gz']
     for i in range(len(grad_channels)):
@@ -371,18 +373,31 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     # ADC
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
+        shape_id_phase_modulation = lib_data[-2]
+        if shape_id_phase_modulation:
+            shape_data = self.shape_library.data[shape_id_phase_modulation]
+            compressed = SimpleNamespace()
+            compressed.num_samples = shape_data[0]
+            compressed.data = shape_data[1:]
+            phase_shape = decompress_shape(compressed)
+        else:
+            phase_shape = np.array([], dtype=float)
 
         adc = SimpleNamespace()
-        (
-            adc.num_samples,
-            adc.dwell,
-            adc.delay,
-            adc.freq_offset,
-            adc.phase_offset,
-            adc.dead_time,
-        ) = [lib_data[x] for x in range(6)]
+        adc.num_samples = lib_data[0]
+        adc.dwell = lib_data[1]
+        adc.delay = lib_data[2]
+        adc.freq_ppm = lib_data[3]
+        adc.phase_ppm = lib_data[4]
+        adc.freq_offset = lib_data[5]
+        adc.phase_offset = lib_data[6]
+        adc.phase_modulation = phase_shape
+        adc.dead_time = self.system.adc_dead_time
         adc.num_samples = int(adc.num_samples)
         adc.type = 'adc'
+
+        # TODO: add optional adc ID from raw_block
+
         block.adc = adc
 
     # Triggers
@@ -449,7 +464,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     return block
 
 
-def register_adc_event(self, event: EventLibrary) -> int:
+def register_adc_event(self, event: EventLibrary) -> Tuple[int, List[int]]:
     """
 
     Parameters
@@ -459,25 +474,52 @@ def register_adc_event(self, event: EventLibrary) -> int:
 
     Returns
     -------
-    int
-        ID of registered ADC event.
+    int, [int, ...]
+        ID of registered RF event, list of shape IDs
     """
+    surely_new = False
+
+    # Handle phase modulation
+    if not hasattr(event, 'phase_modulation') or event.phase_modulation is None or len(event.phase_modulation) == 0:
+        shape_id = 0
+    else:
+        if hasattr(event, 'shape_id'):
+            shape_id = event.shape_id
+        else:
+            phase_shape = compress_shape(np.asarray(event.phase_modulation).flatten())
+            shape_data = np.concatenate(([phase_shape.num_samples], phase_shape.data))
+            shape_id, shape_found = self.shape_library.find_or_insert(shape_data)
+            if not shape_found:
+                surely_new = True
+
+    # Construct the ADC event data
     data = (
         event.num_samples,
         event.dwell,
-        event.delay,
+        max(event.delay, event.dead_time),
+        event.freq_ppm,
+        event.phase_ppm,
         event.freq_offset,
         event.phase_offset,
+        shape_id,
         event.dead_time,
     )
-    adc_id, found = self.adc_library.find_or_insert(new_data=data)
 
-    # Clear block cache because ADC was overwritten
-    # TODO: Could find only the blocks that are affected by the changes
-    if self.use_block_cache and found:
-        self.block_cache.clear()
+    # Insert or find/insert into libraryAdd commentMore actions
+    if surely_new:
+        adc_id = self.adc_library.insert(0, data)
+    else:
+        adc_id, found = self.adc_library.find_or_insert(data)
 
-    return adc_id
+        # Clear block cache if overwritten
+        if self.use_block_cache and found:
+            self.block_cache.clear()
+
+    # Optional mapping
+    if hasattr(event, 'name'):
+        self.adc_id_to_name_map[adc_id] = event.name
+
+    return adc_id, shape_id
 
 
 def register_control_event(self, event: SimpleNamespace) -> int:
