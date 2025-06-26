@@ -144,4 +144,4 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
 
 if __name__ == '__main__':
-    main(plot=False, write_seq=True)
+    seq = main(plot=True, write_seq=False)

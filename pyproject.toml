@@ -28,6 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
+mplcursors = ["mplcursors"]
 test = [
   "coverage",
   "codecov",

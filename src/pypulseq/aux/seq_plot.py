@@ -10,22 +10,22 @@ from pypulseq.Sequence import parula
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 
+try:
+    import mplcursors
 
-def seq_plot(
-    seq,
-    label: str = str(),
-    show_blocks: bool = False,
-    save: bool = False,
-    time_range=(0, np.inf),
-    time_disp: str = 's',
-    grad_disp: str = 'kHz/m',
-    plot_now: bool = True,
-) -> None:
+    __MPLCURSORS_AVAILABLE__ = True
+except ImportError:
+    __MPLCURSORS_AVAILABLE__ = False
+
+
+class SeqPlot:
     """
-    Plot `Sequence`.
+    Interactive plotter for a Pulseq `Sequence` object.
 
     Parameters
     ----------
+    seq : Sequence
+        The Pulseq sequence object to plot.
     label : str, default=str()
         Plot label values for ADC events: in this example for LIN and REP labels; other valid labes are accepted as
         a comma-separated list.
@@ -46,13 +46,132 @@ def seq_plot(
     plot_type : str, default='Gradient'
         Gradients display type, must be one of either 'Gradient' or 'Kspace'.
 
-    Returns
-    -------
-    `~matplotlib.image.AxesImage`
-        Figure object for RF and ADC channels. Only returned if `plot_now=False`.
-    `~matplotlib.image.AxesImage`
-        Figure object for Gradient channels. Only returned if `plot_now=False`.
+    Attributes
+    ----------
+    fig1 : matplotlib.figure.Figure
+        Figure containing RF and ADC channels.
+    fig2 : matplotlib.figure.Figure
+        Figure containing Gradient or K-space channels.
+    ax1 : matplotlib.axes.Axes
+        Axes for fig1.
+    ax2 : matplotlib.axes.Axes
+        Axes for fig2.
     """
+
+    MARGIN = 6
+    MY1 = 45
+    MX1 = 70
+    MX2 = 5
+
+    def __init__(
+        self,
+        seq,
+        label: str = str(),
+        show_blocks: bool = False,
+        save: bool = False,
+        time_range=(0, np.inf),
+        time_disp: str = 's',
+        grad_disp: str = 'kHz/m',
+        plot_now: bool = True,
+    ):
+        self.seq = seq
+        self.fig1, self.fig2 = _seq_plot(
+            seq,
+            label=label,
+            save=save,
+            show_blocks=show_blocks,
+            time_range=time_range,
+            time_disp=time_disp,
+            grad_disp=grad_disp,
+        )
+        self.ax1 = self.fig1.axes[0]
+        self.ax2 = self.fig2.axes[0]
+
+        self.fig1.canvas.mpl_connect('resize_event', self._on_resize)
+        self.fig2.canvas.mpl_connect('resize_event', self._on_resize)
+
+        if plot_now:
+            self.show()
+
+    def show(self):
+        """Show the figures and enable interactive data tips (if mplcursors is available)."""
+        plt.show()
+        if __MPLCURSORS_AVAILABLE__:
+            self._setup_cursor(self.fig1)
+            self._setup_cursor(self.fig2)
+
+    def _setup_cursor(self, fig):
+        for ax in fig.axes:
+            lines = ax.get_lines()
+            cursor = mplcursors.cursor(lines, hover=False)
+            cursor.connect('add', lambda sel, ax=ax: self._on_datatip(sel, ax))
+
+    def _on_datatip(self, sel, ax):
+        x, y = sel.target
+        artist = sel.artist
+        ylabel = ax.get_ylabel().lower()
+        if ylabel.startswith('adc') or (
+            ylabel.startswith('rf/adc') and artist.get_linestyle() == 'none' and artist.get_marker() == '.'
+        ):
+            field = 'adc'
+        else:
+            field = ylabel[:2]
+
+        t0 = artist.get_xdata()[0] if hasattr(artist, 'get_xdata') else x
+        block_index = self.seq.find_block_by_time(t0)
+        rb = self.seq.get_raw_block_content_IDs(block_index)
+
+        lines_txt = [f't: {x:.3f}', f'Y: {y:.3f}']
+        if not rb.__dict__.get(field):
+            lines_txt.append(f'blk: {block_index}')
+        else:
+            fid = rb[field]
+            parts = [f'blk: {block_index}', f'{field}_id: {fid}']
+            try:
+                name_map = {
+                    'a': self.seq.adc_id2name_map,
+                    'r': self.seq.rf_id2name_map,
+                    # "g": self.seq.grad_id2name_map,
+                }[field[0]]
+                parts.append(f"'{name_map[fid]}'")
+            except Exception:  # noqa: S110
+                pass
+            lines_txt.append(' '.join(parts))
+
+        sel.annotation.set_text('\n'.join(lines_txt))
+        self._update_guides()
+
+    def _update_guides(self):
+        """Refresh the figure display after interaction or data tip selection."""
+        for ax in (self.ax1, self.ax2):
+            ax.relim()
+            ax.autoscale_view()
+
+        for fig in (self.fig1, self.fig2):
+            fig.canvas.draw_idle()
+
+    def _on_resize(self, event):
+        fig = event.canvas.figure
+        w_px, h_px = fig.get_size_inches() * fig.dpi
+        left = self.MX1
+        bottom = self.MY1
+        right = w_px - self.MX2
+        top = h_px - self.MARGIN
+
+        for ax in fig.axes:
+            ax.set_position([left / w_px, bottom / h_px, (right - left) / w_px, (top - bottom) / h_px])
+        fig.canvas.draw_idle()
+
+
+def _seq_plot(
+    seq,
+    label,
+    show_blocks,
+    save,
+    time_range,
+    time_disp,
+    grad_disp,
+):
     mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
     valid_time_units = ['s', 'ms', 'us']
@@ -291,7 +410,4 @@ def seq_plot(
         fig1.savefig('seq_plot1.jpg')
         fig2.savefig('seq_plot2.jpg')
 
-    if plot_now:
-        plt.show()
-    else:
-        return fig1, fig2
+    return fig1, fig2
