@@ -100,14 +100,15 @@ def add_gradients(
             firsts.append(0.0)
             lasts.append(0.0)
         else:
-            tt_rast = grads[ii].tt / system.grad_raster_time - 0.5
-            is_arb.append(np.all(np.abs(tt_rast - np.arange(len(tt_rast)))) < eps)
-            is_osa.append(np.all(np.abs(tt_rast - 0.5 * np.arange(len(tt_rast))) < eps))
+            tt_rast = grads[ii].tt / system.grad_raster_time
+            is_arb.append(np.all(np.abs(tt_rast + 0.5 - np.arange(1, len(tt_rast) + 1))) < eps)
+            is_osa.append(np.all(np.abs(tt_rast - 0.5 * np.arange(1, len(tt_rast) + 1)) < eps))
             firsts.append(grads[ii].first)
             lasts.append(grads[ii].last)
 
     # Check if we only have arbitrary grads on irregular time samplings, optionally mixed with trapezoids
-    if np.all(np.logical_or.reduce((is_trap, np.logical_not(is_arb), np.logical_not(is_osa)))):
+    is_etrap = np.logical_and.reduce((np.logical_not(is_trap), np.logical_not(is_arb), np.logical_not(is_osa)))
+    if np.all(np.logical_or(is_trap, is_etrap)):
         # Keep shapes still rather simple
         times = []
         for ii in range(len(grads)):
