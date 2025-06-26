@@ -110,6 +110,7 @@ class SeqPlot:
         x, y = sel.target
         artist = sel.artist
         ylabel = ax.get_ylabel().lower()
+
         if ylabel.startswith('adc') or (
             ylabel.startswith('rf/adc') and artist.get_linestyle() == 'none' and artist.get_marker() == '.'
         ):
@@ -122,21 +123,22 @@ class SeqPlot:
         rb = self.seq.get_raw_block_content_IDs(block_index)
 
         lines_txt = [f't: {x:.3f}', f'Y: {y:.3f}']
-        if not rb.__dict__.get(field):
-            lines_txt.append(f'blk: {block_index}')
-        else:
-            fid = rb[field]
-            parts = [f'blk: {block_index}', f'{field}_id: {fid}']
+
+        val = getattr(rb, field, None)
+        if val is not None:
             try:
-                name_map = {
-                    'a': self.seq.adc_id2name_map,
-                    'r': self.seq.rf_id2name_map,
-                    # "g": self.seq.grad_id2name_map,
-                }[field[0]]
-                parts.append(f"'{name_map[fid]}'")
-            except Exception:  # noqa: S110
-                pass
-            lines_txt.append(' '.join(parts))
+                if field[0] == 'a':
+                    name = self.seq.adc_id2name_map[val]
+                elif field[0] == 'r':
+                    name = self.seq.rf_id2name_map[val]
+                # else:
+                #     name = self.seq.grad_id2name_map[val]
+
+                lines_txt.append(f"blk: {block_index} {field}_id: {val} '{name}'")
+            except Exception:
+                lines_txt.append(f'blk: {block_index} {field}_id: {val}')
+        else:
+            lines_txt.append(f'blk: {block_index}')
 
         sel.annotation.set_text('\n'.join(lines_txt))
         self._update_guides()
