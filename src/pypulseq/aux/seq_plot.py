@@ -131,8 +131,8 @@ class SeqPlot:
                     name = self.seq.adc_id2name_map[val]
                 elif field[0] == 'r':
                     name = self.seq.rf_id2name_map[val]
-                # else:
-                #     name = self.seq.grad_id2name_map[val]
+                else:
+                    name = self.seq.grad_id2name_map[val]
 
                 lines_txt.append(f"blk: {block_index} {field}_id: {val} '{name}'")
             except Exception:
