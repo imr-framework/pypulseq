@@ -16,6 +16,7 @@ import numpy as np
 from scipy.interpolate import PPoly
 
 from pypulseq import __version__, eps
+from pypulseq.aux.paper_plot import paper_plot as ext_paper_plot
 from pypulseq.aux.seq_plot import SeqPlot
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
@@ -929,6 +930,43 @@ class Sequence:
                 self.grad_library.data[selected_events[i]][3] *= modifier
                 self.grad_library.data[selected_events[i]][4] *= modifier
 
+    def paper_plot(
+        self,
+        time_range: Tuple[float] = (0, np.inf),
+        line_width: float = 1.2,
+        axes_color: Tuple[float] = (0.5, 0.5, 0.5),
+        rf_color: str = 'black',
+        gx_color: str = 'blue',
+        gy_color: str = 'red',
+        gz_color: Tuple[float] = (0, 0.5, 0.3),
+        rf_plot: str = 'abs',
+    ):
+        """
+        Plot sequence using paper-style formatting (minimalist, high-contrast layout).
+
+        Parameters
+        ----------
+        time_range : iterable, default=(0, np.inf)
+            Time range (x-axis limits) for plotting the sequence.
+            Default is 0 to infinity (entire sequence).
+        line_width : float, default=1.2
+            Line width used in plots.
+        axes_color : color, default=(0.5, 0.5, 0.5)
+            Color of horizontal zero axes (e.g., gray).
+        rf_color : color, default='black'
+            Color for RF and ADC events.
+        gx_color : color, default='blue'
+            Color for gradient X waveform.
+        gy_color : color, default='red'
+            Color for gradient Y waveform.
+        gz_color : color, default=(0, 0.5, 0.3)
+            Color for gradient Z waveform.
+        rf_plot : {'abs', 'real', 'imag'}, default='abs'
+            Determines how to plot RF waveforms (magnitude, real or imaginary part).
+
+        """
+        ext_paper_plot(self, time_range, line_width, axes_color, rf_color, gx_color, gy_color, gz_color, rf_plot)
+
     def plot(
         self,
         label: str = str(),
@@ -966,10 +1004,8 @@ class Sequence:
 
         Returns
         -------
-        `~matplotlib.image.AxesImage`
-            Figure object for RF and ADC channels. Only returned if `plot_now=False`.
-        `~matplotlib.image.AxesImage`
-            Figure object for Gradient channels. Only returned if `plot_now=False`.
+        SeqPlot
+            SeqPlot handle.
         """
         return SeqPlot(self, label, show_blocks, save, time_range, time_disp, grad_disp, plot_now)
 
@@ -1155,13 +1191,6 @@ class Sequence:
         fp_refocusing : np.ndarray
             Contains frequency and phase offsets of the excitation RF pulses
         """
-        # tc = calc_rf_center(rf)
-        # t = rf.delay + tc
-        # if hasattr(rf,'use') is False or rf.use == 'excitation' or rf.use =='undefined':
-        #     tfp_excitation(:,end+1) = [curr_dur+t; full_freq_offset; full_phase_offset + 2* pi * full_freq_offset * tc]
-        # elif rf.use =='refocusing':
-        #     tfp_refocusing(:,end+1) = [curr_dur+t; full_freq_offset; full_phase_offset + 2 * pi * full_freq_offset * tc]
-
         # Collect RF timing data
         t_excitation = []
         fp_excitation = []

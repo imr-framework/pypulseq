@@ -5,7 +5,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq', paper_plot: bool = False):
     # ======
     # SETUP
     # ======
@@ -121,7 +121,10 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
     # VISUALIZATION
     # ======
     if plot:
-        seq.plot()
+        if paper_plot:
+            seq.paper_plot()
+        else:
+            seq.plot()
 
     seq.calculate_kspace()
 
@@ -144,4 +147,4 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
 
 if __name__ == '__main__':
-    seq = main(plot=True, write_seq=False)
+    seq = main(plot=True, paper_plot=True, write_seq=False)
