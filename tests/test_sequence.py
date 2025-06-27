@@ -215,14 +215,14 @@ sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_puls
 seq_examples = [
     'write_gre',
     'write_gre_label',
-    # 'write_haste', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
+    'write_haste',  # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_radial_gre',
-    # 'write_tse', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
+    'write_tse',  # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_epi',
     'write_epi_label',
     'write_epi_se',
-    # 'write_epi_se_rs', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
-    # 'write_mprage', # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
+    'write_epi_se_rs',  # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
+    'write_mprage',  # TODO: re-enable when bumping grad storage to v1.5.x (i.e., 'first', 'last')
     'write_ute',
 ]
 

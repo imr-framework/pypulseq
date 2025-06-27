@@ -91,6 +91,7 @@ class Sequence:
         self.signature_value = ''
         self.rf_id_to_name_map = {}
         self.adc_id_to_name_map = {}
+        self.grad_id_to_name_map = {}
 
         self.block_durations = {}
         self.extension_numeric_idx = []
@@ -1037,7 +1038,7 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-                new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
+                new_data = data[0:3] + (mapping[data[3]], mapping[data[4]]) + (data[5],)
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 
