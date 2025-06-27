@@ -127,16 +127,16 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             output_file.write(
                 '#   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)\n'
             )
-            output_file.write('# id amplitude amp_shape_id time_shape_id delay\n')
-            output_file.write('# ..      Hz/m       ..         ..          us\n')
+            output_file.write('# id amplitude first last amp_shape_id time_shape_id delay\n')
+            output_file.write('# ..      Hz/m  Hz/m Hz/m        ..         ..          us\n')
             output_file.write('[GRADIENTS]\n')
-            id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:.0f}\n'  # Refer lines 20-21
+            id_format_str = '{:.0f} {:12g} {:12g} {:12g} {:.0f} {:.0f} {:.0f}\n'  # Refer lines 20-21
             keys = np.array(list(self.grad_library.data.keys()))
             for k in keys[arb_grad_mask]:
                 s = id_format_str.format(
                     k,
-                    *self.grad_library.data[k][:3],
-                    round(self.grad_library.data[k][3] * 1e6),
+                    *self.grad_library.data[k][:5],
+                    round(self.grad_library.data[k][5] * 1e6),
                 )
                 output_file.write(s)
             output_file.write('\n')

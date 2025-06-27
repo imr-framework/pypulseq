@@ -152,7 +152,9 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 else:  # 1.3.x and below
                     self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
         elif section == '[GRADIENTS]':
-            if version_combined >= 1004000:  # 1.4.x format
+            if version_combined >= 1005000:  # 1.5.x format
+                self.grad_library = __read_events(input_file, (1, 1, 1, 1, 1, 1e-6), 'g', self.grad_library)
+            elif version_combined >= 1004000:  # 1.4.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1e-6), 'g', self.grad_library)
             else:  # 1.3.x and below
                 self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
