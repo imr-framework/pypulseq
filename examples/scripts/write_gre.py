@@ -1,7 +1,5 @@
 import math
-
 import numpy as np
-
 import pypulseq as pp
 
 

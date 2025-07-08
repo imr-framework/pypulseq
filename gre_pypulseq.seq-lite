@@ -27,7 +27,7 @@ BASE	 3	0	0	5	0	0	1	1
 BASE	 4	0	0	6	7	8	0	0	
 
 # Format of first level hierarchy - TR UPDATES:
-# Value in an iteration = strength + factor[iteration] * step
+# Value in a step = strength + (factor * step)
 # Event_type event_id attribute_name attribute_unit strength step factor
 [TR_UPDATES]
 RF	1	['phase_offset']	['rad']	[0.0]	[2.04204]	256

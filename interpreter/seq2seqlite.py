@@ -516,7 +516,7 @@ class seqlite():
             
             
             output_file.write('\n# Format of first level hierarchy - TR UPDATES:\n')
-            output_file.write('# Value in an iteration = strength + factor[iteration] * step\n')
+            output_file.write('# Value in a step = strength + (factor * step)\n')
             output_file.write('# Event_type event_id attribute_name attribute_unit strength step factor\n')
             output_file.write('[TR_UPDATES]\n')
             
