@@ -233,7 +233,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
             rf_ex.phase_offset = rf_ex_phase - 2 * np.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
             rf_ref.phase_offset = rf_ref_phase - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
 
-            seq.add_block(gs1, pp.make_label(label='TRID', type='SET', value=1))
+            seq.add_block(gs1, pp.make_label(label='SQID', type='SET', value=1))
             seq.add_block(gs2, rf_ex)
             seq.add_block(gs3, gr3)
 
@@ -257,7 +257,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
                     duration=t_sp,
                     rise_time=dG,
                 )
-                seq.add_block(gs4, rf_ref)
+                seq.add_block(gs4, rf_ref, pp.make_label(label='SQID', type='SET', value=2))
                 seq.add_block(gs5, gr5, gp_pre)
                 if k_ex > 0:
                     seq.add_block(gr6, adc)
@@ -266,7 +266,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
 
                 seq.add_block(gs7, gr7, gp_rew)
 
-            seq.add_block(gs4)
+            seq.add_block(gs4, pp.make_label(label='SQID', type='SET', value=3))
             seq.add_block(gs5)
             seq.add_block(delay_TR)
 

@@ -29,7 +29,7 @@ def get_supported_labels() -> Tuple[str, str, str, str, str, str, str, str, str,
         'NOPOS',
         'NOSCL',  # instruct the interpreter to ignore the position, rotation or scaling of the FOV specified on the UI
         'ONCE',  # a 3-state flag that instructs the interpreter to alter the sequence when executing multiple repeats as follows: blocks with ONCE==0 are executed on every repetition; ONCE==1: only the first repetition; ONCE==2: only the last repetition
-        'TRID',  # an integer ID of the TR (sequence segment) used by the GE interpreter to optimize the execution on the scanner
+        'SQID',  # an integer ID of the SQ (sequence segment) used by different scanners to identify the sequence segment in the sequence
     )
 
 

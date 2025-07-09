@@ -211,7 +211,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
     # ======
     # Define sequence blocks
     for s in range(n_slices):
-        seq.add_block(rf_fs, gz_fs, pp.make_label(label='TRID', type='SET', value=1))
+        seq.add_block(rf_fs, gz_fs, pp.make_label(label='SQID', type='SET', value=1))
         rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         rf180.freq_offset = gz180.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
         seq.add_block(rf, gz, trig)
@@ -220,13 +220,13 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_rs_pypulseq.se
         for i in range(1, Ny_meas + 1):
             if i == 1:
                 # Read the first line of k-space with a single half-blip at the end
-                seq.add_block(gx, gy_blipup, adc)
+                seq.add_block(gx, gy_blipup, adc, pp.make_label(label='SQID', type='SET', value=2))
             elif i == Ny_meas:
                 # Read the last line of k-space with a single half-blip at the beginning
-                seq.add_block(gx, gy_blipdown, adc)
+                seq.add_block(gx, gy_blipdown, adc, pp.make_label(label='SQID', type='SET', value=2))
             else:
                 # Read an intermediate line of k-space with a half-blip at the beginning and a half-blip at the end
-                seq.add_block(gx, gy_blipdownup, adc)
+                seq.add_block(gx, gy_blipdownup, adc, pp.make_label(label='SQID', type='SET', value=2))
             gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
 
     # Check whether the timing of the sequence is correct

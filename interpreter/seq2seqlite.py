@@ -60,7 +60,7 @@ class seqlite():
             block = self.seq.get_block(i)
             block_event = self.seq.block_events[i]
             if block.label is not None:
-                if 'TRID' in block.label[0].label:      # Think if this is a hardcoding issue to access the first label
+                if 'SQID' in block.label[0].label:      # Think if this is a hardcoding issue to access the first label
                     trid += 1
                     if trid not in tr_blocks:
                         tr_blocks[trid] = []

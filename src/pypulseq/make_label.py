@@ -35,7 +35,7 @@ def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleN
     if label not in arr_supported_labels:
         raise ValueError(
             "Invalid label. Must be one of 'SLC', 'SEG', 'REP', 'AVG', 'SET', 'ECO', 'PHS', 'LIN', 'PAR', "
-            "NAV', 'REV', or 'SMS'."
+            "NAV', 'REV','SQID', or 'SMS'."
         )
     if type not in ['SET', 'INC']:
         raise ValueError("Invalid type. Must be one of 'SET' or 'INC'.")

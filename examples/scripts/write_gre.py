@@ -88,7 +88,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
         rf_inc = divmod(rf_inc + rf_spoiling_inc, 360.0)[1]
         rf_phase = divmod(rf_phase + rf_inc, 360.0)[1]
 
-        seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1)) # add TRID label
+        seq.add_block(rf, gz, pp.make_label(label='SQID', type='SET', value=1)) # add TRID label
         gy_pre = pp.make_trapezoid(
             channel='y',
             area=phase_areas[i],
