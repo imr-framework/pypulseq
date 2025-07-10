@@ -226,7 +226,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     if prev_type == 't':
                         last = 0
                     elif prev_type == 'g':
-                        last = prev_lib['data'][5]
+                        last = prev_lib['data'][2]  # v150
 
             # Check whether the difference between the last gradient value and
             # the first value of the new gradient is achievable with the
@@ -245,7 +245,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     if next_type == 't':
                         first = 0
                     elif next_type == 'g':
-                        first = next_lib['data'][4]
+                        first = next_lib['data'][1]  # v150
                 else:
                     first = 0
 
@@ -260,7 +260,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
             raise RuntimeError('First gradient in the the first block has to start at 0.')
 
         if (
-            grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
+            abs(grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time
             and abs(grad_to_check.stop[0] - duration) > 1e-7
         ):
             raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
@@ -331,9 +331,9 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             grad.channel = grad_channels[i][1]
             if grad.type == 'grad':
                 amplitude = lib_data[0]
-                shape_id = lib_data[1]
-                time_id = lib_data[2]
-                delay = lib_data[3]
+                shape_id = lib_data[3]  # change in v150
+                time_id = lib_data[4]  # change in v150
+                delay = lib_data[5]  # change in v150
                 shape_data = self.shape_library.data[shape_id]
                 compressed.num_samples = shape_data[0]
                 compressed.data = shape_data[1:]
@@ -343,22 +343,36 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 if time_id == 0:
                     grad.tt = (np.arange(1, len(g) + 1) - 0.5) * self.grad_raster_time
                     t_end = len(g) * self.grad_raster_time
+                    grad.area = sum(grad.waveform) * self.grad_raster_time
+                elif time_id == -1:
+                    # Gradient with oversampling by a factor of 2
+                    grad.tt = 0.5 * (np.arange(1, len(g) + 1)) * self.grad_raster_time
+                    if len(grad.tt) != len(grad.waveform):
+                        raise ValueError(
+                            f'Mismatch between time shape length ({len(grad.tt)}) and gradient shape length ({len(grad.waveform)}).'
+                        )
+                    if len(grad.waveform) % 2 != 1:
+                        raise ValueError('Oversampled gradient waveforms must have odd number of samples')
+                    t_end = (len(g) + 1) * self.grad_raster_time
+                    grad.area = sum(grad.waveform[::2]) * self.grad_raster_time  # remove oversampling
                 else:
                     t_shape_data = self.shape_library.data[time_id]
                     compressed.num_samples = t_shape_data[0]
                     compressed.data = t_shape_data[1:]
                     grad.tt = decompress_shape(compressed) * self.grad_raster_time
-
-                    assert len(grad.waveform) == len(grad.tt)
+                    if len(grad.tt) != len(grad.waveform):
+                        raise ValueError(
+                            f'Mismatch between time shape length ({len(grad.tt)}) and gradient shape length ({len(grad.waveform)}).'
+                        )
                     t_end = grad.tt[-1]
+                    grad.area = 0.5 * sum((grad.tt[1:] - grad.tt[:-1]) * (grad.waveform[1:] + grad.waveform[:-1]))
 
                 grad.shape_id = shape_id
                 grad.time_id = time_id
                 grad.delay = delay
                 grad.shape_dur = t_end
-                if len(lib_data) > 5:
-                    grad.first = lib_data[4]
-                    grad.last = lib_data[5]
+                grad.first = lib_data[1]  # change in v150 - we always have first/last now
+                grad.last = lib_data[2]  # change in v150 - we always have first/last now
             else:
                 grad.amplitude = lib_data[0]
                 grad.rise_time = lib_data[1]
@@ -367,6 +381,8 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.delay = lib_data[4]
                 grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
                 grad.flat_area = grad.amplitude * grad.flat_time
+
+            # TODO: add optional grad ID from raw_block
 
             setattr(block, grad_channels[i], grad)
 
@@ -572,37 +588,45 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     """
     may_exist = True
     any_changed = False
+
     if event.type == 'grad':
-        amplitude = np.abs(event.waveform).max()
+        amplitude = np.max(np.abs(event.waveform))
         if amplitude > 0:
             fnz = event.waveform[np.nonzero(event.waveform)[0][0]]
-            amplitude *= np.sign(fnz) if fnz != 0 else 1  # Workaround for np.sign(0) = 0
+            amplitude *= np.sign(fnz) if fnz != 0 else 1
 
+        # Shape ID initialization
         if hasattr(event, 'shape_IDs'):
             shape_IDs = event.shape_IDs
         else:
             shape_IDs = [0, 0]
-            if amplitude != 0:
-                g = event.waveform / amplitude
-            else:
-                g = event.waveform
+
+            # Shape for waveform
+            g = event.waveform / amplitude if amplitude != 0 else event.waveform
             c_shape = compress_shape(g)
             s_data = np.concatenate(([c_shape.num_samples], c_shape.data))
             shape_IDs[0], found = self.shape_library.find_or_insert(s_data)
-            may_exist = may_exist & found
+            may_exist = may_exist and found
             any_changed = any_changed or found
 
-            # Check whether tt == np.arange(len(event.tt)) * self.grad_raster_time + 0.5
-            tt_regular = (np.floor(event.tt / self.grad_raster_time) == np.arange(len(event.tt))).all()
+            # Shape for timing
+            c_time = compress_shape(event.tt / self.grad_raster_time)
+            t_data = np.concatenate(([c_time.num_samples], c_time.data))
 
-            if not tt_regular:
-                c_time = compress_shape(event.tt / self.grad_raster_time)
-                t_data = np.concatenate(([c_time.num_samples], c_time.data))
+            if len(c_time.data) == 4 and np.allclose(c_time.data, [0.5, 1, 1, c_time.num_samples - 3]):
+                # Standard raster → leave shape_IDs[1] as 0
+                pass
+            elif len(c_time.data) == 3 and np.allclose(c_time.data, [0.5, 0.5, c_time.num_samples - 2]):
+                # Half-raster → set to -1 as special flag
+                shape_IDs[1] = -1
+            else:
                 shape_IDs[1], found = self.shape_library.find_or_insert(t_data)
-                may_exist = may_exist & found
+                may_exist = may_exist and found
                 any_changed = any_changed or found
 
-        data = (amplitude, *shape_IDs, event.delay, event.first, event.last)
+        # Updated data layout to match MATLAB v1.5.0 ordering
+        data = (amplitude, event.first, event.last, *shape_IDs, event.delay)
+
     elif event.type == 'trap':
         data = (
             event.amplitude,
@@ -624,6 +648,9 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     # TODO: Could find only the blocks that are affected by the changes
     if self.use_block_cache and any_changed:
         self.block_cache.clear()
+
+    if hasattr(event, 'name'):
+        self.grad_id_to_name_map[grad_id] = event.name
 
     if event.type == 'grad':
         return grad_id, shape_IDs
