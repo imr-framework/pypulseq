@@ -1139,7 +1139,7 @@ class Sequence:
         compressed.num_samples = shape_data[0]
         compressed.data = shape_data[1:]
         phase = decompress_shape(compressed)
-        rf.signal = amplitude * mag * np.exp(1j * 2 * np.pi * phase)
+        rf.signal = amplitude * mag * np.exp(1j * 2 * math.pi * phase)
         time_shape = lib_data[3]
         if time_shape > 0:
             shape_data = self.shape_library.data[time_shape]
@@ -1227,7 +1227,7 @@ class Sequence:
 
                 full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
                 full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
-                full_phase_offset = full_phase_offset + 2 * np.pi * full_freq_offset * tc
+                full_phase_offset = full_phase_offset + 2 * math.pi * full_freq_offset * tc
 
                 if not hasattr(rf, 'use') or block.rf.use in [
                     'excitation',
@@ -1456,7 +1456,7 @@ class Sequence:
                     rf_piece = np.array(
                         [
                             curr_dur + rf.delay + rf.t,
-                            rf.signal * np.exp(1j * (full_phase_offset + 2 * np.pi * full_freq_offset * rf.t)),
+                            rf.signal * np.exp(1j * (full_phase_offset + 2 * math.pi * full_freq_offset * rf.t)),
                         ]
                     )
                     out_len[-1] += len(rf.t)
@@ -1535,147 +1535,163 @@ class Sequence:
 
         return wave_data, tfp_excitation, tfp_refocusing, t_adc, fp_adc
 
-    # def waveforms_export(self, time_range=(0, np.inf)) -> dict:
-    #     """
-    #     Plot `Sequence`.
+    def waveforms_export(self, time_range=(0, np.inf)) -> dict:
+        """
+        Plot `Sequence`.
 
-    #     Parameters
-    #     ----------
-    #     time_range : iterable, default=(0, np.inf)
-    #         Time range (x-axis limits) for all waveforms. Default is 0 to infinity (entire sequence).
+        Parameters
+        ----------
+        time_range : iterable, default=(0, np.inf)
+            Time range (x-axis limits) for all waveforms. Default is 0 to infinity (entire sequence).
 
-    #     Returns
-    #     -------
-    #     all_waveforms: dict
-    #         Dictionary containing the following sequence waveforms and time array(s):
-    #         - `t_adc` - ADC timing array [seconds]
-    #         - `t_rf` - RF timing array [seconds]
-    #         - `t_rf_centers`: `rf_t_centers`,
-    #         - `t_gx`: x gradient timing array,
-    #         - `t_gy`: y gradient timing array,
-    #         - `t_gz`: z gradient timing array,
-    #         - `adc` - ADC complex signal (amplitude=1, phase=adc phase) [a.u.]
-    #         - `rf` - RF complex signal
-    #         - `rf_centers`: RF centers array,
-    #         - `gx` - x gradient
-    #         - `gy` - y gradient
-    #         - `gz` - z gradient
-    #         - `grad_unit`: [kHz/m],
-    #         - `rf_unit`: [Hz],
-    #         - `time_unit`: [seconds],
-    #     """
-    #     # Check time range validity
-    #     if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
-    #         raise ValueError('Invalid time range')
+        Returns
+        -------
+        all_waveforms: dict
+            Dictionary containing the following sequence waveforms and time array(s):
+            - `t_adc` - ADC timing array [seconds]
+            - `t_rf` - RF timing array [seconds]
+            - `t_rf_centers`: `rf_t_centers`,
+            - `t_gx`: x gradient timing array,
+            - `t_gy`: y gradient timing array,
+            - `t_gz`: z gradient timing array,
+            - `adc` - ADC complex signal (amplitude=1, phase=adc phase) [a.u.]
+            - `rf` - RF complex signal
+            - `rf_centers`: RF centers array,
+            - `gx` - x gradient
+            - `gy` - y gradient
+            - `gz` - z gradient
+            - `grad_unit`: [kHz/m],
+            - `rf_unit`: [Hz],
+            - `time_unit`: [seconds],
+        """
+        # Check time range validity
+        if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
+            raise ValueError('Invalid time range')
 
-    #     t0 = 0
-    #     adc_t_all = np.array([])
-    #     adc_signal_all = np.array([], dtype=complex)
-    #     rf_t_all = np.array([])
-    #     rf_signal_all = np.array([], dtype=complex)
-    #     rf_t_centers = np.array([])
-    #     rf_signal_centers = np.array([], dtype=complex)
-    #     gx_t_all = np.array([])
-    #     gy_t_all = np.array([])
-    #     gz_t_all = np.array([])
-    #     gx_all = np.array([])
-    #     gy_all = np.array([])
-    #     gz_all = np.array([])
+        t0 = 0
+        adc_t_all = np.array([])
+        adc_signal_all = np.array([], dtype=complex)
+        rf_t_all = np.array([])
+        rf_signal_all = np.array([], dtype=complex)
+        rf_t_centers = np.array([])
+        rf_signal_centers = np.array([], dtype=complex)
+        gx_t_all = np.array([])
+        gy_t_all = np.array([])
+        gz_t_all = np.array([])
+        gx_all = np.array([])
+        gy_all = np.array([])
+        gz_all = np.array([])
 
-    #     for block_counter in self.block_events:  # For each block
-    #         block = self.get_block(block_counter)  # Retrieve it
-    #         is_valid = time_range[0] <= t0 <= time_range[1]  # Check if "current time" is within requested range.
-    #         if is_valid:
-    #             # Case 1: ADC
-    #             if block.adc is not None:
-    #                 adc = block.adc  # Get adc info
-    #                 # From Pulseq: According to the information from Klaus Scheffler and indirectly from Siemens this
-    #                 # is the present convention - the samples are shifted by 0.5 dwell
-    #                 t = adc.delay + (np.arange(int(adc.num_samples)) + 0.5) * adc.dwell
-    #                 adc_t = t0 + t
-    #                 adc_signal = np.exp(1j * adc.phase_offset) * np.exp(1j * 2 * np.pi * t * adc.freq_offset)
-    #                 adc_t_all = np.concatenate((adc_t_all, adc_t))
-    #                 adc_signal_all = np.concatenate((adc_signal_all, adc_signal))
+        for block_counter in self.block_events:  # For each block
+            block = self.get_block(block_counter)  # Retrieve it
+            is_valid = time_range[0] <= t0 <= time_range[1]  # Check if "current time" is within requested range.
+            if is_valid:
+                # Case 1: ADC
+                if block.adc is not None:
+                    adc = block.adc  # Get adc info
+                    # From Pulseq: According to the information from Klaus Scheffler and indirectly from Siemens this
+                    # is the present convention - the samples are shifted by 0.5 dwell
+                    t = adc.delay + (np.arange(int(adc.num_samples)) + 0.5) * adc.dwell
+                    adc_t = t0 + t
 
-    #             if block.rf is not None:
-    #                 rf = block.rf
-    #                 tc, ic = calc_rf_center(rf)
-    #                 t = rf.t + rf.delay
-    #                 tc = tc + rf.delay
+                    if adc.phase_modulation is None or len(adc.phase_modulation) == 0:
+                        phase_modulation = 0
+                    else:
+                        phase_modulation = adc.phase_modulation
 
-    #                 # Debug - visualize
-    #                 # sp12.plot(t_factor * (t0 + t), np.abs(rf.signal))
-    #                 # sp13.plot(t_factor * (t0 + t), np.angle(rf.signal * np.exp(1j * rf.phase_offset)
-    #                 #                                         * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)),
-    #                 #           t_factor * (t0 + tc), np.angle(rf.signal[ic] * np.exp(1j * rf.phase_offset)
-    #                 #                                          * np.exp(1j * 2 * math.pi * rf.t[ic] * rf.freq_offset)),
-    #                 #           'xb')
+                    full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * self.system.B0)
+                    full_phase_offset = np.atleast_1d(
+                        adc.phase_offset + adc.phase_offset * 1e-6 * self.system.B0 + phase_modulation
+                    )
 
-    #                 rf_t = t0 + t
-    #                 rf = rf.signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)
-    #                 rf_t_all = np.concatenate((rf_t_all, rf_t))
-    #                 rf_signal_all = np.concatenate((rf_signal_all, rf))
-    #                 rf_t_centers = np.concatenate((rf_t_centers, [rf_t[ic]]))
-    #                 rf_signal_centers = np.concatenate((rf_signal_centers, [rf[ic]]))
+                    adc_signal = np.exp(1j * full_phase_offset) * np.exp(1j * 2 * math.pi * t * full_phase_offset)
+                    adc_t_all = np.concatenate((adc_t_all, adc_t))
+                    adc_signal_all = np.concatenate((adc_signal_all, adc_signal))
 
-    #             grad_channels = ['gx', 'gy', 'gz']
-    #             for x in range(len(grad_channels)):  # Check each gradient channel: x, y, and z
-    #                 if getattr(block, grad_channels[x]) is not None:
-    #                     # If this channel is on in current block
-    #                     grad = getattr(block, grad_channels[x])
-    #                     if grad.type == 'grad':  # Arbitrary gradient option
-    #                         # In place unpacking of grad.t with the starred expression
-    #                         g_t = (
-    #                             t0
-    #                             + grad.delay
-    #                             + [
-    #                                 0,
-    #                                 *(grad.t + (grad.t[1] - grad.t[0]) / 2),
-    #                                 grad.t[-1] + grad.t[1] - grad.t[0],
-    #                             ]
-    #                         )
-    #                         g = 1e-3 * np.array((grad.first, *grad.waveform, grad.last))
-    #                     else:  # Trapezoid gradient option
-    #                         g_t = cumsum(
-    #                             t0,
-    #                             grad.delay,
-    #                             grad.rise_time,
-    #                             grad.flat_time,
-    #                             grad.fall_time,
-    #                         )
-    #                         g = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
+                if block.rf is not None:
+                    rf = block.rf
 
-    #                     if grad.channel == 'x':
-    #                         gx_t_all = np.concatenate((gx_t_all, g_t))
-    #                         gx_all = np.concatenate((gx_all, g))
-    #                     elif grad.channel == 'y':
-    #                         gy_t_all = np.concatenate((gy_t_all, g_t))
-    #                         gy_all = np.concatenate((gy_all, g))
-    #                     elif grad.channel == 'z':
-    #                         gz_t_all = np.concatenate((gz_t_all, g_t))
-    #                         gz_all = np.concatenate((gz_all, g))
+                    tc, ic = calc_rf_center(rf)
+                    t = rf.t + rf.delay
+                    tc = tc + rf.delay
 
-    #         t0 += self.block_durations[block_counter]  # "Current time" gets updated to end of block just examined
+                    full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
+                    full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
+                    full_phase_offset = full_phase_offset + 2 * math.pi * full_freq_offset * tc
 
-    #     all_waveforms = {
-    #         't_adc': adc_t_all,
-    #         't_rf': rf_t_all,
-    #         't_rf_centers': rf_t_centers,
-    #         't_gx': gx_t_all,
-    #         't_gy': gy_t_all,
-    #         't_gz': gz_t_all,
-    #         'adc': adc_signal_all,
-    #         'rf': rf_signal_all,
-    #         'rf_centers': rf_signal_centers,
-    #         'gx': gx_all,
-    #         'gy': gy_all,
-    #         'gz': gz_all,
-    #         'grad_unit': '[kHz/m]',
-    #         'rf_unit': '[Hz]',
-    #         'time_unit': '[seconds]',
-    #     }
+                    # Debug - visualize
+                    # sp12.plot(t_factor * (t0 + t), np.abs(rf.signal))
+                    # sp13.plot(t_factor * (t0 + t), np.angle(rf.signal * np.exp(1j * rf.phase_offset)
+                    #                                         * np.exp(1j * 2 * math.pi * rf.t * rf.freq_offset)),
+                    #           t_factor * (t0 + tc), np.angle(rf.signal[ic] * np.exp(1j * rf.phase_offset)
+                    #                                          * np.exp(1j * 2 * math.pi * rf.t[ic] * rf.freq_offset)),
+                    #           'xb')
 
-    #     return all_waveforms
+                    rf_t = t0 + t
+                    rf = rf.signal * np.exp(1j * (full_phase_offset + 2 * math.pi * full_freq_offset * rf.t))
+                    rf_t_all = np.concatenate((rf_t_all, rf_t))
+                    rf_signal_all = np.concatenate((rf_signal_all, rf))
+                    rf_t_centers = np.concatenate((rf_t_centers, [rf_t[ic]]))
+                    rf_signal_centers = np.concatenate((rf_signal_centers, [rf[ic]]))
+
+                grad_channels = ['gx', 'gy', 'gz']
+                for x in range(len(grad_channels)):  # Check each gradient channel: x, y, and z
+                    if getattr(block, grad_channels[x]) is not None:
+                        # If this channel is on in current block
+                        grad = getattr(block, grad_channels[x])
+                        if grad.type == 'grad':  # Arbitrary gradient option
+                            # In place unpacking of grad.t with the starred expression
+                            g_t = (
+                                t0
+                                + grad.delay
+                                + [
+                                    0,
+                                    *(grad.t + (grad.t[1] - grad.t[0]) / 2),
+                                    grad.t[-1] + grad.t[1] - grad.t[0],
+                                ]
+                            )
+                            g = 1e-3 * np.array((grad.first, *grad.waveform, grad.last))
+                        else:  # Trapezoid gradient option
+                            g_t = cumsum(
+                                t0,
+                                grad.delay,
+                                grad.rise_time,
+                                grad.flat_time,
+                                grad.fall_time,
+                            )
+                            g = 1e-3 * grad.amplitude * np.array([0, 0, 1, 1, 0])
+
+                        if grad.channel == 'x':
+                            gx_t_all = np.concatenate((gx_t_all, g_t))
+                            gx_all = np.concatenate((gx_all, g))
+                        elif grad.channel == 'y':
+                            gy_t_all = np.concatenate((gy_t_all, g_t))
+                            gy_all = np.concatenate((gy_all, g))
+                        elif grad.channel == 'z':
+                            gz_t_all = np.concatenate((gz_t_all, g_t))
+                            gz_all = np.concatenate((gz_all, g))
+
+            t0 += self.block_durations[block_counter]  # "Current time" gets updated to end of block just examined
+
+        all_waveforms = {
+            't_adc': adc_t_all,
+            't_rf': rf_t_all,
+            't_rf_centers': rf_t_centers,
+            't_gx': gx_t_all,
+            't_gy': gy_t_all,
+            't_gz': gz_t_all,
+            'adc': adc_signal_all,
+            'rf': rf_signal_all,
+            'rf_centers': rf_signal_centers,
+            'gx': gx_all,
+            'gy': gy_all,
+            'gz': gz_all,
+            'grad_unit': '[kHz/m]',
+            'rf_unit': '[Hz]',
+            'time_unit': '[seconds]',
+        }
+
+        return all_waveforms
 
     def write(
         self, name: str, create_signature: bool = True, remove_duplicates: bool = True, check_timing: bool = True

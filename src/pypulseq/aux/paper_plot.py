@@ -62,7 +62,7 @@ def paper_plot(
             j -= 1
 
     # Create figure
-    fig = plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(12, 10), constrained_layout=True)
     fig.patch.set_facecolor('white')
     spec = GridSpec(nrows=4, ncols=1, hspace=0.0)
     axes = []
@@ -70,7 +70,6 @@ def paper_plot(
     def format_axis(ax, xlim, ylim):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-        ax.set_box_aspect(1)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_facecolor('white')
@@ -85,7 +84,7 @@ def paper_plot(
         rf_waveform = np.imag(wave_data[3][1])
     else:
         rf_waveform = np.abs(wave_data[3][1])
-    ax.plot(wave_data[3][0], rf_waveform, color=rf_color, lw=line_width)
+    ax.plot(wave_data[3][0].real, rf_waveform, color=rf_color, lw=line_width)
 
     if len(t_adc) > 0:
         t_adc_x3 = np.repeat(t_adc[np.newaxis, :], 3, axis=0)
