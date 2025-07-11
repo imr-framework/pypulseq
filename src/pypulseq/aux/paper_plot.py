@@ -2,7 +2,6 @@ from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.gridspec import GridSpec
 
 
 def paper_plot(
@@ -64,7 +63,7 @@ def paper_plot(
     # Create figure
     fig = plt.figure(figsize=(12, 10), constrained_layout=True)
     fig.patch.set_facecolor('white')
-    spec = GridSpec(nrows=4, ncols=1, hspace=0.0)
+    spec = fig.add_gridspec(nrows=4, ncols=1, hspace=0.0)
     axes = []
 
     def format_axis(ax, xlim, ylim):
