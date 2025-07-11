@@ -58,11 +58,6 @@ class SeqPlot:
         Axes for fig2.
     """
 
-    MARGIN = 6
-    MY1 = 45
-    MX1 = 70
-    MX2 = 5
-
     def __init__(
         self,
         seq,
@@ -75,6 +70,8 @@ class SeqPlot:
         plot_now: bool = True,
     ):
         self.seq = seq
+        self._cursors = []
+
         self.fig1, self.fig2 = _seq_plot(
             seq,
             label=label,
@@ -87,28 +84,28 @@ class SeqPlot:
         self.ax1 = self.fig1.axes[0]
         self.ax2 = self.fig2.axes[0]
 
-        self.fig1.canvas.mpl_connect('resize_event', self._on_resize)
-        self.fig2.canvas.mpl_connect('resize_event', self._on_resize)
+        if __MPLCURSORS_AVAILABLE__:
+            self._setup_cursor(self.fig1)
+            self._setup_cursor(self.fig2)
 
         if plot_now:
             self.show()
 
     def show(self):
-        """Show the figures and enable interactive data tips (if mplcursors is available)."""
         plt.show()
-        if __MPLCURSORS_AVAILABLE__:
-            self._setup_cursor(self.fig1)
-            self._setup_cursor(self.fig2)
 
     def _setup_cursor(self, fig):
         for ax in fig.axes:
             lines = ax.get_lines()
-            cursor = mplcursors.cursor(lines, hover=False)
-            cursor.connect('add', lambda sel, ax=ax: self._on_datatip(sel, ax))
+            for line in lines:
+                cursor = mplcursors.cursor(line, multiple=True)
+                cursor.connect('add', lambda sel: self._on_datatip(sel))
+                self._cursors.append(cursor)
 
-    def _on_datatip(self, sel, ax):
-        x, y = sel.target
+    def _on_datatip(self, sel):
         artist = sel.artist
+        ax = artist.axes
+        x, y = sel.target
         ylabel = ax.get_ylabel().lower()
 
         if ylabel.startswith('adc') or (
@@ -144,25 +141,12 @@ class SeqPlot:
         self._update_guides()
 
     def _update_guides(self):
-        """Refresh the figure display after interaction or data tip selection."""
         for ax in (self.ax1, self.ax2):
             ax.relim()
             ax.autoscale_view()
 
         for fig in (self.fig1, self.fig2):
             fig.canvas.draw_idle()
-
-    def _on_resize(self, event):
-        fig = event.canvas.figure
-        w_px, h_px = fig.get_size_inches() * fig.dpi
-        left = self.MX1
-        bottom = self.MY1
-        right = w_px - self.MX2
-        top = h_px - self.MARGIN
-
-        for ax in fig.axes:
-            ax.set_position([left / w_px, bottom / h_px, (right - left) / w_px, (top - bottom) / h_px])
-        fig.canvas.draw_idle()
 
 
 def _seq_plot(
@@ -259,7 +243,7 @@ def _seq_plot(
 
                 sp13.plot(
                     t_factor * (t0 + t),
-                    np.angle(np.exp(1j * full_phase_offset) * np.exp(1j * 2 * np.pi * t * full_freq_offset)),
+                    np.angle(np.exp(1j * full_phase_offset) * np.exp(1j * 2 * math.pi * t * full_freq_offset)),
                     'b.',
                     markersize=0.25,
                 )
