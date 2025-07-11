@@ -45,9 +45,18 @@ def paper_plot(
     wave_data, _, _, t_adc, _ = seq.waveforms_and_times(append_RF=True, time_range=time_range)
 
     # Max amplitudes for scaling
-    gwm = np.max(np.abs(np.vstack(wave_data[:3][1])), axis=0)
-    rfm = np.max(np.abs(wave_data[3][1]), axis=0)
-    gwm_max = max(gwm[0], t_adc[-1]) if len(t_adc) > 0 else gwm[0]
+    gwm = np.max(np.abs(np.concatenate(wave_data[:3], axis=1)), axis=1)
+    gwm[0] = max(gwm[0], t_adc[-1])
+    rfm = np.max(np.abs(wave_data[3]), axis=1)
+
+    # Handle complex RF
+    if rf_plot == 'real':
+        rf_waveform = np.real(wave_data[3][1])
+    elif rf_plot == 'imag':
+        rf_waveform = np.imag(wave_data[3][1])
+    else:
+        rf_waveform = np.abs(wave_data[3][1])
+    wave_data[3] = np.stack((wave_data[3][0].real, rf_waveform), axis=0)
 
     # Clean waveforms by inserting NaNs between zero plateaus
     for i in range(4):
@@ -74,44 +83,37 @@ def paper_plot(
         ax.set_facecolor('white')
         ax.spines[:].set_visible(False)
 
-    # RF + ADC plot
+    # ADC
     ax = fig.add_subplot(spec[0])
-    ax.plot([-0.01 * gwm_max, 1.01 * gwm_max], [0, 0], color=axes_color, lw=line_width / 5)
-    if rf_plot == 'real':
-        rf_waveform = np.real(wave_data[3][1])
-    elif rf_plot == 'imag':
-        rf_waveform = np.imag(wave_data[3][1])
-    else:
-        rf_waveform = np.abs(wave_data[3][1])
-    ax.plot(wave_data[3][0].real, rf_waveform, color=rf_color, lw=line_width)
+    ax.vlines(t_adc, ymin=0, ymax=rfm[1] / 5, color=rf_color, lw=line_width / 4, zorder=2.5)
 
-    if len(t_adc) > 0:
-        t_adc_x3 = np.repeat(t_adc[np.newaxis, :], 3, axis=0)
-        y_adc = np.repeat([[0], [rfm / 5], [np.nan]], t_adc.shape[0], axis=1)
-        ax.plot(t_adc_x3.ravel(), y_adc.ravel(), color=rf_color, lw=line_width / 4)
+    # RF
+    ax.plot([-0.01 * gwm[0], 1.01 * gwm[0]], [0, 0], color=axes_color, lw=line_width / 5)
+    ax.plot(wave_data[3][0], wave_data[3][1], color=rf_color, lw=line_width)
 
-    format_axis(ax, [-0.03 * gwm_max, 1.03 * gwm_max], [-1.03 * rfm, 1.03 * rfm])
+    # Format RF + ADC
+    format_axis(ax, [-0.03 * gwm[0], 1.03 * gwm[0]], [-1.03 * rfm[1], 1.03 * rfm[1]])
     axes.append(ax)
 
     # Gradient Z
     ax = fig.add_subplot(spec[1])
-    ax.plot([-0.01 * gwm_max, 1.01 * gwm_max], [0, 0], color=axes_color, lw=line_width / 5)
+    ax.plot([-0.01 * gwm[0], 1.01 * gwm[0]], [0, 0], color=axes_color, lw=line_width / 5)
     ax.plot(wave_data[2][0], wave_data[2][1], color=gz_color, lw=line_width)
-    format_axis(ax, [-0.03 * gwm_max, 1.03 * gwm_max], [-1.03 * gwm[2], 1.03 * gwm[2]])
+    format_axis(ax, [-0.03 * gwm[0], 1.03 * gwm[0]], [-1.03 * gwm[1], 1.03 * gwm[1]])
     axes.append(ax)
 
     # Gradient Y
     ax = fig.add_subplot(spec[2])
-    ax.plot([-0.01 * gwm_max, 1.01 * gwm_max], [0, 0], color=axes_color, lw=line_width / 5)
+    ax.plot([-0.01 * gwm[0], 1.01 * gwm[0]], [0, 0], color=axes_color, lw=line_width / 5)
     ax.plot(wave_data[1][0], wave_data[1][1], color=gy_color, lw=line_width)
-    format_axis(ax, [-0.03 * gwm_max, 1.03 * gwm_max], [-1.03 * gwm[1], 1.03 * gwm[1]])
+    format_axis(ax, [-0.03 * gwm[0], 1.03 * gwm[0]], [-1.03 * gwm[1], 1.03 * gwm[1]])
     axes.append(ax)
 
     # Gradient X
     ax = fig.add_subplot(spec[3])
-    ax.plot([-0.01 * gwm_max, 1.01 * gwm_max], [0, 0], color=axes_color, lw=line_width / 5)
+    ax.plot([-0.01 * gwm[0], 1.01 * gwm[0]], [0, 0], color=axes_color, lw=line_width / 5)
     ax.plot(wave_data[0][0], wave_data[0][1], color=gx_color, lw=line_width)
-    format_axis(ax, [-0.03 * gwm_max, 1.03 * gwm_max], [-1.03 * gwm[0], 1.03 * gwm[0]])
+    format_axis(ax, [-0.03 * gwm[0], 1.03 * gwm[0]], [-1.03 * gwm[1], 1.03 * gwm[1]])
     axes.append(ax)
 
     # Link X-axes (time axis)
