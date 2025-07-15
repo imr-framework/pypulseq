@@ -16,8 +16,6 @@ import numpy as np
 from scipy.interpolate import PPoly
 
 from pypulseq import __version__, eps
-from pypulseq.aux.paper_plot import paper_plot as ext_paper_plot
-from pypulseq.aux.seq_plot import SeqPlot
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.check_timing import print_error_report
@@ -32,6 +30,8 @@ from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.utils.cumsum import cumsum
+from pypulseq.utils.paper_plot import paper_plot as ext_paper_plot
+from pypulseq.utils.seq_plot import SeqPlot
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 
 major, minor, revision = __version__.split('.')[:3]
@@ -976,7 +976,7 @@ class Sequence:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
-    ) -> None:
+    ) -> SeqPlot:
         """
         Plot `Sequence`.
 
