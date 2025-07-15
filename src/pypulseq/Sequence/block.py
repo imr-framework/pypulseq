@@ -272,7 +272,51 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
     self.block_durations[block_index] = float(duration)
 
 
-# TODO: refactor to get_raw_block_content_id + get_block
+def get_raw_block_content_IDs(self, block_index: int) -> SimpleNamespace:
+    """
+    Returns PyPulseq block content IDs at `block_index` position in `self.block_events`.
+
+    No block events are created, only the IDs of the objects are returned.
+
+    Parameters
+    ----------
+    block_index : int
+        Index of PyPulseq block to be retrieved from `self.block_events`.
+
+    Returns
+    -------
+    block : SimpleNamespace
+        PyPulseq block content IDs at 'block_index' position in `self.block_events`.
+    """
+    raw_block = SimpleNamespace(block_duration=0, rf=0, gx=0, gy=0, gz=0, adc=0, ext=[])
+    event_ind = self.block_events[block_index]
+
+    # Extensions
+    if event_ind[6] > 0:
+        next_ext_id = event_ind[6]
+        while next_ext_id != 0:
+            ext_data = self.extensions_library.data[next_ext_id]
+            raw_block.ext.append(ext_data[:2])
+            next_ext_id = ext_data[2]
+        raw_block.ext = np.stack(raw_block.ext, axis=-1)
+
+    # RF
+    if event_ind[1] > 0:
+        raw_block.rf = event_ind[1]
+
+    # Gradients
+    grad_channels = ['gx', 'gy', 'gz']
+    for i in range(len(grad_channels)):
+        if event_ind[2 + i] > 0:
+            setattr(raw_block, grad_channels[i], event_ind[2 + i])
+
+    # ADC
+    if event_ind[5] > 0:
+        raw_block.adc = event_ind[5]
+
+    return raw_block
+
+
 def get_block(self, block_index: int) -> SimpleNamespace:
     """
     Returns PyPulseq block at `block_index` position in `self.block_events`.
