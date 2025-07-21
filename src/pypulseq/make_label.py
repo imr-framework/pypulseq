@@ -10,11 +10,39 @@ def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleN
 
     Parameters
     ----------
-    type : str
-        Label type. Must be one of 'SET' or 'INC'.
     label : str
-        Must be one of `pypulseq.get_supported_labels()`.
-    value : bool, float or int
+        Must be one of the following:
+
+            - 'SLC' (counter): slice counter (or slab counter for 3D multi-slab sequences).
+            - 'SEG' (counter): segment counter e.g. for segmented FLASH or EPI.
+            - 'REP' (counter): repetition counter.
+            - 'AVG' (counter): averaging counter.
+            - 'SET' (counter): flexible counter without firm assignment.
+            - 'ECO' (counter): echo counter in multi-echo sequences.
+            - 'PHS' (counter): cardiac phase counter.
+            - 'LIN' (counter): line counter in 2D and 3D acquisitions.
+            - 'PAR' (counter): partition counter; itt counts phase encoding steps in the 2nd (through-slab) phase encoding direction in 3D sequences.
+            - 'ACQ' (counter): spectroscopic acquisition counter.
+            - 'NAV' (flag): navigator data flag.
+            - 'REV' (flag): flag indicating that the readout direction is reversed.
+            - 'SMS' (flag): simultaneous multi-slice (SMS) acquisition.
+            _ 'REF' (flag): parallel imaging flag indicating reference / auto-calibration data.
+            - 'IMA' (flag): parallel imaging flag indicating imaging data within the ACS region.
+            - 'NOISE' (flag): noise adjust scan, for iPAT acceleration.
+            - 'PMC' (flag): for MoCo/PMC Pulseq version to recognize blocks that can be prospectively corrected for motion.
+            - 'NOROT' (flag): instruct the interpreter to ignore the rotation of the FOV specified on the UI.
+            - 'NOPOS' (flag): instruct the interpreter to ignore the position of the FOV specified on the UI.
+            - 'NOSCL' (flag): instruct the interpreter to ignore the scaling of the FOV specified on the UI.
+            - 'ONCE' (flag): a 3-state flag that instructs the interpreter as follows:
+
+                * `ONCE == 0` blocks are executed on every repetition;
+                * `ONCE == 1`: only the first repetition of the block is executed;
+                * `ONCE == 2`: only the last repetition of the block is executed.
+
+            -'TRID' (counter): marks the beginning of a repeatable module in the sequence (e.g. TR).
+
+        Label type. Must be one of 'SET' or 'INC' (not compatible with flags).
+     value : bool, float or int
         Label value.
 
     Returns
@@ -25,7 +53,7 @@ def make_label(label: str, type: str, value: Union[bool, float, int]) -> SimpleN
     Raises
     ------
     ValueError
-        If a valid `label` was not passed. Must be one of `pypulseq.get_supported_labels()`.
+        If a valid `label` was not passed. Must be one of 'pypulseq.get_supported_labels()'.
         If a valid `type` was not passed. Must be one of 'SET' or 'INC'.
         If `value` was not a valid numerical or logical value.
     """
