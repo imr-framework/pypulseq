@@ -131,6 +131,8 @@ def make_arbitrary_grad(
         grad.area = (waveform * system.grad_raster_time).sum()
         grad.tt = (np.arange(len(waveform)) + 0.5) * system.grad_raster_time
         grad.shape_dur = len(waveform) * system.grad_raster_time
+    grad.first = first
+    grad.last = last
 
     if trace_enabled():
         grad.trace = trace()
