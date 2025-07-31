@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 4
-revision 2
+minor 5
+revision 0
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -132,4 +132,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 54a863dda55463e26b0cc8a849a0111b
+Hash 24b88f718569289067edeeee09e5ff00
