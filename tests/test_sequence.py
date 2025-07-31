@@ -236,6 +236,7 @@ sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_puls
 seq_examples = [
     'write_gre',
     'write_gre_label',
+    'write_gre_label_softdelay',
     'write_haste',
     'write_radial_gre',
     'write_tse',
