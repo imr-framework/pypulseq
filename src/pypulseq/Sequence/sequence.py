@@ -1522,7 +1522,7 @@ class Sequence:
 
     def get_default_soft_delay_values(
         self,
-    ) -> Tuple[Dict[str, float], List[SimpleNamespace], Dict[int, SimpleNamespace]]:
+    ) -> Tuple[Dict[str, float], Dict[int, SimpleNamespace]]:
         """
         Go through all the blocks checking the consistency of the soft delays
         TODO/FIXME:
@@ -1532,14 +1532,11 @@ class Sequence:
         -------
         delays_by_hints : dict
             Dictionary of soft delay hints and their default values.
-        error_report : list
-            List of error messages for any inconsistencies found in the soft delays.
         soft_delay_state : dict
             Dictionary of soft delay states, containing the default value, hint, block number, min and max delays for each numeric ID.
 
         """
 
-        error_report: List[SimpleNamespace] = []
         soft_delay_state = {}
 
         # Loop over all blocks
@@ -1552,7 +1549,7 @@ class Sequence:
                 ) * block.soft_delay.factor
 
                 if soft_delay_state[block.soft_delay.numID] is None:
-                    dly_state_ = SimpleNamespace(
+                    soft_delay_state[block.soft_delay.numID] = SimpleNamespace(
                         default=default_delay,
                         hint=block.soft_delay.hint,
                         blk=block_counter,
@@ -1560,22 +1557,6 @@ class Sequence:
                         max_delay=np.inf,
                     )
 
-                    soft_delay_state[block.soft_delay.numID] = dly_state_
-                else:
-                    if (
-                        abs(default_delay - soft_delay_state[block.soft_delay.numID].default) > 1e-7
-                    ):  # What is a reasonable threshold?
-                        error_report.append(
-                            SimpleNamespace(
-                                block=block_counter,
-                                event='soft_delay',
-                                field='delay',
-                                error_type='SOFT_DELAY_DUR_INCONSISTENCY',
-                                value=default_delay,
-                                hint=block.soft_delay.hint,
-                                numID=block.soft_delay.numID,
-                            )
-                        )
                 # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
                 lim_delay = -block.soft_delay.offset * block.soft_delay.factor
                 if block.soft_delay.factor > 0:
@@ -1600,7 +1581,7 @@ class Sequence:
                     f'SoftDelay with numeric ID {numID_} uses the same hint "{delay_state_.hint}" as some previous soft delay'
                 )
 
-        return delays_by_hints, error_report, soft_delay_state
+        return delays_by_hints, soft_delay_state
 
     def test_report(self) -> str:
         """
