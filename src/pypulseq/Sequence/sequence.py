@@ -1195,14 +1195,14 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-                new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
+                new_data = (data[0], mapping[data[1]], mapping[data[2]], *data[3:])
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 
         # Remap shape IDs of RF events
         for rf_id in seq_copy.rf_library.data:
             data = seq_copy.rf_library.data[rf_id]
-            new_data = (data[0],) + (mapping[data[1]], mapping[data[2]], mapping[data[3]]) + data[4:]
+            new_data = (data[0], mapping[data[1]], mapping[data[2]], mapping[data[3]], *data[4:])
             if data != new_data:
                 seq_copy.rf_library.update(rf_id, None, new_data)
 

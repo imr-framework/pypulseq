@@ -214,7 +214,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time) + d[3:],
+                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time, *d[3:]),
                             self.grad_library.type[i],
                         )
 
@@ -224,7 +224,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            d[:2] + (d[2] - self.grad_raster_time, self.grad_raster_time) + d[4:],
+                            (*d[:2], d[2] - self.grad_raster_time, self.grad_raster_time, *d[4:]),
                             self.grad_library.type[i],
                         )
 
