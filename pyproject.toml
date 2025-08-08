@@ -133,3 +133,10 @@ filterwarnings = [
   "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev",
 ]
 markers = ["sigpy: tests that require sigpy"]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*'
+check-hidden = true
+ignore-regex = '^\s*"image/\S+": ".*'
+# ignore-words-list = ''
