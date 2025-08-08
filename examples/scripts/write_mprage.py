@@ -89,7 +89,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprag
 
     # Calculate timing of the fast loop. We will have two blocks in the inner loop:
     # 1: spoilers/rewinders + RF
-    # 2: prewinder, phase enconding + readout
+    # 2: prewinder, phase encoding + readout
     rf.delay = pp.calc_duration(gro_Sp, gpe1, gpe2)
     gro_pre, _, _ = pp.align(right=[gro_pre, gpe1, gpe2])
     gro1.delay = pp.calc_duration(gro_pre)

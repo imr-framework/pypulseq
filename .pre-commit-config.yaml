@@ -27,6 +27,14 @@ repos:
     hooks:
       - id: typos
         exclude: ^examples/|paper.md
+  
+  - repo: https://github.com/codespell-project/codespell
+    # Configuration for codespell is in pyproject.toml
+    rev: v2.4.1
+    hooks:
+    - id: codespell
+    additional_dependencies:
+    - tomli; python_version<'3.11'
 
 ci:
   autofix_commit_msg: |
