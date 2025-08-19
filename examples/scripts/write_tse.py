@@ -27,7 +27,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'tse_pypulseq.seq'):
     fov = 256e-3  # Define FOV and resolution
     Nx, Ny = 128, 128
     n_echo = 16  # Number of echoes
-    n_slices = 1
+    n_slices = 3
     rf_flip = 180  # Flip angle
     if isinstance(rf_flip, int):
         rf_flip = np.zeros(n_echo) + rf_flip

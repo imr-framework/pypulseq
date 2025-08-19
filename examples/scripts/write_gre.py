@@ -17,7 +17,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
     TR = 12e-3  # Repetition time
     TE = 5e-3  # Echo time
 
-    rf_spoiling_inc = 117  # RF spoiling increment
+    rf_spoiling_inc = 107 # RF spoiling increment
 
     system = pp.Opts(
         max_grad=28,

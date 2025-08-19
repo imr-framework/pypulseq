@@ -82,18 +82,24 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'epi_se_pypulseq.seq')
     # CONSTRUCT SEQUENCE
     # ======
     # Define sequence blocks
-    seq.add_block(rf, gz, pp.make_label(label='TRID', type='SET', value=1))
+    seq.add_block(rf, gz, pp.make_label(label='SQID', type='SET', value=1))
     seq.add_block(gx_pre, gy_pre, gz_reph)
     seq.add_block(pp.make_delay(delay_TE1))
     seq.add_block(gz_spoil)
     seq.add_block(rf180)
     seq.add_block(gz_spoil)
     seq.add_block(pp.make_delay(delay_TE2))
-    for i in range(Ny):
-        seq.add_block(gx, adc)  # Read one line of k-space
+    for i in range(0, Ny, 2): # effort to reduce the number of SQ changes by combining better in for loops
+        # Positive lobe 
+        seq.add_block(gx, adc, pp.make_label(label='SQID', type='SET', value=2))  # Read one line of k-space
         seq.add_block(gy)  # Phase blip
+        # Negative lobe
         gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
-    seq.add_block(pp.make_delay(1e-4))
+        seq.add_block(gx, adc)   # Read next line of k-space
+        seq.add_block(gy)
+        # Get back to positive
+        gx.amplitude = -gx.amplitude  # Reverse polarity of read gradient
+    seq.add_block(pp.make_delay(1e-4))  # Delay at the end of the sequence
 
     ok, error_report = seq.check_timing()
     if ok:

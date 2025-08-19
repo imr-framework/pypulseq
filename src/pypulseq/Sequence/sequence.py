@@ -90,7 +90,7 @@ class Sequence:
         self.set_definition('GradientRasterTime', self.grad_raster_time)
         self.set_definition('RadiofrequencyRasterTime', self.rf_raster_time)
         self.set_definition('RF_deadtime [RF_FE]', self.system.rf_dead_time)
-        self.set_definition('RF_ringdown time [RF_FE]', self.system.rf_ringdown_time)
+        self.set_definition('RF_ringdown  [RF_FE]', self.system.rf_ringdown_time)
         self.set_definition('ADC_deadtime [ADC_FE]', self.system.adc_dead_time)
         self.signature_type = ''
         self.signature_file = ''

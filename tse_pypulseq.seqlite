@@ -1,0 +1,556 @@
+# Pulseq-lite sequence file
+# Created by PyPulseq
+
+[VERSION]
+major 0.0
+minor 0.0
+revision 0.0
+
+[DEFINITIONS]
+ADC_deadtime [ADC_FE] 1e-05 
+AdcRasterTime 1e-07 
+BlockDurationRaster 1e-05 
+GradientRasterTime 1e-05 
+RF_deadtime [RF_FE] 0.0001 
+RF_ringdown time [RF_FE] 0.0001 
+RadiofrequencyRasterTime 1e-06 
+TotalDuration 18.00009 
+
+# Format of zero level hierarchy - SOR kernel:
+[SOR]
+kernel [0, 1, 2]
+SQs_repeats 27
+
+# Format of first level hierarchy - SQs:
+SQ#  0
+[BASE BLOCKS]
+#   RF GX GY GZ AQ
+0  0   0   0   1   0   1
+1  1   0   0   2   0   0
+2  0   4   0   3   0   0
+
+# Format of second level hierarchy - SQ repeat attributes:
+#1 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#2 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#3 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#4 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#5 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#6 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#7 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#8 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#9 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#10 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#11 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#12 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#13 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#14 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#15 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#16 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#17 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#18 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#19 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#20 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#21 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#22 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#23 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#24 Block 1, Event RF (ID: 1): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(25.1328)}
+#25 Block 1, Event RF (ID: 3): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+#26 Block 1, Event RF (ID: 5): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-12.5664)}
+Loop count = 1
+
+SQ#  1
+[BASE BLOCKS]
+#   RF GX GY GZ AQ
+0  2   0   0   5   0   2
+1  0   7   8   6   0   0
+2  0   9   0   0   0   0
+3  0   11   8   10   0   0
+4  2   0   0   5   0   2
+5  0   7   8   6   0   0
+6  0   9   0   0   0   0
+7  0   11   8   10   0   0
+8  2   0   0   5   0   2
+9  0   7   8   6   0   0
+10  0   9   0   0   0   0
+11  0   11   8   10   0   0
+12  2   0   0   5   0   2
+13  0   7   8   6   0   0
+14  0   9   0   0   0   0
+15  0   11   8   10   0   0
+16  2   0   0   5   0   2
+17  0   7   8   6   0   0
+18  0   9   0   0   0   0
+19  0   11   8   10   0   0
+20  2   0   0   5   0   2
+21  0   7   8   6   0   0
+22  0   9   0   0   0   0
+23  0   11   8   10   0   0
+24  2   0   0   5   0   2
+25  0   7   8   6   0   0
+26  0   9   0   0   0   0
+27  0   11   8   10   0   0
+28  2   0   0   5   0   2
+29  0   7   8   6   0   0
+30  0   9   0   0   0   0
+31  0   11   8   10   0   0
+32  2   0   0   5   0   2
+33  0   7   8   6   0   0
+34  0   9   0   0   0   0
+35  0   11   8   10   0   0
+36  2   0   0   5   0   2
+37  0   7   8   6   0   0
+38  0   9   0   0   0   0
+39  0   11   8   10   0   0
+40  2   0   0   5   0   2
+41  0   7   8   6   0   0
+42  0   9   0   0   0   0
+43  0   11   8   10   0   0
+44  2   0   0   5   0   2
+45  0   7   8   6   0   0
+46  0   9   0   0   0   0
+47  0   11   8   10   0   0
+48  2   0   0   5   0   2
+49  0   7   8   6   0   0
+50  0   9   0   0   0   0
+51  0   11   8   10   0   0
+52  2   0   0   5   0   2
+53  0   7   8   6   0   0
+54  0   9   0   0   0   0
+55  0   11   8   10   0   0
+56  2   0   0   5   0   2
+57  0   7   8   6   0   0
+58  0   9   0   0   0   0
+59  0   11   8   10   0   0
+60  2   0   0   5   0   2
+61  0   7   8   6   0   0
+62  0   9   0   0   0   0
+63  0   11   8   10   0   0
+
+# Format of second level hierarchy - SQ repeat attributes:
+#1 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#1 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#2 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#3 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#3 Block 1, Event GY (ID: 12): {'amplitude': np.float64(-162760.0)}
+#3 Block 2, Event ADC (ID: 1): {'num_samples': 128}
+#3 Block 3, Event GY (ID: 13): {'amplitude': np.float64(162760.0)}
+#3 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#3 Block 5, Event GY (ID: 14): {'amplitude': np.float64(-141059.0)}
+#3 Block 6, Event ADC (ID: 1): {'num_samples': 128}
+#3 Block 7, Event GY (ID: 15): {'amplitude': np.float64(141059.0)}
+#3 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#3 Block 9, Event GY (ID: 16): {'amplitude': np.float64(-119358.0)}
+#3 Block 10, Event ADC (ID: 1): {'num_samples': 128}
+#3 Block 11, Event GY (ID: 17): {'amplitude': np.float64(119358.0)}
+#3 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#3 Block 13, Event GY (ID: 18): {'amplitude': np.float64(-97656.2)}
+#3 Block 14, Event ADC (ID: 1): {'num_samples': 128}
+#3 Block 15, Event GY (ID: 19): {'amplitude': np.float64(97656.2)}
+#4 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#4 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#5 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#6 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#6 Block 1, Event GY (ID: 28): {'amplitude': np.float64(2712.0)}
+#6 Block 3, Event GY (ID: 29): {'amplitude': np.float64(-2712.0)}
+#6 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#6 Block 5, Event GY (ID: 30): {'amplitude': np.float64(2713.0)}
+#6 Block 7, Event GY (ID: 31): {'amplitude': np.float64(-2713.0)}
+#6 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#6 Block 9, Event GY (ID: 32): {'amplitude': np.float64(2713.0)}
+#6 Block 11, Event GY (ID: 33): {'amplitude': np.float64(-2713.0)}
+#6 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#6 Block 13, Event GY (ID: 34): {'amplitude': np.float64(2712.5999999999913)}
+#6 Block 15, Event GY (ID: 35): {'amplitude': np.float64(-2712.5999999999913)}
+#6 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#6 Block 17, Event GY (ID: 36): {'amplitude': np.float64(2712.699999999997)}
+#6 Block 19, Event GY (ID: 37): {'amplitude': np.float64(-2712.699999999997)}
+#6 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#7 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#7 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#8 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#9 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#9 Block 1, Event GY (ID: 60): {'amplitude': np.float64(2713.0)}
+#9 Block 3, Event GY (ID: 61): {'amplitude': np.float64(-2713.0)}
+#9 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#9 Block 5, Event GY (ID: 62): {'amplitude': np.float64(2712.0)}
+#9 Block 7, Event GY (ID: 63): {'amplitude': np.float64(-2712.0)}
+#9 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#9 Block 9, Event GY (ID: 64): {'amplitude': np.float64(2713.0)}
+#9 Block 11, Event GY (ID: 65): {'amplitude': np.float64(-2713.0)}
+#9 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#9 Block 13, Event GY (ID: 66): {'amplitude': np.float64(2712.7000000000116)}
+#9 Block 15, Event GY (ID: 67): {'amplitude': np.float64(-2712.7000000000116)}
+#9 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#9 Block 17, Event GY (ID: 68): {'amplitude': np.float64(2712.699999999997)}
+#9 Block 19, Event GY (ID: 69): {'amplitude': np.float64(-2712.699999999997)}
+#9 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#10 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#10 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#11 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#12 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#12 Block 1, Event GY (ID: 92): {'amplitude': np.float64(2713.0)}
+#12 Block 3, Event GY (ID: 93): {'amplitude': np.float64(-2713.0)}
+#12 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#12 Block 5, Event GY (ID: 94): {'amplitude': np.float64(2713.0)}
+#12 Block 7, Event GY (ID: 95): {'amplitude': np.float64(-2713.0)}
+#12 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#12 Block 9, Event GY (ID: 96): {'amplitude': np.float64(2712.0)}
+#12 Block 11, Event GY (ID: 97): {'amplitude': np.float64(-2712.0)}
+#12 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#12 Block 13, Event GY (ID: 98): {'amplitude': np.float64(2712.699999999997)}
+#12 Block 15, Event GY (ID: 99): {'amplitude': np.float64(-2712.699999999997)}
+#12 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#12 Block 17, Event GY (ID: 100): {'amplitude': np.float64(2712.699999999997)}
+#12 Block 19, Event GY (ID: 101): {'amplitude': np.float64(-2712.699999999997)}
+#12 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#13 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#13 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#14 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#15 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#15 Block 1, Event GY (ID: 124): {'amplitude': np.float64(2712.0)}
+#15 Block 3, Event GY (ID: 125): {'amplitude': np.float64(-2712.0)}
+#15 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#15 Block 5, Event GY (ID: 126): {'amplitude': np.float64(2713.0)}
+#15 Block 7, Event GY (ID: 127): {'amplitude': np.float64(-2713.0)}
+#15 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#15 Block 9, Event GY (ID: 128): {'amplitude': np.float64(2713.0)}
+#15 Block 11, Event GY (ID: 129): {'amplitude': np.float64(-2713.0)}
+#15 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#15 Block 13, Event GY (ID: 130): {'amplitude': np.float64(2712.5999999999913)}
+#15 Block 15, Event GY (ID: 131): {'amplitude': np.float64(-2712.5999999999913)}
+#15 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#15 Block 17, Event GY (ID: 132): {'amplitude': np.float64(2712.600000000006)}
+#15 Block 19, Event GY (ID: 133): {'amplitude': np.float64(-2712.600000000006)}
+#15 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#16 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#16 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#17 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#18 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#18 Block 1, Event GY (ID: 121): {'amplitude': np.float64(2713.0)}
+#18 Block 3, Event GY (ID: 120): {'amplitude': np.float64(-2713.0)}
+#18 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#18 Block 5, Event GY (ID: 119): {'amplitude': np.float64(2712.0)}
+#18 Block 7, Event GY (ID: 118): {'amplitude': np.float64(-2712.0)}
+#18 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#18 Block 9, Event GY (ID: 117): {'amplitude': np.float64(2713.0)}
+#18 Block 11, Event GY (ID: 116): {'amplitude': np.float64(-2713.0)}
+#18 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#18 Block 13, Event GY (ID: 115): {'amplitude': np.float64(2712.7000000000116)}
+#18 Block 15, Event GY (ID: 114): {'amplitude': np.float64(-2712.7000000000116)}
+#18 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#18 Block 17, Event GY (ID: 113): {'amplitude': np.float64(2712.699999999997)}
+#18 Block 19, Event GY (ID: 112): {'amplitude': np.float64(-2712.699999999997)}
+#18 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#19 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#19 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#20 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#21 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#21 Block 1, Event GY (ID: 89): {'amplitude': np.float64(2713.0)}
+#21 Block 3, Event GY (ID: 88): {'amplitude': np.float64(-2713.0)}
+#21 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#21 Block 5, Event GY (ID: 87): {'amplitude': np.float64(2713.0)}
+#21 Block 7, Event GY (ID: 86): {'amplitude': np.float64(-2713.0)}
+#21 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#21 Block 9, Event GY (ID: 85): {'amplitude': np.float64(2712.0)}
+#21 Block 11, Event GY (ID: 84): {'amplitude': np.float64(-2712.0)}
+#21 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#21 Block 13, Event GY (ID: 83): {'amplitude': np.float64(2712.699999999997)}
+#21 Block 15, Event GY (ID: 82): {'amplitude': np.float64(-2712.699999999997)}
+#21 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#21 Block 17, Event GY (ID: 81): {'amplitude': np.float64(2712.699999999997)}
+#21 Block 19, Event GY (ID: 80): {'amplitude': np.float64(-2712.699999999997)}
+#21 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#22 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#22 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#23 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#24 Block 0, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#24 Block 1, Event GY (ID: 57): {'amplitude': np.float64(2712.0)}
+#24 Block 3, Event GY (ID: 56): {'amplitude': np.float64(-2712.0)}
+#24 Block 4, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#24 Block 5, Event GY (ID: 55): {'amplitude': np.float64(2713.0)}
+#24 Block 7, Event GY (ID: 54): {'amplitude': np.float64(-2713.0)}
+#24 Block 8, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#24 Block 9, Event GY (ID: 53): {'amplitude': np.float64(2713.0)}
+#24 Block 11, Event GY (ID: 52): {'amplitude': np.float64(-2713.0)}
+#24 Block 12, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#24 Block 13, Event GY (ID: 51): {'amplitude': np.float64(2712.699999999997)}
+#24 Block 15, Event GY (ID: 50): {'amplitude': np.float64(-2712.699999999997)}
+#24 Block 16, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#24 Block 17, Event GY (ID: 49): {'amplitude': np.float64(2712.7000000000044)}
+#24 Block 19, Event GY (ID: 48): {'amplitude': np.float64(-2712.7000000000044)}
+#24 Block 20, Event RF (ID: 2): {'freq_offset': np.float64(-3200.0), 'phase_offset': np.float64(20.1062)}
+#25 Block 0, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 4, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 8, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 12, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 16, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 20, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 24, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 28, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 32, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 36, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 40, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 44, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 48, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 52, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 56, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#25 Block 60, Event RF (ID: 4): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 0, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 4, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 8, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 12, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 16, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 20, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 24, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 28, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 32, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 36, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 40, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 44, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 48, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 52, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 56, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+#26 Block 60, Event RF (ID: 6): {'freq_offset': np.float64(1600.0), 'phase_offset': np.float64(-10.0531)}
+Loop count = 1
+
+SQ#  2
+[BASE BLOCKS]
+#   RF GX GY GZ AQ
+0  0   0   0   5   0   3
+1  0   0   0   6   0   0
+
+# Format of second level hierarchy - SQ repeat attributes:
+No SQ repeat attributes for this SQ
+
