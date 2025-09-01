@@ -23,7 +23,7 @@ repos:
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.35.7
+    rev: v1.35.6
     hooks:
       - id: typos
         exclude: ^examples/|paper.md
