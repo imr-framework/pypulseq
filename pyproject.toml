@@ -14,7 +14,7 @@ maintainers = [
 description = "Pulseq in Python"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.6.3"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
