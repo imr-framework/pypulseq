@@ -73,23 +73,19 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
             # Gradient raster time
             if 'GradientRasterTime' in self.definitions:
-                self.grad_raster_time = self.definitions['GradientRasterTime']
-                self.system.grad_raster_time = self.grad_raster_time
+                self.gradient_raster_time = self.definitions['GradientRasterTime']
 
             # Radio frequency raster time
             if 'RadiofrequencyRasterTime' in self.definitions:
                 self.rf_raster_time = self.definitions['RadiofrequencyRasterTime']
-                self.system.rf_raster_time = self.rf_raster_time
 
             # ADC raster time
             if 'AdcRasterTime' in self.definitions:
                 self.adc_raster_time = self.definitions['AdcRasterTime']
-                self.system.adc_raster_time = self.adc_raster_time
 
             # Block duration raster
             if 'BlockDurationRaster' in self.definitions:
                 self.block_duration_raster = self.definitions['BlockDurationRaster']
-                self.system.block_duration_raster = self.block_duration_raster
             else:
                 warnings.warn(f'No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.')
 
