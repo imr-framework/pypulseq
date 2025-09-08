@@ -889,6 +889,7 @@ class Sequence:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
+        clear= True,
     ) -> None:
         """
         Plot `Sequence`.
@@ -914,6 +915,8 @@ class Sequence:
             If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
         plot_type : str, default='Gradient'
             Gradients display type, must be one of either 'Gradient' or 'Kspace'.
+        clear : bool, default=True
+            create fresh figures to plot seq.plot(), if clearFalse existing figrue 1 and 2 are used to plot seq on top of old plot. 
         """
         mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -928,15 +931,40 @@ class Sequence:
         if grad_disp not in valid_grad_units:
             raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-        fig1, fig2 = plt.figure(), plt.figure()
-        sp11 = fig1.add_subplot(311)
-        sp12 = fig1.add_subplot(312, sharex=sp11)
-        sp13 = fig1.add_subplot(313, sharex=sp11)
-        fig2_subplots = [
-            fig2.add_subplot(311, sharex=sp11),
-            fig2.add_subplot(312, sharex=sp11),
-            fig2.add_subplot(313, sharex=sp11),
-        ]
+        fig1, fig2 = plt.figure(1), plt.figure(2)
+        fig1_subplots = fig1.get_axes()
+        fig2_subplots = fig2.get_axes()
+        
+        if clear: 
+            for ax in fig1_subplots + fig2_subplots:
+                ax.remove()
+            fig1_subplots = fig1.get_axes()
+            fig2_subplots = fig2.get_axes()
+
+        if len(fig1_subplots) == 3:
+            (sp11, sp12, sp13) = fig1_subplots
+        else:
+            for ax in fig1_subplots:
+                ax.remove()
+
+            # These 3 subplots are unchanged from pypulseq 1.2
+            sp11 = fig1.add_subplot(311)
+            sp12 = fig1.add_subplot(312, sharex=sp11)
+            sp13 = fig1.add_subplot(313, sharex=sp11)
+
+        if len(fig2_subplots) == 3:
+            fig1_subplots = fig2_subplots
+            fig2_subplots = fig2_subplots
+        else:
+            for ax in fig2_subplots:
+                ax.remove()
+
+            # This is also straight from pypulseq 1.2
+            fig2_subplots = [
+                fig2.add_subplot(311, sharex=sp11),
+                fig2.add_subplot(312, sharex=sp11),
+                fig2.add_subplot(313, sharex=sp11)
+            ]
 
         t_factor_list = [1, 1e3, 1e6]
         t_factor = t_factor_list[valid_time_units.index(time_disp)]
@@ -1129,6 +1157,8 @@ class Sequence:
 
         if plot_now:
             plt.show()
+        
+        return fig1, (sp11, sp12, sp13), fig2, fig2_subplots
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
         """
