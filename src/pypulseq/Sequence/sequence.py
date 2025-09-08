@@ -889,7 +889,7 @@ class Sequence:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
-        clear= True,
+        clear=True,
     ) -> None:
         """
         Plot `Sequence`.
@@ -916,7 +916,7 @@ class Sequence:
         plot_type : str, default='Gradient'
             Gradients display type, must be one of either 'Gradient' or 'Kspace'.
         clear : bool, default=True
-            create fresh figures to plot seq.plot(), if clearFalse existing figrue 1 and 2 are used to plot seq on top of old plot. 
+            create fresh figures to plot seq.plot(), if clearFalse existing figrue 1 and 2 are used to plot seq on top of old plot.
         """
         mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -934,8 +934,8 @@ class Sequence:
         fig1, fig2 = plt.figure(1), plt.figure(2)
         fig1_subplots = fig1.get_axes()
         fig2_subplots = fig2.get_axes()
-        
-        if clear: 
+
+        if clear:
             for ax in fig1_subplots + fig2_subplots:
                 ax.remove()
             fig1_subplots = fig1.get_axes()
@@ -963,7 +963,7 @@ class Sequence:
             fig2_subplots = [
                 fig2.add_subplot(311, sharex=sp11),
                 fig2.add_subplot(312, sharex=sp11),
-                fig2.add_subplot(313, sharex=sp11)
+                fig2.add_subplot(313, sharex=sp11),
             ]
 
         t_factor_list = [1, 1e3, 1e6]
@@ -1157,7 +1157,7 @@ class Sequence:
 
         if plot_now:
             plt.show()
-        
+
         return fig1, (sp11, sp12, sp13), fig2, fig2_subplots
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
