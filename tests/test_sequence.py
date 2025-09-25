@@ -2,81 +2,16 @@ import importlib
 import math
 import os
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import pypulseq as pp
 import pytest
-from _pytest.python_api import ApproxBase
 from pypulseq import Sequence
 
+from conftest import Approx
+
 expected_output_path = Path(__file__).parent / 'expected_output'
-
-
-class Approx(ApproxBase):
-    """
-    Extension of pytest.approx that also handles approximate equality
-    recursively within dicts, lists, tuples, and SimpleNamespace
-    """
-
-    def __repr__(self):
-        return str(self.expected)
-
-    def __eq__(self, actual):
-        # if type(actual) != type(self.expected):
-        #     return False
-        if isinstance(self.expected, dict):
-            if set(self.expected.keys()) != set(actual.keys()):
-                return False
-
-            for k in self.expected:
-                if actual[k] != Approx(self.expected[k], rel=self.rel, abs=self.abs, nan_ok=self.nan_ok):
-                    return False
-            return True
-        elif isinstance(self.expected, (list, tuple)):
-            if len(self.expected) != len(actual):
-                return False
-
-            for e, a in zip(self.expected, actual):
-                if a != Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok):
-                    return False
-            return True
-        elif isinstance(self.expected, SimpleNamespace):
-            return actual.__dict__ == Approx(self.expected.__dict__, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
-        else:
-            return actual == pytest.approx(self.expected, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
-
-    def _repr_compare(self, actual):
-        # if type(actual) != type(self.expected):
-        #     return [f'Actual and expected types do not match: {type(actual)} != {type(self.expected)}']
-        if isinstance(self.expected, dict):
-            if set(self.expected.keys()) != set(actual.keys()):
-                return [f'Actual and expected keys do not match: {set(actual.keys())} != {set(self.expected.keys())}']
-
-            r = []
-            for k in self.expected:
-                approx_obj = Approx(self.expected[k], rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
-                if actual[k] != approx_obj:
-                    r += [f'{k} does not match:']
-                    r += [f'  {x}' for x in approx_obj._repr_compare(actual[k])]
-            return r
-        elif isinstance(self.expected, (list, tuple)):
-            if len(self.expected) != len(actual):
-                return [f'Actual and expected lengths do not match: {len(actual)} != {len(self.expected)}']
-            r = []
-            for i, (e, a) in enumerate(zip(self.expected, actual)):
-                approx_obj = Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
-                if a != approx_obj:
-                    r += [f'Index {i} does not match:']
-                    r += [f'  {x}' for x in approx_obj._repr_compare(a)]
-            return r
-        elif isinstance(self.expected, SimpleNamespace):
-            return Approx(self.expected.__dict__, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)._repr_compare(
-                actual.__dict__
-            )
-        else:
-            return pytest.approx(self.expected, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)._repr_compare(actual)
 
 
 # Dummy sequence which contains only gaussian pulses with different parameters
