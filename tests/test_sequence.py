@@ -283,6 +283,13 @@ class TestSequence:
                 TestSequence.seq.plot(grad_disp='mT/m')
                 plt.close('all')
 
+    # Test sequence.test_report() method
+    def test_test_report(self, seq_func):
+        if seq_func.__name__ in seq_examples:
+            report = TestSequence.seq.test_report()
+            assert isinstance(report, str), 'test_report() did not return a string'
+            assert len(report) > 0, 'test_report() returned an empty string'
+
     # Test whether the sequence is the approximately the same after writing a .seq
     # file and reading it back in.
     def test_writeread(self, seq_func, tmp_path, compare_seq_file):
