@@ -10,23 +10,23 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
     # Create a new sequence object
     
     fov = 256e-3  # Define FOV and resolution
-    Nx = 256
-    Ny = 256
-    alpha = 10  # flip angle
+    Nx = 64
+    Ny = 64
+    alpha = 30  # flip angle
     slice_thickness = 3e-3  # slice
-    TR = 12e-3  # Repetition time
-    TE = 5e-3  # Echo time
+    TR = 200e-3  # Repetition time
+    TE = 10e-3  # Echo time
 
     rf_spoiling_inc = 107 # RF spoiling increment
 
     system = pp.Opts(
         max_grad=28,
         grad_unit='mT/m',
-        max_slew=150,
+        max_slew=100,
         slew_unit='T/m/s',
         rf_ringdown_time=20e-6, # note down values from Sandeep - 
-        rf_dead_time=100e-6,
-        adc_dead_time=10e-6,
+        rf_dead_time=500e-6,
+        adc_dead_time=50e-6,
         rf_raster_time=2e-6,
     )
     seq = pp.Sequence(system=system)
@@ -119,6 +119,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
 
     # Very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within
     # slew-rate limits
+
     rep = seq.test_report()
     print(rep)
 
@@ -134,4 +135,4 @@ def main(plot: bool, write_seq: bool, seq_filename: str = 'gre_pypulseq.seq'):
 
 
 if __name__ == '__main__':
-    main(plot=True, write_seq=True)
+    main(plot=True, write_seq=True, seq_filename = 'gre_pypulseq_64_200.seq')
