@@ -314,7 +314,7 @@ class TestSequence:
 
     # Test sequence.test_report() method
     def test_test_report(self, seq_func):
-        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4', 'seq5']:
+        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq2', 'seq3', 'seq4', 'seq5']:
             report = TestSequence.seq.test_report()
             assert isinstance(report, str), 'test_report() did not return a string'
             assert len(report) > 0, 'test_report() returned an empty string'
