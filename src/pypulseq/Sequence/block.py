@@ -297,7 +297,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     block = SimpleNamespace()
     attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label']
     values = [None] * len(attrs)
-    for att, val in zip(attrs, values):
+    for att, val in zip(attrs, values, strict=False):
         setattr(block, att, val)
     event_ind = self.block_events[block_index]
 

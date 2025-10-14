@@ -38,7 +38,7 @@ class Approx(ApproxBase):
             if len(self.expected) != len(actual):
                 return False
 
-            for e, a in zip(self.expected, actual):
+            for e, a in zip(self.expected, actual, strict=False):
                 if a != Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok):
                     return False
             return True
@@ -65,7 +65,7 @@ class Approx(ApproxBase):
             if len(self.expected) != len(actual):
                 return [f'Actual and expected lengths do not match: {len(actual)} != {len(self.expected)}']
             r = []
-            for i, (e, a) in enumerate(zip(self.expected, actual)):
+            for i, (e, a) in enumerate(zip(self.expected, actual, strict=False)):
                 approx_obj = Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
                 if a != approx_obj:
                     r += [f'Index {i} does not match:']
@@ -326,7 +326,7 @@ class TestSequence:
             assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
 
         # Test for approximate equality of all gradient waveforms
-        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z'], strict=False):
             if a is None and b is None:
                 continue
             assert a is not None and b is not None
@@ -384,7 +384,7 @@ class TestSequence:
             )
 
         # Test for approximate equality of all gradient waveforms
-        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z'], strict=False):
             if a is None and b is None:
                 continue
             assert a is not None and b is not None
