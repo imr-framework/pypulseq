@@ -16,16 +16,17 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.3
+    rev: v0.14.0
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.38.1
     hooks:
       - id: typos
+        args: [] # empty, to remove write-changes from the default arguments.
         exclude: ^examples/|paper.md
   
   - repo: https://github.com/codespell-project/codespell
