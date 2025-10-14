@@ -36,12 +36,7 @@ test = [
   "pytest-cov<6.1",
   "pytest-xdist",
 ]
-docs = [
-  "sphinx",
-  "jinja2",
-  "furo",
-  "recommonmark",
-]
+docs = ["sphinx", "jinja2", "furo", "recommonmark"]
 
 [project.urls]
 Homepage = "https://github.com/imr-framework/pypulseq"
@@ -128,7 +123,6 @@ skip-magic-trailing-comma = false
 
 [tool.typos.default]
 locale = "en-us"
-exclude = ["examples/**"]
 
 # PyTest section
 [tool.pytest.ini_options]
