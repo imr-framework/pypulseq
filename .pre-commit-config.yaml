@@ -34,8 +34,8 @@ repos:
     rev: v2.4.1
     hooks:
     - id: codespell
-    additional_dependencies:
-    - tomli; python_version<'3.11'
+      additional_dependencies:
+        - tomli; python_version<'3.11'
 
 ci:
   autofix_commit_msg: |
