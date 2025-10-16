@@ -3,7 +3,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, List, Tuple, Union
 from warnings import warn
 
 try:
@@ -1484,7 +1484,6 @@ class Sequence:
         - A warning is issued if substantial rounding occurs
         """
 
-        # TODO: check if this works
         # Go through all the blocks and update durations, at the same time checking the consistency of the soft delays
         sd_str2numID = {}
         sd_numID2hint = {}
@@ -1536,69 +1535,6 @@ class Sequence:
         for hint in all_input_hints:
             if hint not in sd_str2numID:
                 raise ValueError(f"Specified soft delay '{hint}' does not exist in the sequence")
-
-    def get_default_soft_delay_values(
-        self,
-    ) -> Tuple[Dict[str, float], Dict[int, SimpleNamespace]]:
-        """
-        Go through all the blocks checking the consistency of the soft delays
-        TODO/FIXME:
-        - This is currently not functional.
-        Returns
-        -------
-        -------
-        delays_by_hints : dict
-            Dictionary of soft delay hints and their default values.
-        soft_delay_state : dict
-            Dictionary of soft delay states, containing the default value, hint, block number, min and max delays for each numeric ID.
-
-        """
-
-        soft_delay_state = {}
-
-        # Loop over all blocks
-        for block_counter in self.block_events:
-            block = self.get_block(block_counter)
-            if block.soft_delay is not None:
-                # Calculate default delay based on the current block duration
-                default_delay = (
-                    self.block_durations[block_counter] - block.soft_delay.offset
-                ) * block.soft_delay.factor
-
-                if soft_delay_state[block.soft_delay.numID] is None:
-                    soft_delay_state[block.soft_delay.numID] = SimpleNamespace(
-                        default=default_delay,
-                        hint=block.soft_delay.hint,
-                        blk=block_counter,
-                        min_delay=0.0,
-                        max_delay=np.inf,
-                    )
-
-                # Calculate the delay value that would make the block duration of 0, which corresponds to min/max
-                lim_delay = -block.soft_delay.offset * block.soft_delay.factor
-                if block.soft_delay.factor > 0:
-                    # lim_delay corresponds to the minimum
-                    if lim_delay > soft_delay_state[block.soft_delay.numID].min_delay:
-                        soft_delay_state[block.soft_delay.numID].min_delay = lim_delay
-                else:
-                    # lim_delay corresponds to the maximum
-                    if lim_delay < soft_delay_state[block.soft_delay.numID].max_delay:
-                        soft_delay_state[block.soft_delay.numID].max_delay = lim_delay
-
-        numIDs_ = np.array(soft_delay_state.keys())
-        delays_by_hints = {}
-        if numIDs_[0] != 0 or np.any(np.diff(numIDs_) != 1):
-            # Interpreter seems to allow this, but why should we?
-            warn('Soft delay numeric IDs are not continuous, which is unexpected.')
-        for numID_, delay_state_ in soft_delay_state.items():
-            if delay_state_.hint not in delays_by_hints:
-                delays_by_hints[delay_state_.hint] = delay_state_.default
-            else:
-                raise ValueError(
-                    f'SoftDelay with numeric ID {numID_} uses the same hint "{delay_state_.hint}" as some previous soft delay'
-                )
-
-        return delays_by_hints, soft_delay_state
 
     def test_report(self) -> str:
         """
