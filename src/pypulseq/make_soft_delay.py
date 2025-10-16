@@ -57,15 +57,15 @@ def make_soft_delay(
 
     Examples
     --------
-    Create a basic TE soft delay (numID auto-assigned):
+    Create a basic TE soft delay (numID and duration handled automatically):
 
     >>> te_delay = pp.make_soft_delay('TE', default_duration=5e-3)
-    >>> seq.add_block(te_delay)
+    >>> seq.add_block(te_delay)  # Block duration automatically becomes 5ms
 
-    Create a TR delay with scaling and offset (numID auto-assigned):
+    Create a TR delay with scaling and offset:
 
     >>> tr_delay = pp.make_soft_delay('TR', offset=-10e-3, factor=1.0, default_duration=100e-3)
-    >>> seq.add_block(tr_delay)
+    >>> seq.add_block(tr_delay)  # Block duration automatically becomes 100ms
 
     Multiple delays with same hint reuse the same numID:
 
@@ -85,6 +85,7 @@ def make_soft_delay(
     -----
     - Soft delays require file format version 1.5.0 or higher
     - Each soft delay must be in its own empty block
+    - The default_duration automatically becomes the block duration when added to sequence
     - The block duration equation is: duration = (user_input / factor) + offset
     - Soft delays with identical hints automatically share the same numID
     - The scanner interface displays delays ordered by numID (auto-assigned by hint order)

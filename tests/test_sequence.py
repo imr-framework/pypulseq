@@ -244,10 +244,7 @@ def seq6():
         seq.add_block(pp.make_trapezoid('x', area=1000))
         seq.add_block(pp.make_trapezoid('y', area=-500 + i * 100))
         seq.add_block(pp.make_trapezoid('x', area=-500))
-        seq.add_block(
-            10e-6,  # Add a small delay as we can't have soft_delay in an 0 duration block.
-            pp.make_soft_delay(numID=0, hint='TE', offset=1, factor=1.0),
-        )
+        seq.add_block(pp.make_soft_delay(numID=0, hint='TE', offset=1, factor=1.0, default_duration=10e-6))
         seq.add_block(
             pp.make_trapezoid('x', area=1000, duration=10e-3),
             pp.make_adc(num_samples=100, duration=10e-3),

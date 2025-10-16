@@ -166,8 +166,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
             else:
                 raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
-            # Delay given as floating number
-            # TODO: It would be cleaner to not have a floating number as input to the set_block() function.
+            # Delay given as floating number (internal use only, e.g., from get_block())
             duration = max(duration, event)
 
     # =========

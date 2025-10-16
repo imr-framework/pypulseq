@@ -152,3 +152,39 @@ def test_soft_delay_error_messages():
 
     with pytest.raises(ValueError, match='Calculated duration is negative'):
         seq_neg.apply_soft_delay(NEG=0.5e-3)  # Will result in negative duration
+
+
+def test_soft_delay_automatic_duration():
+    """Test that default_duration automatically becomes block duration."""
+    seq = pp.Sequence()
+
+    # Create soft delay with specific default_duration
+    te_delay = pp.make_soft_delay('TE', default_duration=7.5e-3)
+
+    # Add to sequence without specifying duration
+    seq.add_block(te_delay)
+
+    # Block duration should automatically be the default_duration
+    assert seq.block_durations[1] == 7.5e-3, f'Expected block duration 7.5ms, got {seq.block_durations[1] * 1e3}ms'
+
+    # Test with different duration
+    tr_delay = pp.make_soft_delay('TR', default_duration=150e-3)
+    seq.add_block(tr_delay)
+
+    assert seq.block_durations[2] == 150e-3, f'Expected block duration 150ms, got {seq.block_durations[2] * 1e3}ms'
+
+
+def test_raw_float_rejection():
+    """Test that raw float durations are rejected with helpful error message."""
+    seq = pp.Sequence()
+
+    # Test that raw floats are rejected
+    with pytest.raises(
+        ValueError,
+        match=r'Raw float values are not allowed in add_block\(\)\. Use pp.make_delay\(0.001\) for delays\.',
+    ):
+        seq.add_block(1e-3)
+
+    # Test that the proper way still works
+    seq.add_block(pp.make_delay(1e-3))
+    assert seq.block_durations[1] == 1e-3, 'make_delay should still work'

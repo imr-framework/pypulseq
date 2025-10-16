@@ -166,22 +166,31 @@ class Sequence:
 
         return t_adc, fp_adc
 
-    def add_block(self, *args: Union[SimpleNamespace, float]) -> None:
+    def add_block(self, *args: SimpleNamespace) -> None:
         """
-        Add a new block/multiple events to the sequence. Adds a sequence block with provided as a block structure
-
-        See Also
-        --------
-        - `pypulseq.Sequence.sequence.Sequence.set_block()`
-        - `pypulseq.make_adc.make_adc()`
-        - `pypulseq.make_trapezoid.make_trapezoid()`
-        - `pypulseq.make_sinc_pulse.make_sinc_pulse()`
+        Add a new block/multiple events to the sequence.
 
         Parameters
         ----------
-        args : SimpleNamespace
-            Block structure or events to be added as a block to `Sequence`.
+        *args : SimpleNamespace
+            Event objects to be added as a block to the sequence. For delays,
+            use `pypulseq.make_delay()` instead of raw float values.
+
+        See Also
+        --------
+        pypulseq.make_delay : Create delay events
+        pypulseq.make_adc : Create ADC events
+        pypulseq.make_trapezoid : Create trapezoid gradient events
+        pypulseq.make_sinc_pulse : Create sinc RF pulse events
+        pypulseq.make_soft_delay : Create soft delay events
         """
+        # Validate that no raw floats are passed directly by users
+        for arg in args:
+            if isinstance(arg, float):
+                raise ValueError(
+                    f'Raw float values are not allowed in add_block(). Use pp.make_delay({arg}) for delays.'
+                )
+
         if trace_enabled():
             self.block_trace[self.next_free_block_ID] = SimpleNamespace(block=trace())
 
