@@ -121,7 +121,7 @@ def sigpy_n_seq(
         )
 
     if pulse_cfg.pulse_type == 'slr':
-        [signal, t, pulse] = make_slr(
+        [signal, t, _] = make_slr(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
             duration=duration,
@@ -130,7 +130,7 @@ def sigpy_n_seq(
             disp=plot,
         )
     if pulse_cfg.pulse_type == 'sms':
-        [signal, t, pulse] = make_sms(
+        [signal, t, _] = make_sms(
             flip_angle=flip_angle,
             time_bw_product=time_bw_product,
             duration=duration,

@@ -1004,7 +1004,7 @@ class Sequence:
                         _t = [t_factor * t] * len(lbl_vals)
                         # Plot each label individually to retrieve each corresponding Line2D object
                         p = itertools.chain.from_iterable(
-                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
+                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals, strict=False)]
                         )
                         if len(label_legend_to_plot) != 0:
                             sp11.legend(list(p), label_legend_to_plot, loc='upper left')
@@ -1201,14 +1201,14 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-                new_data = (data[0],) + (mapping[data[1]], mapping[data[2]]) + data[3:]
+                new_data = (data[0], mapping[data[1]], mapping[data[2]], *data[3:])
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 
         # Remap shape IDs of RF events
         for rf_id in seq_copy.rf_library.data:
             data = seq_copy.rf_library.data[rf_id]
-            new_data = (data[0],) + (mapping[data[1]], mapping[data[2]], mapping[data[3]]) + data[4:]
+            new_data = (data[0], mapping[data[1]], mapping[data[2]], mapping[data[3]], *data[4:])
             if data != new_data:
                 seq_copy.rf_library.update(rf_id, None, new_data)
 
@@ -1746,7 +1746,7 @@ class Sequence:
             # element of the next shape.
             shape_pieces[j] = [shape_pieces[j][0]] + [
                 cur if prev[0, -1] + eps < cur[0, 0] else cur[:, 1:]
-                for prev, cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:])
+                for prev, cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:], strict=False)
             ]
 
             wave_data.append(np.concatenate(shape_pieces[j], axis=1))
@@ -1977,7 +1977,7 @@ class Sequence:
         # Check whether all gradients in the last block are ramped down properly
         last_block_id = next(reversed(self.block_events))
         last_block = self.get_block(last_block_id)
-        for channel, event in zip(('x', 'y', 'z'), (last_block.gx, last_block.gy, last_block.gz)):
+        for channel, event in zip(('x', 'y', 'z'), (last_block.gx, last_block.gy, last_block.gz), strict=False):
             if (
                 event is not None
                 and event.type == 'grad'
