@@ -668,13 +668,29 @@ def register_soft_delay_event(self, event: SimpleNamespace) -> int:
     int
         ID of registered soft delay event.
     """
+    # Auto-assign numID based on hint - each unique hint gets a unique numID
     if event.hint in self.soft_delay_hints:
-        if event.numID and event.numID != self.soft_delay_hints[event.hint]:
-            raise ValueError('Given numID and hint is inconsistent for the soft delay.')
-        event.numID = self.soft_delay_hints[event.hint]
+        # Reuse existing numID for this hint
+        assigned_numID = self.soft_delay_hints[event.hint]
+        if event.numID is not None and event.numID != assigned_numID:
+            raise ValueError(
+                f"Soft delay hint '{event.hint}' is already assigned to numID {assigned_numID}. "
+                f'Cannot use numID {event.numID}. Consider using a different hint or omitting numID.'
+            )
+        event.numID = assigned_numID
     else:
+        # Assign new numID for this hint
         if event.numID is None:
+            # Auto-assign next available numID
             event.numID = max([-1, *self.soft_delay_hints.values()]) + 1
+        else:
+            # Check if user-provided numID is already taken
+            if event.numID in self.soft_delay_hints.values():
+                existing_hint = next(hint for hint, num_id in self.soft_delay_hints.items() if num_id == event.numID)
+                raise ValueError(
+                    f"numID {event.numID} is already used by soft delay '{existing_hint}'. "
+                    f'Use a different numID or omit it for auto-assignment.'
+                )
 
         self.soft_delay_hints[event.hint] = event.numID
 

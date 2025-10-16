@@ -23,8 +23,10 @@ def make_soft_delay(
         Human-readable identifier for the soft delay shown in the scanner interface.
         Must not contain whitespace characters. Examples: 'TE', 'TR', 'TI'.
     numID : int or None, optional
-        Numeric identifier for the soft delay. If None, will be auto-assigned.
-        Multiple soft delays with the same numID must have identical hints.
+        Numeric identifier for the soft delay. If None (recommended), will be
+        auto-assigned based on the hint. Each unique hint gets its own numID.
+        Rarely needed - only specify if you need explicit control over scanner
+        interface ordering.
     offset : float, optional
         Time offset in seconds added to the calculated duration. Can be positive
         or negative. Default is 0.0.
@@ -55,15 +57,20 @@ def make_soft_delay(
 
     Examples
     --------
-    Create a basic TE soft delay:
+    Create a basic TE soft delay (numID auto-assigned):
 
     >>> te_delay = pp.make_soft_delay('TE', default_duration=5e-3)
     >>> seq.add_block(te_delay)
 
-    Create a TR delay with scaling and offset:
+    Create a TR delay with scaling and offset (numID auto-assigned):
 
     >>> tr_delay = pp.make_soft_delay('TR', offset=-10e-3, factor=1.0, default_duration=100e-3)
     >>> seq.add_block(tr_delay)
+
+    Multiple delays with same hint reuse the same numID:
+
+    >>> te1 = pp.make_soft_delay('TE', default_duration=5e-3)  # Gets numID 0
+    >>> te2 = pp.make_soft_delay('TE', default_duration=5e-3)  # Reuses numID 0
 
     Apply soft delays in the sequence:
 
@@ -79,8 +86,9 @@ def make_soft_delay(
     - Soft delays require file format version 1.5.0 or higher
     - Each soft delay must be in its own empty block
     - The block duration equation is: duration = (user_input / factor) + offset
-    - Soft delays with identical numID must have identical hint strings
-    - The scanner interface will display delays ordered by numID
+    - Soft delays with identical hints automatically share the same numID
+    - The scanner interface displays delays ordered by numID (auto-assigned by hint order)
+    - For most use cases, omit numID and let the system auto-assign based on hints
     """
     soft_delay = SimpleNamespace()
 
