@@ -91,7 +91,7 @@ def test_soft_delay_validation():
         pp.make_soft_delay('T E', default_duration=5e-3)
 
     # Test non-string hint
-    with pytest.raises(TypeError, match="argument of type 'int' is not iterable"):
+    with pytest.raises(TypeError, match="'int' object is not iterable"):
         pp.make_soft_delay(123, default_duration=5e-3)
 
     # Test zero factor
@@ -188,3 +188,191 @@ def test_raw_float_rejection():
     # Test that the proper way still works
     seq.add_block(pp.make_delay(1e-3))
     assert seq.block_durations[1] == 1e-3, 'make_delay should still work'
+
+
+def test_soft_delay_edge_cases():
+    """Test edge cases and boundary conditions for soft delays."""
+    seq = pp.Sequence()
+
+    # Test very small default_duration
+    tiny_delay = pp.make_soft_delay('TINY', default_duration=1e-9)
+    seq.add_block(tiny_delay)
+    assert seq.block_durations[1] == 1e-9, 'Very small durations should work'
+
+    # Test very large default_duration
+    large_delay = pp.make_soft_delay('LARGE', default_duration=10.0)
+    seq.add_block(large_delay)
+    assert seq.block_durations[2] == 10.0, 'Large durations should work'
+
+    # Test zero factor (should be rejected)
+    with pytest.raises(ValueError, match="Parameter 'factor' cannot be zero"):
+        pp.make_soft_delay('ZERO_FACTOR', factor=0.0, default_duration=1e-3)
+
+    # Test negative factor (should work)
+    neg_factor_delay = pp.make_soft_delay('NEG_FACTOR', factor=-1.0, default_duration=1e-3)
+    seq.add_block(neg_factor_delay)
+
+    # Test very large positive offset
+    large_offset_delay = pp.make_soft_delay('LARGE_OFFSET', offset=1.0, default_duration=1e-3)
+    seq.add_block(large_offset_delay)
+
+    # Test very large negative offset
+    neg_offset_delay = pp.make_soft_delay('NEG_OFFSET', offset=-0.5, default_duration=1e-3)
+    seq.add_block(neg_offset_delay)
+
+
+def test_soft_delay_apply_edge_cases():
+    """Test edge cases when applying soft delays."""
+    seq = pp.Sequence()
+
+    # Create delay with negative factor and positive offset
+    # Formula: duration = (input / factor) + offset
+    # With factor=-2, offset=0.1, input=0.04: duration = 0.04/(-2) + 0.1 = -0.02 + 0.1 = 0.08
+    tricky_delay = pp.make_soft_delay('TRICKY', factor=-2.0, offset=0.1, default_duration=0.05)
+    seq.add_block(tricky_delay)
+
+    # Apply a value that results in positive duration
+    seq.apply_soft_delay(TRICKY=0.04)
+    expected_duration = 0.04 / (-2.0) + 0.1  # = -0.02 + 0.1 = 0.08
+    assert abs(seq.block_durations[1] - expected_duration) < 1e-10, (
+        f'Expected {expected_duration}, got {seq.block_durations[1]}'
+    )
+
+    # Test applying very small values
+    seq2 = pp.Sequence()
+    small_delay = pp.make_soft_delay('SMALL', factor=1000.0, offset=0, default_duration=1e-3)
+    seq2.add_block(small_delay)
+    seq2.apply_soft_delay(SMALL=1e-6)  # Very small input
+    expected_small = 1e-6 / 1000.0  # = 1e-9
+    # Use looser tolerance due to rounding to block duration raster
+    assert abs(seq2.block_durations[1] - expected_small) < 1e-9, 'Very small applied values should work'
+
+    # Test applying very large values
+    seq3 = pp.Sequence()
+    large_delay = pp.make_soft_delay('BIG', factor=0.1, offset=0, default_duration=1e-3)
+    seq3.add_block(large_delay)
+    seq3.apply_soft_delay(BIG=100.0)  # Large input
+    expected_large = 100.0 / 0.1  # = 1000.0
+    assert abs(seq3.block_durations[1] - expected_large) < 1e-10, 'Large applied values should work'
+
+
+def test_soft_delay_multiple_sequences():
+    """Test soft delays across multiple sequence instances."""
+    # Test that numID assignment is independent across sequences
+    seq1 = pp.Sequence()
+    seq2 = pp.Sequence()
+
+    # Both sequences should start numID assignment from 0
+    te1 = pp.make_soft_delay('TE', default_duration=5e-3)
+    te2 = pp.make_soft_delay('TE', default_duration=5e-3)
+
+    seq1.add_block(te1)
+    seq2.add_block(te2)
+
+    # Both should get numID 0 in their respective sequences
+    assert te1.numID == 0, 'First sequence should start numID from 0'
+    assert te2.numID == 0, 'Second sequence should also start numID from 0'
+
+    # Add more delays to each sequence
+    tr1 = pp.make_soft_delay('TR', default_duration=100e-3)
+    tr2 = pp.make_soft_delay('TR', default_duration=100e-3)
+
+    seq1.add_block(tr1)
+    seq2.add_block(tr2)
+
+    # Both should get numID 1
+    assert tr1.numID == 1, 'TR in first sequence should get numID 1'
+    assert tr2.numID == 1, 'TR in second sequence should get numID 1'
+
+
+def test_soft_delay_hint_edge_cases():
+    """Test edge cases for hint parameter validation."""
+    # Test single character hint
+    single_char = pp.make_soft_delay('T', default_duration=1e-3)
+    assert single_char.hint == 'T', 'Single character hints should work'
+
+    # Test long hint
+    long_hint = pp.make_soft_delay('VERY_LONG_HINT_NAME_WITH_UNDERSCORES', default_duration=1e-3)
+    assert long_hint.hint == 'VERY_LONG_HINT_NAME_WITH_UNDERSCORES', 'Long hints should work'
+
+    # Test hint with numbers
+    numeric_hint = pp.make_soft_delay('TE123', default_duration=1e-3)
+    assert numeric_hint.hint == 'TE123', 'Hints with numbers should work'
+
+    # Test hint with special characters (except whitespace)
+    special_hint = pp.make_soft_delay('TE-TR_123', default_duration=1e-3)
+    assert special_hint.hint == 'TE-TR_123', 'Hints with hyphens and underscores should work'
+
+    # Test that whitespace is still rejected
+    with pytest.raises(ValueError, match="Parameter 'hint' may not contain white space characters"):
+        pp.make_soft_delay('TE TR', default_duration=1e-3)
+
+    # Test tab character
+    with pytest.raises(ValueError, match="Parameter 'hint' may not contain white space characters"):
+        pp.make_soft_delay('TE\tTR', default_duration=1e-3)
+
+    # Test newline character
+    with pytest.raises(ValueError, match="Parameter 'hint' may not contain white space characters"):
+        pp.make_soft_delay('TE\nTR', default_duration=1e-3)
+
+
+def test_soft_delay_numid_edge_cases():
+    """Test edge cases for numID parameter."""
+    seq = pp.Sequence()
+
+    # Test numID = 0 (should work)
+    delay_zero = pp.make_soft_delay('ZERO', numID=0, default_duration=1e-3)
+    seq.add_block(delay_zero)
+    assert delay_zero.numID == 0, 'numID=0 should work'
+
+    # Test very large numID
+    delay_large = pp.make_soft_delay('LARGE', numID=999999, default_duration=1e-3)
+    seq.add_block(delay_large)
+    assert delay_large.numID == 999999, 'Large numID should work'
+
+    # Test that next auto-assignment skips the large numID
+    delay_auto = pp.make_soft_delay('AUTO', default_duration=1e-3)
+    seq.add_block(delay_auto)
+    assert delay_auto.numID == 1000000, f'Auto-assignment should skip to {1000000}, got {delay_auto.numID}'
+
+    # Test negative numID (should be rejected)
+    with pytest.raises(ValueError, match="Parameter 'numID' must be a non-negative integer or None"):
+        pp.make_soft_delay('NEG', numID=-1, default_duration=1e-3)
+
+    # Test float numID (should be rejected)
+    with pytest.raises(ValueError, match="Parameter 'numID' must be a non-negative integer or None"):
+        pp.make_soft_delay('FLOAT', numID=1.5, default_duration=1e-3)
+
+
+def test_soft_delay_sequence_integration():
+    """Test soft delays integrated with other sequence events."""
+    seq = pp.Sequence()
+
+    # Create a sequence with mixed events
+    rf_pulse = pp.make_block_pulse(flip_angle=1.57, duration=1e-3)  # π/2 pulse
+    grad_x = pp.make_trapezoid('x', area=1000)
+    adc_event = pp.make_adc(num_samples=100, duration=5e-3)
+    te_delay = pp.make_soft_delay('TE', default_duration=10e-3)
+
+    # Add events in sequence
+    seq.add_block(rf_pulse)
+    seq.add_block(grad_x)
+    seq.add_block(te_delay)
+    seq.add_block(adc_event)
+
+    # Check that soft delay block has correct duration
+    assert seq.block_durations[3] == 10e-3, 'Soft delay should have correct duration in mixed sequence'
+
+    # store current durations for comparison
+    dur1 = seq.block_durations[1]
+    dur2 = seq.block_durations[2]
+    dur4 = seq.block_durations[4]
+
+    # Apply soft delay and check duration changes
+    seq.apply_soft_delay(TE=20e-3)
+    assert seq.block_durations[3] == 20e-3, 'Applied soft delay should update duration'
+
+    # Check that other blocks are unaffected
+    assert seq.block_durations[1] == dur1, 'RF block should be unaffected'
+    assert seq.block_durations[2] == dur2, 'Gradient block should be unaffected'
+    assert seq.block_durations[4] == dur4, 'ADC block should be unaffected'

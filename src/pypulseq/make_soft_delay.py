@@ -96,7 +96,7 @@ def make_soft_delay(
     # Validate hint parameter
     if not hint:
         raise ValueError("Parameter 'hint' cannot be empty.")
-    if ' ' in hint:
+    if any(c.isspace() for c in hint):
         raise ValueError("Parameter 'hint' may not contain white space characters.")
     if not isinstance(hint, str):
         raise TypeError("Parameter 'hint' must be a string.")
