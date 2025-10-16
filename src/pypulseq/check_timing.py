@@ -13,7 +13,7 @@ error_messages = {
     'RF_DEAD_TIME': 'Delay of {value*multiplier:.2f} {unit} is smaller than the RF dead time {dead_time*multiplier:.0f} {unit}',
     'RF_RINGDOWN_TIME': 'Time between the end of the RF pulse at {value*multiplier:.2f} {unit} and the end of the block at {duration * multiplier:.2f} {unit} is shorter than rf_ringdown_time ({ringdown_time*multiplier:.0f} {unit})',
     'NEGATIVE_DELAY': 'Delay is negative {value*multiplier:.2f} {unit}',
-    'SOFT_DELAY_FACTOR': 'Soft delay {hint}/{numID} has the factor parameter as zero, which is invalid.',
+    'SOFT_DELAY_FACTOR': 'Soft delay {hint}/{numID} has factor parameter as zero, which makes duration calculation undefined.',
     'SOFT_DELAY_DUR_INCONSISTENCY': 'Soft delay {hint}/{numID} default duration derived from this block ({value*1e6} us) is inconsistent with the previous default.',
     'SOFT_DELAY_HINT_INCONSISTENCY': 'Soft delay {hint}/{numID}: Soft delays with the same numeric ID are expected to share the same text hint but previous hint recorded is {prev_hint}.',
     'SOFT_DELAY_INVALID_NUMID': 'Soft delay {hint}/{numID} has an invalid numeric ID {numID}. Numeric IDs must be positive integers.',
@@ -193,8 +193,9 @@ def check_timing(seq: Sequence) -> Tuple[bool, List[SimpleNamespace]]:
             if block.soft_delay.numID not in soft_delay_defaults:
                 soft_delay_defaults[block.soft_delay.numID] = default_delay
             elif (
-                abs(default_delay - soft_delay_defaults[block.soft_delay.numID]) > 1e-7
-            ):  # What is a reasonable threshold?
+                abs(default_delay - soft_delay_defaults[block.soft_delay.numID])
+                > 1e-7  # 0.1 μs threshold for duration consistency
+            ):
                 error_report.append(
                     SimpleNamespace(
                         block=block_counter,

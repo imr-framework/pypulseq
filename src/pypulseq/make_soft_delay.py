@@ -84,11 +84,21 @@ def make_soft_delay(
     """
     soft_delay = SimpleNamespace()
 
+    # Validate hint parameter
+    if not hint:
+        raise ValueError("Parameter 'hint' cannot be empty.")
     if ' ' in hint:
         raise ValueError("Parameter 'hint' may not contain white space characters.")
+    if not isinstance(hint, str):
+        raise TypeError("Parameter 'hint' must be a string.")
 
+    # Validate numeric parameters
     if default_duration <= 0:
         raise ValueError('Default duration must be greater than 0.')
+    if factor == 0:
+        raise ValueError("Parameter 'factor' cannot be zero (would make duration calculation undefined).")
+    if numID is not None and (not isinstance(numID, int) or numID < 0):
+        raise ValueError("Parameter 'numID' must be a non-negative integer or None.")
 
     soft_delay.type = 'soft_delay'
     soft_delay.numID = numID

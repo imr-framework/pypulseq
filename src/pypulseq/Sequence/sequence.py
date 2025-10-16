@@ -1514,18 +1514,24 @@ class Sequence:
                         kwargs[block.soft_delay.hint] / block.soft_delay.factor + block.soft_delay.offset
                     ) / self.system.block_duration_raster
                     new_dur = round(new_dur_ru) * self.system.block_duration_raster
-                    if (
-                        abs(new_dur - new_dur_ru * self.system.block_duration_raster) > 0.5e-6
-                        and block.soft_delay.numID not in sd_warns
-                    ):
+                    # Check if rounding error is significant (threshold: 0.5 microseconds)
+                    rounding_threshold = 0.5e-6
+                    rounding_error = abs(new_dur - new_dur_ru * self.system.block_duration_raster)
+                    if rounding_error > rounding_threshold and block.soft_delay.numID not in sd_warns:
                         warn(
-                            f"Block duration for block {block_counters}, soft delay '{block.soft_delay.hint}', had to be substantially rounded to become aligned to the raster time. This warning is only displayed for the first block where it occurs."
+                            f"Soft delay '{block.soft_delay.hint}' in block {block_counters}: "
+                            f'Duration rounded by {rounding_error * 1e6:.1f} μs to align with raster time '
+                            f'({self.system.block_duration_raster * 1e6:.1f} μs). '
+                            f'This warning is shown only once per soft delay ID.'
                         )
                         sd_warns[block.soft_delay.numID] = True
 
                     if new_dur < 0:
                         raise ValueError(
-                            f'Calculated new duration of the block {block_counters}, soft delay {block.soft_delay.hint}/{block.soft_delay.numID} is negative ({new_dur} s)'
+                            f"Soft delay '{block.soft_delay.hint}' in block {block_counters}: "
+                            f'Calculated duration is negative ({new_dur * 1e6:.1f} μs). '
+                            f'Check the offset ({block.soft_delay.offset * 1e6:.1f} μs) and factor '
+                            f'({block.soft_delay.factor}) parameters.'
                         )
 
                     self.block_durations[block_counters] = new_dur
@@ -1534,7 +1540,11 @@ class Sequence:
         all_input_hints = kwargs.keys()
         for hint in all_input_hints:
             if hint not in sd_str2numID:
-                raise ValueError(f"Specified soft delay '{hint}' does not exist in the sequence")
+                available_hints = list(sd_str2numID.keys())
+                raise ValueError(
+                    f"Soft delay '{hint}' not found in sequence. "
+                    f'Available soft delays: {available_hints if available_hints else "none"}'
+                )
 
     def test_report(self) -> str:
         """
