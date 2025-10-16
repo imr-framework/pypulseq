@@ -253,6 +253,8 @@ def seq6():
             pp.make_adc(num_samples=100, duration=10e-3),
         )
 
+    return seq
+
 
 # List of all sequence functions that will be tested with the test functions below.
 sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
