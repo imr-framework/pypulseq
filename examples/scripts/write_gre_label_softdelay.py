@@ -1,3 +1,33 @@
+"""
+Advanced GRE sequence with soft delays for TE/TR optimization.
+
+This example demonstrates a complete gradient echo (GRE) imaging sequence with
+soft delays for dynamic TE and TR adjustment. This is a complex example showing
+advanced soft delay usage with mathematical relationships between delays.
+
+For a simpler introduction to soft delays, see: soft_delay_simple_example.py
+
+Soft Delay Strategy in this example:
+-----------------------------------
+1. TE Delays: Two soft delays with the same 'TE' hint but different factors:
+   - First TE delay: Simple positive relationship (factor=1.0, offset=-min_TE)
+   - Second TE delay: Inverse relationship (factor=-1.0, offset=max_TE)
+   - This allows TE adjustment while maintaining constant TR
+
+2. TR Delay: Compensates for TE changes to maintain overall TR
+   - Uses offset=-min_TR to ensure minimum TR constraints
+
+Mathematical Relationships:
+--------------------------
+The delays are designed so that:
+- Increasing TE extends the first delay and shortens the second delay
+- TR delay compensates to maintain constant total TR
+- All timing constraints (min_TE, max_TE, min_TR) are respected
+
+This demonstrates advanced soft delay usage for complex timing optimization
+where multiple delays interact to maintain sequence constraints.
+"""
+
 import math
 
 import numpy as np
@@ -103,9 +133,13 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
                 system=system,
             )
             seq.add_block(gx_pre, gy_pre, gz_reph)
-            # Formula is duration = input / factor + offset, to know the default TE
-            # we do the inverse: input = (duration - offset) * factor
-            # so default TE is (10e-6 - (-min_TE)) * 1.0 = 10e-6 + min_TE
+
+            # FIRST TE SOFT DELAY: Extends with increasing TE
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / 1.0) + (-min_TE)
+            # This creates a delay that increases linearly with TE input
+            # Default duration: 10μs (minimum block duration)
+            # When TE=min_TE: duration = min_TE + (-min_TE) = 0 (but clamped to 10μs minimum)
+            # When TE>min_TE: duration increases proportionally
             seq.add_block(pp.make_soft_delay(hint='TE', offset=-min_TE, factor=1.0))
             seq.add_block(gx, adc)
             gy_pre.amplitude = -gy_pre.amplitude
@@ -121,17 +155,22 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
                 )
             seq.add_block(*spoil_block_contents)
 
-            # Now, whatever we add to TE, we need to subtract from TR delay to keep the TR constant
-            # Also, our min TR can be max TE + rest of the sequence.
-            # Let's see if default duration is consistent with the input:
-            # (max_TE - min_TE - 10e-6 - max_TE) * -1.0 = min_TE + 10e-6, checks out.
+            # SECOND TE SOFT DELAY: Shrinks with increasing TE (maintains constant total TE)
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / -1.0) + max_TE
+            # This creates an inverse relationship: as TE increases, this delay decreases
+            # Default duration: max_TE - min_TE - 10μs
+            # When TE=min_TE: duration = (-min_TE) + max_TE = max_TE - min_TE
+            # When TE=max_TE: duration = (-max_TE) + max_TE = 0 (clamped to 10μs minimum)
+            # Combined with first TE delay: total TE delay remains constant, only distribution changes
             seq.add_block(
                 pp.make_soft_delay(hint='TE', offset=max_TE, factor=-1.0, default_duration=max_TE - min_TE - 10e-6)
             )
-            # Finally the TR
-            # (TR - min_TR - max_TE + min_TE - (-min_TR)) * 1.0 = TR + min_TE - max_TE
-            # From previous line, we have max_TE - min_TE - 10e-6 duration, sum them up:
-            # TR + min_TE - max_TE + max_TE - min_TE -10e-6 = TR - 10e-6, we ended up with default TR.
+
+            # TR SOFT DELAY: Maintains constant TR regardless of TE changes
+            # Formula: duration = (TR_input / factor) + offset = (TR_input / 1.0) + (-min_TR)
+            # Since TE delays have constant total duration, TR delay only needs to handle TR changes
+            # Default duration: TR - min_TR - (max_TE - min_TE)
+            # This ensures total sequence duration = TR regardless of TE/TR settings
             seq.add_block(
                 pp.make_soft_delay(
                     hint='TR', offset=-min_TR, factor=1.0, default_duration=TR - min_TR - max_TE + min_TE
