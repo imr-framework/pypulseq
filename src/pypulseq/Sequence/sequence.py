@@ -1441,30 +1441,47 @@ class Sequence:
 
     def apply_soft_delay(self, **kwargs):
         """
-        Applies soft delays to the sequence by modifying the block durations of the respective blocks.
-        Input parameters are pairs of soft delays and values, whereas the soft delay is identified by its string hint and the value is the duration in seconds.
-        Not all soft delays defined in the sequence need to be specified.
-        Examples:
-           seq.apply_soft_delay(TE=40e-3) # set TE to 40ms
-           seq.apply_soft_delay(TE=50e-3, TR=2) # set TE to 50ms and TR to 2 s
+        Apply soft delay values to modify block durations in the sequence.
 
-        Parameters:
-        -----------
+        This method updates the durations of blocks containing soft delay events
+        based on the provided values. The new block duration is calculated using
+        the formula: duration = (input_value / factor) + offset.
+
+        Parameters
+        ----------
         **kwargs : dict
-            Keyword arguments of the form (string hint, value) pairs
-            The string hint is the name of the soft delay to be modified.
-            The value is the new duration of the soft delay in seconds.
-        Raises:
-        -------
+            Keyword arguments where keys are soft delay hint strings and values
+            are the desired delay values in seconds. Not all soft delays in the
+            sequence need to be specified.
+
+        Raises
+        ------
         ValueError
-            If the given soft delay is not defined in the sequence.
+            If a specified soft delay hint does not exist in the sequence.
         ValueError
-            If the calculated delay is negative.
+            If the calculated block duration would be negative.
         ValueError
-            If the string hint and numeric ID is inconsistent.
+            If soft delay hint and numeric ID mapping is inconsistent.
+
+        Examples
+        --------
+        Apply single soft delay:
+
+        >>> seq.apply_soft_delay(TE=40e-3)  # Set TE to 40ms
+
+        Apply multiple soft delays:
+
+        >>> seq.apply_soft_delay(TE=50e-3, TR=2.0)  # Set TE to 50ms, TR to 2s
+
         See Also
         --------
-        pypulseq.make_soft_delay()
+        pypulseq.make_soft_delay : Create soft delay events
+
+        Notes
+        -----
+        - Only soft delays present in the sequence can be modified
+        - Block durations are automatically rounded to the block duration raster
+        - A warning is issued if substantial rounding occurs
         """
 
         # TODO: check if this works
