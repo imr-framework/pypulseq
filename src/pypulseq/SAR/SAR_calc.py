@@ -280,13 +280,13 @@ def calc_SAR(file: Union[str, Path, Sequence]) -> None:
     SARhg_lim, tsec = _SAR_interp(SAR_hg, t)
     (
         SAR_wbg_tensec,
-        SAR_wbg_sixmin,
+        _SAR_wbg_sixmin,
         SAR_hg_tensec,
-        SAR_hg_sixmin,
-        SAR_wbg_sixmin_peak,
-        SAR_hg_sixmin_peak,
-        SAR_wbg_tensec_peak,
-        SAR_hg_tensec_peak,
+        _SAR_hg_sixmin,
+        _SAR_wbg_sixmin_peak,
+        _SAR_hg_sixmin_peak,
+        _SAR_wbg_tensec_peak,
+        _SAR_hg_tensec_peak,
     ) = _SAR_lims_check(SARwbg_lim, SARhg_lim, tsec)
 
     # Plot 10 sec average SAR

@@ -4,9 +4,17 @@
 
 </p>
 
+<p align = "left">
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python](https://img.shields.io/badge/python-3.7--3.13-blue)](https://pypi.org/project/pypulseq/)
+[![FAIR checklist badge](https://fairsoftwarechecklist.net/badge.svg)](https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=32322&r=133)
+
+</p>
+
 # PyPulseq: A Python Package for MRI Pulse Sequence Design
 
-## PyPulseq (v1.4.2) is compatible with all Pulseq interpreter sequences with version >= 1.4.0
+## PyPulseq (v1.4.2.post1) is compatible with all Pulseq interpreter sequences with version >= 1.4.0. The new features introduced with Pulseq 1.5.0 are not yet supported, but will be added in the near future. 
 
 ## Table of contents 🧾
 
@@ -29,7 +37,7 @@ PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]][section-
 exported as a `.seq` file to be run on Siemens, [GE], [Bruker] and now also Philips hardware by leveraging their respective Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
 users. It is a translation of the Pulseq framework originally written in Matlab [[3]][section-references].
 
-👉 Currently, PyPulseq is compatible with Pulseq >= 1.4.0. 👈
+👉 Currently, PyPulseq is compatible with Pulseq >= 1.4.0. The new features introduced with Pulseq 1.5.0 are not yet supported, but will be added in the near future. 👈
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using PyPulseq.
@@ -48,7 +56,7 @@ To use the [sigpy](https://sigpy.readthedocs.io/en/latest/) functionality of `ma
 
 The latest features and minor bug fixes might not be included in the latest release version. If you want to use the bleeding edge version of PyPulseq, you can install it directly from the development branch of this repository using the command
 
-`pip install git+https://github.com/imr-framework/pypulseq@dev`
+`pip install git+https://github.com/imr-framework/pypulseq@master`
 
 👉 PyPulseq is **not yet available on conda**, but this is planned for the future 👈
 
@@ -64,7 +72,7 @@ The latest features and minor bug fixes might not be included in the latest rele
 
 ## 4. 🏃‍♂ Example scripts
 
-The PyPulseq repository contains several example sequences in the [seq_examples](/pypulseq/seq_examples/) folder. Every example script or example notebook creates a pulse sequence, plots the pulse timing diagram and finally saves the sequence as a `.seq` file to disk.
+The PyPulseq repository contains several example sequences in the [examples](/examples/) folder. Every example script or example notebook creates a pulse sequence, plots the pulse timing diagram and finally saves the sequence as a `.seq` file to disk.
 
 ---
 
@@ -89,8 +97,7 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
     delta_k = fov / Nx
 
     # RF sinc pulse with a 90 degree flip angle
-    rf90 = pp.make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,
-       time_bw_product=4)
+    rf90 = pp.make_sinc_pulse(flip_angle=90, duration=2e-3, system=system, slice_thickness=5e-3, apodization=0.5,time_bw_product=4, use='excitation')
 
     # Frequency encode, trapezoidal event
     gx = pp.make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=6.4e-3, system=system)
