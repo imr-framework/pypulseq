@@ -1122,6 +1122,11 @@ class Sequence:
 
                     # Add shaded region spanning the soft delay block duration on RF phase subplot
                     sp13.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp12.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp11.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    for fig2_sp in fig2_subplots:
+                        fig2_sp.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
 
                     # Add text annotation with soft delay hint
                     y_lim = sp13.get_ylim()
@@ -1130,7 +1135,7 @@ class Sequence:
                     y_text = y_lim[0] + 0.3 * y_range
 
                     sp13.annotate(
-                        f'soft delay\n"{soft_delay.hint}"',
+                        f'{soft_delay.hint}',
                         xy=(t_factor * t_mid, y_pos),
                         xytext=(t_factor * t_mid, y_text),
                         ha='center',
