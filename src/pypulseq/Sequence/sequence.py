@@ -1113,6 +1113,32 @@ class Sequence:
                             )
                             waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
+
+                # Soft delays - plot as shaded regions with annotations
+                if getattr(block, 'soft_delay', None) is not None:
+                    soft_delay = block.soft_delay
+                    block_duration = self.block_durations[block_counter]
+                    t_mid = t0 + block_duration / 2  # Middle of the block
+
+                    # Add shaded region spanning the soft delay block duration on RF phase subplot
+                    sp13.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    # Add text annotation with soft delay hint
+                    y_lim = sp13.get_ylim()
+                    y_range = y_lim[1] - y_lim[0]
+                    y_pos = y_lim[0] + 0.1 * y_range
+                    y_text = y_lim[0] + 0.3 * y_range
+
+                    sp13.annotate(
+                        f'soft delay\n"{soft_delay.hint}"',
+                        xy=(t_factor * t_mid, y_pos),
+                        xytext=(t_factor * t_mid, y_text),
+                        ha='center',
+                        va='bottom',
+                        fontsize=8,
+                        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'orange', 'alpha': 0.7},
+                    )
+
             t0 += self.block_durations[block_counter]
 
         grad_plot_labels = ['x', 'y', 'z']
