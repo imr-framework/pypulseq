@@ -283,3 +283,40 @@ def test_mod_grad_axis_no_gradients_on_axis():
     assert abs(block.gx.amplitude - 1000) < 1e-12, 'X gradient should be unchanged'
     assert abs(block.gz.amplitude - 1500) < 1e-12, 'Z gradient should be unchanged'
     assert not hasattr(block, 'gy') or block.gy is None, 'Y gradient should not exist'
+
+
+def test_mod_grad_axis_keymap_integrity():
+    """Test that EventLibrary keymap integrity is maintained after modification."""
+    seq = pp.Sequence()
+
+    # Create a gradient and add it to the sequence
+    gx = pp.make_trapezoid('x', amplitude=1000, flat_time=5e-3)
+    seq.add_block(gx)
+
+    # Store original library state
+    original_keymap_size = len(seq.grad_library.keymap)
+    original_data_size = len(seq.grad_library.data)
+
+    # Modify the gradient
+    seq.mod_grad_axis('x', -1.0)
+
+    # Check that library sizes are maintained (no duplicates created)
+    assert len(seq.grad_library.keymap) == original_keymap_size, 'Keymap size should be unchanged'
+    assert len(seq.grad_library.data) == original_data_size, 'Data size should be unchanged'
+
+    # Verify that a modification does not create a duplicate gradient event
+    gx_inverted = pp.make_trapezoid('x', amplitude=-1000, flat_time=5e-3)
+    seq.add_block(gx_inverted)
+
+    # Library should still have the same number of unique gradients
+    assert len(seq.grad_library.data) == original_data_size, 'No duplicate gradient should be created'
+
+    # Verify that both gradients reference the same gradient event
+    block1_events = seq.block_events[1]
+    block2_events = seq.block_events[2]
+
+    # The gradient event ID is at index 2
+    gx_event_id_block1 = block1_events[2]
+    gx_event_id_block2 = block2_events[2]
+
+    assert gx_event_id_block1 == gx_event_id_block2, 'Both gradients should reference the same gradient event'

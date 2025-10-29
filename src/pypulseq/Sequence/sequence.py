@@ -908,15 +908,23 @@ class Sequence:
             raise RuntimeError('mod_grad_axis does not yet support the same gradient event used on multiple axes.')
 
         for i in range(len(selected_events)):
-            # Convert tuple to list for modification, then convert back
-            grad_data = list(self.grad_library.data[selected_events[i]])
+            event_id = selected_events[i]
+            old_data = self.grad_library.data[event_id]
+            grad_type = self.grad_library.type[event_id]
+
+            # Convert tuple to list for modification
+            grad_data = list(old_data)
             grad_data[0] *= modifier
-            if self.grad_library.type[selected_events[i]] == 'g' and len(grad_data) == 6:
+
+            if grad_type == 'g' and len(grad_data) == 6:
                 # Need to update first and last fields for arbitrary gradients
                 # Data structure: (amplitude, shape_ID1, shape_ID2, delay, first, last)
                 grad_data[4] *= modifier  # first
                 grad_data[5] *= modifier  # last
-            self.grad_library.data[selected_events[i]] = tuple(grad_data)
+
+            # Use EventLibrary.update() to properly maintain keymap integrity
+            new_data = tuple(grad_data)
+            self.grad_library.update(event_id, old_data, new_data, grad_type)
 
         # Clear block cache to ensure get_block() uses the modified gradient data
         if self.use_block_cache:
