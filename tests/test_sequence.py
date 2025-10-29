@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pypulseq as pp
 import pytest
 from _pytest.python_api import ApproxBase
@@ -38,7 +39,7 @@ class Approx(ApproxBase):
             if len(self.expected) != len(actual):
                 return False
 
-            for e, a in zip(self.expected, actual):
+            for e, a in zip(self.expected, actual, strict=False):
                 if a != Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok):
                     return False
             return True
@@ -65,7 +66,7 @@ class Approx(ApproxBase):
             if len(self.expected) != len(actual):
                 return [f'Actual and expected lengths do not match: {len(actual)} != {len(self.expected)}']
             r = []
-            for i, (e, a) in enumerate(zip(self.expected, actual)):
+            for i, (e, a) in enumerate(zip(self.expected, actual, strict=False)):
                 approx_obj = Approx(e, rel=self.rel, abs=self.abs, nan_ok=self.nan_ok)
                 if a != approx_obj:
                     r += [f'Index {i} does not match:']
@@ -206,8 +207,54 @@ def seq4():
     return seq
 
 
+# GRE sequence with preceding noise acquisition and labels
+def seq5():
+    sys = pp.Opts()
+    seq = Sequence(sys)
+    rf, gz, gzr = pp.make_sinc_pulse(flip_angle=math.pi / 8, duration=1e-3, slice_thickness=3e-3, return_gz=True)
+    gx = pp.make_trapezoid(channel='x', flat_area=32 * 1 / 0.3, flat_time=32 * 1e-4, system=sys)
+    adc = pp.make_adc(num_samples=32, duration=gx.flat_time, delay=gx.rise_time, system=sys)
+    gx_pre = pp.make_trapezoid(channel='x', area=-gx.area / 2, duration=1e-3, system=sys)
+    phase_areas = -(np.arange(32) - 32 / 2) * (1 / 0.3)
+
+    seq.add_block(pp.make_label(label='LIN', type='SET', value=0), pp.make_label(label='SLC', type='SET', value=0))
+    seq.add_block(pp.make_adc(num_samples=1000, duration=1e-3), pp.make_label(label='NOISE', type='SET', value=True))
+    seq.add_block(pp.make_label(label='NOISE', type='SET', value=False))
+    seq.add_block(pp.make_delay(sys.rf_dead_time))
+
+    for pe in range(32):
+        gy_pre = pp.make_trapezoid(channel='y', area=phase_areas[pe], duration=1e-3, system=sys)
+
+        seq.add_block(rf, gz)
+        seq.add_block(gx_pre, gy_pre, gzr)
+        seq.add_block(gx, adc, pp.make_label(label='LIN', type='SET', value=pe))
+
+        gy_pre.amplitude = -gy_pre.amplitude
+        seq.add_block(gx_pre, gy_pre, pp.make_delay(10e-3))
+
+    return seq
+
+
+# Basic GRE sequence with Soft Delay
+def seq6():
+    seq = Sequence()
+
+    for i in range(10):
+        seq.add_block(pp.make_block_pulse(math.pi / 8, duration=1e-3))
+        seq.add_block(pp.make_trapezoid('x', area=1000))
+        seq.add_block(pp.make_trapezoid('y', area=-500 + i * 100))
+        seq.add_block(pp.make_trapezoid('x', area=-500))
+        seq.add_block(pp.make_soft_delay(numID=0, hint='TE', offset=1, factor=1.0, default_duration=10e-6))
+        seq.add_block(
+            pp.make_trapezoid('x', area=1000, duration=10e-3),
+            pp.make_adc(num_samples=100, duration=10e-3),
+        )
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4]
+sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
@@ -215,6 +262,7 @@ sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_puls
 seq_examples = [
     'write_gre',
     'write_gre_label',
+    'write_gre_label_softdelay',
     'write_haste',
     'write_radial_gre',
     'write_tse',
@@ -274,7 +322,7 @@ class TestSequence:
 
     # Test sequence.plot() method
     def test_plot(self, seq_func):
-        if seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4']:
+        if seq_func.__name__ in ['seq1', 'seq2', 'seq3', 'seq4', 'seq5']:
             with patch('matplotlib.pyplot.show'):
                 TestSequence.seq.plot()
                 TestSequence.seq.plot(show_blocks=True)
@@ -282,6 +330,13 @@ class TestSequence:
                 TestSequence.seq.plot(time_disp='ms')
                 TestSequence.seq.plot(grad_disp='mT/m')
                 plt.close('all')
+
+    # Test sequence.test_report() method
+    def test_test_report(self, seq_func):
+        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq2', 'seq3', 'seq4', 'seq5', 'seq6']:
+            report = TestSequence.seq.test_report()
+            assert isinstance(report, str), 'test_report() did not return a string'
+            assert len(report) > 0, 'test_report() returned an empty string'
 
     # Test whether the sequence is the approximately the same after writing a .seq
     # file and reading it back in.
@@ -319,7 +374,7 @@ class TestSequence:
             assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
 
         # Test for approximate equality of all gradient waveforms
-        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z'], strict=False):
             if a is None and b is None:
                 continue
             assert a is not None and b is not None
@@ -377,7 +432,7 @@ class TestSequence:
             )
 
         # Test for approximate equality of all gradient waveforms
-        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z']):
+        for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z'], strict=False):
             if a is None and b is None:
                 continue
             assert a is not None and b is not None

@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from typing import Tuple
 
 
-def block_to_events(*args: SimpleNamespace) -> Tuple[SimpleNamespace, ...]:
+def block_to_events(*args: SimpleNamespace | float) -> Tuple[SimpleNamespace, ...]:
     """
     Converts `args` from a block to a list of events. If `args` is already a list of event(s), returns it unmodified.
 
@@ -20,6 +20,7 @@ def block_to_events(*args: SimpleNamespace) -> Tuple[SimpleNamespace, ...]:
         events = list(vars(args[0]).values())  # Get all attrs
         events = list(filter(lambda filter_none: filter_none is not None, events))  # Filter None attributes
         events = __get_label_events_if_any(*events)  # Flatten label events from dict datatype
+        events = tuple(events)
 
     else:  # args is a tuple of events
         return args

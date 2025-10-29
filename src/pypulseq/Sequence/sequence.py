@@ -32,6 +32,7 @@ from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
+from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
@@ -68,6 +69,7 @@ class Sequence:
         self.rf_library = EventLibrary()
         self.shape_library = EventLibrary(numpy_data=True)
         self.trigger_library = EventLibrary()
+        self.soft_delay_library = EventLibrary()
 
         # =========
         # OTHER
@@ -96,6 +98,7 @@ class Sequence:
         self.block_durations = {}
         self.extension_numeric_idx = []
         self.extension_string_idx = []
+        self.soft_delay_hints = {}
 
     def __str__(self) -> str:
         s = 'Sequence:'
@@ -165,20 +168,29 @@ class Sequence:
 
     def add_block(self, *args: SimpleNamespace) -> None:
         """
-        Add a new block/multiple events to the sequence. Adds a sequence block with provided as a block structure
-
-        See Also
-        --------
-        - `pypulseq.Sequence.sequence.Sequence.set_block()`
-        - `pypulseq.make_adc.make_adc()`
-        - `pypulseq.make_trapezoid.make_trapezoid()`
-        - `pypulseq.make_sinc_pulse.make_sinc_pulse()`
+        Add a new block/multiple events to the sequence.
 
         Parameters
         ----------
-        args : SimpleNamespace
-            Block structure or events to be added as a block to `Sequence`.
+        *args : SimpleNamespace
+            Event objects to be added as a block to the sequence. For delays,
+            use `pypulseq.make_delay()` instead of raw float values.
+
+        See Also
+        --------
+        pypulseq.make_delay : Create delay events
+        pypulseq.make_adc : Create ADC events
+        pypulseq.make_trapezoid : Create trapezoid gradient events
+        pypulseq.make_sinc_pulse : Create sinc RF pulse events
+        pypulseq.make_soft_delay : Create soft delay events
         """
+        # Validate that no raw floats are passed directly by users
+        for arg in args:
+            if isinstance(arg, float):
+                raise ValueError(
+                    f'Raw float values are not allowed in add_block(). Use pp.make_delay({arg}) for delays.'
+                )
+
         if trace_enabled():
             self.block_trace[self.next_free_block_ID] = SimpleNamespace(block=trace())
 
@@ -1029,7 +1041,7 @@ class Sequence:
                         _t = [t_factor * t] * len(lbl_vals)
                         # Plot each label individually to retrieve each corresponding Line2D object
                         p = itertools.chain.from_iterable(
-                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
+                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals, strict=False)]
                         )
                         if len(label_legend_to_plot) != 0:
                             sp11.legend(list(p), label_legend_to_plot, loc='upper left')
@@ -1129,6 +1141,37 @@ class Sequence:
                             )
                             waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
                         fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
+
+                # Soft delays - plot as shaded regions with annotations
+                if getattr(block, 'soft_delay', None) is not None:
+                    soft_delay = block.soft_delay
+                    block_duration = self.block_durations[block_counter]
+                    t_mid = t0 + block_duration / 2  # Middle of the block
+
+                    # Add shaded region spanning the soft delay block duration on RF phase subplot
+                    sp13.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp12.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp11.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    for fig2_sp in fig2_subplots:
+                        fig2_sp.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    # Add text annotation with soft delay hint
+                    y_lim = sp13.get_ylim()
+                    y_range = y_lim[1] - y_lim[0]
+                    y_pos = y_lim[0] + 0.1 * y_range
+                    y_text = y_lim[0] + 0.3 * y_range
+
+                    sp13.annotate(
+                        f'{soft_delay.hint}',
+                        xy=(t_factor * t_mid, y_pos),
+                        xytext=(t_factor * t_mid, y_text),
+                        ha='center',
+                        va='bottom',
+                        fontsize=8,
+                        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'orange', 'alpha': 0.7},
+                    )
+
             t0 += self.block_durations[block_counter]
 
         grad_plot_labels = ['x', 'y', 'z']
@@ -1192,7 +1235,10 @@ class Sequence:
     def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
         return block.register_rf_event(self, event)
 
-    def remove_duplicates(self, in_place: bool = False) -> Self:
+    def register_soft_delay_event(self, event: SimpleNamespace) -> int:
+        return block.register_soft_delay_event(self, event)
+
+    def remove_duplicates(self, in_place: bool = False) -> 'Sequence':
         """
         Removes duplicate events from the shape and event libraries contained
         in this sequence.
@@ -1463,6 +1509,113 @@ class Sequence:
         self.extension_string_idx.append(extension_str)
         assert len(self.extension_numeric_idx) == len(self.extension_string_idx)
 
+    def apply_soft_delay(self, **kwargs):
+        """
+        Apply soft delay values to modify block durations in the sequence.
+
+        This method updates the durations of blocks containing soft delay events
+        based on the provided values. The new block duration is calculated using
+        the formula: duration = (input_value / factor) + offset.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Keyword arguments where keys are soft delay hint strings and values
+            are the desired delay values in seconds. Not all soft delays in the
+            sequence need to be specified.
+
+        Raises
+        ------
+        ValueError
+            If a specified soft delay hint does not exist in the sequence.
+        ValueError
+            If the calculated block duration would be negative.
+        ValueError
+            If soft delay hint and numeric ID mapping is inconsistent.
+
+        Examples
+        --------
+        Apply single soft delay:
+
+        >>> seq.apply_soft_delay(TE=40e-3)  # Set TE to 40ms
+
+        Apply multiple soft delays:
+
+        >>> seq.apply_soft_delay(TE=50e-3, TR=2.0)  # Set TE to 50ms, TR to 2s
+
+        See Also
+        --------
+        pypulseq.make_soft_delay : Create soft delay events
+
+        Notes
+        -----
+        - Only soft delays present in the sequence can be modified
+        - Block durations are automatically rounded to the block duration raster
+        - A warning is issued if substantial rounding occurs
+        """
+
+        # Go through all the blocks and update durations, at the same time checking the consistency of the soft delays
+        sd_str2numID = {}
+        sd_numID2hint = {}
+        sd_warns = {}
+        for block_counters in self.block_events:
+            block = self.get_block(block_counters)
+            if block.soft_delay is not None:
+                # Check the numeric ID consistency
+                if block.soft_delay.hint not in sd_str2numID:
+                    sd_str2numID[block.soft_delay.hint] = block.soft_delay.numID
+                else:
+                    if sd_str2numID[block.soft_delay.hint] != block.soft_delay.numID:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same string hint"
+                        )
+
+                if block.soft_delay.numID not in sd_numID2hint:
+                    sd_numID2hint[block.soft_delay.numID] = block.soft_delay.hint
+                else:
+                    if sd_numID2hint[block.soft_delay.numID] != block.soft_delay.hint:
+                        raise ValueError(
+                            f"Soft delay in block {block_counters} with numeric ID {block.soft_delay.numID} and string hint '{block.soft_delay.hint}' is inconsistent with the previous occurrences of the same numeric ID"
+                        )
+
+                if block.soft_delay.hint in kwargs:
+                    # Calculate the new block duration
+                    new_dur_ru = (
+                        kwargs[block.soft_delay.hint] / block.soft_delay.factor + block.soft_delay.offset
+                    ) / self.system.block_duration_raster
+                    new_dur = round(new_dur_ru) * self.system.block_duration_raster
+                    # Check if rounding error is significant (threshold: 0.5 microseconds)
+                    rounding_threshold = 0.5e-6
+                    rounding_error = abs(new_dur - new_dur_ru * self.system.block_duration_raster)
+                    if rounding_error > rounding_threshold and block.soft_delay.numID not in sd_warns:
+                        warn(
+                            f"Soft delay '{block.soft_delay.hint}' in block {block_counters}: "
+                            f'Duration rounded by {rounding_error * 1e6:.1f} μs to align with raster time '
+                            f'({self.system.block_duration_raster * 1e6:.1f} μs). '
+                            f'This warning is shown only once per soft delay ID.'
+                        )
+                        sd_warns[block.soft_delay.numID] = True
+
+                    if new_dur < 0:
+                        raise ValueError(
+                            f"Soft delay '{block.soft_delay.hint}' in block {block_counters}: "
+                            f'Calculated duration is negative ({new_dur * 1e6:.1f} μs). '
+                            f'Check the offset ({block.soft_delay.offset * 1e6:.1f} μs) and factor '
+                            f'({block.soft_delay.factor}) parameters.'
+                        )
+
+                    self.block_durations[block_counters] = new_dur
+
+        # Now check if there are some input soft delays which haven't been found in the sequence
+        all_input_hints = kwargs.keys()
+        for hint in all_input_hints:
+            if hint not in sd_str2numID:
+                available_hints = list(sd_str2numID.keys())
+                raise ValueError(
+                    f"Soft delay '{hint}' not found in sequence. "
+                    f'Available soft delays: {available_hints if available_hints else "none"}'
+                )
+
     def test_report(self) -> str:
         """
         Analyze the sequence and return a text report.
@@ -1626,7 +1779,7 @@ class Sequence:
             # element of the next shape.
             shape_pieces[j] = [shape_pieces[j][0]] + [
                 cur if prev[0, -1] + eps < cur[0, 0] else cur[:, 1:]
-                for prev, cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:])
+                for prev, cur in zip(shape_pieces[j][:-1], shape_pieces[j][1:], strict=False)
             ]
 
             wave_data.append(np.concatenate(shape_pieces[j], axis=1))
@@ -1816,7 +1969,12 @@ class Sequence:
         return all_waveforms
 
     def write(
-        self, name: str, create_signature: bool = True, remove_duplicates: bool = True, check_timing: bool = True
+        self,
+        name: str,
+        create_signature: bool = True,
+        remove_duplicates: bool = True,
+        check_timing: bool = True,
+        v141_compat: bool = False,
     ) -> Union[str, None]:
         """
         Write the sequence data to the given filename using the open file format for MR sequences.
@@ -1831,6 +1989,8 @@ class Sequence:
             Boolean flag to indicate if the file has to be signed.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence before writing
+        v141_compat: bool, default=False
+            Write the sequence in v1.4.1 compatible file format.
 
         Returns
         -------
@@ -1850,7 +2010,7 @@ class Sequence:
         # Check whether all gradients in the last block are ramped down properly
         last_block_id = next(reversed(self.block_events))
         last_block = self.get_block(last_block_id)
-        for channel, event in zip(('x', 'y', 'z'), (last_block.gx, last_block.gy, last_block.gz)):
+        for channel, event in zip(('x', 'y', 'z'), (last_block.gx, last_block.gy, last_block.gz), strict=False):
             if (
                 event is not None
                 and event.type == 'grad'
@@ -1869,7 +2029,10 @@ class Sequence:
                 warn(warn_msg, stacklevel=2)
 
         # Write the sequence
-        signature = write_seq(self, name, create_signature, remove_duplicates)
+        if v141_compat:
+            signature = write_seq_v141(self, name, create_signature, remove_duplicates)
+        else:
+            signature = write_seq(self, name, create_signature, remove_duplicates)
 
         # Return the sequence md5 signature if requested
         if signature is not None:

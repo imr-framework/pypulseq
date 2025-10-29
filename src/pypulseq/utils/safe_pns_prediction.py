@@ -405,7 +405,7 @@ def safe_example():
     # safe_hw_verify(hw)
 
     # Predict PNS levels
-    pns, res = safe_gwf_to_pns(gwf, rf, dt, hw, 1)
+    pns, _ = safe_gwf_to_pns(gwf, rf, dt, hw, 1)
 
     # Plot some results
     safe_plot(pns, dt)
