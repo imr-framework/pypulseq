@@ -235,8 +235,26 @@ def seq5():
     return seq
 
 
+# Basic GRE sequence with Soft Delay
+def seq6():
+    seq = Sequence()
+
+    for i in range(10):
+        seq.add_block(pp.make_block_pulse(math.pi / 8, duration=1e-3))
+        seq.add_block(pp.make_trapezoid('x', area=1000))
+        seq.add_block(pp.make_trapezoid('y', area=-500 + i * 100))
+        seq.add_block(pp.make_trapezoid('x', area=-500))
+        seq.add_block(pp.make_soft_delay(numID=0, hint='TE', offset=1, factor=1.0, default_duration=10e-6))
+        seq.add_block(
+            pp.make_trapezoid('x', area=1000, duration=10e-3),
+            pp.make_adc(num_samples=100, duration=10e-3),
+        )
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5]
+sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
@@ -244,6 +262,7 @@ sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_puls
 seq_examples = [
     'write_gre',
     'write_gre_label',
+    'write_gre_label_softdelay',
     'write_haste',
     'write_radial_gre',
     'write_tse',
@@ -314,7 +333,7 @@ class TestSequence:
 
     # Test sequence.test_report() method
     def test_test_report(self, seq_func):
-        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq2', 'seq3', 'seq4', 'seq5']:
+        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq2', 'seq3', 'seq4', 'seq5', 'seq6']:
             report = TestSequence.seq.test_report()
             assert isinstance(report, str), 'test_report() did not return a string'
             assert len(report) > 0, 'test_report() returned an empty string'
