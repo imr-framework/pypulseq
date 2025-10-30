@@ -951,34 +951,39 @@ class Sequence:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
-        clear=True,
-    ) -> None:
+        clear: bool = True,
+    ) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]:
         """
         Plot `Sequence`.
 
         Parameters
         ----------
         label : str, default=str()
-            Plot label values for ADC events: in this example for LIN and REP labels; other valid labes are accepted as
+            Plot label values for ADC events: in this example for LIN and REP labels; other valid labels are accepted as
             a comma-separated list.
+        show_blocks : bool, default=False
+            Boolean flag to indicate if grid and tick labels at the block boundaries are to be plotted.
         save : bool, default=False
             Boolean flag indicating if plots should be saved. The two figures will be saved as JPG with numerical
             suffixes to the filename 'seq_plot'.
-        show_blocks : bool, default=False
-            Boolean flag to indicate if grid and tick labels at the block boundaries are to be plotted.
         time_range : iterable, default=(0, np.inf)
             Time range (x-axis limits) for plotting the sequence. Default is 0 to infinity (entire sequence).
         time_disp : str, default='s'
-            Time display type, must be one of `s`, `ms` or `us`.
-        grad_disp : str, default='s'
-            Gradient display unit, must be one of `kHz/m` or `mT/m`.
+            Time display type, must be one of 's', 'ms' or 'us'.
+        grad_disp : str, default='kHz/m'
+            Gradient display unit, must be one of 'kHz/m' or 'mT/m'.
         plot_now : bool, default=True
-            If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
-            If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
-        plot_type : str, default='Gradient'
-            Gradients display type, must be one of either 'Gradient' or 'Kspace'.
+            If True, function immediately shows the plots, blocking the rest of the code until plots are exited.
+            If False, plots are shown when plt.show() is called. Useful if plots are to be modified.
         clear : bool, default=True
-            create fresh figures to plot seq.plot(), if clearFalse existing figrue 1 and 2 are used to plot seq on top of old plot.
+            If True, clear existing figures before plotting (default behavior).
+            If False, overlay on existing figures 1 and 2 for sequence comparison.
+
+        Returns
+        -------
+        Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]
+            Returns (fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)) for plot customization.
+            Always returns figures and axes regardless of plot_now setting.
         """
         mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -993,40 +998,32 @@ class Sequence:
         if grad_disp not in valid_grad_units:
             raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-        fig1, fig2 = plt.figure(1), plt.figure(2)
-        fig1_subplots = fig1.get_axes()
-        fig2_subplots = fig2.get_axes()
+        # Create the two figures (#1 for RF/ADC, #2 for gradients in x, y, z)
+        fig1 = plt.figure(1)
+        fig2 = plt.figure(2)
 
+        # Clear existing figures if clear=True
         if clear:
-            for ax in fig1_subplots + fig2_subplots:
-                ax.remove()
-            fig1_subplots = fig1.get_axes()
-            fig2_subplots = fig2.get_axes()
+            fig1.clear()
+            fig2.clear()
 
-        if len(fig1_subplots) == 3:
-            (sp11, sp12, sp13) = fig1_subplots
-        else:
-            for ax in fig1_subplots:
-                ax.remove()
-
-            # These 3 subplots are unchanged from pypulseq 1.2
+        # Create or reuse subplots of fig1
+        fig1_axes = fig1.get_axes()
+        if not fig1_axes or clear:
             sp11 = fig1.add_subplot(311)
             sp12 = fig1.add_subplot(312, sharex=sp11)
             sp13 = fig1.add_subplot(313, sharex=sp11)
-
-        if len(fig2_subplots) == 3:
-            fig1_subplots = fig2_subplots
-            fig2_subplots = fig2_subplots
         else:
-            for ax in fig2_subplots:
-                ax.remove()
+            sp11, sp12, sp13 = fig1_axes[:3]
 
-            # This is also straight from pypulseq 1.2
-            fig2_subplots = [
-                fig2.add_subplot(311, sharex=sp11),
-                fig2.add_subplot(312, sharex=sp11),
-                fig2.add_subplot(313, sharex=sp11),
-            ]
+        # Create or reuse subplots of fig2
+        fig2_axes = fig2.get_axes()
+        if not fig2_axes or clear:
+            sp21 = fig2.add_subplot(311, sharex=sp11)
+            sp22 = fig2.add_subplot(312, sharex=sp11)
+            sp23 = fig2.add_subplot(313, sharex=sp11)
+        else:
+            sp21, sp22, sp23 = fig2_axes[:3]
 
         t_factor_list = [1, 1e3, 1e6]
         t_factor = t_factor_list[valid_time_units.index(time_disp)]
@@ -1055,7 +1052,7 @@ class Sequence:
         block_edges = np.cumsum([0] + [x[1] for x in sorted(self.block_durations.items())])
         block_edges_in_range = block_edges[(block_edges >= time_range[0]) * (block_edges <= time_range[1])]
         if show_blocks:
-            for sp in [sp11, sp12, sp13, *fig2_subplots]:
+            for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
                 sp.set_xticks(t_factor * block_edges_in_range)
                 sp.set_xticklabels(sp.get_xticklabels(), rotation=90)
 
@@ -1190,7 +1187,7 @@ class Sequence:
                                 )
                             )
                             waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
-                        fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
+                        [sp21, sp22, sp23][x].plot(t_factor * (t0 + time), waveform)
 
                 # Soft delays - plot as shaded regions with annotations
                 if getattr(block, 'soft_delay', None) is not None:
@@ -1203,8 +1200,8 @@ class Sequence:
                     sp12.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
                     sp11.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
 
-                    for fig2_sp in fig2_subplots:
-                        fig2_sp.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    for sp2x in [sp21, sp22, sp23]:
+                        sp2x.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
 
                     # Add text annotation with soft delay hint
                     y_lim = sp13.get_ylim()
@@ -1224,23 +1221,24 @@ class Sequence:
 
             t0 += self.block_durations[block_counter]
 
-        grad_plot_labels = ['x', 'y', 'z']
+        # Set axis labels
         sp11.set_ylabel('ADC')
         sp12.set_ylabel('RF mag (Hz)')
         sp13.set_ylabel('RF/ADC phase (rad)')
         sp13.set_xlabel(f't ({time_disp})')
-        for x in range(3):
-            _label = grad_plot_labels[x]
-            fig2_subplots[x].set_ylabel(f'G{_label} ({grad_disp})')
-        fig2_subplots[-1].set_xlabel(f't ({time_disp})')
+        sp21.set_ylabel(f'Gx ({grad_disp})')
+        sp22.set_ylabel(f'Gy ({grad_disp})')
+        sp23.set_ylabel(f'Gz ({grad_disp})')
+        sp23.set_xlabel(f't ({time_disp})')
 
-        # Setting display limits
+        # Set display limits for all subplots
         disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
-        [x.set_xlim(disp_range) for x in [sp11, sp12, sp13, *fig2_subplots]]
+        for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+            sp.set_xlim(disp_range)
 
-        # Grid on
-        for sp in [sp11, sp12, sp13, *fig2_subplots]:
-            sp.grid()
+        # Enable grid on all subplots (explicitly set to True, don't toggle)
+        for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+            sp.grid(True)
 
         fig1.tight_layout()
         fig2.tight_layout()
@@ -1251,7 +1249,8 @@ class Sequence:
         if plot_now:
             plt.show()
 
-        return fig1, (sp11, sp12, sp13), fig2, fig2_subplots
+        # Always return figures and axes for customization
+        return fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
         """
