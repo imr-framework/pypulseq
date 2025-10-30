@@ -849,16 +849,20 @@ class Sequence:
 
         print(f'Sequence installed correctly on target `{name}`')
 
-    def mod_grad_axis(self, axis: str, modifier: int) -> None:
+    def mod_grad_axis(self, axis: str, modifier: float) -> None:
         """
-        Invert or scale all gradients along the corresponding axis/channel. The function acts on all gradient objects
-        already added to the sequence object.
+        Invert or scale all gradients along the corresponding axis/channel.
+
+        The function acts on all gradient objects already added to the sequence object.
+        This modifies the amplitude of gradients while preserving timing parameters
+        (rise_time, flat_time, fall_time, delay). The gradient area scales proportionally
+        with the amplitude.
 
         Parameters
         ----------
         axis : str
             Gradients to invert or scale. Must be one of 'x', 'y' or 'z'.
-        modifier : int
+        modifier : float
             Scaling value.
 
         Raises
@@ -867,6 +871,32 @@ class Sequence:
             If invalid `axis` is passed. Must be one of 'x', 'y','z'.
         RuntimeError
             If same gradient event is used on multiple axes.
+
+        Examples
+        --------
+        Disable phase encoding gradients (y-axis):
+
+        >>> seq.mod_grad_axis('y', 0.0)
+
+        Invert readout gradients (x-axis):
+
+        >>> seq.mod_grad_axis('x', -1.0)
+
+        Reduce slice selection gradients by half (z-axis):
+
+        >>> seq.mod_grad_axis('z', 0.5)
+
+        Double all gradients on x-axis:
+
+        >>> seq.mod_grad_axis('x', 2.0)
+
+        Notes
+        -----
+        - Only amplitude-related parameters are modified (amplitude, area, first, last)
+        - Timing parameters remain unchanged (rise_time, flat_time, fall_time, delay)
+        - For arbitrary gradients, the entire waveform is scaled
+        - For trapezoid gradients, only the amplitude is scaled
+        - Setting modifier to 0.0 effectively disables gradients on that axis
         """
         if axis not in ['x', 'y', 'z']:
             raise ValueError(f"Invalid axis. Must be one of 'x', 'y','z'. Passed: {axis}")
@@ -876,6 +906,10 @@ class Sequence:
         other_channels.remove(channel_num)
 
         # Go through all event table entries and list gradient objects in the library
+        if len(self.block_events) == 0:
+            # Empty sequence - nothing to modify
+            return
+
         all_grad_events = np.array(list(self.block_events.values()))
         all_grad_events = all_grad_events[:, 2:5]
 
@@ -886,11 +920,27 @@ class Sequence:
             raise RuntimeError('mod_grad_axis does not yet support the same gradient event used on multiple axes.')
 
         for i in range(len(selected_events)):
-            self.grad_library.data[selected_events[i]][0] *= modifier
-            if self.grad_library.type[selected_events[i]] == 'g' and self.grad_library.lengths[selected_events[i]] == 5:
-                # Need to update first and last fields
-                self.grad_library.data[selected_events[i]][3] *= modifier
-                self.grad_library.data[selected_events[i]][4] *= modifier
+            event_id = selected_events[i]
+            old_data = self.grad_library.data[event_id]
+            grad_type = self.grad_library.type[event_id]
+
+            # Convert tuple to list for modification
+            grad_data = list(old_data)
+            grad_data[0] *= modifier
+
+            if grad_type == 'g' and len(grad_data) == 6:
+                # Need to update first and last fields for arbitrary gradients
+                # Data structure: (amplitude, shape_ID1, shape_ID2, delay, first, last)
+                grad_data[4] *= modifier  # first
+                grad_data[5] *= modifier  # last
+
+            # Use EventLibrary.update() to properly maintain keymap integrity
+            new_data = tuple(grad_data)
+            self.grad_library.update(event_id, old_data, new_data, grad_type)
+
+        # Clear block cache to ensure get_block() uses the modified gradient data
+        if self.use_block_cache:
+            self.block_cache.clear()
 
     def plot(
         self,
