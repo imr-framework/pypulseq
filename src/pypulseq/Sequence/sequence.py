@@ -952,6 +952,8 @@ class Sequence:
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
         clear: bool = True,
+        fig1: Union[plt.Figure, None] = None,
+        fig2: Union[plt.Figure, None] = None,
     ) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]:
         """
         Plot `Sequence`.
@@ -978,6 +980,10 @@ class Sequence:
         clear : bool, default=True
             If True, clear existing figures before plotting (default behavior).
             If False, overlay on existing figures 1 and 2 for sequence comparison.
+        fig1 : Optional[plt.Figure], default=None
+            Existing figure to plot RF/ADC events on. If None, a new figure is created.
+        fig2 : Optional[plt.Figure], default=None
+            Existing figure to plot gradients on. If None, a new figure is created.
 
         Returns
         -------
@@ -998,9 +1004,9 @@ class Sequence:
         if grad_disp not in valid_grad_units:
             raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-        # Create the two figures (#1 for RF/ADC, #2 for gradients in x, y, z)
-        fig1 = plt.figure(1)
-        fig2 = plt.figure(2)
+        # Create the two figures (#1 for RF/ADC, #2 for gradients in x, y, z) or reuse existing figures
+        fig1 = plt.figure() if fig1 is None else fig1
+        fig2 = plt.figure() if fig2 is None else fig2
 
         # Clear existing figures if clear=True
         if clear:
