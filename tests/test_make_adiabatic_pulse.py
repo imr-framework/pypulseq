@@ -13,7 +13,7 @@ from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 
 def test_pulse_select():
     valid_rf_use_labels = get_supported_rf_uses()
-    valid_pulse_types = ('hypsec', 'wurst')
+    valid_pulse_types = ('hypsec', 'hypsec_n', 'wurst')
 
     # Check all use and valid pulse combinations return a sensible object
     # with default parameters.
@@ -63,6 +63,12 @@ def test_hypsec_options():
     pobj = make_adiabatic_pulse(pulse_type='hypsec', beta=700, mu=6, duration=0.05)
 
     assert np.isclose(pobj.shape_dur, 0.05)
+
+
+def test_hypsec_n_options():
+    pobj = make_adiabatic_pulse(pulse_type='hypsec_n', beta=400, mu=9.8, order=4, duration=0.01)
+
+    assert np.isclose(pobj.shape_dur, 0.01)
 
 
 def test_wurst_options():
