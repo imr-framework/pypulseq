@@ -43,16 +43,16 @@ class SeqPlot:
     plot_now : bool, default=True
         If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
         If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
-    overlay : SeqPlot or None, default=None
-        If provided, overlay this plot on the figures from the given SeqPlot object. Overrides fig1, fig2, and sets clear=False.
     clear : bool, default=True
         If True, clear existing figures before plotting (default behavior).
         If False, overlay on existing figures for sequence comparison.
+    overlay : SeqPlot or None, default=None
+        If provided, overlay this plot on the figures from the given SeqPlot object. Overrides fig1, fig2, and sets clear=False.
     stacked : bool, default=False
         If True, plot all channels (ADC, RF mag, RF phase, Gx, Gy, Gz) in a single stacked figure (MATLAB Pulseq style).
         If False, use separate figures for RF/ADC and gradients.
-    show_guide : bool, default=True
-        If True, enable grid lines (guides) on all subplots for better readability.
+    show_guides : bool, default=False
+        If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
 
     Attributes
     ----------
@@ -64,6 +64,7 @@ class SeqPlot:
         Tuple of axes for fig1: (sp11, sp12, sp13) if not stacked, or (sp11, sp12, sp13, sp21, sp22, sp23) if stacked.
     ax2 : tuple of matplotlib.axes.Axes
         Tuple of axes for fig2: (sp21, sp22, sp23) if not stacked, or same as ax1 if stacked.
+    vlines : dict (axis -> Line2D) if show_guides enabled
     """
 
     def __init__(
@@ -79,7 +80,7 @@ class SeqPlot:
         overlay=None,
         clear: bool = True,
         stacked: bool = False,
-        show_guides: bool = True,
+        show_guides: bool = False,
     ):
         # Handle overlay parameter
         if overlay is not None:
@@ -91,8 +92,11 @@ class SeqPlot:
 
         self.seq = seq
         self._cursors = []
+        self._vlines = None  # populated if show_guides enabled
+        self._guide_cids = []  # mpl_connect IDs for motion events
+        self._show_guides = show_guides
 
-        self.fig1, self.ax1, self.fig2, self.ax2 = _seq_plot(
+        handles = _seq_plot(
             seq,
             label=label,
             save=save,
@@ -101,16 +105,68 @@ class SeqPlot:
             time_disp=time_disp,
             grad_disp=grad_disp,
             clear=clear,
-            stacked=stacked,
-            show_guides=show_guides,
             fig1=fig1,
             fig2=fig2,
+            stacked=stacked,
         )
+        
+        if stacked:
+            self.fig1, self.ax1 = handles
+            self.fig2, self.ax2 = None, tuple([])
+        else:
+            self.fig1, self.ax1, self.fig2, self.ax2 = handles
 
         if __MPLCURSORS_AVAILABLE__:
             self._setup_cursor(self.fig1)
             if not stacked or self.fig2 != self.fig1:  # Avoid double setup if same figure
                 self._setup_cursor(self.fig2)
+        else:
+            self._show_guides = False
+        
+        # Setup dynamic guides if requested and not already provided by overlay
+        if self._show_guides:
+            # If overlay provided and overlay already has vlines, reuse them
+            if overlay is not None and getattr(overlay, "_vlines", None):
+                self._vlines = overlay._vlines
+                self._guide_cids = overlay._guide_cids
+            else:
+                # create guides: one vertical line per unique axis in ax1 + ax2
+                axes = tuple(self.ax1) + tuple(self.ax2)
+                unique_axes = []
+                for ax in axes:
+                    if ax not in unique_axes:
+                        unique_axes.append(ax)
+                self._vlines = {}
+                for ax in unique_axes:
+                    ln = ax.axvline(0.0, color='r', linestyle='--', linewidth=1.0, visible=False, zorder=1000)
+                    self._vlines[ax] = ln
+
+                # Motion handler
+                def _motion(event):
+                    if event.inaxes in unique_axes and event.xdata is not None:
+                        x = event.xdata
+                        for ln in self._vlines.values():
+                            ln.set_xdata(x)
+                            ln.set_visible(True)
+                        for fig in {self.fig1, self.fig2}:
+                            if fig is not None:
+                                fig.canvas.draw_idle()
+                    else:
+                        for ln in self._vlines.values():
+                            if ln.get_visible():
+                                ln.set_visible(False)
+                        for fig in {self.fig1, self.fig2}:
+                            if fig is not None:
+                                fig.canvas.draw_idle()
+
+                canvases = []
+                if self.fig1 is not None:
+                    canvases.append(self.fig1.canvas)
+                if self.fig2 is not None and self.fig2 is not self.fig1:
+                    canvases.append(self.fig2.canvas)
+                for canvas in canvases:
+                    cid = canvas.mpl_connect('motion_notify_event', _motion)
+                    self._guide_cids.append((canvas, cid))
 
         if plot_now:
             self.show()
@@ -122,11 +178,19 @@ class SeqPlot:
         for ax in fig.axes:
             lines = ax.get_lines()
             for line in lines:
-                cursor = mplcursors.cursor(line, multiple=True)
-                cursor.connect('add', lambda sel: self._on_datatip(sel))
-                self._cursors.append(cursor)
+                try:
+                    cursor = mplcursors.cursor(line, multiple=True)
+                    cursor.connect('add', lambda sel: self._on_datatip(sel))
+                    cursor.connect('remove', lambda sel: self._hide_datatip_guides(sel)) # new
+                    self._cursors.append(cursor)
+                except Exception:
+                    pass
 
     def _on_datatip(self, sel):
+        """
+        Called when a datatip is created (user clicks via mplcursors).
+        Populate annotation text and, if guides exist, move them to the selected x position.
+        """
         artist = sel.artist
         ax = artist.axes
         x, y = sel.target
@@ -162,12 +226,36 @@ class SeqPlot:
             lines_txt.append(f'blk: {block_index}')
 
         sel.annotation.set_text('\n'.join(lines_txt))
+        
+        # If we have dynamic guides, move them to the datatip x position and show them
+        if getattr(self, "_vlines", None):
+            x_coord = x
+            for ln in self._vlines.values():
+                ln.set_xdata(x_coord)
+                ln.set_visible(True)
+            for fig in {self.fig1, self.fig2}:
+                if fig is not None:
+                    fig.canvas.draw_idle()
+
         self._update_guides()
 
+    def _hide_datatip_guides(self, sel):
+        # Hide guides when datatip removed (connected to mplcursors 'remove' event)
+        if getattr(self, "_vlines", None):
+            for ln in self._vlines.values():
+                ln.set_visible(False)
+            for fig in {self.fig1, self.fig2}:
+                if fig is not None:
+                    fig.canvas.draw_idle()
+
     def _update_guides(self):
-        for ax in (self.ax1 + self.ax2):  # Flatten tuples for iteration
-            ax.relim()
-            ax.autoscale_view()
+        # Update autoscale for all axes involved and redraw figures
+        for ax in (tuple(self.ax1) + tuple(self.ax2)):  # Flatten tuples for iteration
+            try:
+                ax.relim()
+                ax.autoscale_view()
+            except Exception:
+                pass
 
         for fig in (self.fig1, self.fig2):
             if fig is not None:
@@ -183,10 +271,9 @@ def _seq_plot(
     time_disp,
     grad_disp,
     clear,
-    stacked,
-    show_guides,
     fig1,
     fig2,
+    stacked,
 ):
     mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -292,7 +379,7 @@ def _seq_plot(
                 sp11.plot(t_factor * (t0 + t), np.zeros(len(t)), 'rx')
 
                 if adc.phase_modulation is None or len(adc.phase_modulation) == 0:
-                    phase_modulation = 0
+                    phase_modulation = 0.0
                 else:
                     phase_modulation = adc.phase_modulation
 
@@ -478,9 +565,9 @@ def _seq_plot(
     for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
         sp.set_xlim(disp_range)
 
-    # Grid on/off based on show_guides
+    # Enable grid on all subplots (explicitly set to True, don't toggle)
     for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
-        sp.grid(show_guides)
+        sp.grid(True)
 
     fig1.tight_layout()
     if not stacked:
@@ -493,6 +580,6 @@ def _seq_plot(
             fig2.savefig('seq_plot2.jpg')
 
     if stacked:
-        return fig1, (sp11, sp12, sp13, sp21, sp22, sp23), fig1, (sp21, sp22, sp23)
+        return fig1, (sp11, sp12, sp13, sp21, sp22, sp23)
     else:
         return fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)

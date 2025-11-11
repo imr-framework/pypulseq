@@ -1068,10 +1068,13 @@ class Sequence:
         clear : bool, default=True
             If True, clear existing figures before plotting (default behavior).
             If False, overlay on existing figures 1 and 2 for sequence comparison.
-        fig1 : Optional[plt.Figure], default=None
-            Existing figure to plot RF/ADC events on. If None, a new figure is created.
-        fig2 : Optional[plt.Figure], default=None
-            Existing figure to plot gradients on. If None, a new figure is created.
+        overlay : SeqPlot or None, default=None
+            If provided, overlay this plot on the figures from the given SeqPlot object. Overrides fig1, fig2, and sets clear=False.
+        stacked : bool, default=False
+            If True, plot all channels (ADC, RF mag, RF phase, Gx, Gy, Gz) in a single stacked figure (MATLAB Pulseq style).
+            If False, use separate figures for RF/ADC and gradients.
+        show_guides : bool, default=False
+            If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
 
         Returns
         -------
