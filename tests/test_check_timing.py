@@ -69,7 +69,7 @@ def test_check_timing():
     seq.add_block(gx)  # Block 9: NEGATIVE_DELAY
 
     # Check timing errors
-    ok, error_report = seq.check_timing()
+    _, error_report = seq.check_timing()
 
     # Check whether the timing error report is as expected
     assert blocks_not_in_error_report(error_report, [1, 3, 6]), 'No timing errors expected on blocks 1, 3, and 6'
