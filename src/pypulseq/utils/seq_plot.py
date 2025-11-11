@@ -207,27 +207,45 @@ class SeqPlot:
         else:
             field = ylabel[:2]
 
-        t0 = artist.get_xdata()[0] if hasattr(artist, 'get_xdata') else x
-        block_index = self.seq.find_block_by_time(t0)
-        rb = self.seq.get_raw_block_content_IDs(block_index)
+        # Convert the displayed x coordinate back to the sequence time units
+        # _seq_plot stores a t_factor on each figure as _seq_t_factor
+        fig = artist.axes.figure
+        t_factor = getattr(fig, "_seq_t_factor", 1.0)
+        seq_time = x / t_factor
+
+        # Try finding corresponding block; if it fails (click outside sequence/time range) handle gracefully
+        try:
+            block_index = self.seq.find_block_by_time(seq_time)
+            rb = self.seq.get_raw_block_content_IDs(block_index)
+        except Exception:
+            block_index = None
+            rb = None
 
         lines_txt = [f't: {x:.3f}', f'Y: {y:.3f}']
 
-        val = getattr(rb, field, None)
-        if val is not None:
-            try:
-                if field[0] == 'a':
-                    name = self.seq.adc_id2name_map[val]
-                elif field[0] == 'r':
-                    name = self.seq.rf_id2name_map[val]
-                else:
-                    name = self.seq.grad_id2name_map[val]
+        if rb is not None and block_index not in (None, 0):
+            val = getattr(rb, field, None)
+            if val is not None:
+                try:
+                    if field[0] == 'a':
+                        name = self.seq.adc_id2name_map[val]
+                    elif field[0] == 'r':
+                        name = self.seq.rf_id2name_map[val]
+                    else:
+                        name = self.seq.grad_id2name_map[val]
 
-                lines_txt.append(f"blk: {block_index} {field}_id: {val} '{name}'")
-            except Exception:
-                lines_txt.append(f'blk: {block_index} {field}_id: {val}')
+                    # Display 1-based block index for users (add 1 to zero-based internal index).
+                    display_blk = block_index + 1
+                    lines_txt.append(f"blk: {display_blk} {field}_id: {val} '{name}'")
+                except Exception:
+                    display_blk = block_index + 1
+                    lines_txt.append(f'blk: {display_blk} {field}_id: {val}')
+            else:
+                display_blk = block_index + 1
+                lines_txt.append(f'blk: {display_blk}')
         else:
-            lines_txt.append(f'blk: {block_index}')
+            # Couldn't resolve a block for this x (outside plotted time_range or no block)
+            lines_txt.append('blk: 1')
 
         sel.annotation.set_text('\n'.join(lines_txt))
         
@@ -572,6 +590,11 @@ def _seq_plot(
     # Enable grid on all subplots (explicitly set to True, don't toggle)
     for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
         sp.grid(True)
+
+    # Store the t_factor on the figures so interactive callbacks can convert displayed x back to sequence time
+    setattr(fig1, "_seq_t_factor", t_factor)
+    if fig2 is not None:
+        setattr(fig2, "_seq_t_factor", t_factor)
 
     fig1.tight_layout()
     if not stacked:
