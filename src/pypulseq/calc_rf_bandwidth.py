@@ -1,10 +1,12 @@
 import math
+import warnings
 from types import SimpleNamespace
 from typing import Tuple, Union
 
 import numpy as np
 
 from pypulseq.calc_rf_center import calc_rf_center
+from pypulseq.opts import Opts
 
 
 def calc_rf_bandwidth(
@@ -12,6 +14,8 @@ def calc_rf_bandwidth(
     cutoff: float = 0.5,
     return_axis: bool = False,
     return_spectrum: bool = False,
+    dw: float = 10,
+    dt: float = 1e-6,
 ) -> Union[float, Tuple[float, np.ndarray], Tuple[float, np.ndarray, float]]:
     """
     Calculate the spectrum of the RF pulse. Returns the bandwidth of the pulse (calculated by a simple FFT, e.g.
@@ -27,6 +31,10 @@ def calc_rf_bandwidth(
         Boolean flag to indicate if frequency axis of RF pulse will be returned.
     return_spectrum : bool, default=False
         Boolean flag to indicate if spectrum of RF pulse will be returned.
+    dw : float, default=10
+        Spectral resolution in (Hz).
+    dt : float, default=1e-6
+        Sampling time in (s).
 
     Returns
     -------
@@ -36,13 +44,22 @@ def calc_rf_bandwidth(
     """
     time_center, _ = calc_rf_center(rf)
 
+    if abs(rf.freq_ppm) > np.finfo(float).eps:
+        warnings.warn(
+            'calc_rf_bandwidth(): relying on the system properties, like B0 and gamma, '
+            'stored in the global environment by calling pypulseq.Opts()'
+        )
+        sys = Opts()
+        full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * sys.gamma * sys.B0
+    else:
+        full_freq_offset = rf.freq_offset
+
     # Resample the pulse to a reasonable time array
-    dw = 10  # Hz
-    dt = 1e-6  # For now, 1 MHz
     nn = round(1 / dw / dt)
     tt = np.arange(-math.floor(nn / 2), math.ceil(nn / 2) - 1) * dt
 
-    rfs = np.interp(xp=rf.t - time_center, fp=rf.signal, x=tt)
+    rf_signal = rf.signal * np.exp(1j * rf.phase_offset + 2 * math.pi * full_freq_offset * rf.t)
+    rfs = np.interp(xp=rf.t - time_center, fp=rf_signal, x=tt)
     spectrum = np.fft.fftshift(np.fft.fft(np.fft.fftshift(rfs)))
     w = np.arange(-math.floor(nn / 2), math.ceil(nn / 2) - 1) * dw
 
@@ -53,7 +70,9 @@ def calc_rf_bandwidth(
 
     if return_spectrum and not return_axis:
         return bw, spectrum
-    if return_axis:
+    elif return_axis and not return_spectrum:
+        return bw, w
+    elif return_spectrum and return_axis:
         return bw, spectrum, w
 
     return bw

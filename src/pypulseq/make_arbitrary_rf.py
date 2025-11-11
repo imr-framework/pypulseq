@@ -6,6 +6,7 @@ from warnings import warn
 
 import numpy as np
 
+from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
@@ -27,7 +28,10 @@ def make_arbitrary_rf(
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
     time_bw_product: float = 0,
-    use: str = str(),
+    use: str = 'undefined',
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
+    center: Union[float, None] = None,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
     Create an RF pulse with the given pulse shape.
@@ -63,8 +67,14 @@ def make_arbitrary_rf(
         System limits.
     time_bw_product : float, default=4
         Time-bandwidth product.
-    use : str, default=str()
+    use : str, default='undefined'
         Use of arbitrary radio-frequency pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
+    center : float, default=None
+        RF center (s).
 
     Returns
     -------
@@ -110,12 +120,12 @@ def make_arbitrary_rf(
     rf.shape_dur = duration
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-
-    if use != '':
-        rf.use = use
+    rf.use = use
 
     if rf.dead_time > rf.delay:
         warn(
@@ -123,6 +133,15 @@ def make_arbitrary_rf(
             stacklevel=2,
         )
         rf.delay = rf.dead_time
+
+    if center is not None:
+        rf.center = center
+        if rf.center < 0:
+            rf.center = 0
+        if rf.center > rf.shape_dur:
+            rf.center = rf.shape_dur
+    else:
+        rf.center, _ = calc_rf_center(rf)
 
     if return_gz:
         if slice_thickness <= 0:
