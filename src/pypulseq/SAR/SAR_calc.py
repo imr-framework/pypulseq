@@ -102,8 +102,8 @@ def _SAR_from_seq(seq: Sequence, Qtmf: np.ndarray, Qhmf: np.ndarray) -> Tuple[np
             rf = block.rf
             signal = rf.signal
             # This rf could be parallel transmit as well
-            SAR_wbg[block_counter] = _calc_SAR(Qtmf, signal)
-            SAR_hg[block_counter] = _calc_SAR(Qhmf, signal)
+            SAR_wbg[block_counter - 1] = _calc_SAR(Qtmf, signal)
+            SAR_hg[block_counter - 1] = _calc_SAR(Qhmf, signal)
 
     return SAR_wbg, SAR_hg, t
 
