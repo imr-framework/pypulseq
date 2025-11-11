@@ -86,47 +86,76 @@ class SeqPlot:
         if __MPLCURSORS_AVAILABLE__ is False:
             show_guides = False
 
-        # Handle overlay parameter
+        # Prepare fig1/fig2 from overlay if provided
         if overlay is not None:
-            if not isinstance(overlay, SeqPlot):
+            if overlay.__class__.__name__ != 'SeqPlot': # not sure why isinstance() does not work here
                 raise ValueError("overlay must be an instance of SeqPlot or None")
-            fig1 = overlay.fig1
-            fig2 = overlay.fig2
+
+            # If the overlay's figure objects have been closed, create new figures instead.
+            fig1 = overlay.fig1 if getattr(overlay, "fig1", None) and plt.fignum_exists(getattr(overlay.fig1, "number", None)) else None
+            fig2 = overlay.fig2 if getattr(overlay, "fig2", None) and plt.fignum_exists(getattr(overlay.fig2, "number", None)) else None
+
+            # Force using overlay stacking mode and avoid clearing the overlay by default.
             stacked = overlay.stacked
+            clear = False
         else:
             fig1, fig2 = None, None
 
         self.seq = seq
+        self.stacked = stacked
         self._cursors = []
         self._vlines = None  # populated if show_guides enabled
         self._guide_cids = []  # mpl_connect IDs for motion events
         self._show_guides = show_guides
 
-        handles = _seq_plot(
-            seq,
-            label=label,
-            save=save,
-            show_blocks=show_blocks,
-            time_range=time_range,
-            time_disp=time_disp,
-            grad_disp=grad_disp,
-            clear=clear,
-            fig1=fig1,
-            fig2=fig2,
-            stacked=stacked,
-        )
-        
+        # Respect plot_now even when matplotlib interactive mode is enabled:
+        # if plot_now is False and interactive mode is currently on, temporarily turn it off
+        prev_interactive = plt.isinteractive()
+        turned_off_interactive = False
+        if not plot_now and prev_interactive:
+            plt.ioff()
+            turned_off_interactive = True
+
+        try:
+            handles = _seq_plot(
+                seq,
+                label=label,
+                save=save,
+                show_blocks=show_blocks,
+                time_range=time_range,
+                time_disp=time_disp,
+                grad_disp=grad_disp,
+                clear=clear,
+                fig1=fig1,
+                fig2=fig2,
+                stacked=stacked,
+            )
+        finally:
+            # restore interactive state if we changed it
+            if turned_off_interactive:
+                plt.ion()
+
         if stacked:
             self.fig1, self.ax1 = handles
             self.fig2, self.ax2 = None, tuple([])
         else:
             self.fig1, self.ax1, self.fig2, self.ax2 = handles
 
+        # If overlay was provided and its figures existed, those figures are being reused:
+        # ensure the canvas is refreshed (but do not force show here; respect plot_now).
+        if overlay is not None:
+            for fig in (self.fig1, self.fig2):
+                if fig is not None:
+                    try:
+                        fig.canvas.draw_idle()
+                    except Exception:
+                        pass
+
         if __MPLCURSORS_AVAILABLE__:
             self._setup_cursor(self.fig1)
             if not stacked:  # Avoid double setup if same figure
                 self._setup_cursor(self.fig2)
-        
+
         # Setup dynamic guides if requested and not already provided by overlay
         if self._show_guides:
             # If overlay provided and overlay already has vlines, reuse them
@@ -154,14 +183,20 @@ class SeqPlot:
                             ln.set_visible(True)
                         for fig in {self.fig1, self.fig2}:
                             if fig is not None:
-                                fig.canvas.draw_idle()
+                                try:
+                                    fig.canvas.draw_idle()
+                                except Exception:
+                                    pass
                     else:
                         for ln in self._vlines.values():
                             if ln.get_visible():
                                 ln.set_visible(False)
                         for fig in {self.fig1, self.fig2}:
                             if fig is not None:
-                                fig.canvas.draw_idle()
+                                try:
+                                    fig.canvas.draw_idle()
+                                except Exception:
+                                    pass
 
                 canvases = []
                 if self.fig1 is not None:
@@ -172,6 +207,7 @@ class SeqPlot:
                     cid = canvas.mpl_connect('motion_notify_event', _motion)
                     self._guide_cids.append((canvas, cid))
 
+        # Only show now if requested. If plot_now is False, caller will manage plt.show()
         if plot_now:
             self.show()
 
@@ -225,6 +261,10 @@ class SeqPlot:
 
         if rb is not None and block_index not in (None, 0):
             val = getattr(rb, field, None)
+            try:
+                display_blk = block_index + 1
+            except Exception:
+                display_blk = block_index
             if val is not None:
                 try:
                     if field[0] == 'a':
@@ -234,14 +274,10 @@ class SeqPlot:
                     else:
                         name = self.seq.grad_id2name_map[val]
 
-                    # Display 1-based block index for users (add 1 to zero-based internal index).
-                    display_blk = block_index + 1
                     lines_txt.append(f"blk: {display_blk} {field}_id: {val} '{name}'")
                 except Exception:
-                    display_blk = block_index + 1
                     lines_txt.append(f'blk: {display_blk} {field}_id: {val}')
             else:
-                display_blk = block_index + 1
                 lines_txt.append(f'blk: {display_blk}')
         else:
             # Couldn't resolve a block for this x (outside plotted time_range or no block)
@@ -257,7 +293,10 @@ class SeqPlot:
                 ln.set_visible(True)
             for fig in {self.fig1, self.fig2}:
                 if fig is not None:
-                    fig.canvas.draw_idle()
+                    try:
+                        fig.canvas.draw_idle()
+                    except Exception:
+                        pass
 
         self._update_guides()
 
@@ -268,7 +307,10 @@ class SeqPlot:
                 ln.set_visible(False)
             for fig in {self.fig1, self.fig2}:
                 if fig is not None:
-                    fig.canvas.draw_idle()
+                    try:
+                        fig.canvas.draw_idle()
+                    except Exception:
+                        pass
 
     def _update_guides(self):
         # Update autoscale for all axes involved and redraw figures
@@ -281,7 +323,10 @@ class SeqPlot:
 
         for fig in (self.fig1, self.fig2):
             if fig is not None:
-                fig.canvas.draw_idle()
+                try:
+                    fig.canvas.draw_idle()
+                except Exception:
+                    pass
 
 
 def _seq_plot(
@@ -310,18 +355,54 @@ def _seq_plot(
     if grad_disp not in valid_grad_units:
         raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
+    # If figs were provided but closed (None), create new ones
     if stacked:
-        # Single figure with 6 subplots (MATLAB Pulseq style)
+        # Reuse existing fig1 when provided (overlay) or create new figure.
         fig1 = plt.figure() if fig1 is None else fig1
         fig2 = fig1  # Use same figure
+
+        # If clear requested clear, otherwise keep existing axes.
         if clear:
-            fig1.clear()
-        sp11 = fig1.add_subplot(611)
-        sp12 = fig1.add_subplot(612, sharex=sp11)
-        sp13 = fig1.add_subplot(613, sharex=sp11)
-        sp21 = fig1.add_subplot(614, sharex=sp11)
-        sp22 = fig1.add_subplot(615, sharex=sp11)
-        sp23 = fig1.add_subplot(616, sharex=sp11)
+            try:
+                fig1.clear()
+            except Exception:
+                pass
+
+        # Try to reuse existing axes when overlay/stacked is used (previous implementation always created new axes,
+        # which caused overlay to fail when stacked=True).
+        fig1_axes = fig1.get_axes()
+        if not fig1_axes or clear:
+            sp11 = fig1.add_subplot(611)
+            sp12 = fig1.add_subplot(612, sharex=sp11)
+            sp13 = fig1.add_subplot(613, sharex=sp11)
+            sp21 = fig1.add_subplot(614, sharex=sp11)
+            sp22 = fig1.add_subplot(615, sharex=sp11)
+            sp23 = fig1.add_subplot(616, sharex=sp11)
+        else:
+            # Reuse first six axes if present; create any missing ones and preserve sharex with sp11.
+            if len(fig1_axes) >= 6:
+                sp11, sp12, sp13, sp21, sp22, sp23 = fig1_axes[:6]
+            else:
+                # At least one axis exists; use the first as sp11, create the rest
+                if len(fig1_axes) >= 1:
+                    sp11 = fig1_axes[0]
+                else:
+                    sp11 = fig1.add_subplot(611)
+                # create remaining axes with sharex=sp11
+                existing = len(fig1_axes)
+                mapping_positions = [612, 613, 614, 615, 616]
+                created_axes = []
+                for pos in mapping_positions[existing - 1 if existing > 0 else 0:]:
+                    # pos is in the form 6xy; still safe to call add_subplot with position int
+                    created_axes.append(fig1.add_subplot(pos, sharex=sp11))
+                # now assemble sp12..sp23 from existing+created
+                all_axes = fig1.get_axes()
+                # ensure we pick the first six axes in document order
+                sp_axes = all_axes[:6]
+                # pad if somehow less than 6 (unlikely)
+                while len(sp_axes) < 6:
+                    sp_axes.append(fig1.add_subplot(616, sharex=sp11))
+                sp11, sp12, sp13, sp21, sp22, sp23 = sp_axes[:6]
     else:
         # Two figures
         fig1 = plt.figure() if fig1 is None else fig1
@@ -329,8 +410,14 @@ def _seq_plot(
 
         # Clear existing figures if clear=True
         if clear:
-            fig1.clear()
-            fig2.clear()
+            try:
+                fig1.clear()
+            except Exception:
+                pass
+            try:
+                fig2.clear()
+            except Exception:
+                pass
 
         # Create or reuse subplots of fig1
         fig1_axes = fig1.get_axes()
