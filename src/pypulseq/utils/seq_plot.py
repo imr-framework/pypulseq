@@ -1,3 +1,4 @@
+import contextlib
 import itertools
 import math
 
@@ -88,12 +89,20 @@ class SeqPlot:
 
         # Prepare fig1/fig2 from overlay if provided
         if overlay is not None:
-            if overlay.__class__.__name__ != 'SeqPlot': # not sure why isinstance() does not work here
-                raise ValueError("overlay must be an instance of SeqPlot or None")
+            if overlay.__class__.__name__ != 'SeqPlot':  # not sure why isinstance() does not work here
+                raise ValueError('overlay must be an instance of SeqPlot or None')
 
             # If the overlay's figure objects have been closed, create new figures instead.
-            fig1 = overlay.fig1 if getattr(overlay, "fig1", None) and plt.fignum_exists(getattr(overlay.fig1, "number", None)) else None
-            fig2 = overlay.fig2 if getattr(overlay, "fig2", None) and plt.fignum_exists(getattr(overlay.fig2, "number", None)) else None
+            fig1 = (
+                overlay.fig1
+                if getattr(overlay, 'fig1', None) and plt.fignum_exists(getattr(overlay.fig1, 'number', None))
+                else None
+            )
+            fig2 = (
+                overlay.fig2
+                if getattr(overlay, 'fig2', None) and plt.fignum_exists(getattr(overlay.fig2, 'number', None))
+                else None
+            )
 
             # Force using overlay stacking mode and avoid clearing the overlay by default.
             stacked = overlay.stacked
@@ -137,7 +146,7 @@ class SeqPlot:
 
         if stacked:
             self.fig1, self.ax1 = handles
-            self.fig2, self.ax2 = None, tuple([])
+            self.fig2, self.ax2 = None, ()
         else:
             self.fig1, self.ax1, self.fig2, self.ax2 = handles
 
@@ -146,10 +155,8 @@ class SeqPlot:
         if overlay is not None:
             for fig in (self.fig1, self.fig2):
                 if fig is not None:
-                    try:
+                    with contextlib.suppress(Exception):
                         fig.canvas.draw_idle()
-                    except Exception:
-                        pass
 
         if __MPLCURSORS_AVAILABLE__:
             self._setup_cursor(self.fig1)
@@ -159,7 +166,7 @@ class SeqPlot:
         # Setup dynamic guides if requested and not already provided by overlay
         if self._show_guides:
             # If overlay provided and overlay already has vlines, reuse them
-            if overlay is not None and getattr(overlay, "_vlines", None):
+            if overlay is not None and getattr(overlay, '_vlines', None):
                 self._vlines = overlay._vlines
                 self._guide_cids = overlay._guide_cids
             else:
@@ -179,24 +186,20 @@ class SeqPlot:
                     if event.inaxes in unique_axes and event.xdata is not None:
                         x = event.xdata
                         for ln in self._vlines.values():
-                            ln.set_xdata(x)
+                            ln.set_xdata([x])
                             ln.set_visible(True)
                         for fig in {self.fig1, self.fig2}:
                             if fig is not None:
-                                try:
+                                with contextlib.suppress(Exception):
                                     fig.canvas.draw_idle()
-                                except Exception:
-                                    pass
                     else:
                         for ln in self._vlines.values():
                             if ln.get_visible():
                                 ln.set_visible(False)
                         for fig in {self.fig1, self.fig2}:
                             if fig is not None:
-                                try:
+                                with contextlib.suppress(Exception):
                                     fig.canvas.draw_idle()
-                                except Exception:
-                                    pass
 
                 canvases = []
                 if self.fig1 is not None:
@@ -218,13 +221,11 @@ class SeqPlot:
         for ax in fig.axes:
             lines = ax.get_lines()
             for line in lines:
-                try:
+                with contextlib.suppress(Exception):
                     cursor = mplcursors.cursor(line, multiple=True)
                     cursor.connect('add', lambda sel: self._on_datatip(sel))
-                    cursor.connect('remove', lambda sel: self._hide_datatip_guides(sel)) # new
+                    cursor.connect('remove', lambda sel: self._hide_datatip_guides(sel))  # new
                     self._cursors.append(cursor)
-                except Exception:
-                    pass
 
     def _on_datatip(self, sel):
         """
@@ -246,7 +247,7 @@ class SeqPlot:
         # Convert the displayed x coordinate back to the sequence time units
         # _seq_plot stores a t_factor on each figure as _seq_t_factor
         fig = artist.axes.figure
-        t_factor = getattr(fig, "_seq_t_factor", 1.0)
+        t_factor = getattr(fig, '_seq_t_factor', 1.0)
         seq_time = x / t_factor
 
         # Try finding corresponding block; if it fails (click outside sequence/time range) handle gracefully
@@ -284,49 +285,41 @@ class SeqPlot:
             lines_txt.append('blk: 1')
 
         sel.annotation.set_text('\n'.join(lines_txt))
-        
+
         # If we have dynamic guides, move them to the datatip x position and show them
-        if getattr(self, "_vlines", None):
+        if getattr(self, '_vlines', None):
             x_coord = x
             for ln in self._vlines.values():
-                ln.set_xdata(x_coord)
+                ln.set_xdata([x_coord])
                 ln.set_visible(True)
             for fig in {self.fig1, self.fig2}:
                 if fig is not None:
-                    try:
+                    with contextlib.suppress(Exception):
                         fig.canvas.draw_idle()
-                    except Exception:
-                        pass
 
         self._update_guides()
 
-    def _hide_datatip_guides(self, sel):
+    def _hide_datatip_guides(self, sel):  # noqa
         # Hide guides when datatip removed (connected to mplcursors 'remove' event)
-        if getattr(self, "_vlines", None):
+        if getattr(self, '_vlines', None):
             for ln in self._vlines.values():
                 ln.set_visible(False)
             for fig in {self.fig1, self.fig2}:
                 if fig is not None:
-                    try:
+                    with contextlib.suppress(Exception):
                         fig.canvas.draw_idle()
-                    except Exception:
-                        pass
 
     def _update_guides(self):
         # Update autoscale for all axes involved and redraw figures
-        for ax in (tuple(self.ax1) + tuple(self.ax2)):  # Flatten tuples for iteration
-            try:
+        for ax in tuple(self.ax1) + tuple(self.ax2):  # Flatten tuples for iteration
+            with contextlib.suppress(Exception):
                 ax.relim()
                 ax.autoscale_view()
-            except Exception:
-                pass
 
         for fig in (self.fig1, self.fig2):
             if fig is not None:
-                try:
+                with contextlib.suppress(Exception):
                     fig.canvas.draw_idle()
-                except Exception:
-                    pass
 
 
 def _seq_plot(
@@ -363,10 +356,8 @@ def _seq_plot(
 
         # If clear requested clear, otherwise keep existing axes.
         if clear:
-            try:
+            with contextlib.suppress(Exception):
                 fig1.clear()
-            except Exception:
-                pass
 
         # Try to reuse existing axes when overlay/stacked is used (previous implementation always created new axes,
         # which caused overlay to fail when stacked=True).
@@ -392,7 +383,7 @@ def _seq_plot(
                 existing = len(fig1_axes)
                 mapping_positions = [612, 613, 614, 615, 616]
                 created_axes = []
-                for pos in mapping_positions[existing - 1 if existing > 0 else 0:]:
+                for pos in mapping_positions[existing - 1 if existing > 0 else 0 :]:
                     # pos is in the form 6xy; still safe to call add_subplot with position int
                     created_axes.append(fig1.add_subplot(pos, sharex=sp11))
                 # now assemble sp12..sp23 from existing+created
@@ -410,14 +401,10 @@ def _seq_plot(
 
         # Clear existing figures if clear=True
         if clear:
-            try:
+            with contextlib.suppress(Exception):
                 fig1.clear()
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 fig2.clear()
-            except Exception:
-                pass
 
         # Create or reuse subplots of fig1
         fig1_axes = fig1.get_axes()
@@ -511,7 +498,7 @@ def _seq_plot(
                     _t = [t_factor * t] * len(lbl_vals)
                     # Plot each label individually to retrieve each corresponding Line2D object
                     p = itertools.chain.from_iterable(
-                        [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
+                        [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals, strict=True)]
                     )
                     if len(label_legend_to_plot) != 0:
                         sp11.legend(list(p), label_legend_to_plot, loc='upper left')
@@ -679,9 +666,9 @@ def _seq_plot(
         sp.grid(True)
 
     # Store the t_factor on the figures so interactive callbacks can convert displayed x back to sequence time
-    setattr(fig1, "_seq_t_factor", t_factor)
+    fig1._seq_t_factor = t_factor
     if fig2 is not None:
-        setattr(fig2, "_seq_t_factor", t_factor)
+        fig2._seq_t_factor = t_factor
 
     fig1.tight_layout()
     if not stacked:

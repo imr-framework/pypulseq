@@ -1081,7 +1081,20 @@ class Sequence:
         SeqPlot
             SeqPlot handle.
         """
-        return SeqPlot(self, label, show_blocks, save, time_range, time_disp, grad_disp, plot_now, clear, overlay, stacked, show_guides)
+        return SeqPlot(
+            self,
+            label,
+            show_blocks,
+            save,
+            time_range,
+            time_disp,
+            grad_disp,
+            plot_now,
+            clear,
+            overlay,
+            stacked,
+            show_guides,
+        )
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
         """
@@ -1151,7 +1164,7 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-                new_data = data[0:3] + (mapping[data[3]], mapping[data[4]]) + (data[5],)
+                new_data = (*data[0:3], mapping[data[3]], mapping[data[4]], data[5])
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 
