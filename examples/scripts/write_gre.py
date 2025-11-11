@@ -124,7 +124,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
         if paper_plot:
             seq.paper_plot()
         else:
-            seq.plot()
+            seq.plot(time_range=(0.0, TR), stacked=True, show_guides=True)
 
     seq.calculate_kspace()
 
@@ -147,4 +147,4 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
 
 if __name__ == '__main__':
-    seq = main(plot=True, paper_plot=True, write_seq=False)
+    seq = main(plot=False, paper_plot=False, write_seq=False)

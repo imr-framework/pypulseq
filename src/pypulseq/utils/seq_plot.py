@@ -77,18 +77,24 @@ class SeqPlot:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
-        overlay=None,
         clear: bool = True,
+        overlay: 'SeqPlot' = None,
         stacked: bool = False,
         show_guides: bool = False,
     ):
+        # Handle optional dependencies
+        if __MPLCURSORS_AVAILABLE__ is False:
+            show_guides = False
+
         # Handle overlay parameter
         if overlay is not None:
             if not isinstance(overlay, SeqPlot):
                 raise ValueError("overlay must be an instance of SeqPlot or None")
             fig1 = overlay.fig1
             fig2 = overlay.fig2
-            clear = False  # Always overlay on existing figures
+            stacked = overlay.stacked
+        else:
+            fig1, fig2 = None, None
 
         self.seq = seq
         self._cursors = []
@@ -118,10 +124,8 @@ class SeqPlot:
 
         if __MPLCURSORS_AVAILABLE__:
             self._setup_cursor(self.fig1)
-            if not stacked or self.fig2 != self.fig1:  # Avoid double setup if same figure
+            if not stacked:  # Avoid double setup if same figure
                 self._setup_cursor(self.fig2)
-        else:
-            self._show_guides = False
         
         # Setup dynamic guides if requested and not already provided by overlay
         if self._show_guides:
