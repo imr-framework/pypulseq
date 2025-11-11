@@ -29,11 +29,8 @@ from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
-<<<<<<< HEAD
-=======
 from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.supported_labels_rf_use import get_supported_labels
->>>>>>> origin/master
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.paper_plot import paper_plot as ext_paper_plot
 from pypulseq.utils.seq_plot import SeqPlot
@@ -984,9 +981,9 @@ class Sequence:
 
             if grad_type == 'g' and len(grad_data) == 6:
                 # Need to update first and last fields for arbitrary gradients
-                # Data structure: (amplitude, shape_ID1, shape_ID2, delay, first, last)
-                grad_data[4] *= modifier  # first
-                grad_data[5] *= modifier  # last
+                # Data structure: (amplitude, first, last, shape_ID1, shape_ID2, delay) # changed in v1.5.x
+                grad_data[1] *= modifier  # first # changed in v1.5.x
+                grad_data[2] *= modifier  # last # changed in v1.5.x
 
             # Use EventLibrary.update() to properly maintain keymap integrity
             new_data = tuple(grad_data)
@@ -1042,14 +1039,10 @@ class Sequence:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
-<<<<<<< HEAD
-    ) -> SeqPlot:
-=======
         clear: bool = True,
         fig1: Union[plt.Figure, None] = None,
         fig2: Union[plt.Figure, None] = None,
     ) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]:
->>>>>>> origin/master
         """
         Plot `Sequence`.
 
@@ -1070,19 +1063,6 @@ class Sequence:
         grad_disp : str, default='kHz/m'
             Gradient display unit, must be one of 'kHz/m' or 'mT/m'.
         plot_now : bool, default=True
-<<<<<<< HEAD
-            If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
-            If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
-        plot_type : str, default='Gradient'
-            Gradients display type, must be one of either 'Gradient' or 'Kspace'.
-
-        Returns
-        -------
-        SeqPlot
-            SeqPlot handle.
-        """
-        return SeqPlot(self, label, show_blocks, save, time_range, time_disp, grad_disp, plot_now)
-=======
             If True, function immediately shows the plots, blocking the rest of the code until plots are exited.
             If False, plots are shown when plt.show() is called. Useful if plots are to be modified.
         clear : bool, default=True
@@ -1362,7 +1342,6 @@ class Sequence:
 
         if plot_now:
             plt.show()
->>>>>>> origin/master
 
         # Always return figures and axes for customization
         return fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)
@@ -1435,11 +1414,7 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-<<<<<<< HEAD
                 new_data = data[0:3] + (mapping[data[3]], mapping[data[4]]) + (data[5],)
-=======
-                new_data = (data[0], mapping[data[1]], mapping[data[2]], *data[3:])
->>>>>>> origin/master
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 

@@ -43,19 +43,27 @@ class SeqPlot:
     plot_now : bool, default=True
         If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
         If false, plots are shown when plt.show() is called. Useful if plots are to be modified.
-    plot_type : str, default='Gradient'
-        Gradients display type, must be one of either 'Gradient' or 'Kspace'.
+    overlay : SeqPlot or None, default=None
+        If provided, overlay this plot on the figures from the given SeqPlot object. Overrides fig1, fig2, and sets clear=False.
+    clear : bool, default=True
+        If True, clear existing figures before plotting (default behavior).
+        If False, overlay on existing figures for sequence comparison.
+    stacked : bool, default=False
+        If True, plot all channels (ADC, RF mag, RF phase, Gx, Gy, Gz) in a single stacked figure (MATLAB Pulseq style).
+        If False, use separate figures for RF/ADC and gradients.
+    show_guide : bool, default=True
+        If True, enable grid lines (guides) on all subplots for better readability.
 
     Attributes
     ----------
     fig1 : matplotlib.figure.Figure
-        Figure containing RF and ADC channels.
+        Figure containing RF/ADC channels (or all channels if stacked).
     fig2 : matplotlib.figure.Figure
-        Figure containing Gradient or K-space channels.
-    ax1 : matplotlib.axes.Axes
-        Axes for fig1.
-    ax2 : matplotlib.axes.Axes
-        Axes for fig2.
+        Figure containing Gradient channels (same as fig1 if stacked).
+    ax1 : tuple of matplotlib.axes.Axes
+        Tuple of axes for fig1: (sp11, sp12, sp13) if not stacked, or (sp11, sp12, sp13, sp21, sp22, sp23) if stacked.
+    ax2 : tuple of matplotlib.axes.Axes
+        Tuple of axes for fig2: (sp21, sp22, sp23) if not stacked, or same as ax1 if stacked.
     """
 
     def __init__(
@@ -68,11 +76,23 @@ class SeqPlot:
         time_disp: str = 's',
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
+        overlay=None,
+        clear: bool = True,
+        stacked: bool = False,
+        show_guides: bool = True,
     ):
+        # Handle overlay parameter
+        if overlay is not None:
+            if not isinstance(overlay, SeqPlot):
+                raise ValueError("overlay must be an instance of SeqPlot or None")
+            fig1 = overlay.fig1
+            fig2 = overlay.fig2
+            clear = False  # Always overlay on existing figures
+
         self.seq = seq
         self._cursors = []
 
-        self.fig1, self.fig2 = _seq_plot(
+        self.fig1, self.ax1, self.fig2, self.ax2 = _seq_plot(
             seq,
             label=label,
             save=save,
@@ -80,13 +100,17 @@ class SeqPlot:
             time_range=time_range,
             time_disp=time_disp,
             grad_disp=grad_disp,
+            clear=clear,
+            stacked=stacked,
+            show_guides=show_guides,
+            fig1=fig1,
+            fig2=fig2,
         )
-        self.ax1 = self.fig1.axes[0]
-        self.ax2 = self.fig2.axes[0]
 
         if __MPLCURSORS_AVAILABLE__:
             self._setup_cursor(self.fig1)
-            self._setup_cursor(self.fig2)
+            if not stacked or self.fig2 != self.fig1:  # Avoid double setup if same figure
+                self._setup_cursor(self.fig2)
 
         if plot_now:
             self.show()
@@ -141,12 +165,13 @@ class SeqPlot:
         self._update_guides()
 
     def _update_guides(self):
-        for ax in (self.ax1, self.ax2):
+        for ax in (self.ax1 + self.ax2):  # Flatten tuples for iteration
             ax.relim()
             ax.autoscale_view()
 
         for fig in (self.fig1, self.fig2):
-            fig.canvas.draw_idle()
+            if fig is not None:
+                fig.canvas.draw_idle()
 
 
 def _seq_plot(
@@ -157,6 +182,11 @@ def _seq_plot(
     time_range,
     time_disp,
     grad_disp,
+    clear,
+    stacked,
+    show_guides,
+    fig1,
+    fig2,
 ):
     mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -171,15 +201,45 @@ def _seq_plot(
     if grad_disp not in valid_grad_units:
         raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
 
-    fig1, fig2 = plt.figure(), plt.figure()
-    sp11 = fig1.add_subplot(311)
-    sp12 = fig1.add_subplot(312, sharex=sp11)
-    sp13 = fig1.add_subplot(313, sharex=sp11)
-    fig2_subplots = [
-        fig2.add_subplot(311, sharex=sp11),
-        fig2.add_subplot(312, sharex=sp11),
-        fig2.add_subplot(313, sharex=sp11),
-    ]
+    if stacked:
+        # Single figure with 6 subplots (MATLAB Pulseq style)
+        fig1 = plt.figure() if fig1 is None else fig1
+        fig2 = fig1  # Use same figure
+        if clear:
+            fig1.clear()
+        sp11 = fig1.add_subplot(611)
+        sp12 = fig1.add_subplot(612, sharex=sp11)
+        sp13 = fig1.add_subplot(613, sharex=sp11)
+        sp21 = fig1.add_subplot(614, sharex=sp11)
+        sp22 = fig1.add_subplot(615, sharex=sp11)
+        sp23 = fig1.add_subplot(616, sharex=sp11)
+    else:
+        # Two figures
+        fig1 = plt.figure() if fig1 is None else fig1
+        fig2 = plt.figure() if fig2 is None else fig2
+
+        # Clear existing figures if clear=True
+        if clear:
+            fig1.clear()
+            fig2.clear()
+
+        # Create or reuse subplots of fig1
+        fig1_axes = fig1.get_axes()
+        if not fig1_axes or clear:
+            sp11 = fig1.add_subplot(311)
+            sp12 = fig1.add_subplot(312, sharex=sp11)
+            sp13 = fig1.add_subplot(313, sharex=sp11)
+        else:
+            sp11, sp12, sp13 = fig1_axes[:3]
+
+        # Create or reuse subplots of fig2
+        fig2_axes = fig2.get_axes()
+        if not fig2_axes or clear:
+            sp21 = fig2.add_subplot(311, sharex=sp11)
+            sp22 = fig2.add_subplot(312, sharex=sp11)
+            sp23 = fig2.add_subplot(313, sharex=sp11)
+        else:
+            sp21, sp22, sp23 = fig2_axes[:3]
 
     t_factor_list = [1, 1e3, 1e6]
     t_factor = t_factor_list[valid_time_units.index(time_disp)]
@@ -208,7 +268,7 @@ def _seq_plot(
     block_edges = np.cumsum([0] + [x[1] for x in sorted(seq.block_durations.items())])
     block_edges_in_range = block_edges[(block_edges >= time_range[0]) * (block_edges <= time_range[1])]
     if show_blocks:
-        for sp in [sp11, sp12, sp13, *fig2_subplots]:
+        for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
             sp.set_xticks(t_factor * block_edges_in_range)
             sp.set_xticklabels(sp.get_xticklabels(), rotation=90)
 
@@ -238,7 +298,7 @@ def _seq_plot(
 
                 full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0)
                 full_phase_offset = np.atleast_1d(
-                    adc.phase_offset + adc.phase_offset * 1e-6 * seq.system.B0 + phase_modulation
+                    adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 + phase_modulation
                 )
 
                 sp13.plot(
@@ -369,31 +429,70 @@ def _seq_plot(
                             )
                         )
                         waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
-                    fig2_subplots[x].plot(t_factor * (t0 + time), waveform)
+                    [sp21, sp22, sp23][x].plot(t_factor * (t0 + time), waveform)
+
+            # Soft delays - plot as shaded regions with annotations
+            if getattr(block, 'soft_delay', None) is not None:
+                soft_delay = block.soft_delay
+                block_duration = seq.block_durations[block_counter]
+                t_mid = t0 + block_duration / 2  # Middle of the block
+
+                # Add shaded region spanning the soft delay block duration on all subplots
+                sp13.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                sp12.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                sp11.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                for sp2x in [sp21, sp22, sp23]:
+                    sp2x.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                # Add text annotation with soft delay hint on the RF/ADC phase subplot
+                y_lim = sp13.get_ylim()
+                y_range = y_lim[1] - y_lim[0]
+                y_pos = y_lim[0] + 0.1 * y_range
+                y_text = y_lim[0] + 0.3 * y_range
+
+                sp13.annotate(
+                    f'{soft_delay.hint}',
+                    xy=(t_factor * t_mid, y_pos),
+                    xytext=(t_factor * t_mid, y_text),
+                    ha='center',
+                    va='bottom',
+                    fontsize=8,
+                    bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'orange', 'alpha': 0.7},
+                )
+
         t0 += seq.block_durations[block_counter]
 
-    grad_plot_labels = ['x', 'y', 'z']
+    # Set axis labels
     sp11.set_ylabel('ADC')
     sp12.set_ylabel('RF mag (Hz)')
     sp13.set_ylabel('RF/ADC phase (rad)')
     sp13.set_xlabel(f't ({time_disp})')
-    for x in range(3):
-        _label = grad_plot_labels[x]
-        fig2_subplots[x].set_ylabel(f'G{_label} ({grad_disp})')
-    fig2_subplots[-1].set_xlabel(f't ({time_disp})')
+    sp21.set_ylabel(f'Gx ({grad_disp})')
+    sp22.set_ylabel(f'Gy ({grad_disp})')
+    sp23.set_ylabel(f'Gz ({grad_disp})')
+    if not stacked:
+        sp23.set_xlabel(f't ({time_disp})')
 
     # Setting display limits
     disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
-    [x.set_xlim(disp_range) for x in [sp11, sp12, sp13, *fig2_subplots]]
+    for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+        sp.set_xlim(disp_range)
 
-    # Grid on
-    for sp in [sp11, sp12, sp13, *fig2_subplots]:
-        sp.grid()
+    # Grid on/off based on show_guides
+    for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+        sp.grid(show_guides)
 
     fig1.tight_layout()
-    fig2.tight_layout()
+    if not stacked:
+        fig2.tight_layout()
     if save:
-        fig1.savefig('seq_plot1.jpg')
-        fig2.savefig('seq_plot2.jpg')
+        if stacked:
+            fig1.savefig('seq_plot_stacked.jpg')
+        else:
+            fig1.savefig('seq_plot1.jpg')
+            fig2.savefig('seq_plot2.jpg')
 
-    return fig1, fig2
+    if stacked:
+        return fig1, (sp11, sp12, sp13, sp21, sp22, sp23), fig1, (sp21, sp22, sp23)
+    else:
+        return fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)
