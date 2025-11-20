@@ -255,7 +255,7 @@ def _seq_plot(
                     _t = [t_factor * t] * len(lbl_vals)
                     # Plot each label individually to retrieve each corresponding Line2D object
                     p = itertools.chain.from_iterable(
-                        [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals)]
+                        [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals, strict=True)]
                     )
                     if len(label_legend_to_plot) != 0:
                         sp11.legend(list(p), label_legend_to_plot, loc='upper left')
