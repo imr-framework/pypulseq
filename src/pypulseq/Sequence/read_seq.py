@@ -210,6 +210,16 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     return get_supported_labels().index(s) + 1
 
                 self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
+            elif section[:16] == 'extension DELAYS':
+                extension_id = int(section[16:])
+                self.set_extension_string_ID('DELAYS', extension_id)
+                self.soft_delay_library = __read_and_parse_events(
+                    input_file, int, lambda ofs: 1e-6 * int(ofs), int, str
+                )
+                # Map numIDs to soft delay hints
+                for d in self.soft_delay_library.data.values():
+                    if d[3] not in self.soft_delay_hints:
+                        self.soft_delay_hints[d[3]] = d[0]
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
@@ -244,7 +254,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time) + d[3:],
+                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time, *d[3:]),
                             self.grad_library.type[i],
                         )
 
@@ -254,7 +264,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            d[:2] + (d[2] - self.grad_raster_time, self.grad_raster_time) + d[4:],
+                            (*d[:2], d[2] - self.grad_raster_time, self.grad_raster_time, *d[4:]),
                             self.grad_library.type[i],
                         )
 
@@ -616,13 +626,13 @@ def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
     while line != '' and line != '#':
         list_of_data_str = re.split(r'(\s+)', line)
         list_of_data_str = [d for d in list_of_data_str if d != ' ']
-        data = np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
+        data = []  # np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
         event_id = int(list_of_data_str[0])
         for i in range(1, len(list_of_data_str)):
             if i > len(args):
-                data[i - 1] = int(list_of_data_str[i])
+                data.append(int(list_of_data_str[i]))
             else:
-                data[i - 1] = args[i - 1](list_of_data_str[i])
+                data.append(args[i - 1](list_of_data_str[i]))
         event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 

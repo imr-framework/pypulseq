@@ -28,8 +28,11 @@ def ext_test_report(self) -> str:
     # Calculate TE, TR
     duration, num_blocks, event_count = self.duration()
 
-    k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc = self.calculate_kspace()
+    k_traj_adc, _, t_excitation, _, t_adc = self.calculate_kspace()
     t_excitation = np.asarray(t_excitation)
+
+    # remove all ADC events that come before the first RF event (noise scans or alike)
+    t_adc = t_adc[t_adc > t_excitation[0]]
 
     k_abs_adc = np.sqrt(np.sum(np.square(k_traj_adc), axis=0))
     k_abs_echo, index_echo = np.min(k_abs_adc), np.argmin(k_abs_adc)
@@ -132,7 +135,7 @@ def ext_test_report(self) -> str:
         unique_k_positions = np.max(k_counters, axis=1) + 1
         is_cartesian = np.prod(unique_k_positions) == k_traj_rep1.shape[1]
     else:
-        unique_k_positions = 1
+        unique_k_positions = np.ones(1)
 
     gw_data = self.waveforms()
     gws = [np.zeros_like(x) for x in gw_data]
@@ -140,8 +143,15 @@ def ext_test_report(self) -> str:
     gs = np.zeros(len(gw_data))
 
     common_time = np.unique(np.concatenate(gw_data, axis=1)[0])
-    gw_ct = np.zeros((len(gw_data), len(common_time)))
-    gs_ct = np.zeros((len(gw_data), len(common_time) - 1))
+
+    # catch case where no gradients are present (e.g. FID)
+    if all(x.size == 0 for x in gw_data):
+        gw_ct = np.zeros(0)
+        gs_ct = np.zeros(0)
+    else:
+        gw_ct = np.zeros((len(gw_data), len(common_time)))
+        gs_ct = np.zeros((len(gw_data), len(common_time) - 1))
+
     for gc in range(len(gw_data)):
         if gw_data[gc].shape[1] > 0:
             # Slew

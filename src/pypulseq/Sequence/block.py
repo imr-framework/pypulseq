@@ -13,7 +13,7 @@ from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.tracing import trace_enabled
 
 
-def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
+def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> None:
     """
     Replace block at index with new block provided as block structure, add sequence block, or create a new block
     from events and store at position specified by index. The block or events are provided in uncompressed form and
@@ -30,6 +30,7 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         Index at which block is replaced.
     args : SimpleNamespace
         Block or events to be replaced/added or created at `block_index`.
+        If a floating point number is provided, it is interpreted as the duration of the block.
 
     Raises
     ------
@@ -40,6 +41,9 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
         If two consecutive gradients to not have the same amplitude at the connection point.
         If the first gradient in the block does not start with 0.
         If a gradient that doesn't end at zero is not aligned to the block boundary.
+        If multiple soft_delay extensions are used in a block.
+        If a soft delay extension is used in a block of zero duration.
+        If a soft delay extension is used in a block containing conventional events.
     """
     events = block_to_events(*args)
     new_block = np.zeros(7, dtype=np.int32)
@@ -150,8 +154,19 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                     'ref': label_id,
                 }
                 extensions.append(ext)
+            elif event.type == 'soft_delay':
+                if hasattr(event, 'id'):
+                    event_id = event.id
+                else:
+                    event_id = register_soft_delay_event(self, event)
+
+                duration = max(duration, event.default_duration)
+                ext = {'type': self.get_extension_type_ID('DELAYS'), 'ref': event_id}
+                extensions.append(ext)
+            else:
+                raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
-            # Floating point number given as delay
+            # Delay given as floating number (internal use only, e.g., from get_block())
             duration = max(duration, event)
 
     # =========
@@ -184,6 +199,20 @@ def set_block(self, block_index: int, *args: SimpleNamespace) -> None:
                 if not found:
                     self.extensions_library.insert(extension_id, data)
 
+        # Sanity checks for the soft delays
+        if 'DELAYS' in self.extension_string_idx:
+            n_soft_delays = sum([1 for e in extensions if e['type'] == self.get_extension_type_ID('DELAYS')])
+            if n_soft_delays:
+                if n_soft_delays > 1:
+                    raise RuntimeError('Only one soft delay extension is allowed per block.')
+                if not duration:
+                    raise RuntimeError(
+                        'Soft delay extension can only be used in conjunction with blocks of non-zero duration.'
+                    )  # otherwise the gradient checks get tedious
+                if new_block[1:5].any():
+                    raise RuntimeError(
+                        'Soft delay extension can only be used in empty blocks (blocks containing no conventional events such as RF, adc or gradients).'
+                    )
         # Now we add the ID
         new_block[6] = extension_id
 
@@ -344,9 +373,9 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         return self.block_cache[block_index]
 
     block = SimpleNamespace()
-    attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label']
+    attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label', 'soft_delay']
     values = [None] * len(attrs)
-    for att, val in zip(attrs, values):
+    for att, val in zip(attrs, values, strict=False):
         setattr(block, att, val)
     event_ind = self.block_events[block_index]
 
@@ -460,7 +489,6 @@ def get_block(self, block_index: int) -> SimpleNamespace:
 
         block.adc = adc
 
-    # Triggers
     if event_ind[6] > 0:
         # We have extensions - triggers, labels, etc.
         next_ext_id = event_ind[6]
@@ -469,6 +497,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             # Format: ext_type, ext_id, next_ext_id
             ext_type = self.get_extension_type_string(ext_data[0])
 
+            # Triggers
             if ext_type == 'TRIGGERS':
                 trigger_types = ['output', 'trigger']
                 data = self.trigger_library.data[ext_data[1]]
@@ -506,6 +535,19 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                     block.label[len(block.label)] = label
                 else:
                     block.label = {0: label}
+            elif ext_type == 'DELAYS':
+                data = self.soft_delay_library.data[ext_data[1]]
+
+                # TODO: Check for multiple soft delays
+                block.soft_delay = SimpleNamespace(
+                    type='soft_delay',
+                    numID=data[0],
+                    offset=data[1],
+                    factor=data[2],
+                    hint=data[3],
+                    default_duration=self.block_durations[block_index],
+                )
+
             else:
                 raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
 
@@ -729,6 +771,51 @@ def register_label_event(self, event: SimpleNamespace) -> int:
         self.block_cache.clear()
 
     return label_id
+
+
+def register_soft_delay_event(self, event: SimpleNamespace) -> int:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        ID of soft delay event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered soft delay event.
+    """
+    # Auto-assign numID based on hint - each unique hint gets a unique numID
+    if event.hint in self.soft_delay_hints:
+        # Reuse existing numID for this hint
+        assigned_numID = self.soft_delay_hints[event.hint]
+        if event.numID is not None and event.numID != assigned_numID:
+            raise ValueError(
+                f"Soft delay hint '{event.hint}' is already assigned to numID {assigned_numID}. "
+                f'Cannot use numID {event.numID}. Consider using a different hint or omitting numID.'
+            )
+        event.numID = assigned_numID
+    else:
+        # Assign new numID for this hint
+        if event.numID is None:
+            # Auto-assign next available numID
+            event.numID = max([-1, *self.soft_delay_hints.values()]) + 1
+        else:
+            # Check if user-provided numID is already taken
+            if event.numID in self.soft_delay_hints.values():
+                existing_hint = next(hint for hint, num_id in self.soft_delay_hints.items() if num_id == event.numID)
+                raise ValueError(
+                    f"numID {event.numID} is already used by soft delay '{existing_hint}'. "
+                    f'Use a different numID or omit it for auto-assignment.'
+                )
+
+        self.soft_delay_hints[event.hint] = event.numID
+
+    data = (event.numID, event.offset, event.factor, event.hint)
+    soft_delay_id, found = self.soft_delay_library.find_or_insert(new_data=data)
+    if self.use_block_cache and found:
+        self.block_cache.clear()
+    return soft_delay_id
 
 
 def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
