@@ -4,6 +4,8 @@ from types import SimpleNamespace
 from typing import List, Optional, Tuple, Union
 from warnings import warn
 
+import numpy as np
+
 from pypulseq.opts import Opts
 from pypulseq.utils.tracing import trace, trace_enabled
 
@@ -16,6 +18,9 @@ def make_adc(
     freq_offset: float = 0,
     phase_offset: float = 0,
     system: Union[Opts, None] = None,
+    freq_ppm: float = 0,
+    phase_ppm: float = 0,
+    phase_modulation: np.ndarray = None,
 ) -> SimpleNamespace:
     """
     Create an ADC readout event.
@@ -36,6 +41,13 @@ def make_adc(
         Frequency offset of ADC readout event.
     phase_offset : float, default=0
         Phase offset of ADC readout event.
+    freq_ppm : float, default=0
+        PPM frequency offset of ADC readout event.
+    phase_ppm : float, default=0
+        PPM phase offset of ADC readout event.
+    phase_modulation : numpy.ndarray, default=None
+        Phase modulation array for FOV shifting.
+        If provided, it must have `num_samples` number of samples.
 
     Returns
     -------
@@ -57,10 +69,16 @@ def make_adc(
     adc.delay = delay
     adc.freq_offset = freq_offset
     adc.phase_offset = phase_offset
+    adc.freq_ppm = freq_ppm
+    adc.phase_ppm = phase_ppm
     adc.dead_time = system.adc_dead_time
 
     if (dwell == 0 and duration == 0) or (dwell > 0 and duration > 0):
         raise ValueError('Either dwell or duration must be defined')
+
+    if phase_modulation is not None and len(phase_modulation) != num_samples:
+        raise ValueError('ADC Phase modulation vector must have the same length as the number of samples')
+    adc.phase_modulation = phase_modulation
 
     if duration > 0:
         adc.dwell = duration / num_samples
