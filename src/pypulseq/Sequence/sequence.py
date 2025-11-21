@@ -1241,12 +1241,12 @@ class Sequence:
             rf.t = (np.arange(1, len(rf.signal) + 1) - 0.5) * self.rf_raster_time
             rf.shape_dur = len(rf.signal) * self.rf_raster_time
 
-        rf.center = lib_data[4]  # new in v150
-        rf.delay = lib_data[5]  # changed in v150
-        rf.freq_ppm = lib_data[6]  # new in v150
-        rf.phase_ppm = lib_data[7]  # new in v150
-        rf.freq_offset = lib_data[8]  # changed in v150
-        rf.phase_offset = lib_data[9]  # changed in v150
+        rf.center = lib_data[4]  # v150: new field
+        rf.delay = lib_data[5]  # v150: changed from lib_data[4] to lib_data[5]
+        rf.freq_ppm = lib_data[6]  # v150: new field
+        rf.phase_ppm = lib_data[7]  # v150: new field
+        rf.freq_offset = lib_data[8]  # v150: changed from lib_data[5] to lib_data[8]
+        rf.phase_offset = lib_data[9]  # v150: changed from lib_data[6] to lib_data[9]
 
         rf.dead_time = self.system.rf_dead_time
         rf.ringdown_time = self.system.rf_ringdown_time

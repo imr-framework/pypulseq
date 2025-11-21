@@ -216,7 +216,6 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
         # Now we add the ID
         new_block[6] = extension_id
 
-    # TODO: replace with independent function (#PR 289)
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
@@ -255,7 +254,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                     if prev_type == 't':
                         last = 0
                     elif prev_type == 'g':
-                        last = prev_lib['data'][2]  # v150
+                        last = prev_lib['data'][2]  # v150: changed from ['data'][5] to ['data'][2]
 
             # Check whether the difference between the last gradient value and
             # the first value of the new gradient is achievable with the
@@ -274,7 +273,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                     if next_type == 't':
                         first = 0
                     elif next_type == 'g':
-                        first = next_lib['data'][1]  # v150
+                        first = next_lib['data'][1]  # v150: changed from ['data'][4] to ['data'][1]
                 else:
                     first = 0
 
@@ -404,9 +403,9 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             grad.channel = grad_channels[i][1]
             if grad.type == 'grad':
                 amplitude = lib_data[0]
-                shape_id = lib_data[3]  # change in v150
-                time_id = lib_data[4]  # change in v150
-                delay = lib_data[5]  # change in v150
+                shape_id = lib_data[3]  # change in v150: changed from lib_data[1] to lib_data[3]
+                time_id = lib_data[4]  # change in v150: changed from lib_data[2] to lib_data[4]
+                delay = lib_data[5]  # change in v150: changed from lib_data[3] to lib_data[5]
                 shape_data = self.shape_library.data[shape_id]
                 compressed.num_samples = shape_data[0]
                 compressed.data = shape_data[1:]
@@ -566,7 +565,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     return block
 
 
-def register_adc_event(self, event: EventLibrary) -> Tuple[int, List[int]]:
+def register_adc_event(self, event: EventLibrary) -> Tuple[int, int]:
     """
 
     Parameters
@@ -577,7 +576,7 @@ def register_adc_event(self, event: EventLibrary) -> Tuple[int, List[int]]:
     Returns
     -------
     int, [int, ...]
-        ID of registered RF event, list of shape IDs
+        ID of registered RF event, shape IDs
     """
     surely_new = False
 

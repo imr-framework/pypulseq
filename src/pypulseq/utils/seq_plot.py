@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import contextlib
 import itertools
 import math
+import typing
 
 import matplotlib as mpl
 import numpy as np
@@ -14,9 +17,12 @@ from pypulseq.utils.cumsum import cumsum
 try:
     import mplcursors
 
-    __MPLCURSORS_AVAILABLE__ = True
+    _MPLCURSORS_AVAILABLE = True
 except ImportError:
-    __MPLCURSORS_AVAILABLE__ = False
+    _MPLCURSORS_AVAILABLE = False
+
+if typing.TYPE_CHECKING:
+    from pypulseq.Sequence.sequence import Sequence
 
 
 class SeqPlot:
@@ -28,8 +34,7 @@ class SeqPlot:
     seq : Sequence
         The Pulseq sequence object to plot.
     label : str, default=str()
-        Plot label values for ADC events: in this example for LIN and REP labels; other valid labes are accepted as
-        a comma-separated list.
+        Plot label values for ADC events. Valid labels are accepted as a comma-separated list.
     save : bool, default=False
         Boolean flag indicating if plots should be saved. The two figures will be saved as JPG with numerical
         suffixes to the filename 'seq_plot'.
@@ -39,7 +44,7 @@ class SeqPlot:
         Time range (x-axis limits) for plotting the sequence. Default is 0 to infinity (entire sequence).
     time_disp : str, default='s'
         Time display type, must be one of `s`, `ms` or `us`.
-    grad_disp : str, default='s'
+    grad_disp : str, default='kHz/m'
         Gradient display unit, must be one of `kHz/m` or `mT/m`.
     plot_now : bool, default=True
         If true, function immediately shows the plots, blocking the rest of the code until plots are exited.
@@ -70,7 +75,7 @@ class SeqPlot:
 
     def __init__(
         self,
-        seq,
+        seq: Sequence,
         label: str = str(),
         show_blocks: bool = False,
         save: bool = False,
@@ -84,7 +89,7 @@ class SeqPlot:
         show_guides: bool = False,
     ):
         # Handle optional dependencies
-        if __MPLCURSORS_AVAILABLE__ is False:
+        if _MPLCURSORS_AVAILABLE is False:
             show_guides = False
 
         # Prepare fig1/fig2 from overlay if provided
@@ -158,7 +163,7 @@ class SeqPlot:
                     with contextlib.suppress(Exception):
                         fig.canvas.draw_idle()
 
-        if __MPLCURSORS_AVAILABLE__:
+        if _MPLCURSORS_AVAILABLE:
             self._setup_cursor(self.fig1)
             if not stacked:  # Avoid double setup if same figure
                 self._setup_cursor(self.fig2)

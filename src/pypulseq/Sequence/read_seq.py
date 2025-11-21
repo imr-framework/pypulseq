@@ -120,7 +120,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     f'expected'
                 )
 
-            if version_combined < 1005000 and detect_rf_use:
+            if version_combined >= 1005000 and detect_rf_use:
                 warnings.warn('Option detectRFuse is not supported for file format version 1.5.0 and above')
                 detect_rf_use = False
 
