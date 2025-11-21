@@ -576,7 +576,7 @@ def register_adc_event(self, event: EventLibrary) -> Tuple[int, int]:
     Returns
     -------
     int, int
-        ID of registered ADC event, shape IDs
+        ID of registered ADC event, shape ID
     """
     surely_new = False
 
