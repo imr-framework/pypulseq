@@ -125,7 +125,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                 if hasattr(event, 'id'):
                     adc_id = event.id
                 else:
-                    adc_id = register_adc_event(self, event)
+                    adc_id, _ = register_adc_event(self, event)
 
                 new_block[5] = adc_id
                 duration = max(duration, event.delay + event.num_samples * event.dwell + event.dead_time)
@@ -254,7 +254,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                     if prev_type == 't':
                         last = 0
                     elif prev_type == 'g':
-                        last = prev_lib['data'][5]
+                        last = prev_lib['data'][2]  # v150: changed from ['data'][5] to ['data'][2]
 
             # Check whether the difference between the last gradient value and
             # the first value of the new gradient is achievable with the
@@ -273,7 +273,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                     if next_type == 't':
                         first = 0
                     elif next_type == 'g':
-                        first = next_lib['data'][4]
+                        first = next_lib['data'][1]  # v150: changed from ['data'][4] to ['data'][1]
                 else:
                     first = 0
 
@@ -288,13 +288,61 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
             raise RuntimeError('First gradient in the the first block has to start at 0.')
 
         if (
-            grad_to_check.stop[1] > self.system.max_slew * self.system.grad_raster_time
+            abs(grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time
             and abs(grad_to_check.stop[0] - duration) > 1e-7
         ):
             raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
+    # =========
+    # END GRADIENT CHECKS
+    # =========
 
     self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)
+
+
+def get_raw_block_content_IDs(self, block_index: int) -> SimpleNamespace:
+    """
+    Returns PyPulseq block content IDs at `block_index` position in `self.block_events`.
+
+    No block events are created, only the IDs of the objects are returned.
+
+    Parameters
+    ----------
+    block_index : int
+        Index of PyPulseq block to be retrieved from `self.block_events`.
+
+    Returns
+    -------
+    block : SimpleNamespace
+        PyPulseq block content IDs at 'block_index' position in `self.block_events`.
+    """
+    raw_block = SimpleNamespace(block_duration=0, rf=0, gx=0, gy=0, gz=0, adc=0, ext=[])
+    event_ind = self.block_events[block_index]
+
+    # Extensions
+    if event_ind[6] > 0:
+        next_ext_id = event_ind[6]
+        while next_ext_id != 0:
+            ext_data = self.extensions_library.data[next_ext_id]
+            raw_block.ext.append(ext_data[:2])
+            next_ext_id = ext_data[2]
+        raw_block.ext = np.stack(raw_block.ext, axis=-1)
+
+    # RF
+    if event_ind[1] > 0:
+        raw_block.rf = event_ind[1]
+
+    # Gradients
+    grad_channels = ['gx', 'gy', 'gz']
+    for i in range(len(grad_channels)):
+        if event_ind[2 + i] > 0:
+            setattr(raw_block, grad_channels[i], event_ind[2 + i])
+
+    # ADC
+    if event_ind[5] > 0:
+        raw_block.adc = event_ind[5]
+
+    return raw_block
 
 
 def get_block(self, block_index: int) -> SimpleNamespace:
@@ -342,6 +390,8 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         else:
             block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], 'u')  # Undefined type/use
 
+        # TODO: add optional rf ID from raw_block
+
     # Gradients
     grad_channels = ['gx', 'gy', 'gz']
     for i in range(len(grad_channels)):
@@ -353,9 +403,9 @@ def get_block(self, block_index: int) -> SimpleNamespace:
             grad.channel = grad_channels[i][1]
             if grad.type == 'grad':
                 amplitude = lib_data[0]
-                shape_id = lib_data[1]
-                time_id = lib_data[2]
-                delay = lib_data[3]
+                shape_id = lib_data[3]  # change in v150: changed from lib_data[1] to lib_data[3]
+                time_id = lib_data[4]  # change in v150: changed from lib_data[2] to lib_data[4]
+                delay = lib_data[5]  # change in v150: changed from lib_data[3] to lib_data[5]
                 shape_data = self.shape_library.data[shape_id]
                 compressed.num_samples = shape_data[0]
                 compressed.data = shape_data[1:]
@@ -365,22 +415,36 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 if time_id == 0:
                     grad.tt = (np.arange(1, len(g) + 1) - 0.5) * self.grad_raster_time
                     t_end = len(g) * self.grad_raster_time
+                    grad.area = sum(grad.waveform) * self.grad_raster_time
+                elif time_id == -1:
+                    # Gradient with oversampling by a factor of 2
+                    grad.tt = 0.5 * (np.arange(1, len(g) + 1)) * self.grad_raster_time
+                    if len(grad.tt) != len(grad.waveform):
+                        raise ValueError(
+                            f'Mismatch between time shape length ({len(grad.tt)}) and gradient shape length ({len(grad.waveform)}).'
+                        )
+                    if len(grad.waveform) % 2 != 1:
+                        raise ValueError('Oversampled gradient waveforms must have odd number of samples')
+                    t_end = (len(g) + 1) * self.grad_raster_time
+                    grad.area = sum(grad.waveform[::2]) * self.grad_raster_time  # remove oversampling
                 else:
                     t_shape_data = self.shape_library.data[time_id]
                     compressed.num_samples = t_shape_data[0]
                     compressed.data = t_shape_data[1:]
                     grad.tt = decompress_shape(compressed) * self.grad_raster_time
-
-                    assert len(grad.waveform) == len(grad.tt)
+                    if len(grad.tt) != len(grad.waveform):
+                        raise ValueError(
+                            f'Mismatch between time shape length ({len(grad.tt)}) and gradient shape length ({len(grad.waveform)}).'
+                        )
                     t_end = grad.tt[-1]
+                    grad.area = 0.5 * sum((grad.tt[1:] - grad.tt[:-1]) * (grad.waveform[1:] + grad.waveform[:-1]))
 
                 grad.shape_id = shape_id
                 grad.time_id = time_id
                 grad.delay = delay
                 grad.shape_dur = t_end
-                if len(lib_data) > 5:
-                    grad.first = lib_data[4]
-                    grad.last = lib_data[5]
+                grad.first = lib_data[1]  # change in v150 - we always have first/last now
+                grad.last = lib_data[2]  # change in v150 - we always have first/last now
             else:
                 grad.amplitude = lib_data[0]
                 grad.rise_time = lib_data[1]
@@ -390,23 +454,38 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
                 grad.flat_area = grad.amplitude * grad.flat_time
 
+            # TODO: add optional grad ID from raw_block
+
             setattr(block, grad_channels[i], grad)
 
     # ADC
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
+        shape_id_phase_modulation = lib_data[-2]
+        if shape_id_phase_modulation:
+            shape_data = self.shape_library.data[shape_id_phase_modulation]
+            compressed = SimpleNamespace()
+            compressed.num_samples = shape_data[0]
+            compressed.data = shape_data[1:]
+            phase_shape = decompress_shape(compressed)
+        else:
+            phase_shape = np.array([], dtype=float)
 
         adc = SimpleNamespace()
-        (
-            adc.num_samples,
-            adc.dwell,
-            adc.delay,
-            adc.freq_offset,
-            adc.phase_offset,
-            adc.dead_time,
-        ) = [lib_data[x] for x in range(6)]
+        adc.num_samples = lib_data[0]
+        adc.dwell = lib_data[1]
+        adc.delay = lib_data[2]
+        adc.freq_ppm = lib_data[3]
+        adc.phase_ppm = lib_data[4]
+        adc.freq_offset = lib_data[5]
+        adc.phase_offset = lib_data[6]
+        adc.phase_modulation = phase_shape
+        adc.dead_time = self.system.adc_dead_time
         adc.num_samples = int(adc.num_samples)
         adc.type = 'adc'
+
+        # TODO: add optional adc ID from raw_block
+
         block.adc = adc
 
     if event_ind[6] > 0:
@@ -486,7 +565,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     return block
 
 
-def register_adc_event(self, event: EventLibrary) -> int:
+def register_adc_event(self, event: EventLibrary) -> Tuple[int, int]:
     """
 
     Parameters
@@ -496,25 +575,52 @@ def register_adc_event(self, event: EventLibrary) -> int:
 
     Returns
     -------
-    int
-        ID of registered ADC event.
+    int, int
+        ID of registered ADC event, shape ID
     """
+    surely_new = False
+
+    # Handle phase modulation
+    if not hasattr(event, 'phase_modulation') or event.phase_modulation is None or len(event.phase_modulation) == 0:
+        shape_id = 0
+    else:
+        if hasattr(event, 'shape_id'):
+            shape_id = event.shape_id
+        else:
+            phase_shape = compress_shape(np.asarray(event.phase_modulation).flatten())
+            shape_data = np.concatenate(([phase_shape.num_samples], phase_shape.data))
+            shape_id, shape_found = self.shape_library.find_or_insert(shape_data)
+            if not shape_found:
+                surely_new = True
+
+    # Construct the ADC event data
     data = (
         event.num_samples,
         event.dwell,
-        event.delay,
+        max(event.delay, event.dead_time),
+        event.freq_ppm,
+        event.phase_ppm,
         event.freq_offset,
         event.phase_offset,
+        shape_id,
         event.dead_time,
     )
-    adc_id, found = self.adc_library.find_or_insert(new_data=data)
 
-    # Clear block cache because ADC was overwritten
-    # TODO: Could find only the blocks that are affected by the changes
-    if self.use_block_cache and found:
-        self.block_cache.clear()
+    # Insert or find/insert into libraryAdd commentMore actions
+    if surely_new:
+        adc_id = self.adc_library.insert(0, data)
+    else:
+        adc_id, found = self.adc_library.find_or_insert(data)
 
-    return adc_id
+        # Clear block cache if overwritten
+        if self.use_block_cache and found:
+            self.block_cache.clear()
+
+    # Optional mapping
+    if hasattr(event, 'name'):
+        self.adc_id_to_name_map[adc_id] = event.name
+
+    return adc_id, shape_id
 
 
 def register_control_event(self, event: SimpleNamespace) -> int:
@@ -567,37 +673,45 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     """
     may_exist = True
     any_changed = False
+
     if event.type == 'grad':
-        amplitude = np.abs(event.waveform).max()
+        amplitude = np.max(np.abs(event.waveform))
         if amplitude > 0:
             fnz = event.waveform[np.nonzero(event.waveform)[0][0]]
-            amplitude *= np.sign(fnz) if fnz != 0 else 1  # Workaround for np.sign(0) = 0
+            amplitude *= np.sign(fnz) if fnz != 0 else 1
 
+        # Shape ID initialization
         if hasattr(event, 'shape_IDs'):
             shape_IDs = event.shape_IDs
         else:
             shape_IDs = [0, 0]
-            if amplitude != 0:
-                g = event.waveform / amplitude
-            else:
-                g = event.waveform
+
+            # Shape for waveform
+            g = event.waveform / amplitude if amplitude != 0 else event.waveform
             c_shape = compress_shape(g)
             s_data = np.concatenate(([c_shape.num_samples], c_shape.data))
             shape_IDs[0], found = self.shape_library.find_or_insert(s_data)
-            may_exist = may_exist & found
+            may_exist = may_exist and found
             any_changed = any_changed or found
 
-            # Check whether tt == np.arange(len(event.tt)) * self.grad_raster_time + 0.5
-            tt_regular = (np.floor(event.tt / self.grad_raster_time) == np.arange(len(event.tt))).all()
+            # Shape for timing
+            c_time = compress_shape(event.tt / self.grad_raster_time)
+            t_data = np.concatenate(([c_time.num_samples], c_time.data))
 
-            if not tt_regular:
-                c_time = compress_shape(event.tt / self.grad_raster_time)
-                t_data = np.concatenate(([c_time.num_samples], c_time.data))
+            if len(c_time.data) == 4 and np.allclose(c_time.data, [0.5, 1, 1, c_time.num_samples - 3]):
+                # Standard raster → leave shape_IDs[1] as 0
+                pass
+            elif len(c_time.data) == 3 and np.allclose(c_time.data, [0.5, 0.5, c_time.num_samples - 2]):
+                # Half-raster → set to -1 as special flag
+                shape_IDs[1] = -1
+            else:
                 shape_IDs[1], found = self.shape_library.find_or_insert(t_data)
-                may_exist = may_exist & found
+                may_exist = may_exist and found
                 any_changed = any_changed or found
 
-        data = (amplitude, *shape_IDs, event.delay, event.first, event.last)
+        # Updated data layout to match MATLAB v1.5.0 ordering
+        data = (amplitude, event.first, event.last, *shape_IDs, event.delay)
+
     elif event.type == 'trap':
         data = (
             event.amplitude,
@@ -619,6 +733,9 @@ def register_grad_event(self, event: SimpleNamespace) -> Union[int, Tuple[int, L
     # TODO: Could find only the blocks that are affected by the changes
     if self.use_block_cache and any_changed:
         self.block_cache.clear()
+
+    if hasattr(event, 'name'):
+        self.grad_id_to_name_map[grad_id] = event.name
 
     if event.type == 'grad':
         return grad_id, shape_IDs
@@ -760,8 +877,19 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             use = event.use[0]
         else:
             use = 'u'
+    else:
+        raise ValueError('Parameter "use" is not optional since v1.5.0')
 
-    data = (amplitude, *shape_IDs, event.delay, event.freq_offset, event.phase_offset)
+    data = (
+        amplitude,
+        *shape_IDs,
+        event.center,
+        event.delay,
+        event.freq_ppm,
+        event.phase_ppm,
+        event.freq_offset,
+        event.phase_offset,
+    )
 
     if may_exist:
         rf_id, found = self.rf_library.find_or_insert(new_data=data, data_type=use)
@@ -772,5 +900,8 @@ def register_rf_event(self, event: SimpleNamespace) -> Tuple[int, List[int]]:
             self.block_cache.clear()
     else:
         rf_id = self.rf_library.insert(key_id=0, new_data=data, data_type=use)
+
+    if hasattr(event, 'name'):
+        self.rf_id_to_name_map[rf_id] = event.name
 
     return rf_id, shape_IDs
