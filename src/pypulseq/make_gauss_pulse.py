@@ -73,7 +73,9 @@ def make_gauss_pulse(
     time_bw_product : int, default=4
         Time-bandwidth product.
     use : str, default='undefined'
-        Use of radio-frequency gauss pulse event. Must be one defined in pypulseq.supported_labels_rf_use.get_supported_rf_uses.
+        Use of arbitrary radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
         PPM frequency offset.
     phase_ppm : float, default=0
@@ -97,8 +99,9 @@ def make_gauss_pulse(
     if system is None:
         system = Opts.default
 
-    if use != '' and use not in get_supported_rf_uses():
-        raise ValueError(f'Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}')
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time

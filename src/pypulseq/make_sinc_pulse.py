@@ -69,7 +69,9 @@ def make_sinc_pulse(
     time_bw_product : float, default=4
         Time-bandwidth product.
     use : str, default='undefined'
-        Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        Use of arbitrary radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
         PPM frequency offset.
     phase_ppm : float, default=0
@@ -89,7 +91,7 @@ def make_sinc_pulse(
     Raises
     ------
     ValueError
-        If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        If invalid `use` parameter was passed.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
     if system is None:

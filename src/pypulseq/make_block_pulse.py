@@ -49,7 +49,9 @@ def make_block_pulse(
     system : Opts, default=Opts()
         System limits.
     use : str, default='undefined'
-        Use of radio-frequency block pulse event.
+        Use of arbitrary radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
         PPM frequency offset.
     phase_ppm : float, default=0
@@ -70,9 +72,9 @@ def make_block_pulse(
     if system is None:
         system = Opts.default
 
-    valid_use_pulses = get_supported_rf_uses()
-    if use != '' and use not in valid_use_pulses:
-        raise ValueError(f'Invalid use parameter. Must be one of {valid_use_pulses}. Passed: {use}')
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if duration is None and bandwidth is None:
         warn('Using default 4 ms duration for block pulse.')

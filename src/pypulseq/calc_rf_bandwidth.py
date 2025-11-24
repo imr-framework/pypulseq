@@ -15,7 +15,7 @@ def calc_rf_bandwidth(
     return_axis: bool = False,
     return_spectrum: bool = False,
     dw: float = 10,
-    dt: float = 1e-6,
+    dt: Union[float, None] = None,
 ) -> Union[float, Tuple[float, np.ndarray], Tuple[float, np.ndarray, float]]:
     """
     Calculate the spectrum of the RF pulse. Returns the bandwidth of the pulse (calculated by a simple FFT, e.g.
@@ -33,8 +33,8 @@ def calc_rf_bandwidth(
         Boolean flag to indicate if spectrum of RF pulse will be returned.
     dw : float, default=10
         Spectral resolution in (Hz).
-    dt : float, default=1e-6
-        Sampling time in (s).
+    dt : Union[float, None], default=None
+        Sampling time in (s). Defaults to Opts().rf_raster_time.
 
     Returns
     -------
@@ -42,6 +42,9 @@ def calc_rf_bandwidth(
         Bandwidth of the RF pulse.
 
     """
+    if dt is None:
+        dt = Opts().rf_raster_time
+
     time_center, _ = calc_rf_center(rf)
 
     if abs(rf.freq_ppm) > np.finfo(float).eps:

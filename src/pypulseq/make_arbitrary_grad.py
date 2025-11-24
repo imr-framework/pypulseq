@@ -1,4 +1,3 @@
-# import warnings
 from types import SimpleNamespace
 from typing import Union
 
@@ -80,36 +79,29 @@ def make_arbitrary_grad(
     if channel not in ['x', 'y', 'z']:
         raise ValueError(f'Invalid channel. Must be one of x, y or z. Passed: {channel}')
 
-    if first is None:
-        # warnings.warn(
-        #     'it will be compulsory to provide the first point of the gradient shape in the future releases; finding the first by extrapolation for now...',
-        #     FutureWarning,
-        # )
-        if oversampling:
-            first = 2 * waveform[0] - waveform[1]  # extrapolate by 1 gradient raster
-        else:
-            first = (3 * waveform[0] - waveform[1]) * 0.5  # extrapolate by 1/2 gradient of the raster
+    if first is None or last is None:
 
-    if last is None:
-        # warnings.warn(
-        #     'it will be compulsory to provide the last point of the gradient shape in the future releases; finding the last by extrapolation for now...',
-        #     FutureWarning,
-        # )
-        if oversampling:
-            last = 2 * waveform[-1] - waveform[-2]  # extrapolate by 1 gradient raster
-        else:
-            last = (3 * waveform[-1] - waveform[-2]) * 0.5  # extrapolate by 1/2 gradient of the raster
+        def extrap(a, b):
+            # extrapolate by 1 gradient raster (oversampling)
+            # or by 1/2 gradient of the raster (non-oversampling)
+            return 2 * a - b if oversampling else 0.5 * (3 * a - b)
+
+        if first is None:
+            first = extrap(waveform[0], waveform[1])
+        if last is None:
+            last = extrap(waveform[-1], waveform[-2])
 
     # Slew rate calculation
     if oversampling:
-        slew_rate = np.concatenate([[first - waveform[0]], np.diff(waveform), [last - waveform[-1]]]) / (
-            system.grad_raster_time * 2
-        )
+        edge_scale = system.grad_raster_time * 2
+        pre = first - waveform[0]
+        post = last - waveform[-1]
     else:
-        slew_rate = (
-            np.concatenate([[2 * (first - waveform[0])], np.diff(waveform), [2 * (waveform[-1] - last)]])
-            / system.grad_raster_time
-        )
+        edge_scale = system.grad_raster_time
+        pre = 2 * (first - waveform[0])
+        post = 2 * (waveform[-1] - last)
+
+    slew_rate = np.concatenate([[pre], np.diff(waveform), [post]]) / edge_scale
 
     if max(abs(slew_rate)) > max_slew * (1 + eps):
         raise ValueError(f'Slew rate violation {max(abs(slew_rate)) / max_slew * 100}')

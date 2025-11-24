@@ -68,7 +68,9 @@ def make_arbitrary_rf(
     time_bw_product : float, default=4
         Time-bandwidth product.
     use : str, default='undefined'
-        Use of arbitrary radio-frequency pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        Use of arbitrary radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
         PPM frequency offset.
     phase_ppm : float, default=0
@@ -86,18 +88,16 @@ def make_arbitrary_rf(
     Raises
     ------
     ValueError
-        If invalid `use` parameter is passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        If invalid `use` parameter is passed.
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwidth` are not passed.
     """
     if system is None:
         system = Opts.default
 
-    valid_use_pulses = get_supported_rf_uses()
-    if use != '' and use not in valid_use_pulses:
-        raise ValueError(
-            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
-        )
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
