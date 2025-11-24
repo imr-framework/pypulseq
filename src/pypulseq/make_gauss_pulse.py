@@ -73,7 +73,7 @@ def make_gauss_pulse(
     time_bw_product : int, default=4
         Time-bandwidth product.
     use : str, default='undefined'
-        Use of arbitrary radio-frequency pulse event.
+        Use of radio-frequency Gauss pulse event.
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0

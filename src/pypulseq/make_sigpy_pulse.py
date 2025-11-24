@@ -92,7 +92,7 @@ def sigpy_n_seq(
         - phs_0_pt: str, optional, default='None'
             Phase 0 point. SMS only.
     use : str, default='undefined'
-        Use of arbitrary radio-frequency pulse event.
+        Use of radio-frequency Shinnar-LeRoux pulse event.
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     plot: bool, optional, default=True
@@ -105,7 +105,7 @@ def sigpy_n_seq(
     Returns
     -------
     rf : SimpleNamespace
-        Radio-frequency sinc pulse event.
+        Radio-frequency Shinnar-LeRoux pulse event.
     gz : SimpleNamespace, optional
         Accompanying slice select trapezoidal gradient event. Returned only if `slice_thickness` is provided.
     gzr : SimpleNamespace, optional

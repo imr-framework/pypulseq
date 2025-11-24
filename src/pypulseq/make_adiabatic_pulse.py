@@ -9,6 +9,7 @@ from pypulseq import eps
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 from pypulseq.utils.tracing import trace, trace_enabled
 
 
@@ -115,7 +116,9 @@ def make_adiabatic_pulse(
     system : Opts, default=Opts()
         System limits.
     use : str, default='inversion'
-        Whether it is an 'inversion' (default) or 'refocusing' pulse (for k-space calculation).
+        Use of adiabatic radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
         PPM frequency offset.
     phase_ppm : float, default=0
@@ -146,7 +149,7 @@ def make_adiabatic_pulse(
     valid_pulse_types = ['hypsec', 'wurst']
     if (not pulse_type) or (pulse_type not in valid_pulse_types):
         raise ValueError(f'Invalid type parameter. Must be one of {valid_pulse_types}.Passed: {pulse_type}')
-    valid_rf_use_labels = ['inversion', 'refocusing']
+    valid_rf_use_labels = get_supported_rf_uses()
     if use != '' and use not in valid_rf_use_labels:
         raise ValueError(f'Invalid use parameter. Must be one of {valid_rf_use_labels}. Passed: {use}')
 

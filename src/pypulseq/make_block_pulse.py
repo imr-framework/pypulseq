@@ -49,7 +49,7 @@ def make_block_pulse(
     system : Opts, default=Opts()
         System limits.
     use : str, default='undefined'
-        Use of arbitrary radio-frequency pulse event.
+        Use of radio-frequency block pulse event.
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
