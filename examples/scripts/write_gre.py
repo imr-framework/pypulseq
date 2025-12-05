@@ -5,7 +5,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq', paper_plot: bool = False):
     # ======
     # SETUP
     # ======
@@ -44,6 +44,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
         system=system,
         return_gz=True,
         delay=system.rf_dead_time,
+        use='excitation',
     )
     # Define other gradients and ADC events
     delta_k = 1 / fov
@@ -120,7 +121,10 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
     # VISUALIZATION
     # ======
     if plot:
-        seq.plot()
+        if paper_plot:
+            seq.paper_plot()
+        else:
+            seq.plot(time_range=(0.0, TR), stacked=True, show_guides=True)
 
     seq.calculate_kspace()
 
@@ -143,4 +147,4 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
 
 if __name__ == '__main__':
-    main(plot=False, write_seq=True)
+    seq = main(plot=False, paper_plot=False, write_seq=False)
