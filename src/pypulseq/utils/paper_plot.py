@@ -3,6 +3,8 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pypulseq import eps
+
 
 def paper_plot(
     seq,
@@ -45,9 +47,16 @@ def paper_plot(
     wave_data, _, _, t_adc, _ = seq.waveforms_and_times(append_RF=True, time_range=time_range)
 
     # Max amplitudes for scaling
-    gwm = np.max(np.abs(np.concatenate(wave_data[:3], axis=1)), axis=1)
-    gwm[0] = max(gwm[0], t_adc[-1])
-    rfm = np.max(np.abs(wave_data[3]), axis=1)
+    if wave_data[0].size + wave_data[1].size + wave_data[2].size:
+        gwm = np.max(np.abs(np.concatenate(wave_data[:3], axis=1)), axis=1)
+    else:
+        gwm = (-eps, eps)
+    if t_adc.size:
+        gwm[0] = max(gwm[0], t_adc[-1])
+    if wave_data[3].size:
+        rfm = np.max(np.abs(wave_data[3]), axis=1)
+    else:
+        rfm = (-eps, eps)
 
     # Handle complex RF
     if rf_plot == 'real':
