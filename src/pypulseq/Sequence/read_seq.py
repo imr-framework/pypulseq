@@ -60,7 +60,6 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     self.extension_string_idx = []
     self.extension_numeric_idx = []
 
-    jemris_generated = False
     version_combined = 0
 
     # Load data from file
@@ -89,8 +88,6 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             else:
                 warnings.warn(f'No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.')
 
-        elif section == '[JEMRIS]':
-            jemris_generated = True
         elif section == '[SIGNATURE]':
             temp_sign_defs = __read_definitions(input_file)
             if 'Type' in temp_sign_defs:
@@ -128,27 +125,21 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             )
             self.block_events, self.block_durations, delay_ind_temp = result
         elif section == '[RF]':
-            if jemris_generated:
-                self.rf_library = __read_events(input_file, (1, 1, 1, 1, 1), event_library=self.rf_library)
-            else:
-                if version_combined >= 1004000:  # 1.4.x format
-                    self.rf_library = __read_events(
-                        input_file,
-                        (1, 1, 1, 1, 1e-6, 1, 1),
-                        event_library=self.rf_library,
-                    )
-                else:  # 1.3.x and below
-                    self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
+            if version_combined >= 1004000:  # 1.4.x format
+                self.rf_library = __read_events(
+                    input_file,
+                    (1, 1, 1, 1, 1e-6, 1, 1),
+                    event_library=self.rf_library,
+                )
+            else:  # 1.3.x and below
+                self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
         elif section == '[GRADIENTS]':
             if version_combined >= 1004000:  # 1.4.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1e-6), 'g', self.grad_library)
             else:  # 1.3.x and below
                 self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
         elif section == '[TRAP]':
-            if jemris_generated:
-                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
-            else:
-                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
+            self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
             self.adc_library = __read_events(
                 input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
