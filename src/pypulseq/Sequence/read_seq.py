@@ -1,7 +1,7 @@
 import re
 import warnings
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -529,7 +529,11 @@ def __read_blocks(
 
 
 def __read_events(
-    input_file, scale: Optional[Tuple] = None, event_type: str = str(), event_library: EventLibrary = None, append=None
+    input_file,
+    scale: Union[Tuple, None] = None,
+    event_type: str = str(),
+    event_library: EventLibrary = None,
+    append=None,
 ) -> EventLibrary:
     """
     Read an event section of a sequence file and return a library of events.

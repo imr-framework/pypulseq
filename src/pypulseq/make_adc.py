@@ -1,7 +1,7 @@
 import itertools
 from math import ceil, floor, gcd, isclose, prod
 from types import SimpleNamespace
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 from warnings import warn
 
 import numpy as np
@@ -100,7 +100,7 @@ def make_adc(
 
 
 def calc_adc_segments(
-    num_samples: int, dwell: float, system: Optional[Opts] = None, mode: str = 'lengthen'
+    num_samples: int, dwell: float, system: Union[Opts, None] = None, mode: str = 'lengthen'
 ) -> Tuple[int, int]:
     """Calculate splitting of the ADC in segments with equal samples.
 
@@ -110,7 +110,7 @@ def calc_adc_segments(
         Initial number of samples to split into segments.
     dwell : float
         Dwell time of the ADC in [s]
-    system : Optional[Opts], default=None
+    system : Opts, default=None
        System limits. Default is a system limits object initialized to default values.
     mode : str, default='lengthen'
         The total number of samples can either be shortened or lengthened to match the constraints.
