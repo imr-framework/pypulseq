@@ -45,7 +45,7 @@ def make_adc(
         PPM frequency offset of ADC readout event.
     phase_ppm : float, default=0
         PPM phase offset of ADC readout event.
-    phase_modulation : Union[npumpy.ndarray, None], default=None
+    phase_modulation : Union[np.ndarray, None], default=None
         Phase modulation array for FOV shifting.
         If provided, it must have `num_samples` number of samples.
 

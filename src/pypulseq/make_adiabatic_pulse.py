@@ -92,7 +92,7 @@ def make_adiabatic_pulse(
     adiabaticity : int, default=4
     bandwidth : int, default=40000
         Pulse bandwidth.
-    beta : int, default=800
+    beta : float, default=800.0
         AM waveform parameter.
     delay : float, default=0
         Delay in seconds (s).

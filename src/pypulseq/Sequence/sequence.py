@@ -1200,7 +1200,7 @@ class Sequence:
 
         return seq_copy
 
-    def rf_from_lib_data(self, lib_data: list, use: str = str()) -> SimpleNamespace:
+    def rf_from_lib_data(self, lib_data: list, use: str = '') -> SimpleNamespace:
         """
         Construct RF object from `lib_data`.
 
@@ -1208,7 +1208,7 @@ class Sequence:
         ----------
         lib_data : list
             RF envelope.
-        use : str, default=str()
+        use : str, default=''
             RF event use.
 
         Returns

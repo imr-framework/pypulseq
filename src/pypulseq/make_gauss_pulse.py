@@ -27,7 +27,7 @@ def make_gauss_pulse(
     return_gz: bool = False,
     slice_thickness: float = 0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 4,
+    time_bw_product: float = 4.0,
     use: str = 'undefined',
     freq_ppm: float = 0,
     phase_ppm: float = 0,
@@ -70,7 +70,7 @@ def make_gauss_pulse(
         slice select event.
     system : Opts, default=Opts()
         System limits.
-    time_bw_product : int, default=4
+    time_bw_product : float, default=4.0
         Time-bandwidth product.
     use : str, default='undefined'
         Use of radio-frequency Gauss pulse event.

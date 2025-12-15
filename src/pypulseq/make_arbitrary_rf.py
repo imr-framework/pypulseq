@@ -65,7 +65,7 @@ def make_arbitrary_rf(
         slice select event.
     system : Opts, default=Opts()
         System limits.
-    time_bw_product : float, default=4
+    time_bw_product : float, default=0
         Time-bandwidth product.
     use : str, default='undefined'
         Use of arbitrary radio-frequency pulse event.

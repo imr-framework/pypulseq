@@ -1,7 +1,7 @@
 import re
 import warnings
 from types import SimpleNamespace
-from typing import Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -600,15 +600,16 @@ def __read_events(
     return event_library
 
 
-def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
+def __read_and_parse_events(input_file, *args: Callable) -> EventLibrary:
     """
-    Read an event section of a sequence file and return a library of events. Event data elements are converted using
-    the provided parser(s). Default parser is `int()`.
+    Read an event section of a sequence file and return a library of events.
+
+    Event data elements are converted using the provided parser(s). Default parser is `int()`.
 
     Parameters
     ----------
     input_file : file
-    args : callable
+    args : Callable
         Event parsers.
 
     Returns
