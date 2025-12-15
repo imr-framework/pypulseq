@@ -13,7 +13,7 @@ def make_arbitrary_grad(
     waveform: np.ndarray,
     first: Union[float, None] = None,
     last: Union[float, None] = None,
-    delay: float = 0,
+    delay: float = 0.0,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
     system: Union[Opts, None] = None,

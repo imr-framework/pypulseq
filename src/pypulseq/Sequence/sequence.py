@@ -200,9 +200,9 @@ class Sequence:
 
     def calculate_gradient_spectrum(
         self,
-        max_frequency: float = 2000,
+        max_frequency: float = 2000.0,
         window_width: float = 0.05,
-        frequency_oversampling: float = 3,
+        frequency_oversampling: float = 3.0,
         time_range: Union[List[float], None] = None,
         plot: bool = True,
         combine_mode: str = 'max',
@@ -275,8 +275,8 @@ class Sequence:
 
     def calculate_kspace(
         self,
-        trajectory_delay: Union[float, List[float], np.ndarray] = 0,
-        gradient_offset: Union[float, List[float], np.ndarray] = 0,
+        trajectory_delay: Union[float, List[float], np.ndarray] = 0.0,
+        gradient_offset: Union[float, List[float], np.ndarray] = 0.0,
     ) -> Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray]:
         """
         Calculates the k-space trajectory of the entire pulse sequence.

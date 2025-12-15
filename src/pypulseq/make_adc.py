@@ -12,14 +12,14 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def make_adc(
     num_samples: int,
-    delay: float = 0,
-    duration: float = 0,
-    dwell: float = 0,
-    freq_offset: float = 0,
-    phase_offset: float = 0,
+    delay: float = 0.0,
+    duration: float = 0.0,
+    dwell: float = 0.0,
+    freq_offset: float = 0.0,
+    phase_offset: float = 0.0,
     system: Union[Opts, None] = None,
-    freq_ppm: float = 0,
-    phase_ppm: float = 0,
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
     phase_modulation: Union[np.ndarray, None] = None,
 ) -> SimpleNamespace:
     """

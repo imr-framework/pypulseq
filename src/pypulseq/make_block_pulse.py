@@ -11,16 +11,16 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def make_block_pulse(
     flip_angle: float,
-    delay: float = 0,
+    delay: float = 0.0,
     duration: Union[float, None] = None,
     bandwidth: Union[float, None] = None,
     time_bw_product: Union[float, None] = None,
-    freq_offset: float = 0,
-    phase_offset: float = 0,
+    freq_offset: float = 0.0,
+    phase_offset: float = 0.0,
     system: Union[Opts, None] = None,
     use: str = 'undefined',
-    freq_ppm: float = 0,
-    phase_ppm: float = 0,
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
 ) -> SimpleNamespace:
     """
     Create a block (RECT or hard) pulse.

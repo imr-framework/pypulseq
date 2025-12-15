@@ -23,22 +23,22 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def sigpy_n_seq(
     flip_angle: float,
-    delay: float = 0,
+    delay: float = 0.0,
     duration: float = 4e-3,
-    freq_offset: float = 0,
+    freq_offset: float = 0.0,
     center_pos: float = 0.5,
-    max_grad: float = 0,
-    max_slew: float = 0,
-    phase_offset: float = 0,
+    max_grad: float = 0.0,
+    max_slew: float = 0.0,
+    phase_offset: float = 0.0,
     return_gz: bool = True,
-    slice_thickness: float = 0,
+    slice_thickness: float = 0.0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 4,
+    time_bw_product: float = 4.0,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     use: str = 'undefined',
     plot: bool = True,
-    freq_ppm: float = 0,
-    phase_ppm: float = 0,
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
     """
     Creates a radio-frequency sinc pulse event using the sigpy rf pulse library and optionally accompanying slice select, slice select rephasing
@@ -210,8 +210,8 @@ def sigpy_n_seq(
 
 def make_slr(
     flip_angle: float,
-    time_bw_product: float = 4,
-    duration: float = 0,
+    time_bw_product: float = 4.0,
+    duration: float = 0.0,
     system: Union[Opts, None] = None,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
@@ -262,8 +262,8 @@ def make_slr(
 
 def make_sms(
     flip_angle: float,
-    time_bw_product: float = 4,
-    duration: float = 0,
+    time_bw_product: float = 4.0,
+    duration: float = 0.0,
     system: Union[Opts, None] = None,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
