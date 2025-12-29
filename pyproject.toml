@@ -10,11 +10,13 @@ maintainers = [
   { name = "Bilal Tasdelen" },
   { name = "Frank Ziljstra" },
   { name = "Patrick Schuenke" },
+  { name = "Sairam Geethanath" },
+  { name = "Matteo Cencini" },
 ]
 description = "Pulseq in Python"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.6.3"
+requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
