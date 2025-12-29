@@ -61,7 +61,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     self.extension_string_idx = []
     self.extension_numeric_idx = []
 
-    version_combined = 0
+    file_version_combined = 0
 
     # Load data from file
     while True:
@@ -97,47 +97,54 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 self.signature_value = temp_sign_defs['Hash']
                 self.signature_file = 'Text'
         elif section == '[VERSION]':
-            version_major, version_minor, version_revision = __read_version(input_file)
+            file_version_major, file_version_minor, file_version_revision = __read_version(input_file)
+            file_version_combined = 1000000 * file_version_major + 1000 * file_version_minor + file_version_revision
 
-            if version_major != self.version_major:
-                raise RuntimeError(f'Unsupported version_major: {version_major}. Expected: {self.version_major}')
+            # Check if file version is higher than version of the installed PyPulseq package
+            package_version_combined = (
+                1000000 * self.version_major + 1000 * self.version_minor + int(self.version_revision)
+            )
+            if file_version_combined > package_version_combined:
+                warnings.warn(
+                    f'File version {file_version_major}.{file_version_minor}.{file_version_revision} is higher than '
+                    f'installed package version {self.version_major}.{self.version_minor}.{self.version_revision}. '
+                    f'This may cause parsing errors.'
+                )
 
-            version_combined = 1000000 * version_major + 1000 * version_minor + version_revision
-
-            if version_combined < 1002000:
+            if file_version_combined < 1002000:
                 raise RuntimeError(
-                    f'Unsupported version {version_major}.{version_minor}.{version_revision}, only file '
+                    f'Unsupported version {file_version_major}.{file_version_minor}.{file_version_revision}, only file '
                     f'format revision 1.2.0 and above are supported.'
                 )
 
-            if version_combined < 1003001:
+            if file_version_combined < 1003001:
                 raise RuntimeError(
                     f'Loading older Pulseq format file (version '
-                    f'{version_major}.{version_minor}.{version_revision}) some code may function not as '
+                    f'{file_version_major}.{file_version_minor}.{file_version_revision}) some code may function not as '
                     f'expected'
                 )
 
-            if version_combined >= 1005000 and detect_rf_use:
+            if file_version_combined >= 1005000 and detect_rf_use:
                 warnings.warn('Option detectRFuse is not supported for file format version 1.5.0 and above')
                 detect_rf_use = False
 
         elif section == '[BLOCKS]':
-            if version_major == 0:
+            if file_version_major == 0:
                 raise RuntimeError('Pulseq file MUST include [VERSION] section prior to [BLOCKS] section')
             result = __read_blocks(
                 input_file,
                 block_duration_raster=self.block_duration_raster,
-                version_combined=version_combined,
+                version_combined=file_version_combined,
             )
             self.block_events, self.block_durations, delay_ind_temp = result
         elif section == '[RF]':
-            if version_combined >= 1005000:  # 1.5.x format
+            if file_version_combined >= 1005000:  # 1.5.x format
                 self.rf_library = __read_events(
                     input_file,
                     (1, 1, 1, 1, 1e-6, 1e-6, 1, 1, 1, 1, np.nan),
                     event_library=self.rf_library,
                 )
-            elif version_combined >= 1004000:  # 1.4.x format
+            elif file_version_combined >= 1004000:  # 1.4.x format
                 self.rf_library = __read_events(
                     input_file,
                     (1, 1, 1, 1, 1e-6, 1, 1),
@@ -147,16 +154,16 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
 
         elif section == '[GRADIENTS]':
-            if version_combined >= 1005000:  # 1.5.x format
+            if file_version_combined >= 1005000:  # 1.5.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1, 1, 1e-6), 'g', self.grad_library)
-            elif version_combined >= 1004000:  # 1.4.x format
+            elif file_version_combined >= 1004000:  # 1.4.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1e-6), 'g', self.grad_library)
             else:  # 1.3.x and below
                 self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
         elif section == '[TRAP]':
             self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
-            if version_combined >= 1005000:  # 1.5.x format
+            if file_version_combined >= 1005000:  # 1.5.x format
                 self.adc_library = __read_events(
                     input_file,
                     (1, 1e-9, 1e-6, 1, 1, 1, 1, 1),
@@ -168,11 +175,11 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
                 )
         elif section == '[DELAYS]':
-            if version_combined >= 1004000:
+            if file_version_combined >= 1004000:
                 raise RuntimeError('Pulseq file revision 1.4.0 and above MUST NOT contain [DELAYS] section')
             temp_delay_library = __read_events(input_file, (1e-6,))
         elif section == '[SHAPES]':
-            self.shape_library = __read_shapes(input_file, version_major == 1 and version_minor < 4)
+            self.shape_library = __read_shapes(input_file, file_version_major == 1 and file_version_minor < 4)
         elif section == '[EXTENSIONS]':
             self.extensions_library = __read_events(input_file)
         else:
@@ -217,14 +224,14 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
     input_file.close()  # Close file
 
-    if version_combined < 1002000:
+    if file_version_combined < 1002000:
         raise ValueError(
-            f'Unsupported version {version_combined}, only file format revision 1.2.0 (1002000) and above '
+            f'Unsupported version {file_version_combined}, only file format revision 1.2.0 (1002000) and above '
             f'are supported.'
         )
 
     # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
-    if version_combined < 1004000:
+    if file_version_combined < 1004000:
         # Scan through RF objects
         self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
         for i in self.rf_library.data:
@@ -285,7 +292,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             # Calculate actual block duration
             self.block_durations[block_counter] = calc_duration(block)
 
-    elif version_combined < 1005000:
+    elif file_version_combined < 1005000:
         # Port from v1.4.x : RF, ADC and GRAD objects need to be updated
         # this needs to be done on the level of the libraries, because get_block will fail
 
@@ -318,7 +325,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 )  # We use None to label the non-initialized first/last fields. These will be restored in the code below
 
     # Another run through for all older versions
-    if version_combined < 1005000:
+    if file_version_combined < 1005000:
         # TODO: Is it possible to avoid expensive get_block calls here?
         grad_channels = ['gx', 'gy', 'gz']
         grad_prev_last = np.zeros(len(grad_channels))
