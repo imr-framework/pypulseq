@@ -1,10 +1,15 @@
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def make_soft_delay(
-    hint: str, numID: int | None = None, offset: float = 0.0, factor: float = 1.0, default_duration: float = 10e-6
+    hint: str,
+    numID: Union[int, None] = None,
+    offset: float = 0.0,
+    factor: float = 1.0,
+    default_duration: float = 10e-6,
 ) -> SimpleNamespace:
     """
     Create a soft delay extension event for dynamic timing adjustment.

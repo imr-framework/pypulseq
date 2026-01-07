@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Union
 
 from pypulseq.convert import convert
 
@@ -54,22 +54,22 @@ class Opts:
 
     def __init__(
         self,
-        adc_dead_time: Optional[float] = None,
-        adc_raster_time: Optional[float] = None,
-        block_duration_raster: Optional[float] = None,
-        gamma: Optional[float] = None,
-        grad_raster_time: Optional[float] = None,
+        adc_dead_time: Union[float, None] = None,
+        adc_raster_time: Union[float, None] = None,
+        block_duration_raster: Union[float, None] = None,
+        gamma: Union[float, None] = None,
+        grad_raster_time: Union[float, None] = None,
         grad_unit: str = 'Hz/m',
-        max_grad: Optional[float] = None,
-        max_slew: Optional[float] = None,
-        rf_dead_time: Optional[float] = None,
-        rf_raster_time: Optional[float] = None,
-        rf_ringdown_time: Optional[float] = None,
-        adc_samples_limit: Optional[int] = None,
-        adc_samples_divisor: Optional[int] = None,
-        rise_time: Optional[float] = None,
+        max_grad: Union[float, None] = None,
+        max_slew: Union[float, None] = None,
+        rf_dead_time: Union[float, None] = None,
+        rf_raster_time: Union[float, None] = None,
+        rf_ringdown_time: Union[float, None] = None,
+        adc_samples_limit: Union[int, None] = None,
+        adc_samples_divisor: Union[int, None] = None,
+        rise_time: Union[float, None] = None,
         slew_unit: str = 'Hz/m/s',
-        B0: Optional[float] = None,
+        B0: Union[float, None] = None,
     ):
         valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']

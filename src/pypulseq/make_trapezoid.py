@@ -43,7 +43,7 @@ def make_trapezoid(
     channel: str,
     amplitude: Union[float, None] = None,
     area: Union[float, None] = None,
-    delay: float = 0,
+    delay: float = 0.0,
     duration: Union[float, None] = None,
     fall_time: Union[float, None] = None,
     flat_area: Union[float, None] = None,

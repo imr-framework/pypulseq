@@ -45,6 +45,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_r
         time_bw_product=4,
         return_gz=True,
         delay=system.rf_dead_time,
+        use='excitation',
     )
 
     # Define other gradients and ADC events
