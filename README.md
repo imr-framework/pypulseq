@@ -14,7 +14,7 @@
 
 # PyPulseq: A Python Package for MRI Pulse Sequence Design
 
-## PyPulseq (v1.5.0) is compatible with all Pulseq interpreter sequences with version >= 1.5.0. The new features introduced with Pulseq 1.5.1 are not yet supported, but will be added in the near future. 
+## PyPulseq (v1.4.2.post1) is compatible with all Pulseq interpreter sequences with version >= 1.4.0. The new features introduced with Pulseq 1.5.0 are not yet supported, but will be added in the near future. 
 
 ## Table of contents 🧾
 
@@ -37,7 +37,7 @@ PyPulseq enables vendor-neutral pulse sequence design in Python [[1,2]][section-
 exported as a `.seq` file to be run on Siemens, [GE], [Bruker] and now also Philips hardware by leveraging their respective Pulseq interpreters. This tool is targeted at MRI pulse sequence designers, researchers, students and other interested
 users. It is a translation of the Pulseq framework originally written in Matlab [[3]][section-references].
 
-👉 Currently, PyPulseq is compatible with Pulseq >= 1.5.0. The new features introduced with Pulseq 1.5.1 are not yet supported, but will be added in the near future. 👈
+👉 Currently, PyPulseq is compatible with Pulseq >= 1.4.0. The new features introduced with Pulseq 1.5.0 are not yet supported, but will be added in the near future. 👈
 
 It is strongly recommended to first read the [Pulseq specification]  before proceeding. The specification
 document defines the concepts required for pulse sequence design using PyPulseq.

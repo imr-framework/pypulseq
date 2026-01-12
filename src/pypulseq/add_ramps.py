@@ -14,7 +14,6 @@ def add_ramps(
     max_slew: int = 0,
     rf: Union[SimpleNamespace, None] = None,
     system: Union[Opts, None] = None,
-    oversampling: bool = False,
 ) -> List[np.ndarray]:
     """
     Add segments to the trajectory to ramp to and from the given trajectory.
@@ -33,8 +32,6 @@ def add_ramps(
         Maximum gradient amplitude.
     max_slew : int, default=0
         Maximum slew rate.
-    oversampling : bool, default=False
-        Boolean flag to indicate if gradient is oversampled by a factor of 2.
 
     Returns
     -------
@@ -67,8 +64,8 @@ def add_ramps(
     num_channels = k.shape[0]
     k = np.vstack((k, np.zeros((3 - num_channels, k.shape[1]))))  # Pad with zeros if needed
 
-    k_up, ok1 = calc_ramp(k0=np.zeros((3, 2)), k_end=k[:, :2], system=system, oversampling=oversampling)
-    k_down, ok2 = calc_ramp(k0=k[:, -2:], k_end=np.zeros((3, 2)), system=system, oversampling=oversampling)
+    k_up, ok1 = calc_ramp(k0=np.zeros((3, 2)), k_end=k[:, :2], system=system)
+    k_down, ok2 = calc_ramp(k0=k[:, -2:], k_end=np.zeros((3, 2)), system=system)
     if not (ok1 and ok2):
         raise RuntimeError('Failed to calculate gradient ramps')
 

@@ -365,11 +365,11 @@ class TestSequence:
             block_orig = seq.get_block(block_counter)
             block_compare = seq2.get_block(block_counter)
 
-            # if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
-            #     from copy import deepcopy
+            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                from copy import deepcopy
 
-            #     block_orig = deepcopy(block_orig)
-            #     block_orig.rf.use = 'undefined'
+                block_orig = deepcopy(block_orig)
+                block_orig.rf.use = 'undefined'
 
             assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
 
@@ -393,9 +393,9 @@ class TestSequence:
         # Restore RF use for k-space calculation
         for block_counter in seq.block_events:
             block_orig = seq.get_block(block_counter)
-            # if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
-            #     block_compare = seq2.get_block(block_counter)
-            #     block_compare.rf.use = block_orig.rf.use
+            if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                block_compare = seq2.get_block(block_counter)
+                block_compare.rf.use = block_orig.rf.use
 
         # Test for approximate equality of kspace calculation
         assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-1, nan_ok=True)

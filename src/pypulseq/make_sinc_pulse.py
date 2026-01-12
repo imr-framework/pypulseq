@@ -14,22 +14,20 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def make_sinc_pulse(
     flip_angle: float,
-    apodization: float = 0.0,
-    delay: float = 0.0,
+    apodization: float = 0,
+    delay: float = 0,
     duration: float = 4e-3,
-    dwell: float = 0.0,
+    dwell: float = 0,
     center_pos: float = 0.5,
-    freq_offset: float = 0.0,
-    max_grad: float = 0.0,
-    max_slew: float = 0.0,
-    phase_offset: float = 0.0,
+    freq_offset: float = 0,
+    max_grad: float = 0,
+    max_slew: float = 0,
+    phase_offset: float = 0,
     return_gz: bool = False,
-    slice_thickness: float = 0.0,
+    slice_thickness: float = 0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 4.0,
-    use: str = 'undefined',
-    freq_ppm: float = 0.0,
-    phase_ppm: float = 0.0,
+    time_bw_product: float = 4,
+    use: str = str(),
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -68,14 +66,8 @@ def make_sinc_pulse(
         System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, default=4
         Time-bandwidth product.
-    use : str, default='undefined'
-        Use of radio-frequency sinc pulse event.
-        Must be one of 'excitation', 'refocusing', 'inversion',
-        'saturation', 'preparation', 'other', 'undefined'.
-    freq_ppm : float, default=0
-        PPM frequency offset.
-    phase_ppm : float, default=0
-        PPM phase offset.
+    use : str, default=str()
+        Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
 
     See also `pypulseq.Sequence.sequence.Sequence.add_block()`.
 
@@ -91,7 +83,7 @@ def make_sinc_pulse(
     Raises
     ------
     ValueError
-        If invalid `use` parameter was passed.
+        If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
     if system is None:
@@ -124,13 +116,12 @@ def make_sinc_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
-    rf.freq_ppm = freq_ppm
-    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    rf.center = duration * center_pos
-    rf.use = use
+
+    if use != str():
+        rf.use = use
 
     if rf.dead_time > rf.delay:
         warn(

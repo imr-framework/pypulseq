@@ -17,28 +17,25 @@ except ModuleNotFoundError as err:
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts
-from pypulseq.supported_labels_rf_use import get_supported_rf_uses
 from pypulseq.utils.tracing import trace, trace_enabled
 
 
 def sigpy_n_seq(
     flip_angle: float,
-    delay: float = 0.0,
+    delay: float = 0,
     duration: float = 4e-3,
-    freq_offset: float = 0.0,
+    freq_offset: float = 0,
     center_pos: float = 0.5,
-    max_grad: float = 0.0,
-    max_slew: float = 0.0,
-    phase_offset: float = 0.0,
+    max_grad: float = 0,
+    max_slew: float = 0,
+    phase_offset: float = 0,
     return_gz: bool = True,
-    slice_thickness: float = 0.0,
+    slice_thickness: float = 0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 4.0,
+    time_bw_product: float = 4,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
-    use: str = 'undefined',
+    use: str = str(),
     plot: bool = True,
-    freq_ppm: float = 0.0,
-    phase_ppm: float = 0.0,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace]]:
     """
     Creates a radio-frequency sinc pulse event using the sigpy rf pulse library and optionally accompanying slice select, slice select rephasing
@@ -91,21 +88,15 @@ def sigpy_n_seq(
             Band separation. SMS only.
         - phs_0_pt: str, optional, default='None'
             Phase 0 point. SMS only.
-    use : str, default='undefined'
-        Use of radio-frequency Shinnar-LeRoux pulse event.
-        Must be one of 'excitation', 'refocusing', 'inversion',
-        'saturation', 'preparation', 'other', 'undefined'.
+    use : str, optional, default=str()
+        Use of radio-frequency sinc pulse. Must be one of 'excitation', 'refocusing' or 'inversion'.
     plot: bool, optional, default=True
         Show sigpy plot outputs
-    freq_ppm : float, default=0
-        PPM frequency offset.
-    phase_ppm : float, default=0
-        PPM phase offset.
 
     Returns
     -------
     rf : SimpleNamespace
-        Radio-frequency Shinnar-LeRoux pulse event.
+        Radio-frequency sinc pulse event.
     gz : SimpleNamespace, optional
         Accompanying slice select trapezoidal gradient event. Returned only if `slice_thickness` is provided.
     gzr : SimpleNamespace, optional
@@ -114,7 +105,7 @@ def sigpy_n_seq(
     Raises
     ------
     ValueError
-        If invalid `use` parameter was passed.
+        If invalid `use` parameter was passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
         If `return_gz=True` and `slice_thickness` was not provided.
     """
     if system is None:
@@ -123,9 +114,11 @@ def sigpy_n_seq(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    valid_pulse_uses = get_supported_rf_uses()
-    if use != '' and use not in valid_pulse_uses:
-        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
+    valid_use_pulses = ['excitation', 'refocusing', 'inversion']
+    if use != '' and use not in valid_use_pulses:
+        raise ValueError(
+            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
+        )
 
     if pulse_cfg.pulse_type == 'slr':
         [signal, t, _] = make_slr(
@@ -153,13 +146,12 @@ def sigpy_n_seq(
     rfp.shape_dur = t[-1]
     rfp.freq_offset = freq_offset
     rfp.phase_offset = phase_offset
-    rfp.freq_ppm = freq_ppm
-    rfp.phase_ppm = phase_ppm
     rfp.dead_time = system.rf_dead_time
     rfp.ringdown_time = system.rf_ringdown_time
     rfp.delay = delay
-    rfp.center = center_pos * rfp.shape_dur
-    rfp.use = use
+
+    if use != '':
+        rfp.use = use
 
     if rfp.dead_time > rfp.delay:
         warn(
@@ -210,8 +202,8 @@ def sigpy_n_seq(
 
 def make_slr(
     flip_angle: float,
-    time_bw_product: float = 4.0,
-    duration: float = 0.0,
+    time_bw_product: float = 4,
+    duration: float = 0,
     system: Union[Opts, None] = None,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,
@@ -262,8 +254,8 @@ def make_slr(
 
 def make_sms(
     flip_angle: float,
-    time_bw_product: float = 4.0,
-    duration: float = 0.0,
+    time_bw_product: float = 4,
+    duration: float = 0,
     system: Union[Opts, None] = None,
     pulse_cfg: Union[SigpyPulseOpts, None] = None,
     disp: bool = False,

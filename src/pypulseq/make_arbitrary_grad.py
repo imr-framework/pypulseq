@@ -13,11 +13,10 @@ def make_arbitrary_grad(
     waveform: np.ndarray,
     first: Union[float, None] = None,
     last: Union[float, None] = None,
-    delay: float = 0.0,
+    delay: float = 0,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
     system: Union[Opts, None] = None,
-    oversampling: bool = False,
 ) -> SimpleNamespace:
     """
     Creates a gradient event from an arbitrary waveform.
@@ -52,8 +51,6 @@ def make_arbitrary_grad(
         Will default to `system.max_slew` if not provided.
     delay : float, default=0
         Delay in seconds (s).
-    oversampling : bool, default=False
-        Boolean flag to indicate if gradient is oversampled by a factor of 2.
 
     Returns
     -------
@@ -79,52 +76,28 @@ def make_arbitrary_grad(
     if channel not in ['x', 'y', 'z']:
         raise ValueError(f'Invalid channel. Must be one of x, y or z. Passed: {channel}')
 
-    if first is None or last is None:
-
-        def extrap(a, b):
-            # extrapolate by 1 gradient raster (oversampling)
-            # or by 1/2 gradient of the raster (non-oversampling)
-            return 2 * a - b if oversampling else 0.5 * (3 * a - b)
-
-        if first is None:
-            first = extrap(waveform[0], waveform[1])
-        if last is None:
-            last = extrap(waveform[-1], waveform[-2])
-
-    # Slew rate calculation
-    if oversampling:
-        edge_scale = system.grad_raster_time * 2
-        pre = first - waveform[0]
-        post = last - waveform[-1]
-    else:
-        edge_scale = system.grad_raster_time
-        pre = 2 * (first - waveform[0])
-        post = 2 * (waveform[-1] - last)
-
-    slew_rate = np.concatenate([[pre], np.diff(waveform), [post]]) / edge_scale
-
+    slew_rate = np.diff(waveform) / system.grad_raster_time
     if max(abs(slew_rate)) > max_slew * (1 + eps):
         raise ValueError(f'Slew rate violation {max(abs(slew_rate)) / max_slew * 100}')
     if max(abs(waveform)) > max_grad + eps:
         raise ValueError(f'Gradient amplitude violation {max(abs(waveform)) / max_grad * 100}')
+
+    if first is None:
+        first = (3 * waveform[0] - waveform[1]) * 0.5  # linear extrapolation
+
+    if last is None:
+        last = (3 * waveform[-1] - waveform[-2]) * 0.5  # linear extrapolation
 
     grad = SimpleNamespace()
     grad.type = 'grad'
     grad.channel = channel
     grad.waveform = waveform
     grad.delay = delay
-    if oversampling:
-        if len(waveform) % 2 == 0:
-            raise ValueError('When oversampling is active, waveform must have an odd number of samples')
-        grad.area = (waveform[::2] * system.grad_raster_time).sum()
-        grad.tt = np.arange(1, len(waveform) + 1) * 0.5 * system.grad_raster_time
-        grad.shape_dur = (len(waveform) + 1) * 0.5 * system.grad_raster_time
-    else:
-        grad.area = (waveform * system.grad_raster_time).sum()
-        grad.tt = (np.arange(len(waveform)) + 0.5) * system.grad_raster_time
-        grad.shape_dur = len(waveform) * system.grad_raster_time
+    grad.tt = (np.arange(len(waveform)) + 0.5) * system.grad_raster_time
+    grad.shape_dur = len(waveform) * system.grad_raster_time
     grad.first = first
     grad.last = last
+    grad.area = (waveform * system.grad_raster_time).sum()
 
     if trace_enabled():
         grad.trace = trace()

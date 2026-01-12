@@ -28,12 +28,10 @@ section_thickness = 5e-3
 # RF preparatory, excitation
 # =========
 flip_exc = 12 * pi / 180
-rf = pp.make_block_pulse(flip_angle=flip_exc, system=system, duration=250e-6, time_bw_product=4, use='excitation')
+rf = pp.make_block_pulse(flip_angle=flip_exc, system=system, duration=250e-6, time_bw_product=4)
 
 flip_prep = 90 * pi / 180
-rf_prep = pp.make_block_pulse(
-    flip_angle=flip_prep, system=system, duration=500e-6, time_bw_product=4, use='preparation'
-)
+rf_prep = pp.make_block_pulse(flip_angle=flip_prep, system=system, duration=500e-6, time_bw_product=4)
 
 # =========
 # Readout

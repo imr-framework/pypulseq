@@ -12,7 +12,6 @@ def calc_ramp(
     max_points: int = 500,
     max_slew: Union[np.ndarray, None] = None,
     system: Union[Opts, None] = None,
-    oversampling: bool = False,
 ) -> Tuple[np.ndarray, bool]:
     """
     Join the points `k0` and `k_end` in three-dimensional  k-space in minimal time, observing the gradient and slew
@@ -35,8 +34,6 @@ def calc_ramp(
         Maximum total slew rate. Either a single value or one value for each coordinate, of shape `[3, 1]`.
     system : Opts, default=Opts()
         System limits.
-    oversampling : bool, default=False
-        Boolean flag to indicate if gradient is oversampled by a factor of 2.
 
     Returns
     -------
@@ -324,10 +321,7 @@ def calc_ramp(
     if np.all(np.where(max_slew <= 0)):
         max_slew = [system.max_slew]
 
-    if oversampling:
-        grad_raster = 0.5 * system.grad_raster_time
-    else:
-        grad_raster = system.grad_raster_time
+    grad_raster = system.grad_raster_time
 
     if len(max_grad) == 1 and len(max_slew) == 1:
         mode = 0

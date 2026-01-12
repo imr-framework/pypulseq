@@ -18,21 +18,19 @@ def make_adiabatic_pulse(
     adiabaticity: int = 4,
     bandwidth: int = 40000,
     beta: float = 800.0,
-    delay: float = 0.0,
+    delay: float = 0,
     duration: float = 10e-3,
     dwell: Union[float, None] = None,
-    freq_offset: float = 0.0,
+    freq_offset: float = 0,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
     n_fac: int = 40,
     mu: float = 4.9,
-    phase_offset: float = 0.0,
+    phase_offset: float = 0,
     return_gz: bool = False,
-    slice_thickness: float = 0.0,
+    slice_thickness: float = 0,
     system: Union[Opts, None] = None,
-    use: str = 'inversion',
-    freq_ppm: float = 0.0,
-    phase_ppm: float = 0.0,
+    use: str = str(),
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -92,7 +90,7 @@ def make_adiabatic_pulse(
     adiabaticity : int, default=4
     bandwidth : int, default=40000
         Pulse bandwidth.
-    beta : float, default=800.0
+    beta : int, default=800
         AM waveform parameter.
     delay : float, default=0
         Delay in seconds (s).
@@ -115,14 +113,8 @@ def make_adiabatic_pulse(
     slice_thickness : float, default=0
     system : Opts, default=Opts()
         System limits.
-    use : str, default='inversion'
-        Use of adiabatic radio-frequency pulse event.
-        Must be one of 'excitation', 'refocusing', 'inversion',
-        'saturation', 'preparation', 'other', 'undefined'.
-    freq_ppm : float, default=0
-        PPM frequency offset.
-    phase_ppm : float, default=0
-        PPM phase offset.
+    use : str
+        Whether it is a 'refocusing' pulse (for k-space calculation).
 
     Returns
     -------
@@ -217,13 +209,10 @@ def make_adiabatic_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
-    rf.freq_ppm = freq_ppm
-    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-    rf.center, _ = calc_rf_center(rf)
-    rf.use = use
+    rf.use = use if use != '' else 'inversion'
     if rf.dead_time > rf.delay:
         warn(
             f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',

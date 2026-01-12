@@ -57,7 +57,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
         bandwidth=np.abs(sat_freq),
         freq_offset=sat_freq,
         delay=system.rf_dead_time,
-        use='saturation',
     )
     gz_fs = pp.make_trapezoid(channel='z', system=system, delay=pp.calc_duration(rf_fs), area=1 / 1e-4)
 
@@ -71,7 +70,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
         time_bw_product=4,
         return_gz=True,
         delay=system.rf_dead_time,
-        use='excitation',
     )
 
     # Create 90 degree slice refocusing pulse and gradients

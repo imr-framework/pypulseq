@@ -72,7 +72,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'haste
         phase_offset=rfex_phase,
         return_gz=True,
         delay=system.rf_dead_time,
-        use='excitation',
     )
     GS_ex = make_trapezoid(
         channel='z',

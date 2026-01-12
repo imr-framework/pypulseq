@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 5
-revision 0
+minor 4
+revision 2
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -24,12 +24,11 @@ TotalDuration 0.0142
 6 1000   0   4   0   0  1  0
 
 # Format of RF events:
-# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
-# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
-# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
+# id amplitude mag_id phase_id time_shape_id delay freq phase
+# ..        Hz   ....     ....          ....    us   Hz   rad
 [RF]
-1          250 1 2 3 500 0 0 0 0 0 u
-2          500 1 2 3 500 0 0 0 0 0 u
+1          250 1 2 3 0 0 0
+2          500 1 2 3 0 0 0
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -41,10 +40,10 @@ TotalDuration 0.0142
  4       102459 240 9520 240   0
 
 # Format of ADC events:
-# id num dwell delay freqPPM phasePPM freq phase phase_id
-# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
+# id num dwell delay freq phase
+# ..  ..    ns    us   Hz   rad
 [ADC]
-1 100 100000 0 0 0 0 0 0
+1 100 100000 0 0 0
 
 # Sequence Shapes
 [SHAPES]
@@ -70,4 +69,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 84be8c860fdbebf68977a6779ae84cb4
+Hash 208eb3220a345215abbb506cf8a3d495

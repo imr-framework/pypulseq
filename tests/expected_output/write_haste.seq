@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 5
-revision 0
+minor 4
+revision 2
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -185,27 +185,26 @@ TotalDuration 7
 167 500000   0   0   0   0  0  0
 
 # Format of RF events:
-# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
-# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
-# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
+# id amplitude mag_id phase_id time_shape_id delay freq phase
+# ..        Hz   ....     ....          ....    us   Hz   rad
 [RF]
-1      394.982 3 4 0 1250 100 0 0 0 1.5708 e
-2      987.454 9 10 0 1000 100 0 0 0 0 r
+1      394.982 3 4 0 100 0 1.5708
+2      987.454 9 10 0 100 0 0
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
-# id amplitude first last amp_shape_id time_shape_id delay
-# ..      Hz/m  Hz/m Hz/m        ..         ..          us
+# id amplitude amp_shape_id time_shape_id delay
+# ..      Hz/m       ..         ..          us
 [GRADIENTS]
-1       320000            0       320000 1 2 0
-2       320000       320000       320000 5 6 0
-3       320000       320000       320000 7 8 0
-5       320000       320000       320000 5 11 0
-6       180372            0      38940.8 12 13 0
-8       491667       320000            0 14 13 0
-9      38940.8      38940.8      38940.8 5 15 0
-10       180372      38940.8            0 16 13 0
-12       491667            0       320000 17 13 0
+1       320000 1 2 0
+2       320000 5 6 0
+3       320000 7 8 0
+5       320000 5 11 0
+6       180372 12 13 0
+8       491667 14 13 0
+9      38940.8 5 15 0
+10       180372 16 13 0
+12       491667 17 13 0
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -277,10 +276,10 @@ TotalDuration 7
 73     -84092.9 250 1190 250   0
 
 # Format of ADC events:
-# id num dwell delay freqPPM phasePPM freq phase phase_id
-# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
+# id num dwell delay freq phase
+# ..  ..    ns    us   Hz   rad
 [ADC]
-1 64 100000 10 0 0 0 0 0
+1 64 100000 10 0 0
 
 # Sequence Shapes
 [SHAPES]
@@ -4906,4 +4905,4 @@ num_samples 4
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash af032808145852407caf689951a9cd32
+Hash ae19094c326220b5f3bba8a568014c23

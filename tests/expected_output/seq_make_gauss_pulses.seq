@@ -3,8 +3,8 @@
 
 [VERSION]
 major 1
-minor 5
-revision 0
+minor 4
+revision 2
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
@@ -33,18 +33,17 @@ TotalDuration 7.019
 15 100   8   0   0   0  0  0
 
 # Format of RF events:
-# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
-# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
-# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
+# id amplitude mag_id phase_id time_shape_id delay freq phase
+# ..        Hz   ....     ....          ....    us   Hz   rad
 [RF]
-1      159.155 1 2 0 2000 0 0 0 0 0 u
-2      159.155 1 2 0 2000 1000 0 0 0 0 u
-3          250 1 2 0 2000 0 0 0 0 0 u
-4      999.988 3 4 0 500 0 0 0 0 0 u
-5      499.999 5 6 0 1000 0 0 0 0 1.5708 u
-6      999.988 3 4 0 500 0 0 0 1000 1.5708 u
-7      316.492 7 4 0 500 0 0 0 0 0 u
-8      1018.14 8 4 0 500 0 0 0 0 0 u
+1      159.155 1 2 0 0 0 0
+2      159.155 1 2 0 1000 0 0
+3          250 1 2 0 0 0 0
+4      999.988 3 4 0 0 0 0
+5      499.999 5 6 0 0 0 1.5708
+6      999.988 3 4 0 0 1000 1.5708
+7      316.492 7 4 0 0 0 0
+8      1018.14 8 4 0 0 0 0
 
 # Sequence Shapes
 [SHAPES]
@@ -9052,4 +9051,4 @@ num_samples 1000
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 8832bf4b6933e396cf89908b426e8f06
+Hash f295d5778ececa314823a3ba290ab1b6

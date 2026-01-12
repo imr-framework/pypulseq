@@ -47,7 +47,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_l
         time_bw_product=4,
         return_gz=True,
         delay=system.rf_dead_time,
-        use='excitation',
     )
 
     # Define trigger

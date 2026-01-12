@@ -63,7 +63,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_p
         phase_offset=rf_ex_phase,
         return_gz=True,
         delay=system.rf_dead_time,
-        use='excitation',
     )
     gs_ex = pp.make_trapezoid(
         channel='z',

@@ -39,11 +39,10 @@ rf, gz, _ = pp.make_sinc_pulse(
     apodization=0.5,
     time_bw_product=4,
     return_gz=True,
-    use='excitation',
 )
 
 flip90 = 90 * pi / 180
-rf90 = pp.make_block_pulse(flip_angle=flip90, system=system, duration=500e-6, time_bw_product=4, use='preparation')
+rf90 = pp.make_block_pulse(flip_angle=flip90, system=system, duration=500e-6, time_bw_product=4)
 
 # =========
 # Readout

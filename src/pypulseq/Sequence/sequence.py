@@ -1,3 +1,4 @@
+import itertools
 import math
 from collections import OrderedDict
 from copy import deepcopy
@@ -12,7 +13,9 @@ except ImportError:
 
     Self = TypeVar('Self', bound='Sequence')
 
+import matplotlib as mpl
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.interpolate import PPoly
 
 from pypulseq import __version__, eps
@@ -22,7 +25,7 @@ from pypulseq.check_timing import print_error_report
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
-from pypulseq.Sequence import block
+from pypulseq.Sequence import block, parula
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.ext_test_report import ext_test_report
@@ -30,9 +33,8 @@ from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
+from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
-from pypulseq.utils.paper_plot import paper_plot as ext_paper_plot
-from pypulseq.utils.seq_plot import SeqPlot
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 
 major, minor, revision = __version__.split('.')[:3]
@@ -92,9 +94,6 @@ class Sequence:
         self.signature_type = ''
         self.signature_file = ''
         self.signature_value = ''
-        self.rf_id_to_name_map = {}
-        self.adc_id_to_name_map = {}
-        self.grad_id_to_name_map = {}
 
         self.block_durations = {}
         self.extension_numeric_idx = []
@@ -200,9 +199,9 @@ class Sequence:
 
     def calculate_gradient_spectrum(
         self,
-        max_frequency: float = 2000.0,
+        max_frequency: float = 2000,
         window_width: float = 0.05,
-        frequency_oversampling: float = 3.0,
+        frequency_oversampling: float = 3,
         time_range: Union[List[float], None] = None,
         plot: bool = True,
         combine_mode: str = 'max',
@@ -275,8 +274,8 @@ class Sequence:
 
     def calculate_kspace(
         self,
-        trajectory_delay: Union[float, List[float], np.ndarray] = 0.0,
-        gradient_offset: Union[float, List[float], np.ndarray] = 0.0,
+        trajectory_delay: Union[float, List[float], np.ndarray] = 0,
+        gradient_offset: Union[float, List[float], np.ndarray] = 0,
     ) -> Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray]:
         """
         Calculates the k-space trajectory of the entire pulse sequence.
@@ -616,33 +615,6 @@ class Sequence:
 
         return labels
 
-    import numpy as np
-
-    def find_block_by_time(self, t: float) -> int:
-        """
-        Find the index of the block containing time `t`.
-
-        Parameters
-        ----------
-        t : float
-            Time (in seconds) to locate within the sequence.
-
-        Returns
-        -------
-        int or None
-            Index of the block that contains the given time, or None if out of range.
-        """
-        cumsum_durations = np.cumsum(list(self.block_durations.values()))
-        block_index = np.searchsorted(cumsum_durations, t, side='right').item()
-
-        if block_index >= len(self.block_durations):
-            return None
-
-        if self.block_durations[block_index] <= 0:
-            raise ValueError('Block duration cannot be negative')
-
-        return block_index
-
     def flip_grad_axis(self, axis: str) -> None:
         """
         Invert all gradients along the corresponding axis/channel. The function acts on all gradient objects already
@@ -654,28 +626,6 @@ class Sequence:
             Gradients to invert or scale. Must be one of 'x', 'y' or 'z'.
         """
         self.mod_grad_axis(axis, modifier=-1)
-
-    def get_raw_block_content_IDs(self, block_index: int) -> SimpleNamespace:
-        """
-        Returns PyPulseq block content IDs at `block_index` position in `self.block_events`.
-
-        No block events are created, only the IDs of the objects are returned.
-
-        See Also
-        --------
-        - `pypulseq.Sequence.sequence.Sequence.get_block()`.
-
-        Parameters
-        ----------
-        block_index : int
-            Index of block to be retrieved from `Sequence`.
-
-        Returns
-        -------
-        SimpleNamespace
-            PyPulseq block content IDs at 'block_index' position in `self.block_events`.
-        """
-        return block.get_raw_block_content_IDs(self, block_index)
 
     def get_block(self, block_index: int) -> SimpleNamespace:
         """
@@ -980,9 +930,9 @@ class Sequence:
 
             if grad_type == 'g' and len(grad_data) == 6:
                 # Need to update first and last fields for arbitrary gradients
-                # Data structure: (amplitude, first, last, shape_ID1, shape_ID2, delay) # changed in v1.5.x
-                grad_data[1] *= modifier  # first # changed in v1.5.x
-                grad_data[2] *= modifier  # last # changed in v1.5.x
+                # Data structure: (amplitude, shape_ID1, shape_ID2, delay, first, last)
+                grad_data[4] *= modifier  # first
+                grad_data[5] *= modifier  # last
 
             # Use EventLibrary.update() to properly maintain keymap integrity
             new_data = tuple(grad_data)
@@ -991,43 +941,6 @@ class Sequence:
         # Clear block cache to ensure get_block() uses the modified gradient data
         if self.use_block_cache:
             self.block_cache.clear()
-
-    def paper_plot(
-        self,
-        time_range: Tuple[float] = (0, np.inf),
-        line_width: float = 1.2,
-        axes_color: Tuple[float] = (0.5, 0.5, 0.5),
-        rf_color: str = 'black',
-        gx_color: str = 'blue',
-        gy_color: str = 'red',
-        gz_color: Tuple[float] = (0, 0.5, 0.3),
-        rf_plot: str = 'abs',
-    ):
-        """
-        Plot sequence using paper-style formatting (minimalist, high-contrast layout).
-
-        Parameters
-        ----------
-        time_range : iterable, default=(0, np.inf)
-            Time range (x-axis limits) for plotting the sequence.
-            Default is 0 to infinity (entire sequence).
-        line_width : float, default=1.2
-            Line width used in plots.
-        axes_color : color, default=(0.5, 0.5, 0.5)
-            Color of horizontal zero axes (e.g., gray).
-        rf_color : color, default='black'
-            Color for RF and ADC events.
-        gx_color : color, default='blue'
-            Color for gradient X waveform.
-        gy_color : color, default='red'
-            Color for gradient Y waveform.
-        gz_color : color, default=(0, 0.5, 0.3)
-            Color for gradient Z waveform.
-        rf_plot : {'abs', 'real', 'imag'}, default='abs'
-            Determines how to plot RF waveforms (magnitude, real or imaginary part).
-
-        """
-        ext_paper_plot(self, time_range, line_width, axes_color, rf_color, gx_color, gy_color, gz_color, rf_plot)
 
     def plot(
         self,
@@ -1039,10 +952,9 @@ class Sequence:
         grad_disp: str = 'kHz/m',
         plot_now: bool = True,
         clear: bool = True,
-        overlay: SeqPlot = None,
-        stacked: bool = False,
-        show_guides: bool = False,
-    ) -> SeqPlot:
+        fig1: Union[plt.Figure, None] = None,
+        fig2: Union[plt.Figure, None] = None,
+    ) -> Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]:
         """
         Plot `Sequence`.
 
@@ -1068,33 +980,283 @@ class Sequence:
         clear : bool, default=True
             If True, clear existing figures before plotting (default behavior).
             If False, overlay on existing figures 1 and 2 for sequence comparison.
-        overlay : SeqPlot or None, default=None
-            If provided, overlay this plot on the figures from the given SeqPlot object. Overrides fig1, fig2, and sets clear=False.
-        stacked : bool, default=False
-            If True, plot all channels (ADC, RF mag, RF phase, Gx, Gy, Gz) in a single stacked figure (MATLAB Pulseq style).
-            If False, use separate figures for RF/ADC and gradients.
-        show_guides : bool, default=False
-            If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
+        fig1 : Optional[plt.Figure], default=None
+            Existing figure to plot RF/ADC events on. If None, a new figure is created.
+        fig2 : Optional[plt.Figure], default=None
+            Existing figure to plot gradients on. If None, a new figure is created.
 
         Returns
         -------
-        SeqPlot
-            SeqPlot handle.
+        Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes], plt.Figure, Tuple[plt.Axes, plt.Axes, plt.Axes]]
+            Returns (fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)) for plot customization.
+            Always returns figures and axes regardless of plot_now setting.
         """
-        return SeqPlot(
-            self,
-            label,
-            show_blocks,
-            save,
-            time_range,
-            time_disp,
-            grad_disp,
-            plot_now,
-            clear,
-            overlay,
-            stacked,
-            show_guides,
-        )
+        mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
+
+        valid_time_units = ['s', 'ms', 'us']
+        valid_grad_units = ['kHz/m', 'mT/m']
+        valid_labels = get_supported_labels()
+        if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
+            raise ValueError('Invalid time range')
+        if time_disp not in valid_time_units:
+            raise ValueError('Unsupported time unit')
+
+        if grad_disp not in valid_grad_units:
+            raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
+
+        # Create the two figures (#1 for RF/ADC, #2 for gradients in x, y, z) or reuse existing figures
+        fig1 = plt.figure() if fig1 is None else fig1
+        fig2 = plt.figure() if fig2 is None else fig2
+
+        # Clear existing figures if clear=True
+        if clear:
+            fig1.clear()
+            fig2.clear()
+
+        # Create or reuse subplots of fig1
+        fig1_axes = fig1.get_axes()
+        if not fig1_axes or clear:
+            sp11 = fig1.add_subplot(311)
+            sp12 = fig1.add_subplot(312, sharex=sp11)
+            sp13 = fig1.add_subplot(313, sharex=sp11)
+        else:
+            sp11, sp12, sp13 = fig1_axes[:3]
+
+        # Create or reuse subplots of fig2
+        fig2_axes = fig2.get_axes()
+        if not fig2_axes or clear:
+            sp21 = fig2.add_subplot(311, sharex=sp11)
+            sp22 = fig2.add_subplot(312, sharex=sp11)
+            sp23 = fig2.add_subplot(313, sharex=sp11)
+        else:
+            sp21, sp22, sp23 = fig2_axes[:3]
+
+        t_factor_list = [1, 1e3, 1e6]
+        t_factor = t_factor_list[valid_time_units.index(time_disp)]
+
+        g_factor_list = [1e-3, 1e3 / self.system.gamma]
+        g_factor = g_factor_list[valid_grad_units.index(grad_disp)]
+
+        t0 = 0
+        label_defined = False
+        label_idx_to_plot = []
+        label_legend_to_plot = []
+        label_store = {}
+        for i in range(len(valid_labels)):
+            label_store[valid_labels[i]] = 0
+            if valid_labels[i] in label.upper():
+                label_idx_to_plot.append(i)
+                label_legend_to_plot.append(valid_labels[i])
+
+        if len(label_idx_to_plot) != 0:
+            p = parula.main(len(label_idx_to_plot) + 1)
+            label_colors_to_plot = p(np.arange(len(label_idx_to_plot)))
+            cycler = mpl.cycler(color=label_colors_to_plot)
+            sp11.set_prop_cycle(cycler)
+
+        # Block timings
+        block_edges = np.cumsum([0] + [x[1] for x in sorted(self.block_durations.items())])
+        block_edges_in_range = block_edges[(block_edges >= time_range[0]) * (block_edges <= time_range[1])]
+        if show_blocks:
+            for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+                sp.set_xticks(t_factor * block_edges_in_range)
+                sp.set_xticklabels(sp.get_xticklabels(), rotation=90)
+
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            is_valid = time_range[0] <= t0 + self.block_durations[block_counter] and t0 <= time_range[1]
+            if is_valid:
+                if getattr(block, 'label', None) is not None:
+                    for i in range(len(block.label)):
+                        if block.label[i].type == 'labelinc':
+                            label_store[block.label[i].label] += block.label[i].value
+                        else:
+                            label_store[block.label[i].label] = block.label[i].value
+                    label_defined = True
+
+                if getattr(block, 'adc', None) is not None:  # ADC
+                    adc = block.adc
+                    # From Pulseq: According to the information from Klaus Scheffler and indirectly from Siemens this
+                    # is the present convention - the samples are shifted by 0.5 dwell
+                    t = adc.delay + (np.arange(int(adc.num_samples)) + 0.5) * adc.dwell
+                    sp11.plot(t_factor * (t0 + t), np.zeros(len(t)), 'rx')
+                    sp13.plot(
+                        t_factor * (t0 + t),
+                        np.angle(np.exp(1j * adc.phase_offset) * np.exp(1j * 2 * np.pi * t * adc.freq_offset)),
+                        'b.',
+                        markersize=0.25,
+                    )
+
+                    if label_defined and len(label_idx_to_plot) != 0:
+                        arr_label_store = list(label_store.values())
+                        lbl_vals = np.take(arr_label_store, label_idx_to_plot)
+                        t = t0 + adc.delay + (adc.num_samples - 1) / 2 * adc.dwell
+                        _t = [t_factor * t] * len(lbl_vals)
+                        # Plot each label individually to retrieve each corresponding Line2D object
+                        p = itertools.chain.from_iterable(
+                            [sp11.plot(__t, _lbl_vals, '.') for __t, _lbl_vals in zip(_t, lbl_vals, strict=False)]
+                        )
+                        if len(label_legend_to_plot) != 0:
+                            sp11.legend(list(p), label_legend_to_plot, loc='upper left')
+                            label_legend_to_plot = []
+
+                if getattr(block, 'rf', None) is not None:  # RF
+                    rf = block.rf
+                    time_center, index_center = calc_rf_center(rf)
+                    time = rf.t
+                    signal = rf.signal
+
+                    if signal.shape[0] == 2 and rf.freq_offset != 0:
+                        num_samples = min(int(abs(rf.freq_offset)), 256)
+                        time = np.linspace(time[0], time[-1], num_samples)
+                        signal = np.linspace(signal[0], signal[-1], num_samples)
+
+                    if abs(signal[0]) != 0:
+                        signal = np.concatenate(([0], signal))
+                        time = np.concatenate(([time[0]], time))
+                        index_center += 1
+
+                    if abs(signal[-1]) != 0:
+                        signal = np.concatenate((signal, [0]))
+                        time = np.concatenate((time, [time[-1]]))
+
+                    signal_is_real = max(np.abs(np.imag(signal))) / max(np.abs(np.real(signal))) < 1e-6
+
+                    # Compute time vector with delay applied
+                    time_with_delay = t_factor * (t0 + time + rf.delay)
+                    time_center_with_delay = t_factor * (t0 + time_center + rf.delay)
+
+                    # Choose plot behavior based on realness of signal
+                    if signal_is_real:
+                        # Plot real part of signal
+                        sp12.plot(time_with_delay, np.real(signal))
+
+                        # Include sign(real(signal)) factor like MATLAB
+                        phase_corrected = (
+                            signal
+                            * np.sign(np.real(signal))
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
+
+                        sp13.plot(
+                            time_with_delay,
+                            np.angle(phase_corrected),
+                            time_center_with_delay,
+                            np.angle(sc_corrected),
+                            'xb',
+                        )
+                    else:
+                        # Plot magnitude of complex signal
+                        sp12.plot(time_with_delay, np.abs(signal))
+
+                        # Plot angle of complex signal
+                        phase_corrected = (
+                            signal * np.exp(1j * rf.phase_offset) * np.exp(1j * 2 * math.pi * time * rf.freq_offset)
+                        )
+                        sc_corrected = (
+                            signal[index_center]
+                            * np.exp(1j * rf.phase_offset)
+                            * np.exp(1j * 2 * math.pi * time[index_center] * rf.freq_offset)
+                        )
+
+                        sp13.plot(
+                            time_with_delay,
+                            np.angle(phase_corrected),
+                            time_center_with_delay,
+                            np.angle(sc_corrected),
+                            'xb',
+                        )
+
+                grad_channels = ['gx', 'gy', 'gz']
+                for x in range(len(grad_channels)):  # Gradients
+                    if getattr(block, grad_channels[x], None) is not None:
+                        grad = getattr(block, grad_channels[x])
+                        if grad.type == 'grad':
+                            # We extend the shape by adding the first and the last points in an effort of making the
+                            # display a bit less confusing...
+                            time = grad.delay + np.array([0, *grad.tt, grad.shape_dur])
+                            waveform = g_factor * np.array((grad.first, *grad.waveform, grad.last))
+                        else:
+                            time = np.array(
+                                cumsum(
+                                    0,
+                                    grad.delay,
+                                    grad.rise_time,
+                                    grad.flat_time,
+                                    grad.fall_time,
+                                )
+                            )
+                            waveform = g_factor * grad.amplitude * np.array([0, 0, 1, 1, 0])
+                        [sp21, sp22, sp23][x].plot(t_factor * (t0 + time), waveform)
+
+                # Soft delays - plot as shaded regions with annotations
+                if getattr(block, 'soft_delay', None) is not None:
+                    soft_delay = block.soft_delay
+                    block_duration = self.block_durations[block_counter]
+                    t_mid = t0 + block_duration / 2  # Middle of the block
+
+                    # Add shaded region spanning the soft delay block duration on RF phase subplot
+                    sp13.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp12.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+                    sp11.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    for sp2x in [sp21, sp22, sp23]:
+                        sp2x.axvspan(t_factor * t0, t_factor * (t0 + block_duration), alpha=0.2, color='orange')
+
+                    # Add text annotation with soft delay hint
+                    y_lim = sp13.get_ylim()
+                    y_range = y_lim[1] - y_lim[0]
+                    y_pos = y_lim[0] + 0.1 * y_range
+                    y_text = y_lim[0] + 0.3 * y_range
+
+                    sp13.annotate(
+                        f'{soft_delay.hint}',
+                        xy=(t_factor * t_mid, y_pos),
+                        xytext=(t_factor * t_mid, y_text),
+                        ha='center',
+                        va='bottom',
+                        fontsize=8,
+                        bbox={'boxstyle': 'round,pad=0.3', 'facecolor': 'orange', 'alpha': 0.7},
+                    )
+
+            t0 += self.block_durations[block_counter]
+
+        # Set axis labels
+        sp11.set_ylabel('ADC')
+        sp12.set_ylabel('RF mag (Hz)')
+        sp13.set_ylabel('RF/ADC phase (rad)')
+        sp13.set_xlabel(f't ({time_disp})')
+        sp21.set_ylabel(f'Gx ({grad_disp})')
+        sp22.set_ylabel(f'Gy ({grad_disp})')
+        sp23.set_ylabel(f'Gz ({grad_disp})')
+        sp23.set_xlabel(f't ({time_disp})')
+
+        # Set display limits for all subplots
+        disp_range = t_factor * np.array([time_range[0], min(t0, time_range[1])])
+        for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+            sp.set_xlim(disp_range)
+
+        # Enable grid on all subplots (explicitly set to True, don't toggle)
+        for sp in [sp11, sp12, sp13, sp21, sp22, sp23]:
+            sp.grid(True)
+
+        fig1.tight_layout()
+        fig2.tight_layout()
+        if save:
+            fig1.savefig('seq_plot1.jpg')
+            fig2.savefig('seq_plot2.jpg')
+
+        if plot_now:
+            plt.show()
+
+        # Always return figures and axes for customization
+        return fig1, (sp11, sp12, sp13), fig2, (sp21, sp22, sp23)
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
         """
@@ -1164,7 +1326,7 @@ class Sequence:
         for grad_id in seq_copy.grad_library.data:
             if seq_copy.grad_library.type[grad_id] == 'g':
                 data = seq_copy.grad_library.data[grad_id]
-                new_data = (*data[0:3], mapping[data[3]], mapping[data[4]], data[5])
+                new_data = (data[0], mapping[data[1]], mapping[data[2]], *data[3:])
                 if data != new_data:
                     seq_copy.grad_library.update(grad_id, None, new_data)
 
@@ -1185,14 +1347,14 @@ class Sequence:
             seq_copy.block_events[block_id][4] = mapping[seq_copy.block_events[block_id][4]]
 
         # Filter duplicates in RF library
-        seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((6, 0, 0, 0, 6, 6, 6, 6, 6, 6))
+        seq_copy.rf_library, mapping = seq_copy.rf_library.remove_duplicates((6, 0, 0, 0, 6, 6, 6))
 
         # Remap RF event IDs
         for block_id in seq_copy.block_events:
             seq_copy.block_events[block_id][1] = mapping[seq_copy.block_events[block_id][1]]
 
         # Filter duplicates in ADC library
-        seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, -9, -6, 6, 6, 6, 6, 6, 6))
+        seq_copy.adc_library, mapping = seq_copy.adc_library.remove_duplicates((0, -9, -6, 6, 6, 6))
 
         # Remap ADC event IDs
         for block_id in seq_copy.block_events:
@@ -1200,7 +1362,7 @@ class Sequence:
 
         return seq_copy
 
-    def rf_from_lib_data(self, lib_data: list, use: str = '') -> SimpleNamespace:
+    def rf_from_lib_data(self, lib_data: list, use: str = str()) -> SimpleNamespace:
         """
         Construct RF object from `lib_data`.
 
@@ -1208,7 +1370,7 @@ class Sequence:
         ----------
         lib_data : list
             RF envelope.
-        use : str, default=''
+        use : str, default=str()
             RF event use.
 
         Returns
@@ -1229,7 +1391,7 @@ class Sequence:
         compressed.num_samples = shape_data[0]
         compressed.data = shape_data[1:]
         phase = decompress_shape(compressed)
-        rf.signal = amplitude * mag * np.exp(1j * 2 * math.pi * phase)
+        rf.signal = amplitude * mag * np.exp(1j * 2 * np.pi * phase)
         time_shape = lib_data[3]
         if time_shape > 0:
             shape_data = self.shape_library.data[time_shape]
@@ -1241,26 +1403,22 @@ class Sequence:
             rf.t = (np.arange(1, len(rf.signal) + 1) - 0.5) * self.rf_raster_time
             rf.shape_dur = len(rf.signal) * self.rf_raster_time
 
-        rf.center = lib_data[4]  # v150: new field
-        rf.delay = lib_data[5]  # v150: changed from lib_data[4] to lib_data[5]
-        rf.freq_ppm = lib_data[6]  # v150: new field
-        rf.phase_ppm = lib_data[7]  # v150: new field
-        rf.freq_offset = lib_data[8]  # v150: changed from lib_data[5] to lib_data[8]
-        rf.phase_offset = lib_data[9]  # v150: changed from lib_data[6] to lib_data[9]
+        rf.delay = lib_data[4]
+        rf.freq_offset = lib_data[5]
+        rf.phase_offset = lib_data[6]
 
         rf.dead_time = self.system.rf_dead_time
         rf.ringdown_time = self.system.rf_ringdown_time
 
-        # TODO: fixme : use map built from pp.get_supported_rf_uses()
-        use_cases = {
-            'e': 'excitation',
-            'r': 'refocusing',
-            'i': 'inversion',
-            's': 'saturation',
-            'p': 'preparation',
-            'o': 'other',
-        }
-        rf.use = use_cases.get(use, 'undefined')
+        if use != '':
+            use_cases = {
+                'e': 'excitation',
+                'r': 'refocusing',
+                'i': 'inversion',
+                's': 'saturation',
+                'p': 'preparation',
+            }
+            rf.use = use_cases.get(use, 'undefined')
 
         return rf
 
@@ -1311,23 +1469,16 @@ class Sequence:
 
             if block.rf is not None:
                 rf = block.rf
-
-                tc = calc_rf_center(rf)[0]
-                t = rf.delay + tc
-
-                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
-                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
-                full_phase_offset = full_phase_offset + 2 * math.pi * full_freq_offset * tc
-
+                t = rf.delay + calc_rf_center(rf)[0]
                 if not hasattr(rf, 'use') or block.rf.use in [
                     'excitation',
                     'undefined',
                 ]:
                     t_excitation.append(curr_dur + t)
-                    fp_excitation.append([full_freq_offset, full_phase_offset])
+                    fp_excitation.append([block.rf.freq_offset, block.rf.phase_offset])
                 elif block.rf.use == 'refocusing':
                     t_refocusing.append(curr_dur + t)
-                    fp_refocusing.append([full_freq_offset, full_phase_offset])
+                    fp_refocusing.append([block.rf.freq_offset, block.rf.phase_offset])
 
             curr_dur += self.block_durations[block_counter]
 
@@ -1647,13 +1798,11 @@ class Sequence:
 
             if block.rf is not None:  # RF
                 rf = block.rf
-                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
-                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
                 if append_RF:
                     rf_piece = np.array(
                         [
                             curr_dur + rf.delay + rf.t,
-                            rf.signal * np.exp(1j * (full_phase_offset + 2 * math.pi * full_freq_offset * rf.t)),
+                            rf.signal * np.exp(1j * (rf.phase_offset + 2 * np.pi * rf.freq_offset * rf.t)),
                         ]
                     )
                     out_len[-1] += len(rf.t)
