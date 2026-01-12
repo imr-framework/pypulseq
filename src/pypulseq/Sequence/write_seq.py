@@ -322,9 +322,9 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
         output_file.write('# Created by PyPulseq\n\n')
 
         output_file.write('[VERSION]\n')
-        output_file.write(f'major {self.version_major}\n')
-        output_file.write(f'minor {self.version_minor}\n')
-        output_file.write(f'revision {self.version_revision}\n')
+        output_file.write('major 1\n')
+        output_file.write('minor 4\n')
+        output_file.write('revision 1\n')
         output_file.write('\n')
 
         if len(self.definitions) != 0:
