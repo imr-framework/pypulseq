@@ -14,21 +14,23 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def make_gauss_pulse(
     flip_angle: float,
-    apodization: float = 0,
-    bandwidth: float = 0,
+    apodization: float = 0.0,
+    bandwidth: float = 0.0,
     center_pos: float = 0.5,
-    delay: float = 0,
-    dwell: float = 0,
+    delay: float = 0.0,
+    dwell: float = 0.0,
     duration: float = 4e-3,
-    freq_offset: float = 0,
-    max_grad: float = 0,
-    max_slew: float = 0,
-    phase_offset: float = 0,
+    freq_offset: float = 0.0,
+    max_grad: float = 0.0,
+    max_slew: float = 0.0,
+    phase_offset: float = 0.0,
     return_gz: bool = False,
-    slice_thickness: float = 0,
+    slice_thickness: float = 0.0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 4,
-    use: str = str(),
+    time_bw_product: float = 4.0,
+    use: str = 'undefined',
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
 ) -> Union[
     SimpleNamespace,
     Tuple[SimpleNamespace, SimpleNamespace, SimpleNamespace],
@@ -68,10 +70,16 @@ def make_gauss_pulse(
         slice select event.
     system : Opts, default=Opts()
         System limits.
-    time_bw_product : int, default=4
+    time_bw_product : float, default=4.0
         Time-bandwidth product.
-    use : str, default=str()
-        Use of radio-frequency gauss pulse event. Must be one defined in pypulseq.supported_labels_rf_use.get_supported_rf_uses.
+    use : str, default='undefined'
+        Use of radio-frequency Gauss pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     Returns
     -------
@@ -91,8 +99,9 @@ def make_gauss_pulse(
     if system is None:
         system = Opts.default
 
-    if use != '' and use not in get_supported_rf_uses():
-        raise ValueError(f'Invalid use parameter. Must be one of {get_supported_rf_uses()}. Passed: {use}')
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
@@ -117,9 +126,12 @@ def make_gauss_pulse(
     rf.shape_dur = n_samples * dwell
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
+    rf.center = duration * center_pos
     if use != '':
         rf.use = use
 
