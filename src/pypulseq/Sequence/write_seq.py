@@ -5,7 +5,10 @@ from warnings import warn
 
 import numpy as np
 
-from pypulseq.supported_labels_rf_use import get_supported_labels
+from pypulseq import __version__
+from pypulseq.supported_labels_rf_use import get_supported_labels, get_supported_rf_uses
+
+version_major, version_minor, version_revision = __version__.split('.')[:3]
 
 
 def write(self, file_name: Union[str, Path], create_signature, remove_duplicates=True) -> Union[str, None]:
@@ -100,15 +103,19 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
         if len(self.rf_library.data) != 0:
             output_file.write('# Format of RF events:\n')
-            output_file.write('# id amplitude mag_id phase_id time_shape_id delay freq phase\n')
-            output_file.write('# ..        Hz   ....     ....          ....    us   Hz   rad\n')
+            output_file.write('# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use\n')
+            output_file.write('# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..\n')
+            output_file.write(f'# Field "use" is the initial of: {" ".join(get_supported_rf_uses()).strip()}\n')
             output_file.write('[RF]\n')
-            id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g}\n'  # Refer lines 20-21
+            id_format_str = (
+                '{:.0f} {:12g} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g} {:g} {:g} {:g} {:s}\n'  # Refer lines 20-21
+            )
             for k in self.rf_library.data:
                 lib_data1 = self.rf_library.data[k][0:4]
-                lib_data2 = self.rf_library.data[k][5:7]
-                delay = round(self.rf_library.data[k][4] / self.rf_raster_time) * self.rf_raster_time * 1e6
-                s = id_format_str.format(k, *lib_data1, delay, *lib_data2)
+                lib_data2 = self.rf_library.data[k][6:10]
+                center = self.rf_library.data[k][4] * 1e6  # us
+                delay = round(self.rf_library.data[k][5] / self.rf_raster_time) * self.rf_raster_time * 1e6
+                s = id_format_str.format(k, *lib_data1, center, delay, *lib_data2, self.rf_library.type[k])
                 output_file.write(s)
             output_file.write('\n')
 
@@ -121,16 +128,16 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
             output_file.write(
                 '#   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)\n'
             )
-            output_file.write('# id amplitude amp_shape_id time_shape_id delay\n')
-            output_file.write('# ..      Hz/m       ..         ..          us\n')
+            output_file.write('# id amplitude first last amp_shape_id time_shape_id delay\n')
+            output_file.write('# ..      Hz/m  Hz/m Hz/m        ..         ..          us\n')
             output_file.write('[GRADIENTS]\n')
-            id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:.0f}\n'  # Refer lines 20-21
+            id_format_str = '{:.0f} {:12g} {:12g} {:12g} {:.0f} {:.0f} {:.0f}\n'  # Refer lines 20-21
             keys = np.array(list(self.grad_library.data.keys()))
             for k in keys[arb_grad_mask]:
                 s = id_format_str.format(
                     k,
-                    *self.grad_library.data[k][:3],
-                    round(self.grad_library.data[k][3] * 1e6),
+                    *self.grad_library.data[k][:5],
+                    round(self.grad_library.data[k][5] * 1e6),
                 )
                 output_file.write(s)
             output_file.write('\n')
@@ -156,12 +163,12 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
         if len(self.adc_library.data) != 0:
             output_file.write('# Format of ADC events:\n')
-            output_file.write('# id num dwell delay freq phase\n')
-            output_file.write('# ..  ..    ns    us   Hz   rad\n')
+            output_file.write('# id num dwell delay freqPPM phasePPM freq phase phase_id\n')
+            output_file.write('# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..\n')
             output_file.write('[ADC]\n')
-            id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g}\n'  # Refer lines 20-21
+            id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g} {:g} {:.0f}\n'  # Refer lines 20-21
             for k in self.adc_library.data:
-                data = np.multiply(self.adc_library.data[k][0:5], [1, 1e9, 1e6, 1, 1])
+                data = np.multiply(self.adc_library.data[k][0:8], [1, 1e9, 1e6, 1, 1, 1, 1, 1])
                 s = id_format_str.format(k, *data)
                 output_file.write(s)
             output_file.write('\n')

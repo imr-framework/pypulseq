@@ -5,7 +5,10 @@ from pypulseq.opts import Opts
 
 
 def make_digital_output_pulse(
-    channel: str, delay: float = 0, duration: float = 4e-3, system: Union[Opts, None] = None
+    channel: str,
+    delay: float = 0.0,
+    duration: float = 4e-3,
+    system: Union[Opts, None] = None,
 ) -> SimpleNamespace:
     """
     Create a digital output pulse event a.k.a. trigger. Creates an output trigger event on a given channel with optional
