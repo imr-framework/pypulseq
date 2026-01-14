@@ -10,6 +10,7 @@ from scipy.interpolate import PPoly
 if typing.TYPE_CHECKING:
     from pypulseq.Sequence.sequence import Sequence
 
+
 def calc_moments_btensor(
     seq: Sequence,
     calcB: bool = True,
@@ -120,9 +121,7 @@ def calc_moments_btensor(
         tref = float(t_ref[k])
 
         if te < t0 or te > t1:
-            raise ValueError(
-                f'Computed TE={te} is outside repetition segment [{t0},{t1}] for repetition {r} (k={k}).'
-            )
+            raise ValueError(f'Computed TE={te} is outside repetition segment [{t0},{t1}] for repetition {r} (k={k}).')
 
         # restrict gradients to repetition segment and apply refocusing sign flip
         g_tr = [_restrict_piecewise_linear(g_lin[i], t0, t1) for i in range(3)]
@@ -181,7 +180,7 @@ def _unique_sorted(x: np.ndarray) -> np.ndarray:
     return np.unique(x)
 
 
-def _fill_pp_coefs(pp:  Union[PPoly, None], xn: np.ndarray) -> Union[PPoly, None]:
+def _fill_pp_coefs(pp: Union[PPoly, None], xn: np.ndarray) -> Union[PPoly, None]:
     """
     Direct translation of MATLAB's fillPpCoefs function.
     """
@@ -193,7 +192,7 @@ def _fill_pp_coefs(pp:  Union[PPoly, None], xn: np.ndarray) -> Union[PPoly, None
 
     x_old = pp.x
     c_old = pp.c
-    order = c_old. shape[0]
+    order = c_old.shape[0]
     n_intervals = len(xn) - 1
 
     # Find indices
@@ -210,15 +209,13 @@ def _fill_pp_coefs(pp:  Union[PPoly, None], xn: np.ndarray) -> Union[PPoly, None
     for i in range(n_intervals):
         if idx[i] > 0:
             # Simple copy
-            new_coefs[: , i] = c_old[: , idx[i] - 1]
+            new_coefs[:, i] = c_old[:, idx[i] - 1]
         elif i > 0:
             # Taylor expansion with proper binomial coefficient
             dx = xn[i] - xn[i - 1]
             for k in range(order):
                 for l in range(k + 1):
-                    new_coefs[order - 1 - l, i] += (
-                        new_coefs[order - 1 - k, i - 1] * comb(k, l) * (dx ** (k - l))
-                    )
+                    new_coefs[order - 1 - l, i] += new_coefs[order - 1 - k, i - 1] * comb(k, l) * (dx ** (k - l))
 
     return PPoly(new_coefs, xn, extrapolate=False)
 
@@ -243,12 +240,12 @@ def _flip_after(pp_lin: Union[PPoly, None], t_flip: float) -> Union[PPoly, None]
     if t_flip >= x[-1]:
         return pp_lin
 
-    grid = _unique_sorted(np. concatenate((x, [t_flip])))
+    grid = _unique_sorted(np.concatenate((x, [t_flip])))
     pp2 = _fill_pp_coefs(pp_lin, grid)  # ← Changed
 
     x2 = pp2.x
     mask = x2[:-1] >= t_flip
-    c2 = pp2.c. copy()
+    c2 = pp2.c.copy()
     c2[:, mask] *= -1
     return PPoly(c2, x2, extrapolate=False)
 
