@@ -275,9 +275,9 @@ def _integrate_piecewise_linear_product(u: np.ndarray, v: np.ndarray, t: np.ndar
     bu = u[:-1] - au * t[:-1] # codespell:ignore
     bv = v[:-1] - av * t[:-1] # codespell:ignore
 
-    A = au * av
-    B = au * bv + av * bu
-    C = bu * bv
+    A = au * av # codespell:ignore
+    B = au * bv + av * bu # codespell:ignore
+    C = bu * bv # codespell:ignore
 
     t0 = t[:-1]
     t1 = t[1:]
