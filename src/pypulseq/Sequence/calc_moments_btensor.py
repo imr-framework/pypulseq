@@ -270,14 +270,14 @@ def _integrate_piecewise_linear_product(u: np.ndarray, v: np.ndarray, t: np.ndar
     if dt.size == 0:
         return 0.0
 
-    au = np.divide(np.diff(u), dt, out=np.zeros_like(dt), where=dt != 0) # codespell:ignore
-    av = np.divide(np.diff(v), dt, out=np.zeros_like(dt), where=dt != 0) # codespell:ignore
-    bu = u[:-1] - au * t[:-1] # codespell:ignore
-    bv = v[:-1] - av * t[:-1] # codespell:ignore
+    au = np.divide(np.diff(u), dt, out=np.zeros_like(dt), where=dt != 0)  # codespell:ignore
+    av = np.divide(np.diff(v), dt, out=np.zeros_like(dt), where=dt != 0)  # codespell:ignore
+    bu = u[:-1] - au * t[:-1]  # codespell:ignore
+    bv = v[:-1] - av * t[:-1]  # codespell:ignore
 
-    A = au * av # codespell:ignore
-    B = au * bv + av * bu # codespell:ignore
-    C = bu * bv # codespell:ignore
+    A = au * av  # codespell:ignore
+    B = au * bv + av * bu  # codespell:ignore
+    C = bu * bv  # codespell:ignore
 
     t0 = t[:-1]
     t1 = t[1:]
