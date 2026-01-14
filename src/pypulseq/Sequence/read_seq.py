@@ -51,6 +51,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     self.rf_library = EventLibrary()
     self.shape_library = EventLibrary()
     self.trigger_library = EventLibrary()
+    self.rf_shim_library = EventLibrary()
 
     # Raster times
     self.grad_raster_time = self.system.grad_raster_time
@@ -219,6 +220,10 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 for d in self.soft_delay_library.data.values():
                     if d[3] not in self.soft_delay_hints:
                         self.soft_delay_hints[d[3]] = d[0]
+            elif section[:18] == 'extension RF_SHIMS':
+                extension_id = int(section[18:])
+                self.set_extension_string_ID('RF_SHIMS', extension_id)
+                self.rf_shim_library = __read_and_parse_events(input_file, preproc=__preproc_rf_shim_data)
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
@@ -607,17 +612,19 @@ def __read_events(
     return event_library
 
 
-def __read_and_parse_events(input_file, *args: Callable) -> EventLibrary:
+def __read_and_parse_events(input_file, *args: Callable, preproc: Union[callable, None] = None) -> EventLibrary:
     """
     Read an event section of a sequence file and return a library of events.
 
-    Event data elements are converted using the provided parser(s). Default parser is `int()`.
+    Event data elements are converted using the provided parser(s). Default parser is `__str2num()`.
 
     Parameters
     ----------
     input_file : file
     args : Callable
         Event parsers.
+    preproc : callable
+        Event processor.
 
     Returns
     -------
@@ -634,9 +641,13 @@ def __read_and_parse_events(input_file, *args: Callable) -> EventLibrary:
         event_id = int(list_of_data_str[0])
         for i in range(1, len(list_of_data_str)):
             if i > len(args):
-                data.append(int(list_of_data_str[i]))
+                data.append(__str2num(list_of_data_str[i]))
             else:
                 data.append(args[i - 1](list_of_data_str[i]))
+
+        if preproc is not None:
+            data = preproc(data)
+
         event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 
@@ -809,3 +820,17 @@ def __fromstring(line, format_spec: List) -> List:
             raise ValueError(f'Unsupported format: {fmt}')
 
     return data
+
+
+def __preproc_rf_shim_data(data):
+    if len(data) != 2 * int(data[0]) + 1:
+        raise ValueError('Error reading RF shim extension data')
+    return tuple(data[1:])
+
+
+def __str2num(value):
+    try:
+        return int(value)
+    except Exception:
+        return float(value)
+

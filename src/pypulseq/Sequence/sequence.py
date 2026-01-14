@@ -68,6 +68,7 @@ class Sequence:
         self.shape_library = EventLibrary(numpy_data=True)
         self.trigger_library = EventLibrary()
         self.soft_delay_library = EventLibrary()
+        self.rf_shim_library = EventLibrary()
 
         # =========
         # OTHER
@@ -1130,6 +1131,9 @@ class Sequence:
 
     def register_soft_delay_event(self, event: SimpleNamespace) -> int:
         return block.register_soft_delay_event(self, event)
+    
+    def register_rf_shim_event(self, event: SimpleNamespace) -> int:
+        return block.register_rf_shim_event(self, event)
 
     def remove_duplicates(self, in_place: bool = False) -> 'Sequence':
         """
