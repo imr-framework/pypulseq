@@ -11,14 +11,16 @@ from pypulseq.utils.tracing import trace, trace_enabled
 
 def make_block_pulse(
     flip_angle: float,
-    delay: float = 0,
+    delay: float = 0.0,
     duration: Union[float, None] = None,
     bandwidth: Union[float, None] = None,
     time_bw_product: Union[float, None] = None,
-    freq_offset: float = 0,
-    phase_offset: float = 0,
+    freq_offset: float = 0.0,
+    phase_offset: float = 0.0,
     system: Union[Opts, None] = None,
-    use: str = str(),
+    use: str = 'undefined',
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
 ) -> SimpleNamespace:
     """
     Create a block (RECT or hard) pulse.
@@ -46,8 +48,14 @@ def make_block_pulse(
         Phase offset Hertz (Hz).
     system : Opts, default=Opts()
         System limits.
-    use : str, default=str()
+    use : str, default='undefined'
         Use of radio-frequency block pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
 
     Returns
     -------
@@ -64,9 +72,9 @@ def make_block_pulse(
     if system is None:
         system = Opts.default
 
-    valid_use_pulses = get_supported_rf_uses()
-    if use != '' and use not in valid_use_pulses:
-        raise ValueError(f'Invalid use parameter. Must be one of {valid_use_pulses}. Passed: {use}')
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if duration is None and bandwidth is None:
         warn('Using default 4 ms duration for block pulse.')
@@ -101,12 +109,13 @@ def make_block_pulse(
     rf.shape_dur = t[-1]
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-
-    if use != '':
-        rf.use = use
+    rf.center = rf.shape_dur / 2
+    rf.use = use
 
     if rf.dead_time > rf.delay:
         warn(

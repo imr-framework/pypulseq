@@ -1,3 +1,33 @@
+"""
+Advanced GRE sequence with soft delays for TE/TR optimization.
+
+This example demonstrates a complete gradient echo (GRE) imaging sequence with
+soft delays for dynamic TE and TR adjustment. This is a complex example showing
+advanced soft delay usage with mathematical relationships between delays.
+
+For a simpler introduction to soft delays, see: soft_delay_simple_example.py
+
+Soft Delay Strategy in this example:
+-----------------------------------
+1. TE Delays: Two soft delays with the same 'TE' hint but different factors:
+   - First TE delay: Simple positive relationship (factor=1.0, offset=-min_TE)
+   - Second TE delay: Inverse relationship (factor=-1.0, offset=max_TE)
+   - This allows TE adjustment while maintaining constant TR
+
+2. TR Delay: Compensates for TE changes to maintain overall TR
+   - Uses offset=-min_TR to ensure minimum TR constraints
+
+Mathematical Relationships:
+--------------------------
+The delays are designed so that:
+- Increasing TE extends the first delay and shortens the second delay
+- TR delay compensates to maintain constant total TR
+- All timing constraints (min_TE, max_TE, min_TR) are respected
+
+This demonstrates advanced soft delay usage for complex timing optimization
+where multiple delays interact to maintain sequence constraints.
+"""
+
 import math
 
 import numpy as np
@@ -5,7 +35,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_label_pypulseq.seq'):
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_label_softdelay.seq'):
     # ======
     # SETUP
     # ======
@@ -15,9 +45,8 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
     alpha = 7  # Flip angle
     slice_thickness = 3e-3  # Slice thickness
     n_slices = 1
-    TE = 4.3e-3  # Echo time
-    TR = 10e-3  # Repetition time
-
+    TR = 20e-3  # Repetition time
+    max_TE = 8e-3
     rf_spoiling_inc = 117  # RF spoiling increment
     ro_duration = 3.2e-3  # ADC duration
 
@@ -47,7 +76,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
         system=system,
         return_gz=True,
         delay=system.rf_dead_time,
-        use='excitation',
     )
 
     # Define other gradients and ADC events
@@ -63,22 +91,21 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
     gz_spoil = pp.make_trapezoid(channel='z', area=4 / slice_thickness, system=system)
 
     # Calculate timing
-    delay_TE = (
+    min_TE = (
         math.ceil(
-            (TE - pp.calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - pp.calc_duration(gx) / 2)
+            (pp.calc_duration(gx_pre) + gz.fall_time + gz.flat_time / 2 + pp.calc_duration(gx) / 2)
             / seq.grad_raster_time
         )
         * seq.grad_raster_time
     )
-    delay_TR = (
+
+    min_TR = (
         math.ceil(
-            (TR - pp.calc_duration(gz) - pp.calc_duration(gx_pre) - pp.calc_duration(gx) - delay_TE)
+            (gz.fall_time + gz.flat_time / 2 + max_TE + pp.calc_duration(gx) / 2 + pp.calc_duration(gx_spoil, gz_spoil))
             / seq.grad_raster_time
         )
         * seq.grad_raster_time
-    )
-    assert np.all(delay_TE >= 0)
-    assert np.all(delay_TR >= pp.calc_duration(gx_spoil, gz_spoil))
+    )  # + whatever the soft TE delay is.
 
     rf_phase = 0
     rf_inc = 0
@@ -106,10 +133,17 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
                 system=system,
             )
             seq.add_block(gx_pre, gy_pre, gz_reph)
-            seq.add_block(pp.make_delay(delay_TE))
+
+            # FIRST TE SOFT DELAY: Extends with increasing TE
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / 1.0) + (-min_TE)
+            # This creates a delay that increases linearly with TE input
+            # Default duration: 10μs (minimum block duration)
+            # When TE=min_TE: duration = min_TE + (-min_TE) = 0 (but clamped to 10μs minimum)
+            # When TE>min_TE: duration increases proportionally
+            seq.add_block(pp.make_soft_delay(hint='TE', offset=-min_TE, factor=1.0))
             seq.add_block(gx, adc)
             gy_pre.amplitude = -gy_pre.amplitude
-            spoil_block_contents = [pp.make_delay(delay_TR), gx_spoil, gy_pre, gz_spoil]
+            spoil_block_contents = [gx_spoil, gy_pre, gz_spoil]
             if i != Ny - 1:
                 spoil_block_contents.append(pp.make_label(type='INC', label='LIN', value=1))
             else:
@@ -120,6 +154,28 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
                     ]
                 )
             seq.add_block(*spoil_block_contents)
+
+            # SECOND TE SOFT DELAY: Shrinks with increasing TE (maintains constant total TE)
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / -1.0) + max_TE
+            # This creates an inverse relationship: as TE increases, this delay decreases
+            # Default duration: max_TE - min_TE - 10μs
+            # When TE=min_TE: duration = (-min_TE) + max_TE = max_TE - min_TE
+            # When TE=max_TE: duration = (-max_TE) + max_TE = 0 (clamped to 10μs minimum)
+            # Combined with first TE delay: total TE delay remains constant, only distribution changes
+            seq.add_block(
+                pp.make_soft_delay(hint='TE', offset=max_TE, factor=-1.0, default_duration=max_TE - min_TE - 10e-6)
+            )
+
+            # TR SOFT DELAY: Maintains constant TR regardless of TE changes
+            # Formula: duration = (TR_input / factor) + offset = (TR_input / 1.0) + (-min_TR)
+            # Since TE delays have constant total duration, TR delay only needs to handle TR changes
+            # Default duration: TR - min_TR - (max_TE - min_TE)
+            # This ensures total sequence duration = TR regardless of TE/TR settings
+            seq.add_block(
+                pp.make_soft_delay(
+                    hint='TR', offset=-min_TR, factor=1.0, default_duration=TR - min_TR - max_TE + min_TE
+                )
+            )
 
     ok, error_report = seq.check_timing()
 

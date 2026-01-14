@@ -23,13 +23,13 @@ def test_pulse_select():
         assert rf_obj.use == use_label
 
     # Check the appropriate errors are raised if we specify nonsense
-    with pytest.raises(ValueError, match='Invalid type parameter. Must be one of '):
+    with pytest.raises(ValueError, match=r'Invalid type parameter\. Must be one of '):
         make_adiabatic_pulse(pulse_type='not a pulse type')
 
-    with pytest.raises(ValueError, match='Invalid type parameter. Must be one of '):
+    with pytest.raises(ValueError, match=r'Invalid type parameter\. Must be one of '):
         make_adiabatic_pulse(pulse_type='')
 
-    with pytest.raises(ValueError, match='Invalid use parameter. Must be one of '):
+    with pytest.raises(ValueError, match=r'Invalid use parameter\. Must be one of '):
         make_adiabatic_pulse(pulse_type='hypsec', use='not a use')
 
     # Default use case

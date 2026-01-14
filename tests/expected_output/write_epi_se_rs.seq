@@ -198,26 +198,27 @@ TotalDuration 0.21735
 180  48   0   8  10   0  1  0
 
 # Format of RF events:
-# id amplitude mag_id phase_id time_shape_id delay freq phase
-# ..        Hz   ....     ....          ....    us   Hz   rad
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      129.712 1 2 0 100 -424.504 0
-2      493.727 3 4 0 130 -2000 0
-3      987.454 3 4 0 1740 -2000 1.5708
-4      493.727 3 4 0 130 0 0
-5      987.454 3 4 0 1740 0 1.5708
-6      493.727 3 4 0 130 2000 0
-7      987.454 3 4 0 1740 2000 1.5708
+1      129.712 1 2 0 4000 100 0 0 -424.504 0 s
+2      493.727 3 4 0 1000 130 0 0 -2000 0 e
+3      987.454 3 4 0 1000 1740 0 0 -2000 1.5708 r
+4      493.727 3 4 0 1000 130 0 0 0 0 e
+5      987.454 3 4 0 1000 1740 0 0 0 1.5708 r
+6      493.727 3 4 0 1000 130 0 0 2000 0 e
+7      987.454 3 4 0 1000 1740 0 0 2000 1.5708 r
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
-# id amplitude amp_shape_id time_shape_id delay
-# ..      Hz/m       ..         ..          us
+# id amplitude first last amp_shape_id time_shape_id delay
+# ..      Hz/m  Hz/m Hz/m        ..         ..          us
 [GRADIENTS]
-3  1.34624e+06 5 6 0
-7      -133333 7 8 450
-9      -133333 9 10 0
-10      -133333 11 8 0
+3  1.34624e+06            0            0 5 6 0
+7      -133333            0      -133333 7 8 450
+9      -133333      -133333      -133333 9 10 0
+10      -133333      -133333            0 11 8 0
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -231,10 +232,10 @@ TotalDuration 0.21735
  8 -1.00036e+06 220   40 220   0
 
 # Format of ADC events:
-# id num dwell delay freq phase
-# ..  ..    ns    us   Hz   rad
+# id num dwell delay freqPPM phasePPM freq phase phase_id
+# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
 [ADC]
-1 104 3900 37 0 0
+1 104 3900 37 0 0 0 0 0
 
 # Format of extension lists:
 # id type ref next_id
@@ -10335,4 +10336,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash c1e40a69ad6c8a7b7f518378bfda88ab
+Hash 7754f3ee61085517dc7839965fb2b3fd

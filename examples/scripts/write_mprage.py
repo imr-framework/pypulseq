@@ -45,9 +45,16 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprag
     ax.n3 = xyz.index(ax.d3)
 
     # Create alpha-degree hard pulse and gradient
-    rf = pp.make_block_pulse(flip_angle=alpha * np.pi / 180, system=system, duration=rf_len, delay=system.rf_dead_time)
+    rf = pp.make_block_pulse(
+        flip_angle=alpha * np.pi / 180, system=system, duration=rf_len, delay=system.rf_dead_time, use='excitation'
+    )
     rf180 = pp.make_adiabatic_pulse(
-        pulse_type='hypsec', system=system, duration=10.24e-3, dwell=1e-5, delay=system.rf_dead_time
+        pulse_type='hypsec',
+        system=system,
+        duration=10.24e-3,
+        dwell=1e-5,
+        delay=system.rf_dead_time,
+        use='inversion',
     )
 
     # Define other gradients and ADC events
@@ -89,7 +96,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprag
 
     # Calculate timing of the fast loop. We will have two blocks in the inner loop:
     # 1: spoilers/rewinders + RF
-    # 2: prewinder, phase enconding + readout
+    # 2: prewinder, phase encoding + readout
     rf.delay = pp.calc_duration(gro_Sp, gpe1, gpe2)
     gro_pre, _, _ = pp.align(right=[gro_pre, gpe1, gpe2])
     gro1.delay = pp.calc_duration(gro_pre)
