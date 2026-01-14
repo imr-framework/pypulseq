@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 import numpy as np
 
 import pypulseq as pp
@@ -39,6 +40,7 @@ def test_calc_moments_btensor_basic_properties():
 
     # ---- Target b-value ----
     b_target = 1000e6  # s/m^2 (1000 s/mm^2)
+    TE = 80e-3    
     delta = 10e-3
     Delta = 30e-3
 
@@ -47,16 +49,30 @@ def test_calc_moments_btensor_basic_properties():
 
     # ---- Define diffusion gradient lobe ----
     g = pp.make_trapezoid(channel="z", system=sys, amplitude=G, duration=delta)
-
+        
+    # Interval between end of first g and start of second g
+    diff_wait = Delta - delta
+    
+    # RF free time
+    rf_free_time = diff_wait - pp.calc_duration(rf180)
+    
+    # Center rf between gradient lobes
+    g_wait = 0.5 * rf_free_time
+    
+    # Compute te wait time
+    texc_center, _ = pp.calc_rf_center(rf90)
+    tref_center, _ = pp.calc_rf_center(rf180)
+    t_ref = (pp.calc_duration(rf90) - texc_center) + pp.calc_duration(g) + g_wait + tref_center
+    te_wait = 0.5 * TE - t_ref
+    
     # ---- Timing layout ----
     seq.add_block(rf90)
-    seq.add_block(pp.make_delay(5e-3))
+    seq.add_block(pp.make_delay(te_wait))
     seq.add_block(g)
-    seq.add_block(pp.make_delay(Delta - delta))
+    seq.add_block(pp.make_delay(g_wait))
     seq.add_block(rf180)
-    seq.add_block(pp.make_delay(5e-3))
+    seq.add_block(pp.make_delay(g_wait))
     seq.add_block(g)
-    seq.add_block(pp.make_delay(5e-3))
 
     # ---- Run moment calculator -----
     B, m1, m2, m3 = seq.calc_moments_btensor()  # defaults: calcB=True only
@@ -86,7 +102,7 @@ def test_calc_moments_btensor_basic_properties():
     assert abs(B[0, 1, 2]) < 1e-10
 
     # Convert to physical b-value (radians)
-    b_measured = (2 * np.pi)**2 * B[0, 2, 2]
+    b_measured = B[0, 2, 2]
 
     # Check quantitative correctness
     assert np.isclose(b_measured, b_target, rtol=1e-2)

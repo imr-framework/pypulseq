@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from math import comb
 from typing import Tuple, Union
 
 import numpy as np
@@ -92,14 +93,13 @@ def calc_moments_btensor(
     t_exc = np.asarray(t_excitation, dtype=float)
     t_ref = np.asarray(t_refocusing[:R_all], dtype=float)
     t_echo = 2.0 * t_ref - t_exc  # MATLAB TODO caveat
-
     tn = _unique_sorted(np.concatenate([grad_knots, t_exc, t_ref, t_echo]))
 
     # If gradients are empty and tn degenerate, still need a minimal grid.
     if tn.size < 2:
         raise ValueError('Unable to build a valid time grid for gradients (tn has <2 points).')
 
-    g_lin = [_pp_to_piecewise_linear(gw_pp[i], tn) for i in range(3)]
+    g_lin = [_fill_pp_coefs(gw_pp[i], tn) for i in range(3)]
 
     # repetitions after dummy
     R = R_all - Ndummy
@@ -181,31 +181,46 @@ def _unique_sorted(x: np.ndarray) -> np.ndarray:
     return np.unique(x)
 
 
-def _pp_to_piecewise_linear(pp: Union[PPoly, None], grid: np.ndarray) -> Union[PPoly, None]:
+def _fill_pp_coefs(pp:  Union[PPoly, None], xn: np.ndarray) -> Union[PPoly, None]:
     """
-    Rebuild a waveform as piecewise-linear on the provided grid using endpoint evaluation.
-
-    This is a pragmatic equivalent of MATLAB's:
-      - aligning breakpoints across axes/times
-      - re-building PP coefficients on a shared breakpoint vector
-    for the Pulseq context where waveforms are (at most) piecewise-linear.
+    Direct translation of MATLAB's fillPpCoefs function.
     """
     if pp is None:
         return None
-    if grid.size < 2:
+
+    if xn.size < 2:
         return None
 
-    y = pp(grid)
-    y = np.nan_to_num(y, nan=0.0)
+    x_old = pp.x
+    c_old = pp.c
+    order = c_old. shape[0]
+    n_intervals = len(xn) - 1
 
-    dx = np.diff(grid)
-    dy = np.diff(y)
-    slope = np.divide(dy, dx, out=np.zeros_like(dy), where=dx != 0)
-    intercept = y[:-1] - slope * grid[:-1]
+    # Find indices
+    idx = np.zeros(n_intervals, dtype=int)
+    for i in range(n_intervals):
+        matches = np.where(np.abs(x_old[:-1] - xn[i]) < 1e-14)[0]
+        if len(matches) > 0:
+            idx[i] = matches[0] + 1
+        else:
+            idx[i] = 0
 
-    # SciPy PPoly uses c shape (deg+1, n_intervals), highest power first.
-    c = np.vstack([slope, intercept])  # linear
-    return PPoly(c, grid, extrapolate=False)
+    new_coefs = np.zeros((order, n_intervals))
+
+    for i in range(n_intervals):
+        if idx[i] > 0:
+            # Simple copy
+            new_coefs[: , i] = c_old[: , idx[i] - 1]
+        elif i > 0:
+            # Taylor expansion with proper binomial coefficient
+            dx = xn[i] - xn[i - 1]
+            for k in range(order):
+                for l in range(k + 1):
+                    new_coefs[order - 1 - l, i] += (
+                        new_coefs[order - 1 - k, i - 1] * comb(k, l) * (dx ** (k - l))
+                    )
+
+    return PPoly(new_coefs, xn, extrapolate=False)
 
 
 def _restrict_piecewise_linear(pp_lin: Union[PPoly, None], a: float, b: float) -> Union[PPoly, None]:
@@ -215,13 +230,10 @@ def _restrict_piecewise_linear(pp_lin: Union[PPoly, None], a: float, b: float) -
         return None
     knots = pp_lin.x
     grid = _unique_sorted(np.concatenate(([a], knots[(knots > a) & (knots < b)], [b])))
-    return _pp_to_piecewise_linear(pp_lin, grid)
+    return _fill_pp_coefs(pp_lin, grid)  # ← Changed
 
 
 def _flip_after(pp_lin: Union[PPoly, None], t_flip: float) -> Union[PPoly, None]:
-    """
-    Multiply by -1 for t >= t_flip.
-    """
     if pp_lin is None:
         return None
 
@@ -231,13 +243,12 @@ def _flip_after(pp_lin: Union[PPoly, None], t_flip: float) -> Union[PPoly, None]
     if t_flip >= x[-1]:
         return pp_lin
 
-    grid = _unique_sorted(np.concatenate((x, [t_flip])))
-    pp2 = _pp_to_piecewise_linear(pp_lin, grid)
+    grid = _unique_sorted(np. concatenate((x, [t_flip])))
+    pp2 = _fill_pp_coefs(pp_lin, grid)  # ← Changed
 
-    # intervals [xk,xk+1] where xk >= t_flip should be negated
     x2 = pp2.x
     mask = x2[:-1] >= t_flip
-    c2 = pp2.c.copy()
+    c2 = pp2.c. copy()
     c2[:, mask] *= -1
     return PPoly(c2, x2, extrapolate=False)
 
