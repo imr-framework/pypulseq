@@ -377,8 +377,8 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g}\n'  # Refer lines 20-21
             for k in self.rf_library.data:
                 lib_data1 = self.rf_library.data[k][0:4]
-                lib_data2 = self.rf_library.data[k][5:7]
-                delay = round(self.rf_library.data[k][4] / self.rf_raster_time) * self.rf_raster_time * 1e6
+                lib_data2 = self.rf_library.data[k][8:10]
+                delay = round(self.rf_library.data[k][5] / self.rf_raster_time) * self.rf_raster_time * 1e6
                 s = id_format_str.format(k, *lib_data1, delay, *lib_data2)
                 output_file.write(s)
             output_file.write('\n')
@@ -400,8 +400,9 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             for k in keys[arb_grad_mask]:
                 s = id_format_str.format(
                     k,
-                    *self.grad_library.data[k][:3],
-                    round(self.grad_library.data[k][3] * 1e6),
+                    self.grad_library.data[k][0],
+                    *self.grad_library.data[k][3:5],
+                    round(self.grad_library.data[k][5] * 1e6),
                 )
                 output_file.write(s)
             output_file.write('\n')
@@ -432,7 +433,8 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             output_file.write('[ADC]\n')
             id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g}\n'  # Refer lines 20-21
             for k in self.adc_library.data:
-                data = np.multiply(self.adc_library.data[k][0:5], [1, 1e9, 1e6, 1, 1])
+                data = np.concatenate([self.adc_library.data[k][0:3], self.adc_library.data[k][5:7]])
+                data = np.multiply(data, [1, 1e9, 1e6, 1, 1])
                 s = id_format_str.format(k, *data)
                 output_file.write(s)
             output_file.write('\n')
