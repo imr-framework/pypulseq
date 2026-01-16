@@ -22,6 +22,9 @@ def calc_rf_center(rf: SimpleNamespace) -> Tuple[float, float]:
     id_center : float
         Corresponding position of `time_center` in the radio-frequency pulse's envelope.
     """
+    if hasattr(rf, 'center'):
+        return rf.center, np.argmin(abs(rf.t - rf.center)).item()
+
     # Detect the excitation peak; if i is a plateau take its center
     rf_max = np.max(np.abs(rf.signal))
     i_peak = np.where(np.abs(rf.signal) >= rf_max * 0.99999)[0]

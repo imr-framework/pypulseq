@@ -7,9 +7,9 @@ from scipy.signal import spectrogram
 
 def calculate_gradient_spectrum(
     obj,
-    max_frequency: float = 2000,
+    max_frequency: float = 2000.0,
     window_width: float = 0.05,
-    frequency_oversampling: float = 3,
+    frequency_oversampling: float = 3.0,
     time_range: Union[List[float], None] = None,
     plot: bool = True,
     combine_mode: str = 'max',
@@ -156,7 +156,7 @@ def calculate_gradient_spectrum(
                 plt.axvline(res['frequency'] - res['bandwidth'] / 2, color='k', linestyle='--')
                 plt.axvline(res['frequency'] + res['bandwidth'] / 2, color='k', linestyle='--')
         else:
-            for s, c in zip(spectrograms, ['X', 'Y', 'Z']):
+            for s, c in zip(spectrograms, ['X', 'Y', 'Z'], strict=False):
                 plt.figure()
                 plt.title(f'Spectrum {c}')
                 plt.xlabel('Time (s)')

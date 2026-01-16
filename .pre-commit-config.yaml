@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         exclude: ^tests/expected_output/pulseq_calcAdcSeg.txt
@@ -16,17 +16,26 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.4
+    rev: v0.14.10
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.29.5
+    rev: v1.41.0
     hooks:
       - id: typos
+        args: [] # empty, to remove write-changes from the default arguments.
         exclude: ^examples/|paper.md
+  
+  - repo: https://github.com/codespell-project/codespell
+    # Configuration for codespell is in pyproject.toml
+    rev: v2.4.1
+    hooks:
+    - id: codespell
+      additional_dependencies:
+        - tomli; python_version<'3.11'
 
 ci:
   autofix_commit_msg: |

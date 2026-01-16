@@ -4,17 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypulseq"
-version = "1.4.2"
+version = "1.5.0"
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
 maintainers = [
   { name = "Bilal Tasdelen" },
   { name = "Frank Ziljstra" },
   { name = "Patrick Schuenke" },
+  { name = "Sairam Geethanath" },
+  { name = "Matteo Cencini" },
 ]
 description = "Pulseq in Python"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.6.3"
+requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
@@ -28,14 +30,17 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
+mplcursors = ["mplcursors"]
+Qt = ["PySide6"]
 test = [
   "coverage",
   "codecov",
   "pre-commit",
   "pytest",
-  "pytest-cov",
+  "pytest-cov<6.1",
   "pytest-xdist",
 ]
+docs = ["sphinx", "jinja2", "furo", "recommonmark"]
 
 [project.urls]
 Homepage = "https://github.com/imr-framework/pypulseq"
@@ -85,8 +90,8 @@ select = [
 
 extend-select = [
   # "ANN001", #  type annotation for function argument
-  # # "ANN201", #  return type annonation public function
-  # # "ANN205", #  return type annonation static method
+  # # "ANN201", #  return type annotation public function
+  # # "ANN205", #  return type annotation static method
   # # "ANN401", #  any type annotation
   # # "BLE001", #  blind exception
   # # "D107",   #  missing docstring in __init__
@@ -122,7 +127,6 @@ skip-magic-trailing-comma = false
 
 [tool.typos.default]
 locale = "en-us"
-exclude = ["examples/**"]
 
 # PyTest section
 [tool.pytest.ini_options]
@@ -133,3 +137,9 @@ filterwarnings = [
   "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev",
 ]
 markers = ["sigpy: tests that require sigpy"]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*'
+check-hidden = true
+ignore-words-list = 'te,fo,nd,maked,datas,iten,itel,tread'
