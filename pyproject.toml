@@ -4,17 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypulseq"
-version = "1.4.2.post1"
+version = "1.5.0"
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
 maintainers = [
   { name = "Bilal Tasdelen" },
   { name = "Frank Ziljstra" },
   { name = "Patrick Schuenke" },
+  { name = "Sairam Geethanath" },
+  { name = "Matteo Cencini" },
 ]
 description = "Pulseq in Python"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.6.3"
+requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
@@ -28,6 +30,8 @@ dependencies = [
 
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
+mplcursors = ["mplcursors"]
+Qt = ["PySide6"]
 test = [
   "coverage",
   "codecov",
