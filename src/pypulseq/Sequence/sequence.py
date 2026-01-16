@@ -24,6 +24,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.opts import Opts
 from pypulseq.Sequence import block
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
+from pypulseq.Sequence.calc_moments_btensor import calc_moments_btensor
 from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.ext_test_report import ext_test_report
 from pypulseq.Sequence.install import detect_scanner
@@ -272,6 +273,54 @@ class Sequence:
             use_derivative=use_derivative,
             acoustic_resonances=acoustic_resonances,
         )
+
+    def calc_moments_btensor(
+        self,
+        calcB: bool = True,
+        calcm1: bool = False,
+        calcm2: bool = False,
+        calcm3: bool = False,
+        Ndummy: int = 0,
+    ):
+        """
+        B-tensor calculator.
+
+        Parameters
+        ----------
+        calcB : bool, default=True
+            Toggle B-Tensor calculation.
+        calcm1 : bool, default=False
+            Toggle first-order gradient moment calculation.
+        calcm2 : bool, default=False
+            Toggle second-order gradient moment calculation.
+        calcm3: bool, default=False
+            Toggle third-order gradient moment calculation.
+        Ndummy : int, default=0
+            Number of dummy scans to be skipped for the calculation.
+
+        Returns
+        -------
+        B : np.ndarray
+            The B-tensor for each of the R sequence repetitions.
+            It is shaped (R, 3, 3).
+        m1 : np.ndarray
+            First-order gradient moment along (x, y, z) for each of
+            the R sequence repetitions. It is shaped (R, 3).
+        m2 : np.ndarray
+            Second-order gradient moment along (x, y, z) for each of
+            the R sequence repetitions. It is shaped (R, 3).
+        m3 : np.ndarray
+            Third-order gradient moment along (x, y, z) for each of
+            the R sequence repetitions. It is shaped (R, 3).
+
+        Notes
+        -----
+        - Uses 2*pi scaling like MATLAB (phase/radians convention).
+        - Assumes one excitation defines each repetition/TR segment.
+        - TE per repetition is computed as t_echo = 2*t_refocusing - t_excitation
+          (same limitation as MATLAB: not correct for more complex refocusing schemes).
+        """
+        return calc_moments_btensor(self, calcB, calcm1, calcm2, calcm3, Ndummy)
 
     def calculate_kspace(
         self,
