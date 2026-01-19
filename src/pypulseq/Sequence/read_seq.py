@@ -301,7 +301,8 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         for i in self.rf_library.data:
             # Use goes into the type field, and this is done separately
             d = self.rf_library.data[i]
-            rf = self.rf_from_lib_data((d[:4], 0, d[4], 0, 0, d[5:7], 'u')).__delattr__('center')
+            rf = self.rf_from_lib_data((*d[:4], 0, d[4], 0, 0, *d[5:7]), 'u')
+            rf.__delattr__('center')
             center = calc_rf_center(rf)
             self.rf_library.update(
                 i,
