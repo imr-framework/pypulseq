@@ -409,6 +409,25 @@ class TestSequence:
         for label in labels_seq:
             assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
 
+    def test_writeread_v141(self, seq_func, tmp_path, compare_seq_file):  # noqa: ARG002
+        if seq_func.__name__ not in ['seq6', 'write_gre_label_softdelay']:  # soft delay not supported in v141
+            seq_name = str(seq_func.__name__)
+            output_filename = tmp_path / (seq_name + '.seq')
+
+            seq = TestSequence.seq
+
+            # Write sequence to file
+            seq.write(output_filename, v141_compat=True)
+
+            # Read written sequence file back in
+            seq2 = pp.Sequence(system=seq.system)
+            seq2.read(output_filename)
+
+            # Clean up written sequence file
+            output_filename.unlink()
+
+            assert seq.duration()[0] == seq2.duration()[0], 'Sequence durations do not match'
+
     # Test whether the sequence is approximately the same after recreating it by
     # getting all blocks with get_block and inserting them into a new sequence
     # with add_block.
