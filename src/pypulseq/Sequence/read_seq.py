@@ -73,7 +73,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
             # Gradient raster time
             if 'GradientRasterTime' in self.definitions:
-                self.gradient_raster_time = self.definitions['GradientRasterTime']
+                self.grad_raster_time = self.definitions['GradientRasterTime']
 
             # Radio frequency raster time
             if 'RadiofrequencyRasterTime' in self.definitions:
@@ -117,8 +117,8 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     f'format revision 1.2.0 and above are supported.'
                 )
 
-            if file_version_combined < 1003001:
-                raise RuntimeError(
+            if file_version_combined < 1004001:
+                warnings.warn(
                     f'Loading older Pulseq format file (version '
                     f'{file_version_major}.{file_version_minor}.{file_version_revision}) some code may function not as '
                     f'expected'
@@ -224,24 +224,46 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
     input_file.close()  # Close file
 
-    if file_version_combined < 1002000:
-        raise ValueError(
-            f'Unsupported version {file_version_combined}, only file format revision 1.2.0 (1002000) and above '
-            f'are supported.'
-        )
+    # Fix sequence data imported from older versions
+    # a special case for ADCs as the format for them has only been updated once (in v1.5.0)
+    # we have to do it first because seq.getBlock is used in the next version porting code section (version_combined < 1004000)
+    if file_version_combined < 1005000:
+        # scan though the ADCs and add empty phase shape IDs
+        for i in self.adc_library.data:
+            d = self.adc_library.data[i]
+            self.adc_library.update(
+                i,
+                None,
+                (*d[:3], 0, 0, *d[3:5], 0),
+            )  # add empty freqPPM, phasePPM and phase_id fields
 
     # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
     if file_version_combined < 1004000:
+        # Fix definitions which are be missing in older files
+        if 'GradientRasterTime' not in self.definitions:
+            warnings.warn(f'No GradientRasterTime found in file. Using default of {self.grad_raster_time}.')
+            self.set_definition('GradientRasterTime', self.grad_raster_time)
+        if 'RadiofrequencyRasterTime' not in self.definitions:
+            warnings.warn(f'No RadiofrequencyRasterTime found in file. Using default of {self.rf_raster_time}.')
+            self.set_definition('RadiofrequencyRasterTime', self.rf_raster_time)
+        if 'AdcRasterTime' not in self.definitions:
+            warnings.warn(f'No AdcRasterTime found in file. Using default of {self.adc_raster_time}.')
+            self.set_definition('AdcRasterTime', self.adc_raster_time)
+        if 'BlockDurationRaster' not in self.definitions:
+            warnings.warn(f'No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.')
+            self.set_definition('BlockDurationRaster', self.block_duration_raster)
+
         # Scan through RF objects
         self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
         for i in self.rf_library.data:
             d = self.rf_library.data[i]
-            rf = self.rf_from_lib_data((d[:3], 0, 0, d[3], 0, 0, d[4:6], 'u')).__delattr__('center')
-            center = calc_rf_center(rf)
+            rf = self.rf_from_lib_data((*d[:3], 0, 0, d[3], 0, 0, *d[4:6], 'u'))
+            rf.__delattr__('center')
+            center, _ = calc_rf_center(rf)
             self.rf_library.update(
                 i,
                 None,
-                (d[:3], 0, center, d[3], 0, 0, d[4:6], 'u'),
+                (*d[:3], 0, center, d[3], 0, 0, *d[4:6], 'u'),
             )  # 0 between [3] and [4:6] are the freq_ppm and phase_ppm
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
@@ -253,7 +275,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time, *d[3:]),
+                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time, *d[3:5]),
                             self.grad_library.type[i],
                         )
 
@@ -263,19 +285,16 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            (*d[:2], d[2] - self.grad_raster_time, self.grad_raster_time, *d[4:]),
+                            (*d[:2], d[2] - self.grad_raster_time, self.grad_raster_time, d[4]),
                             self.grad_library.type[i],
                         )
 
             if self.grad_library.type[i] == 'g':
+                d = self.grad_library.data[i]
                 self.grad_library.update(
                     i,
                     None,
-                    (
-                        self.grad_library.data[i][:2],
-                        0,
-                        self.grad_library.data[i][2:],
-                    ),
+                    (d[0], None, None, d[1], 0, d[2]),
                     self.grad_library.type[i],
                 )
 
@@ -303,25 +322,21 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             d = self.rf_library.data[i]
             rf = self.rf_from_lib_data((*d[:4], 0, d[4], 0, 0, *d[5:7]), 'u')
             rf.__delattr__('center')
-            center = calc_rf_center(rf)
+            center, _ = calc_rf_center(rf)
             self.rf_library.update(
                 i,
                 None,
-                (d[:4], center, d[4], 0, 0, d[5:7], 'u'),
+                (*d[:4], center, d[4], 0, 0, *d[5:7], 'u'),
             )  # 0 between [4] and [5:7] are the freqPPM and phasePPM
 
         # Scan through the gradient objects and update 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
             if self.grad_library.type[i] == 'g':
+                d = self.grad_library.data[i]
                 self.grad_library.update(
                     i,
                     None,
-                    (
-                        self.grad_library.data[i][0],
-                        None,
-                        None,
-                        self.grad_library.data[i][1:4],
-                    ),
+                    (d[0], None, None, *d[1:4]),
                     self.grad_library.type[i],
                 )  # We use None to label the non-initialized first/last fields. These will be restored in the code below
 
@@ -336,6 +351,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
             # repeated entries so searching by content will fail
             event_idx = self.block_events[block_counter]
+            processed_grad_ids = np.zeros(len(grad_channels))
             # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
             for j in range(len(grad_channels)):
                 grad = getattr(block, grad_channels[j])
@@ -347,27 +363,15 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     if grad.delay > 0:
                         grad_prev_last[j] = 0
 
-                    # go to next channel, if grad.first and grad.last are already set
-                    if hasattr(grad, 'first') and hasattr(grad, 'last'):
-                        grad_prev_last[j] = grad.last
+                    # go to next channel, if grad.first is already set
+                    if hasattr(grad, 'first') and grad.first is not None:
                         continue
-
-                    # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
-                    amplitude_ID = event_idx[j + 2]
-                    if amplitude_ID in event_idx[2 : (j + 2)]:
-                        if self.use_block_cache:
-                            grad.first = self.grad_library.data[amplitude_ID][4]
-                            grad.last = self.grad_library.data[amplitude_ID][5]
-                        continue
-
-                    # get time_id from grad_library
-                    time_id = self.grad_library.data[amplitude_ID][2]
 
                     # if grad.first is not set, set it to the last value of the previous gradient
                     grad.first = grad_prev_last[j]
 
                     # extended trapezoid: use last value of the gradient waveform as grad.last
-                    if time_id != 0:
+                    if grad.time_id != 0:
                         grad.last = grad.waveform[-1]
                         grad_duration = grad.delay + grad.tt[-1]
                     # arbitrary gradients: interpolate grad.last from the gradient waveform
@@ -384,16 +388,21 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     else:
                         grad_prev_last[j] = grad.last
 
-                    # Update the grad_library with the new grad.first and grad.last values
+                    # Recover amplitude from library data
+                    amplitude_ID = event_idx[j + 2]
+                    if j > 0 and any(processed_grad_ids[: j + 1] == amplitude_ID):
+                        continue  # avoid repeated updates if the same gradient is applied on different gradient axes
+                    processed_grad_ids[j] = amplitude_ID
                     amplitude = self.grad_library.data[amplitude_ID][0]
-                    shape_id = self.grad_library.data[amplitude_ID][1]
+
+                    # Update the grad_library with the new grad.first and grad.last values
                     new_data = (
                         amplitude,
-                        shape_id,
-                        time_id,
-                        grad.delay,
                         grad.first,
                         grad.last,
+                        grad.shape_id,
+                        grad.time_id,
+                        grad.delay,
                     )
                     self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
 

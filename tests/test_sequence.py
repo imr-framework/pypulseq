@@ -409,7 +409,7 @@ class TestSequence:
         for label in labels_seq:
             assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
 
-    def test_writeread_v141(self, seq_func, tmp_path, compare_seq_file):  # noqa: ARG002
+    def test_writeread_v141(self, seq_func, tmp_path):
         if seq_func.__name__ not in ['seq6', 'write_gre_label_softdelay']:  # soft delay not supported in v141
             seq_name = str(seq_func.__name__)
             output_filename = tmp_path / (seq_name + '.seq')
@@ -426,15 +426,60 @@ class TestSequence:
             # Clean up written sequence file
             output_filename.unlink()
 
-            assert seq.duration()[0] == seq2.duration()[0], 'Sequence durations do not match'
+            # Test for approximate equality of all blocks
+            assert list(seq2.block_events.keys()) == list(seq.block_events.keys()), (
+                'Sequence block IDs are not identical'
+            )
+            for block_counter in seq.block_events:
+                block_orig = seq.get_block(block_counter)
+                block_compare = seq2.get_block(block_counter)
 
-    # Test whether the sequence is approximately the same after recreating it by
-    # getting all blocks with get_block and inserting them into a new sequence
-    # with add_block.
-    # NOTE: In order to keep the order of shapes the same, sequences need to
-    #       put RF events before gradient events and order arbitrary/extended
-    #       gradient events in X, Y, Z order when passing them to
-    #       seq.add_block(...). i.e. seq.add_block(rf, gx, gy, gz)
+                if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                    block_compare.rf.use = block_orig.rf.use
+
+                assert block_compare == Approx(block_orig, abs=1e-5, rel=1e-5), f'Block {block_counter} does not match'
+
+            # Test for approximate equality of all gradient waveforms
+            for a, b, channel in zip(seq2.get_gradients(), seq.get_gradients(), ['x', 'y', 'z'], strict=False):
+                if a is None and b is None:
+                    continue
+                assert a is not None and b is not None
+
+                # TODO: C[0] is slope of gradient, on the order of max_slew? So expect abs rounding errors in range of 1e2?
+                assert a.x == Approx(b.x, abs=1e-5, rel=1e-5), (
+                    f'Time axis of gradient waveform for channel {channel} does not match'
+                )
+                assert a.c[0] == Approx(b.c[0], abs=1e2, rel=1e-3), (
+                    f'First-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+                )
+                assert a.c[1] == Approx(b.c[1], abs=1e-5, rel=1e-5), (
+                    f'Zero-order coefficients of piecewise-polynomial gradient waveform for channel {channel} do not match'
+                )
+
+            # Restore RF use for k-space calculation
+            for block_counter in seq.block_events:
+                block_orig = seq.get_block(block_counter)
+                if hasattr(block_orig, 'rf') and hasattr(block_orig.rf, 'use'):
+                    block_compare = seq2.get_block(block_counter)
+                    block_compare.rf.use = block_orig.rf.use
+                    if seq_func.__name__ == 'write_ute':
+                        # Bug in make_sinc_pulse: it allows to specify center_pos,
+                        # but the argument does not affect pulse shape, only the
+                        # 'center' attribute
+                        block_compare.rf.center = block_orig.rf.center
+
+            # Test for approximate equality of kspace calculation
+            assert seq2.calculate_kspace() == Approx(seq.calculate_kspace(), abs=1e-1, nan_ok=True)
+
+            # Test whether labels are the same
+            labels_seq = seq.evaluate_labels(evolution='blocks')
+            labels_seq2 = seq2.evaluate_labels(evolution='blocks')
+
+            assert labels_seq.keys() == labels_seq2.keys(), 'Sequences do not contain the same set of labels'
+
+            for label in labels_seq:
+                assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+
     def test_recreate(self, seq_func):  # noqa: ARG002
         seq = TestSequence.seq
 
