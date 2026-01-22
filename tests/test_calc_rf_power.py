@@ -16,12 +16,6 @@ def dummy_rf():
         amplitude=1.0,
         duration=1.0,
         t_override=None,
-        freq_offset=0.0,
-        phase_offset=0.0,
-        freq_ppm=0.0,
-        phase_ppm=0.0,
-        delay=0.0,
-        use='excitation',
     ):
         system = pp.Opts.default
 
