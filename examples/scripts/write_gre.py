@@ -6,9 +6,9 @@ import pypulseq as pp
 
 
 def main(
-    plot: bool = False, 
-    write_seq: bool = False, 
-    seq_filename: str = 'gre_pypulseq.seq', 
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_pypulseq.seq',
     paper_plot: bool = False,
     play_sound: bool = False,
 ):
@@ -148,7 +148,7 @@ def main(
         seq.set_definition(key='Name', value='gre')
 
         seq.write(seq_filename)
-        
+
     if play_sound:
         seq.sound()
 

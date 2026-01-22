@@ -8,12 +8,14 @@ from scipy.signal import convolve, windows
 
 try:
     import sounddevice as sd
+
     _HAS_SOUNDDEVICE = True
 except ImportError:
     _HAS_SOUNDDEVICE = False
 
 if typing.TYPE_CHECKING:
     from pypulseq.Sequence.sequence import Sequence
+
 
 def seq_sound(
     seq: Sequence,
