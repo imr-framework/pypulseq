@@ -11,6 +11,7 @@ def dummy_rf():
     Fixture factory for creating SimpleNamespace RF pulses.
     Returns a function you can call with parameters.
     """
+
     def _make_rf(
         amplitude=1.0,
         duration=1.0,

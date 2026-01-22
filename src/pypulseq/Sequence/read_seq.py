@@ -833,4 +833,3 @@ def __str2num(value):
         return int(value)
     except Exception:
         return float(value)
-

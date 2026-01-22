@@ -50,7 +50,7 @@ def calc_rf_power(
 
     if dt is None:
         # Force interpolation
-        rfs_sq = np.abs(s)**2
+        rfs_sq = np.abs(s) ** 2
         total_energy = np.trapezoid(rfs_sq, t)
         peak_pwr = np.max(rfs_sq)
         shape_dur = t[-1] - t[0]
@@ -63,7 +63,7 @@ def calc_rf_power(
         t_new = (np.arange(nn) + 0.5) * dt
         s_new = np.interp(t_new, t, s, left=0, right=0)
 
-        rfs_sq = np.abs(s_new)**2
+        rfs_sq = np.abs(s_new) ** 2
         total_energy = np.sum(rfs_sq) * dt
         peak_pwr = np.max(rfs_sq)
         rf_rms = np.sqrt(total_energy / rf.shape_dur)
