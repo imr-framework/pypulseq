@@ -16,7 +16,9 @@ import numpy as np
 from scipy.interpolate import PPoly
 
 from pypulseq import __version__, eps
+from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_rf_center import calc_rf_center
+from pypulseq.calc_rf_power import calc_rf_power
 from pypulseq.check_timing import check_timing as ext_check_timing
 from pypulseq.check_timing import print_error_report
 from pypulseq.decompress_shape import decompress_shape
@@ -462,6 +464,132 @@ class Sequence:
             stacklevel=2,
         )
         return self.calculate_kspace(trajectory_delay, gradient_offset)
+
+    def calc_rf_power(
+        self,
+        time_range=(0, np.inf),
+        window_duration: Union[float, None] = None,
+        dt: Union[float, None] = None,
+    ) -> Tuple[float, float, float, float]:
+        """
+        Calculate the relative RF power of a sequence.
+
+        This method aggregates RF power metrics across multiple RF events
+        contained in the sequence blocks. It optionally restricts the
+        calculation to a given time range and can compute worst-case
+        metrics over a sliding time window.
+
+        Returns relative RF energy, mean power, peak power, and RMS B1
+        amplitude.
+
+        Parameters
+        ----------
+        time_range : tuple of float, default=(0, inf)
+            Time interval (start, end) in seconds over which RF power
+            is evaluated.
+        window_duration : float or None, default=None
+            If provided, computes the maximum RF energy, mean power,
+            and RMS amplitude over any sliding window of this duration
+            (in seconds). This mimics SAR-style worst-case windowing.
+
+        Returns
+        -------
+        mean_pwr : float
+            Mean RF power in Hz over the specified time range or window.
+        peak_pwr : float
+            Peak RF power in Hz**2.
+        rf_rms : float
+            RMS B1 amplitude in Hz.
+        total_energy : float
+            Total RF energy in Hz.
+
+        Notes
+        -----
+        The power and RF amplitude calculated by this function are relative,
+        as they are expressed in units of Hz**2 or Hz. The RF amplitude
+        can be converted to Tesla by dividing the resulting value by gamma.
+        Correspondingly, the power can be converted to mT**2 * s by dividing
+        the given value by gamma**2.
+
+        Absolute SAR depends on the electric field distribution and therefore
+        on both the transmit coil design and subject-specific loading. As a
+        result, these values must be scaled by appropriate coil- and
+        subject-dependent factors to obtain absolute SAR.
+
+        When `window_duration` is provided, the function returns the
+        maximum energy, mean power, and RMS amplitude observed over any
+        time window of the specified length. This behavior mirrors SAR
+        compliance definitions commonly used in MRI safety guidelines.
+        """
+        if not all(isinstance(x, (int, float)) for x in time_range) or len(time_range) != 2:
+            raise ValueError('Invalid time range')
+        if window_duration is None:
+            window_duration = np.nan
+        window_on = np.isfinite(window_duration)
+        if window_on:
+            block_bookkeeping = []
+            current_window_dur = 0.0
+            current_window_start_idx = 0
+
+            total_energy_max = 0.0
+            rf_ms_max = 0.0
+
+        t0 = 0
+        dur = 0.0
+        total_energy = 0.0
+        peak_pwr = 0.0
+        rf_ms = 0.0  # sum of rms^2 * duration
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            block_duration = calc_duration(block)
+
+            block_start = t0
+            block_end = t0 + block_duration
+
+            overlap_start = max(block_start, time_range[0])
+            overlap_end = min(block_end, time_range[1])
+            overlap_dur = max(0.0, overlap_end - overlap_start)
+
+            is_valid = overlap_dur > 0
+            if is_valid:
+                frac = overlap_dur / block_duration
+                dur += overlap_dur
+
+                if block.rf is not None:
+                    rf = block.rf
+                    e, ppwr, rms = calc_rf_power(rf, dt=dt)
+
+                    total_energy += e * frac
+                    rf_ms += (rms**2 * rf.shape_dur) * frac
+                    peak_pwr = max(peak_pwr, ppwr)
+
+                    if window_on:
+                        block_bookkeeping.append([e * frac, rms**2 * rf.shape_dur * frac, overlap_dur])
+                        total_energy_max = max(total_energy_max, total_energy)
+                        rf_ms_max = max(rf_ms_max, rf_ms)
+
+                # Sliding window logic
+                if window_on:
+                    current_window_dur += overlap_dur
+
+                    while current_window_dur > window_duration:
+                        total_energy -= block_bookkeeping[current_window_start_idx][0]
+                        rf_ms -= block_bookkeeping[current_window_start_idx][1]
+                        current_window_dur -= block_bookkeeping[current_window_start_idx][2]
+                        current_window_start_idx += 1
+
+            # Update current position
+            t0 += block_duration
+
+        if window_on:
+            total_energy = total_energy_max
+            mean_pwr = total_energy / window_duration
+            rf_rms = np.sqrt(rf_ms_max / window_duration)
+        else:
+            mean_pwr = total_energy / dur
+            rf_rms = np.sqrt(rf_ms / dur)
+
+        return mean_pwr, peak_pwr, rf_rms, total_energy
 
     def calculate_pns(
         self,
@@ -1131,7 +1259,7 @@ class Sequence:
 
     def register_soft_delay_event(self, event: SimpleNamespace) -> int:
         return block.register_soft_delay_event(self, event)
-    
+
     def register_rf_shim_event(self, event: SimpleNamespace) -> int:
         return block.register_rf_shim_event(self, event)
 

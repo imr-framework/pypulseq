@@ -40,6 +40,7 @@ from pypulseq.calc_duration import calc_duration
 from pypulseq.calc_ramp import calc_ramp
 from pypulseq.calc_rf_bandwidth import calc_rf_bandwidth
 from pypulseq.calc_rf_center import calc_rf_center
+from pypulseq.calc_rf_power import calc_rf_power
 from pypulseq.make_adc import make_adc, calc_adc_segments
 from pypulseq.make_adiabatic_pulse import make_adiabatic_pulse
 from pypulseq.make_arbitrary_grad import make_arbitrary_grad
@@ -47,7 +48,6 @@ from pypulseq.make_arbitrary_rf import make_arbitrary_rf
 from pypulseq.make_block_pulse import make_block_pulse
 from pypulseq.make_delay import make_delay
 from pypulseq.make_soft_delay import make_soft_delay
-from pypulseq.make_rf_shim import make_rf_shim
 from pypulseq.make_digital_output_pulse import make_digital_output_pulse
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_extended_trapezoid_area import make_extended_trapezoid_area
