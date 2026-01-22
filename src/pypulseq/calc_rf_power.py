@@ -40,7 +40,7 @@ def calc_rf_power(
     can be converted to T by dividing the resulting value by gamma.
     Correspondingly, The power can be converted to mT**2 * s by dividing
     the given value by gamma^2. Nonetheless, the absolute SAR is related to
-    the electric field, so the further scaling coeficient is both tx-coil-
+    the electric field, so the further scaling coefficient is both tx-coil-
     dependent (e.g. depends on the coil design) and also subject-dependent
     (e.g. depends on the reference voltage).
 

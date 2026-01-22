@@ -128,7 +128,7 @@ def test_sequence_partial_overlap(dummy_rf, dummy_sequence):
     rf = dummy_rf(amplitude=A, duration=T)
     seq.add_block(rf)
 
-    mean_pwr, peak, rms, energy = seq.calc_rf_power(time_range=(2.0e-3, 6.0e-3))
+    mean_pwr, _, rms, energy = seq.calc_rf_power(time_range=(2.0e-3, 6.0e-3))
 
     # Only 4s of 10s contribute
     assert np.isclose(energy, A**2 * 4.0e-3)
