@@ -463,7 +463,7 @@ class Sequence:
             stacklevel=2,
         )
         return self.calculate_kspace(trajectory_delay, gradient_offset)
-    
+
     def calc_rf_power(
         self,
         time_range=(0, np.inf),
