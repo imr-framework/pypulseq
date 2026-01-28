@@ -13,7 +13,7 @@ from pypulseq.event_lib import EventLibrary
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
+def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplicates: bool = True) -> None:
     """
     Load sequence from file - read the given filename and load sequence data into sequence object.
 
@@ -23,11 +23,12 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     ----------
     path : Path
         Path of sequence file to be read.
-    detect_rf_use : bool, default=False
+    detect_rf_use : bool, default=None
         Boolean flag to let the function infer the currently missing flags concerning the intended use of the RF pulses
         (excitation, refocusing, etc). These are important for the k-space trajectory calculation.
+        Default is True for versions prior 1.5.0.
     remove_duplicates: bool, default=True
-        Remove duplicate events from the sequence after reading
+        Remove duplicate events from the sequence after reading.
 
     Raises
     ------
@@ -123,6 +124,9 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     f'{file_version_major}.{file_version_minor}.{file_version_revision}) some code may function not as '
                     f'expected'
                 )
+
+            if detect_rf_use is None:
+                detect_rf_use = file_version_combined < 1005000
 
             if file_version_combined >= 1005000 and detect_rf_use:
                 warnings.warn('Option detectRFuse is not supported for file format version 1.5.0 and above')
