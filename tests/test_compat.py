@@ -18,7 +18,7 @@ def test_backwards_compat(seq_file):
 
     # Get version
     version = int(seq_file.split('.')[0][-3:])
-    
+
     # Read v1.5.0 as reference
     seq150 = pp.Sequence()
     seq150.read(data_path / 'simple_mprage150.seq')
