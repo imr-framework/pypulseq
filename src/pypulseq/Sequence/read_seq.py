@@ -56,7 +56,8 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
     # Raster times
     self.grad_raster_time = self.system.grad_raster_time
     self.rf_raster_time = self.system.rf_raster_time
-
+    self.adc_raster_time = self.system.adc_raster_time
+    self.block_duration_raster = self.system.block_duration_raster
     self.block_events = {}
     self.definitions = {}
     self.extension_string_idx = []
