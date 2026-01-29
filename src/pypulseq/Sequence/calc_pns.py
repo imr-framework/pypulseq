@@ -64,12 +64,12 @@ def calc_pns(
             gw[:, i] = gw_pp[i](t)
 
     if do_plots:
-        colors = ['r', 'g', 'b'] # Same color order as in the SAFE plots
+        colors = ['r', 'g', 'b']  # Same color order as in the SAFE plots
         labels = ['X', 'Y', 'Z']
         plt.figure()
         for i in range(ng):
             if gw_pp[i] is not None:
-                plt.plot(gw_pp[i].x[1:-1]*1000, gw_pp[i].c[1, :-1], colors[i])
+                plt.plot(gw_pp[i].x[1:-1] * 1000, gw_pp[i].c[1, :-1], colors[i])
         plt.title('Gradient waveforms')
         plt.xlabel('Time [ms]')
         plt.ylabel('Gradients as piecewise-polynomials [Hz/m]')
