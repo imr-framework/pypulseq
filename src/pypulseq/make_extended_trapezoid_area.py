@@ -15,10 +15,14 @@ def make_extended_trapezoid_area(
     channel: str,
     grad_start: float,
     grad_end: float,
+    duration: float = 0.0,
     convert_to_arbitrary: bool = False,
     system: Union[Opts, None] = None,
 ) -> Tuple[SimpleNamespace, np.array, np.array]:
-    """Make the shortest possible extended trapezoid for given area and gradient start and end point.
+    """
+    Make an extended trapezoid for given area and gradient start and end point.
+    If no duration is given, the shortest possible duration that satisfies the constraints is used.
+    If a duration is given, the function tries to find a solution with the given duration.
 
     Parameters
     ----------
@@ -30,6 +34,8 @@ def make_extended_trapezoid_area(
         Starting non-zero gradient value.
     grad_end : float
         Ending non-zero gradient value.
+    duration : float, default=0.0
+        Desired duration of the extended trapezoid. If <=0, the minimum duration is used
     convert_to_arbitrary : bool, default=False
         Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
     system: Opts, optional
@@ -46,7 +52,7 @@ def make_extended_trapezoid_area(
 
     Raises
     ------
-        ValueError if no solution was found that satisfies the constraints and the desired area.
+        ValueError if no solution was found that satisfies the constraints and the desired area (and duration, if given).
     """
     if system is None:
         system = Opts.default
@@ -160,49 +166,59 @@ def make_extended_trapezoid_area(
         ind = solutions[ind]
         return (int(time_ramp_up[ind]), int(flat_time[ind]), int(time_ramp_down[ind]), float(grad_amp[ind]))
 
-    # Perform a linear search
-    # This is necessary because there can exist a dead space where solutions
-    # do not exist for some durations longer than the optimal duration. The
-    # binary search below fails to find the optimum in those cases.
-    # TODO: Check if range is sufficient, try to calculate the dead space.
-    min_duration = max(round(_calc_ramp_time(grad_end, grad_start) / raster_time), 2)
+    if duration <= 0: # duration was not given
 
-    # Calculate duration needed to ramp down gradient to zero.
-    # From this point onwards, solutions can always be found by extending
-    # the duration and doing a binary search.
-    max_duration = max(
-        round(_calc_ramp_time(0, grad_start) / raster_time),
-        round(_calc_ramp_time(0, grad_end) / raster_time),
-        min_duration,
-    )
+        # Perform a linear search
+        # This is necessary because there can exist a dead space where solutions
+        # do not exist for some durations longer than the optimal duration. The
+        # binary search below fails to find the optimum in those cases.
+        # TODO: Check if range is sufficient, try to calculate the dead space.
+        min_duration = max(round(_calc_ramp_time(grad_end, grad_start) / raster_time), 2)
 
-    # Linear search
-    solution = None
-    for duration in range(min_duration, max_duration + 1):
-        solution = _find_solution(duration)
-        if solution:
-            break
+        # Calculate duration needed to ramp down gradient to zero.
+        # From this point onwards, solutions can always be found by extending
+        # the duration and doing a binary search.
+        max_duration = max(
+            round(_calc_ramp_time(0, grad_start) / raster_time),
+            round(_calc_ramp_time(0, grad_end) / raster_time),
+            min_duration,
+        )
 
-    # Perform a binary search for duration > max_duration if no solution was found
-    if not solution:
-        # First, find the upper limit on duration where a solution exists by
-        # exponentially expanding the duration.
-        while not solution:
-            max_duration *= 2
-            solution = _find_solution(max_duration)
+        # Linear search
+        solution = None
+        for duration in range(min_duration, max_duration + 1):
+            solution = _find_solution(duration)
+            if solution:
+                break
 
-        def binary_search(fun, lower_limit, upper_limit):
-            if lower_limit == upper_limit - 1:
-                return fun(upper_limit)
+        # Perform a binary search for duration > max_duration if no solution was found
+        if not solution:
+            # First, find the upper limit on duration where a solution exists by
+            # exponentially expanding the duration.
+            while not solution:
+                max_duration *= 2
+                solution = _find_solution(max_duration)
 
-            test_value = (upper_limit + lower_limit) // 2
+            def binary_search(fun, lower_limit, upper_limit):
+                if lower_limit == upper_limit - 1:
+                    return fun(upper_limit)
 
-            if fun(test_value):
-                return binary_search(fun, lower_limit, test_value)
-            else:
-                return binary_search(fun, test_value, upper_limit)
+                test_value = (upper_limit + lower_limit) // 2
 
-        solution = binary_search(_find_solution, max_duration // 2, max_duration)
+                if fun(test_value):
+                    return binary_search(fun, lower_limit, test_value)
+                else:
+                    return binary_search(fun, test_value, upper_limit)
+
+            solution = binary_search(_find_solution, max_duration // 2, max_duration)
+
+    else: # duration was given, so calculate solution for this duration
+
+        duration_raster = max(round(_to_raster(duration) / raster_time) , 2)
+        solution = _find_solution(duration_raster)
+
+        if solution is None:
+            raise ValueError(f'Could not find a solution for area={area} and duration={duration}.')
 
     # Get timing and gradient amplitude from solution
     time_ramp_up = solution[0] * raster_time
@@ -219,7 +235,11 @@ def make_extended_trapezoid_area(
         amplitudes = np.array([grad_start, grad_amp, grad_end])
 
     grad = make_extended_trapezoid(
-        channel=channel, amplitudes=amplitudes, convert_to_arbitrary=convert_to_arbitrary, system=system, times=times
+        channel=channel,
+        amplitudes=amplitudes,
+        convert_to_arbitrary=convert_to_arbitrary,
+        system=system,
+        times=times
     )
 
     # Overwrite trace
