@@ -238,7 +238,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
             self.adc_library.update(
                 i,
                 None,
-                (*d[:3], 0, 0, *d[3:5], 0),
+                (*d[:3], np.float64(0), np.float64(0), *d[3:5], np.float64(0)),
             )  # add empty freqPPM, phasePPM and phase_id fields
 
     # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
@@ -261,13 +261,15 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
         self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
         for i in self.rf_library.data:
             d = self.rf_library.data[i]
-            rf = self.rf_from_lib_data((*d[:3], 0, 0, d[3], 0, 0, *d[4:6], 'u'))
+            rf = self.rf_from_lib_data(
+                (*d[:3], np.float64(0), np.float64(0), d[3], np.float64(0), np.float64(0), *d[4:6], 'u')
+            )
             rf.__delattr__('center')
             center, _ = calc_rf_center(rf)
             self.rf_library.update(
                 i,
                 None,
-                (*d[:3], 0, center, d[3], 0, 0, *d[4:6], 'u'),
+                (*d[:3], np.float64(0), center, d[3], np.float64(0), np.float64(0), *d[4:6], 'u'),
             )  # 0 between [3] and [4:6] are the freq_ppm and phase_ppm
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
@@ -298,7 +300,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
                 self.grad_library.update(
                     i,
                     None,
-                    (d[0], None, None, d[1], 0, d[2]),
+                    (d[0], None, None, d[1], np.float64(0), d[2]),
                     self.grad_library.type[i],
                 )
 
@@ -307,7 +309,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
         # Scan through blocks and calculate durations
         for block_counter in self.block_events:
             # Insert delay as temporary block_duration
-            self.block_durations[block_counter] = 0
+            self.block_durations[block_counter] = 0.0
             if delay_ind_temp[block_counter] > 0:
                 self.block_durations[block_counter] = temp_delay_library.data[delay_ind_temp[block_counter]][0]
 
@@ -324,13 +326,13 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
         for i in self.rf_library.data:
             # Use goes into the type field, and this is done separately
             d = self.rf_library.data[i]
-            rf = self.rf_from_lib_data((*d[:4], 0, d[4], 0, 0, *d[5:7]), 'u')
+            rf = self.rf_from_lib_data((*d[:4], np.float64(0), d[4], np.float64(0), np.float64(0), *d[5:7]), 'u')
             rf.__delattr__('center')
             center, _ = calc_rf_center(rf)
             self.rf_library.update(
                 i,
                 None,
-                (*d[:4], center, d[4], 0, 0, *d[5:7], 'u'),
+                (*d[:4], center, d[4], np.float64(0), np.float64(0), *d[5:7], 'u'),
             )  # 0 between [4] and [5:7] are the freqPPM and phasePPM
 
         # Scan through the gradient objects and update 'g'-s (free-shape gradients)
@@ -360,12 +362,12 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
             for j in range(len(grad_channels)):
                 grad = getattr(block, grad_channels[j])
                 if grad is None:
-                    grad_prev_last[j] = 0
+                    grad_prev_last[j] = 0.0
                     continue
 
                 if grad.type == 'grad':
                     if grad.delay > 0:
-                        grad_prev_last[j] = 0
+                        grad_prev_last[j] = 0.0
 
                     # go to next channel, if grad.first is already set
                     if hasattr(grad, 'first') and grad.first is not None:
@@ -387,7 +389,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
                     # Set grad_prev_last to 0 if gradient does not end at block boundary
                     eps = np.finfo(np.float64).eps
                     if grad_duration + eps < block_duration:
-                        grad_prev_last[j] = 0
+                        grad_prev_last[j] = 0.0
                     # Update grad_prev_last for the next iteration if gradient ends at block boundary
                     else:
                         grad_prev_last[j] = grad.last
@@ -411,7 +413,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
                     self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
 
                 else:
-                    grad_prev_last[j] = 0
+                    grad_prev_last[j] = 0.0
 
     if detect_rf_use:
         # Find the RF pulses, list flip angles, and work around the current (rev 1.2.0) Pulseq file format limitation
