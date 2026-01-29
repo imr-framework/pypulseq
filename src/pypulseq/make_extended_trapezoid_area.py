@@ -166,8 +166,7 @@ def make_extended_trapezoid_area(
         ind = solutions[ind]
         return (int(time_ramp_up[ind]), int(flat_time[ind]), int(time_ramp_down[ind]), float(grad_amp[ind]))
 
-    if duration <= 0: # duration was not given
-
+    if duration <= 0:  # duration was not given
         # Perform a linear search
         # This is necessary because there can exist a dead space where solutions
         # do not exist for some durations longer than the optimal duration. The
@@ -212,9 +211,8 @@ def make_extended_trapezoid_area(
 
             solution = binary_search(_find_solution, max_duration // 2, max_duration)
 
-    else: # duration was given, so calculate solution for this duration
-
-        duration_raster = max(round(_to_raster(duration) / raster_time) , 2)
+    else:  # duration was given, so calculate solution for this duration
+        duration_raster = max(round(_to_raster(duration) / raster_time), 2)
         solution = _find_solution(duration_raster)
 
         if solution is None:
@@ -235,11 +233,7 @@ def make_extended_trapezoid_area(
         amplitudes = np.array([grad_start, grad_amp, grad_end])
 
     grad = make_extended_trapezoid(
-        channel=channel,
-        amplitudes=amplitudes,
-        convert_to_arbitrary=convert_to_arbitrary,
-        system=system,
-        times=times
+        channel=channel, amplitudes=amplitudes, convert_to_arbitrary=convert_to_arbitrary, system=system, times=times
     )
 
     # Overwrite trace
