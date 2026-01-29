@@ -214,7 +214,7 @@ def make_slr(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    n_samples = round(duration / 1e-6)
+    n_samples = round(duration / system.rf_raster_time)
     t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
@@ -266,7 +266,7 @@ def make_sms(
     if pulse_cfg is None:
         pulse_cfg = SigpyPulseOpts()
 
-    n_samples = round(duration / 1e-6)
+    n_samples = round(duration / system.rf_raster_time)
     t = np.arange(1, n_samples + 1) * system.rf_raster_time
 
     # Insert sigpy
