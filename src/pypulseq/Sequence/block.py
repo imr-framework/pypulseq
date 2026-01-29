@@ -461,7 +461,7 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     # ADC
     if event_ind[5] > 0:
         lib_data = self.adc_library.data[event_ind[5]]
-        shape_id_phase_modulation = lib_data[-2]
+        shape_id_phase_modulation = lib_data[7]
         if shape_id_phase_modulation:
             shape_data = self.shape_library.data[shape_id_phase_modulation]
             compressed = SimpleNamespace()
