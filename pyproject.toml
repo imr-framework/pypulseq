@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
 mplcursors = ["mplcursors"]
+sound = ["sounddevice"]
 Qt = ["PySide6"]
 test = [
   "coverage",

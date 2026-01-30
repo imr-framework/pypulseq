@@ -33,6 +33,7 @@ from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.utils.cumsum import cumsum
 from pypulseq.utils.paper_plot import paper_plot as ext_paper_plot
 from pypulseq.utils.seq_plot import SeqPlot
+from pypulseq.utils.seq_sound import seq_sound
 from pypulseq.utils.tracing import format_trace, trace, trace_enabled
 
 major, minor, revision = __version__.split('.')[:3]
@@ -862,6 +863,36 @@ class Sequence:
 
             gw_pp.append(PPoly(np.stack((np.diff(gw[1]) / np.diff(gw[0]), gw[1][:-1])), gw[0], extrapolate=True))
         return gw_pp
+
+    def sound(
+        self,
+        time_range=(0.0, np.inf),
+        channel_weights: tuple = (1.0, 1.0, 1.0),
+        sample_rate: int = 44100,
+        only_produce_sound_data: bool = False,
+    ) -> np.ndarray:
+        """
+        Play out the sequence through the system speaker and return the sound data.
+
+        Parameters
+        ----------
+        time_range : iterable, default=(0, np.inf)
+            Time range for playing the sequence.
+            Default is 0 to infinity (entire sequence).
+        channel_weights : tuple, default=(1.0, 1.0, 1.0)
+            Weight for each gradient channel.
+        sample_rate : int, default=44100
+            Sampling rate for audio waveform
+        only_produce_sound_data : bool, default=False
+            If True, skip the playing part and only produce
+            the sound data
+
+        Returns
+        -------
+        sound_data : np.ndarray
+            Sound data of shape (2, N)
+        """
+        return seq_sound(self, time_range, channel_weights, sample_rate, only_produce_sound_data)
 
     def install(self, target: Union[str, None] = None, clear_cache: bool = False, **kwargs: Any) -> None:
         """Install a sequence to a target scanner.

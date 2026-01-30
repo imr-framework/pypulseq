@@ -5,7 +5,13 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq', paper_plot: bool = False):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_pypulseq.seq',
+    paper_plot: bool = False,
+    play_sound: bool = False,
+):
     # ======
     # SETUP
     # ======
@@ -143,8 +149,11 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
 
         seq.write(seq_filename)
 
+    if play_sound:
+        seq.sound()
+
     return seq
 
 
 if __name__ == '__main__':
-    seq = main(plot=False, paper_plot=False, write_seq=False)
+    seq = main(plot=False, paper_plot=False, write_seq=False, play_sound=True)
