@@ -83,7 +83,7 @@ jobs:
 
       - name: Post PyTest Coverage Comment on push
         id: coverage_comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        uses: MishaKav/pytest-coverage-comment@v1.2.0
         with:
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
