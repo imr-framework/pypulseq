@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install PyPulseq and dependencies
         run: |
@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload PyTest Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pytest-report-${{ matrix.python-version }}-${{ matrix.include-sigpy }}
           path: |
