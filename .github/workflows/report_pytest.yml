@@ -18,7 +18,7 @@ jobs:
     steps:
       # use the results of python 3.12, consider this as target platform
       - name: Download PyTest report artifact for Python 3.12
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: pytest-report-3.12-true
           run-id: ${{ github.event.workflow_run.id }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Post PyTest Coverage Comment
         id: coverage_comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        uses: MishaKav/pytest-coverage-comment@v1.2.0
         with:
           issue-number: ${{ steps.pr-context.outputs.number }}
           pytest-coverage-path: pytest-coverage.txt
@@ -75,7 +75,7 @@ jobs:
       actions: read # Required for downloading artifacts
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
