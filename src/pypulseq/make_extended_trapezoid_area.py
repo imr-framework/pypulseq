@@ -15,8 +15,10 @@ def make_extended_trapezoid_area(
     channel: str,
     grad_start: float,
     grad_end: float,
-    duration: float = 0.0,
+    duration: Union[float, None] = None,
     convert_to_arbitrary: bool = False,
+    max_grad: Union[float, None] = None,
+    max_slew: Union[float, None] = None,
     system: Union[Opts, None] = None,
 ) -> Tuple[SimpleNamespace, np.array, np.array]:
     """
@@ -34,11 +36,15 @@ def make_extended_trapezoid_area(
         Starting non-zero gradient value.
     grad_end : float
         Ending non-zero gradient value.
-    duration : float, default=0.0
-        Desired duration of the extended trapezoid. If <=0, the minimum duration is used
+    duration : float, default=None
+        Desired duration of the extended trapezoid.
     convert_to_arbitrary : bool, default=False
         Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
-    system: Opts, optional
+    max_grad : float, default=None
+        Maximum gradient strength (Hz/m).
+    max_slew : float, default=None
+        Maximum slew rate (Hz/m/s).
+    system: Opts, default=None
         System limits.
 
     Returns
@@ -57,8 +63,15 @@ def make_extended_trapezoid_area(
     if system is None:
         system = Opts.default
 
-    max_slew = system.max_slew * 0.99
-    max_grad = system.max_grad * 0.99
+    if channel not in ['x', 'y', 'z']:
+        raise ValueError(f'Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}')
+
+    if max_grad is None:
+        max_grad = system.max_grad
+
+    if max_slew is None:
+        max_slew = system.max_slew
+
     raster_time = system.grad_raster_time
 
     def _to_raster(time: float) -> float:
@@ -166,7 +179,8 @@ def make_extended_trapezoid_area(
         ind = solutions[ind]
         return (int(time_ramp_up[ind]), int(flat_time[ind]), int(time_ramp_down[ind]), float(grad_amp[ind]))
 
-    if duration <= 0:  # duration was not given
+    if duration is None: # duration was not given
+
         # Perform a linear search
         # This is necessary because there can exist a dead space where solutions
         # do not exist for some durations longer than the optimal duration. The
