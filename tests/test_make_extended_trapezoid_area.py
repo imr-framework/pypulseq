@@ -146,14 +146,14 @@ def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
         # Original trapezoid area (no flat section)
         t_ramp_up_orig = _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_start)
         t_ramp_down_orig = _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_end)
-        area_orig = (t_ramp_up_orig * (grad_start + grad_amp) / 2 +
-                     t_ramp_down_orig * (grad_amp + grad_end) / 2)
+        area_orig = t_ramp_up_orig * (grad_start + grad_amp) / 2 + t_ramp_down_orig * (grad_amp + grad_end) / 2
 
         # New ramp times with clipped amplitude
         t_ramp_up_new = _calc_ramp_time(grad_amp_new, system.max_slew * 0.99, grad_start)
         t_ramp_down_new = _calc_ramp_time(grad_amp_new, system.max_slew * 0.99, grad_end)
-        area_ramps_new = (t_ramp_up_new * (grad_start + grad_amp_new) / 2 +
-                          t_ramp_down_new * (grad_amp_new + grad_end) / 2)
+        area_ramps_new = (
+            t_ramp_up_new * (grad_start + grad_amp_new) / 2 + t_ramp_down_new * (grad_amp_new + grad_end) / 2
+        )
 
         # Flat time to make up the difference
         flat_time = _to_raster((area_orig - area_ramps_new) / grad_amp_new)
@@ -198,15 +198,18 @@ def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
     assert pytest.approx(d1) == d2 or d1 < d2
 
 
-@pytest.mark.parametrize('grad_start, grad_end, area, duration', [
-    (0, 0, 1000, 5e-3),
-    (0, 0, 1000, 10e-3),
-    (0, 1000, 100, 5e-3),
-    (-1000, 1000, 100, 5e-3),
-    (system.max_grad * 0.99, 0, 100, 5e-3),
-    (0, system.max_grad * 0.99, -100, 5e-3),
-    (system.max_grad * 0.5, system.max_grad * 0.5, 500, 3e-3),
-])
+@pytest.mark.parametrize(
+    'grad_start, grad_end, area, duration',
+    [
+        (0, 0, 1000, 5e-3),
+        (0, 0, 1000, 10e-3),
+        (0, 1000, 100, 5e-3),
+        (-1000, 1000, 100, 5e-3),
+        (system.max_grad * 0.99, 0, 100, 5e-3),
+        (0, system.max_grad * 0.99, -100, 5e-3),
+        (system.max_grad * 0.5, system.max_grad * 0.5, 500, 3e-3),
+    ],
+)
 def test_make_extended_trapezoid_area_with_duration(grad_start, grad_end, area, duration):
     """Test extended trapezoid with specified duration."""
     g, _, _ = make_extended_trapezoid_area(
@@ -233,6 +236,7 @@ test_zoo_random = [
     for _ in range(100)
 ]
 
+
 @pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
 def test_make_extended_trapezoid_area_duration_vs_no_duration(grad_start, grad_end, area):
     """Test that specified duration produces same area as no duration."""
@@ -250,13 +254,12 @@ def test_make_extended_trapezoid_area_duration_vs_no_duration(grad_start, grad_e
     )
 
     assert pytest.approx(g_no_duration.area) == g_with_duration.area, 'Areas do not match'
-    assert pytest.approx(calc_duration(g_no_duration), abs=system.grad_raster_time) \
-        == calc_duration(g_with_duration), 'Durations do not match'
+    assert pytest.approx(calc_duration(g_no_duration), abs=system.grad_raster_time) == calc_duration(g_with_duration), (
+        'Durations do not match'
+    )
 
 
 def test_make_extended_trapezoid_area_invalid_duration():
     """Test that invalid duration raises ValueError."""
     with pytest.raises(ValueError, match='Could not find a solution'):
-        make_extended_trapezoid_area(
-            channel='x', grad_start=0, grad_end=0, area=100000, duration=0.1e-6, system=system
-        )
+        make_extended_trapezoid_area(channel='x', grad_start=0, grad_end=0, area=100000, duration=0.1e-6, system=system)

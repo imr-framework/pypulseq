@@ -179,8 +179,7 @@ def make_extended_trapezoid_area(
         ind = solutions[ind]
         return (int(time_ramp_up[ind]), int(flat_time[ind]), int(time_ramp_down[ind]), float(grad_amp[ind]))
 
-    if duration is None: # duration was not given
-
+    if duration is None:  # duration was not given
         # Perform a linear search
         # This is necessary because there can exist a dead space where solutions
         # do not exist for some durations longer than the optimal duration. The
