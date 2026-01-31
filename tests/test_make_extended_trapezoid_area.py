@@ -245,7 +245,7 @@ def test_make_extended_trapezoid_area_duration_vs_no_duration(grad_start, grad_e
         channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
     )
 
-    # Round duration to nearest ns. Neccessary because calc_duration
+    # Round duration to nearest ns. Necessary because calc_duration
     # does not round internally
     duration = round(calc_duration(g_no_duration), 9)
 
