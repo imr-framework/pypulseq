@@ -23,7 +23,7 @@ repos:
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1
+    rev: v1.43.0
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
