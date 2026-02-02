@@ -89,7 +89,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_p
     gs_ref = pp.make_trapezoid(
         channel='z',
         system=system,
-        amplitude=gs_ex.amplitude,
+        amplitude=gz.amplitude,
         flat_time=t_refwd,
         rise_time=dG,
     )
