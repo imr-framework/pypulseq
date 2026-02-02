@@ -67,10 +67,10 @@ def make_extended_trapezoid_area(
         raise ValueError(f'Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}')
 
     if max_grad is None:
-        max_grad = system.max_grad
+        max_grad = system.max_grad * 0.99
 
     if max_slew is None:
-        max_slew = system.max_slew
+        max_slew = system.max_slew * 0.99
 
     raster_time = system.grad_raster_time
 
