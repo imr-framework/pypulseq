@@ -20,7 +20,7 @@ def make_extended_trapezoid_area(
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
     system: Union[Opts, None] = None,
-) -> Tuple[SimpleNamespace, np.array, np.array]:
+) -> Tuple[SimpleNamespace, np.ndarray, np.ndarray]:
     """
     Make an extended trapezoid for given area and gradient start and end point.
     If no duration is given, the shortest possible duration that satisfies the constraints is used.
@@ -29,21 +29,23 @@ def make_extended_trapezoid_area(
     Parameters
     ----------
     area : float
-        Area of extended trapezoid.
+        Area of extended trapezoid in 1/m (= Hz/m * s).
     channel : str
         Orientation of extended trapezoidal gradient event. Must be one of 'x', 'y' or 'z'.
     grad_start : float
-        Starting non-zero gradient value.
+        Starting non-zero gradient value in Hz/m.
     grad_end : float
-        Ending non-zero gradient value.
+        Ending non-zero gradient value in Hz/m.
     duration : float, default=None
-        Desired duration of the extended trapezoid.
+        Desired duration of the extended trapezoid in s.
     convert_to_arbitrary : bool, default=False
         Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
     max_grad : float, default=None
-        Maximum gradient strength (Hz/m).
+        Maximum gradient strength in Hz/m.
+        If None, the maximum gradient strength is set to 99% of the system limit.
     max_slew : float, default=None
-        Maximum slew rate (Hz/m/s).
+        Maximum slew rate in Hz/m/s.
+        If None, the maximum slew rate is set to 99% of the system limit.
     system: Opts, default=None
         System limits.
 
@@ -58,7 +60,8 @@ def make_extended_trapezoid_area(
 
     Raises
     ------
-        ValueError if no solution was found that satisfies the constraints and the desired area (and duration, if given).
+    ValueError
+        If no solution was found that satisfies the constraints and the desired area (and duration, if given).
     """
     if system is None:
         system = Opts.default
@@ -71,6 +74,9 @@ def make_extended_trapezoid_area(
 
     if max_slew is None:
         max_slew = system.max_slew * 0.99
+
+    if duration is not None and duration <= 0:
+        raise ValueError('Duration must be a positive number.')
 
     raster_time = system.grad_raster_time
 
@@ -166,7 +172,7 @@ def make_extended_trapezoid_area(
 
         # Filter solutions that satisfy max_grad and max_slew constraints
         valid_indices = (
-            (abs(grad_amp) <= max_grad + 1e-8) & (slew_rate1 <= max_slew + 1e-8) & (slew_rate2 <= max_slew + 1e-8)
+            (abs(grad_amp) <= max_grad + eps) & (slew_rate1 <= max_slew + eps) & (slew_rate2 <= max_slew + eps)
         )
         solutions = np.flatnonzero(valid_indices)
 
@@ -198,16 +204,16 @@ def make_extended_trapezoid_area(
 
         # Linear search
         solution = None
-        for duration in range(min_duration, max_duration + 1):
-            solution = _find_solution(duration)
-            if solution:
+        for current_duration in range(min_duration, max_duration + 1):
+            solution = _find_solution(current_duration)
+            if solution is not None:
                 break
 
         # Perform a binary search for duration > max_duration if no solution was found
-        if not solution:
+        if solution is None:
             # First, find the upper limit on duration where a solution exists by
             # exponentially expanding the duration.
-            while not solution:
+            while solution is None:
                 max_duration *= 2
                 solution = _find_solution(max_duration)
 
@@ -253,7 +259,7 @@ def make_extended_trapezoid_area(
     if trace_enabled():
         grad.trace = trace()
 
-    if not abs(grad.area - area) < 1e-8:
+    if not abs(grad.area - area) < eps:
         raise ValueError(f'Could not find a solution for area={area}.')
 
     return grad, grad.tt, grad.waveform

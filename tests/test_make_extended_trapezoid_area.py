@@ -259,7 +259,15 @@ def test_make_extended_trapezoid_area_duration_vs_no_duration(grad_start, grad_e
     )
 
 
-def test_make_extended_trapezoid_area_invalid_duration():
+def test_make_extended_trapezoid_area_raises_when_no_solution():
     """Test that invalid duration raises ValueError."""
     with pytest.raises(ValueError, match='Could not find a solution'):
         make_extended_trapezoid_area(channel='x', grad_start=0, grad_end=0, area=100000, duration=0.1e-6, system=system)
+
+
+def test_make_extended_trapezoid_area_raises_when_invalid_duration():
+    """Test that invalid duration raises ValueError."""
+    with pytest.raises(ValueError, match='Duration must be a positive number'):
+        make_extended_trapezoid_area(
+            channel='x', grad_start=0, grad_end=0, area=100000, duration=-0.1e-6, system=system
+        )
