@@ -268,6 +268,7 @@ def seq_adc_only():
 
     return seq
 
+
 # Dummy seq ending with [EXTENSION] section
 def seq_ext_only():
     seq = Sequence()
