@@ -268,6 +268,7 @@ def seq_adc_only():
 
     return seq
 
+
 # Dummy seq ending with [EXTENSION] section
 def seq_ext_only():
     seq = Sequence()
@@ -281,8 +282,15 @@ sequence_zoo = [
     seq_make_gauss_pulses,
     seq_make_sinc_pulses,
     seq_make_block_pulses,
-    seq1, seq2, seq3, seq4, seq5, seq6,
-    seq_trap_only, seq_adc_only, seq_ext_only,
+    seq1,
+    seq2,
+    seq3,
+    seq4,
+    seq5,
+    seq6,
+    seq_trap_only,
+    seq_adc_only,
+    seq_ext_only,
 ]
 
 
