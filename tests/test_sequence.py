@@ -253,8 +253,37 @@ def seq6():
     return seq
 
 
+# Dummy seq ending with [TRAP] section
+def seq_trap_only():
+    seq = Sequence()
+    seq.add_block(pp.make_trapezoid('x', area=1000))
+
+    return seq
+
+
+# Dummy seq ending with [ADC] section
+def seq_adc_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=100, duration=10e-3))
+
+    return seq
+
+# Dummy seq ending with [EXTENSION] section
+def seq_ext_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=1000, duration=1e-3), pp.make_label(label='NOISE', type='SET', value=True))
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
+sequence_zoo = [
+    seq_make_gauss_pulses,
+    seq_make_sinc_pulses,
+    seq_make_block_pulses,
+    seq1, seq2, seq3, seq4, seq5, seq6,
+    seq_trap_only, seq_adc_only, seq_ext_only,
+]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
