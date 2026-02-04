@@ -1,14 +1,15 @@
 import math
+import warnings
 from types import SimpleNamespace
 from typing import List, Tuple, Union
 
 import numpy as np
 
-from pypulseq import eps
 from pypulseq.block_to_events import block_to_events
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
+from pypulseq.Sequence.ext_grad_check import ext_grad_check
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.tracing import trace_enabled
 
@@ -50,9 +51,9 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
     duration = 0
 
     check_g = {
-        0: SimpleNamespace(idx=2, start=(0, 0), stop=(0, 0)),
-        1: SimpleNamespace(idx=3, start=(0, 0), stop=(0, 0)),
-        2: SimpleNamespace(idx=4, start=(0, 0), stop=(0, 0)),
+        0: SimpleNamespace(start=(0, 0), stop=(0, 0)),
+        1: SimpleNamespace(start=(0, 0), stop=(0, 0)),
+        2: SimpleNamespace(start=(0, 0), stop=(0, 0)),
     }  # Key-value mapping of index and  pairs of gradients/times
     extensions = []
 
@@ -219,82 +220,7 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
     # =========
     # PERFORM GRADIENT CHECKS
     # =========
-    for grad_to_check in check_g.values():
-        if abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:  # noqa: SIM102
-            if grad_to_check.start[0] > eps:
-                raise RuntimeError('No delay allowed for gradients which start with a non-zero amplitude')
-
-        # Check whether any blocks exist in the sequence
-        if self.next_free_block_ID > 1:
-            # Look up the previous block (and the next block in case of a set_block call)
-            if block_index == self.next_free_block_ID:
-                # New block inserted
-                prev_block_index = next(reversed(self.block_events))
-                next_block_index = None
-            else:
-                blocks = list(self.block_events)
-                try:
-                    # Existing block overwritten
-                    idx = blocks.index(block_index)
-                    prev_block_index = blocks[idx - 1] if idx > 0 else None
-                    next_block_index = blocks[idx + 1] if idx < len(blocks) - 1 else None
-                except ValueError:
-                    # Inserting a new block with non-contiguous numbering
-                    prev_block_index = next(reversed(self.block_events))
-                    next_block_index = None
-
-            # Look up the last gradient value in the previous block
-            last = 0
-            if prev_block_index is not None:
-                prev_id = self.block_events[prev_block_index][grad_to_check.idx]
-                if prev_id != 0:
-                    prev_lib = self.grad_library.get(prev_id)
-                    prev_type = prev_lib['type']
-
-                    if prev_type == 't':
-                        last = 0
-                    elif prev_type == 'g':
-                        last = prev_lib['data'][2]  # v150: changed from ['data'][5] to ['data'][2]
-
-            # Check whether the difference between the last gradient value and
-            # the first value of the new gradient is achievable with the
-            # specified slew rate.
-            if abs(last - grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
-                raise RuntimeError('Two consecutive gradients need to have the same amplitude at the connection point')
-
-            # Look up the first gradient value in the next block
-            # (this only happens when using set_block to patch a block)
-            if next_block_index is not None:
-                next_id = self.block_events[next_block_index][grad_to_check.idx]
-                if next_id != 0:
-                    next_lib = self.grad_library.get(next_id)
-                    next_type = next_lib['type']
-
-                    if next_type == 't':
-                        first = 0
-                    elif next_type == 'g':
-                        first = next_lib['data'][1]  # v150: changed from ['data'][4] to ['data'][1]
-                else:
-                    first = 0
-
-                # Check whether the difference between the first gradient value
-                # in the next block and the last value of the new gradient is
-                # achievable with the specified slew rate.
-                if abs(first - grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time:
-                    raise RuntimeError(
-                        'Two consecutive gradients need to have the same amplitude at the connection point'
-                    )
-        elif abs(grad_to_check.start[1]) > self.system.max_slew * self.system.grad_raster_time:
-            raise RuntimeError('First gradient in the the first block has to start at 0.')
-
-        if (
-            abs(grad_to_check.stop[1]) > self.system.max_slew * self.system.grad_raster_time
-            and abs(grad_to_check.stop[0] - duration) > 1e-7
-        ):
-            raise RuntimeError("A gradient that doesn't end at zero needs to be aligned to the block boundary.")
-    # =========
-    # END GRADIENT CHECKS
-    # =========
+    ext_grad_check(self, block_index, check_g, duration)
 
     self.block_events[block_index] = new_block
     self.block_durations[block_index] = float(duration)
@@ -345,7 +271,7 @@ def get_raw_block_content_IDs(self, block_index: int) -> SimpleNamespace:
     return raw_block
 
 
-def get_block(self, block_index: int) -> SimpleNamespace:
+def get_block(self, block_index: int, add_IDs: bool = False) -> SimpleNamespace:
     """
     Returns PyPulseq block at `block_index` position in `self.block_events`.
 
@@ -355,6 +281,8 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     ----------
     block_index : int
         Index of PyPulseq block to be retrieved from `self.block_events`.
+    add_IDs : bool, optional
+        Add IDs to block structure. The default is `False`.
 
     Returns
     -------
@@ -374,31 +302,114 @@ def get_block(self, block_index: int) -> SimpleNamespace:
     block = SimpleNamespace()
     attrs = ['block_duration', 'rf', 'gx', 'gy', 'gz', 'adc', 'label', 'soft_delay']
     values = [None] * len(attrs)
-    for att, val in zip(attrs, values, strict=False):
+    for att, val in zip(attrs, values):
         setattr(block, att, val)
-    event_ind = self.block_events[block_index]
+    raw_block = get_raw_block_content_IDs(self, block_index)
 
-    if event_ind[0] > 0:  # Delay
-        delay = SimpleNamespace()
-        delay.type = 'delay'
-        delay.delay = self.delay_library.data[event_ind[0]][0]
-        block.delay = delay
+    # Extensions
+    if len(raw_block.ext) > 0:
+        # We have extensions - triggers, labels, etc.
+        # Format: ext_type, ext_id, next_ext_id
 
-    if event_ind[1] > 0:  # RF
-        if event_ind[1] in self.rf_library.type:
-            block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], self.rf_library.type[event_ind[1]])
+        # Unpack trigger(s)
+        trig_ext = raw_block.ext[1, raw_block.ext[0] == self.get_extension_type_ID('TRIGGERS', update=False)]
+        if trig_ext.shape[-1] > 0:
+            trigger_types = ['output', 'trigger']
+            for i in range(trig_ext.shape[-1]):
+                data = self.trigger_library.data[trig_ext[i]]
+                trigger = SimpleNamespace()
+                trigger.type = trigger_types[int(data[0]) - 1]
+                if data[0] == 1:
+                    trigger_channels = ['osc0', 'osc1', 'ext1']
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
+                elif data[0] == 2:
+                    trigger_channels = ['physio1', 'physio2']
+                    trigger.channel = trigger_channels[int(data[1]) - 1]
+                else:
+                    raise ValueError('Unsupported trigger event type')
+                trigger.delay = data[2]
+                trigger.duration = data[3]
+                if add_IDs:
+                    trigger.id = trig_ext[i]
+                # Allow for multiple triggers per block
+                if hasattr(block, 'trigger'):
+                    block.trigger[i] = trigger
+                else:
+                    block.trigger = {0: trigger}
+
+        # Unpack labels
+        lid_set = self.get_extension_type_ID('LABELSET', update=False)
+        lid_inc = self.get_extension_type_ID('LABELINC', update=False)
+        supported_labels = get_supported_labels()
+        label_ext = raw_block.ext[:, np.logical_or(raw_block.ext[0] == lid_set, raw_block.ext[0] == lid_inc)]
+        if label_ext.shape[-1] > 0:
+            for i in range(label_ext.shape[-1]):
+                label = SimpleNamespace()
+                if label_ext[0, i] == lid_set:
+                    label.type = 'labelset'
+                    data = self.label_set_library.data[label_ext[1, i]]
+                else:
+                    label.type = 'labelinc'
+                    data = self.label_inc_library.data[label_ext[1, i]]
+                label.label = supported_labels[int(data[1] - 1)]
+                label.value = data[0]
+                if add_IDs:
+                    label.id = label_ext[1, i]
+                # Allow for multiple labels per block
+                if block.label is not None:
+                    block.label[i] = label
+                else:
+                    block.label = {0: label}
+
+        # Reverse the order of labels, because extensions are saved as a reversed linked list
+        if block.label is not None:
+            block.label = dict(enumerate(reversed(block.label.values())))
+
+        # Unpack Soft Delays
+        delay_ext = raw_block.ext[:, raw_block.ext[0] == self.get_extension_type_ID('DELAYS', update=False)]
+        if delay_ext.shape[-1] > 0:
+            if delay_ext.shape[-1] > 1:
+                raise ValueError('Only one soft delay extension object per block is allowed')
+            data = self.soft_delay_library.data[delay_ext[1].item()]
+            block.soft_delay = SimpleNamespace()
+            block.soft_delay.type = 'soft_delay'
+            block.soft_delay.numID = data[0]
+            block.soft_delay.offset = data[1]
+            block.soft_delay.factor = data[2]
+            block.soft_delay.hint = data[3]
+            block.soft_delay.default_duration = self.block_durations[block_index]
+            if add_IDs:
+                block.soft_delay.id = delay_ext[1].item()
+
+        if trig_ext.shape[-1] + label_ext.shape[-1] != raw_block.ext.shape[-1]:
+            for i in range(raw_block.ext.shape[1]):
+                ext_id = raw_block.ext[0, i]
+                if (
+                    ext_id != self.get_extension_type_ID('TRIGGERS', update=False)
+                    and ext_id != self.get_extension_type_ID('LABELSET', update=False)
+                    and ext_id != self.get_extension_type_ID('LABELINC', update=False)
+                    and ext_id != self.get_extension_type_ID('DELAYS', update=False)
+                ):
+                    warnings.warn(f'Unknown extension ID {ext_id}')
+
+    # RF
+    if raw_block.rf:  # RF
+        if len(self.rf_library.type) >= raw_block.rf:
+            block.rf = self.rf_from_lib_data(self.rf_library.data[raw_block.rf], self.rf_library.type[raw_block.rf])
         else:
-            block.rf = self.rf_from_lib_data(self.rf_library.data[event_ind[1]], 'u')  # Undefined type/use
-
-        # TODO: add optional rf ID from raw_block
+            block.rf = self.rf_from_lib_data(self.rf_library.data[raw_block.rf], 'u')  # Undefined type/use
+        if add_IDs:
+            block.rf.id = raw_block.rf
 
     # Gradients
     grad_channels = ['gx', 'gy', 'gz']
     for i in range(len(grad_channels)):
-        if event_ind[2 + i] > 0:
+        grad_id = getattr(raw_block, grad_channels[i])
+
+        if grad_id:
             grad, compressed = SimpleNamespace(), SimpleNamespace()
-            grad_type = self.grad_library.type[event_ind[2 + i]]
-            lib_data = self.grad_library.data[event_ind[2 + i]]
+            grad_type = self.grad_library.type[grad_id]
+            lib_data = self.grad_library.data[grad_id]
             grad.type = 'trap' if grad_type == 't' else 'grad'
             grad.channel = grad_channels[i][1]
             if grad.type == 'grad':
@@ -445,6 +456,8 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.shape_dur = t_end
                 grad.first = lib_data[1]  # change in v150 - we always have first/last now
                 grad.last = lib_data[2]  # change in v150 - we always have first/last now
+                if add_IDs:
+                    grad.shape_IDs = [shape_id, time_id]
             else:
                 grad.amplitude = lib_data[0]
                 grad.rise_time = lib_data[1]
@@ -454,13 +467,14 @@ def get_block(self, block_index: int) -> SimpleNamespace:
                 grad.area = grad.amplitude * (grad.flat_time + grad.rise_time / 2 + grad.fall_time / 2)
                 grad.flat_area = grad.amplitude * grad.flat_time
 
-            # TODO: add optional grad ID from raw_block
+            if add_IDs:
+                grad.id = grad_id
 
             setattr(block, grad_channels[i], grad)
 
     # ADC
-    if event_ind[5] > 0:
-        lib_data = self.adc_library.data[event_ind[5]]
+    if raw_block.adc:
+        lib_data = self.adc_library.data[raw_block.adc]
         shape_id_phase_modulation = lib_data[7]
         if shape_id_phase_modulation:
             shape_data = self.shape_library.data[shape_id_phase_modulation]
@@ -484,77 +498,10 @@ def get_block(self, block_index: int) -> SimpleNamespace:
         adc.num_samples = int(adc.num_samples)
         adc.type = 'adc'
 
-        # TODO: add optional adc ID from raw_block
+        if add_IDs:
+            adc.id = raw_block.adc
 
         block.adc = adc
-
-    if event_ind[6] > 0:
-        # We have extensions - triggers, labels, etc.
-        next_ext_id = event_ind[6]
-        while next_ext_id != 0:
-            ext_data = self.extensions_library.data[next_ext_id]
-            # Format: ext_type, ext_id, next_ext_id
-            ext_type = self.get_extension_type_string(ext_data[0])
-
-            # Triggers
-            if ext_type == 'TRIGGERS':
-                trigger_types = ['output', 'trigger']
-                data = self.trigger_library.data[ext_data[1]]
-                trigger = SimpleNamespace()
-                trigger.type = trigger_types[int(data[0]) - 1]
-                if data[0] == 1:
-                    trigger_channels = ['osc0', 'osc1', 'ext1']
-                    trigger.channel = trigger_channels[int(data[1]) - 1]
-                elif data[0] == 2:
-                    trigger_channels = ['physio1', 'physio2']
-                    trigger.channel = trigger_channels[int(data[1]) - 1]
-                else:
-                    raise ValueError('Unsupported trigger event type')
-
-                trigger.delay = data[2]
-                trigger.duration = data[3]
-                # Allow for multiple triggers per block
-                if hasattr(block, 'trigger'):
-                    block.trigger[len(block.trigger)] = trigger
-                else:
-                    block.trigger = {0: trigger}
-            elif ext_type in ['LABELSET', 'LABELINC']:
-                label = SimpleNamespace()
-                label.type = ext_type.lower()
-                supported_labels = get_supported_labels()
-                if ext_type == 'LABELSET':
-                    data = self.label_set_library.data[ext_data[1]]
-                else:
-                    data = self.label_inc_library.data[ext_data[1]]
-
-                label.label = supported_labels[int(data[1] - 1)]
-                label.value = data[0]
-                # Allow for multiple labels per block
-                if block.label is not None:
-                    block.label[len(block.label)] = label
-                else:
-                    block.label = {0: label}
-            elif ext_type == 'DELAYS':
-                data = self.soft_delay_library.data[ext_data[1]]
-
-                # TODO: Check for multiple soft delays
-                block.soft_delay = SimpleNamespace(
-                    type='soft_delay',
-                    numID=data[0],
-                    offset=data[1],
-                    factor=data[2],
-                    hint=data[3],
-                    default_duration=self.block_durations[block_index],
-                )
-
-            else:
-                raise RuntimeError(f'Unknown extension ID {ext_data[0]}')
-
-            next_ext_id = ext_data[2]
-
-    # Reverse the order of labels, because extensions are saved as a reversed linked list
-    if block.label is not None:
-        block.label = dict(enumerate(reversed(block.label.values())))
 
     block.block_duration = self.block_durations[block_index]
 
