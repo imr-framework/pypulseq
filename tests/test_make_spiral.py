@@ -12,7 +12,7 @@ def test_make_spiral_basic_fast():
     
     # oversampling=1 is unsafe for accuracy but fast for "it runs" check. 
     # oversampling=5 is a compromise.
-    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, slice_thickness=0, system=system, oversampling=5)
+    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, system=system, oversampling=5)
     
     assert gx is not None
     assert gy is not None
@@ -42,7 +42,7 @@ def test_make_spiral_pns_fast():
         'pnsDesignLimit': 0.6 # Low limit to force PNS active
     }
     
-    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, slice_thickness=0, system=system, safe_model=safe_model, oversampling=5)
+    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, system=system, safe_model=safe_model, oversampling=5)
     
     assert gx is not None
     assert len(gx.waveform) > 0
@@ -61,7 +61,7 @@ def test_make_spiral_resonance_fast():
         (500, 1500) # Broad band
     ]
     
-    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, slice_thickness=0, system=system, resonances=resonances, oversampling=5)
+    gx, gy, adc = make_spiral(fov=fov, matrix=matrix, system=system, resonances=resonances, oversampling=5)
     assert gx is not None
     assert len(gx.waveform) > 0
 
@@ -72,13 +72,13 @@ def test_make_spiral_interleaves():
     matrix = 32
     
     # 1 interleave
-    gx1, _, _ = make_spiral(fov=fov, matrix=matrix, slice_thickness=0, system=system, interleaves=1, oversampling=5)
+    gx1, _, _ = make_spiral(fov=fov, matrix=matrix, system=system, interleaves=1, oversampling=5)
     
     # 2 interleaves (should be shorter or same duration but sparser? 
     # N interleaves means each arm covers 1/N of k-space density radially?
     # dr/dtheta = N / (2*pi*F). 
     # Larger N -> larger dr/dtheta -> radius grows faster -> reaches kmax faster -> shorter duration.
-    gx2, _, _ = make_spiral(fov=fov, matrix=matrix, slice_thickness=0, system=system, interleaves=2, oversampling=5)
+    gx2, _, _ = make_spiral(fov=fov, matrix=matrix, system=system, interleaves=2, oversampling=5)
     
     assert len(gx2.waveform) < len(gx1.waveform)
 

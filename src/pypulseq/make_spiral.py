@@ -9,7 +9,6 @@ from pypulseq.make_adc import make_adc
 def make_spiral(
     fov: float,
     matrix: int,
-    slice_thickness: float,
     system: Opts = Opts.default,
     max_grad: float = 0,
     max_slew: float = 0,
@@ -29,8 +28,6 @@ def make_spiral(
         Field of view in meters.
     matrix : int
         Matrix size.
-    slice_thickness : float
-        Slice thickness in meters (unused for 2D spiral but kept for interface consistency).
     system : Opts, optional
         System limits.
     max_grad : float, optional
