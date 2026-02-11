@@ -35,20 +35,27 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_label_softdelay.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_label_softdelay.seq',
+    *,
+    fov: float = 224e-3,
+    Nx: int = 64,
+    Ny: int | None = None,
+    alpha: float = 7.0,
+    slice_thickness: float = 3e-3,
+    n_slices: int = 1,
+    TR: float = 20e-3,
+    max_TE: float = 8e-3,
+    ro_duration: float = 3.2e-3,
+):
     # ======
     # SETUP
     # ======
-    fov = 224e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = Nx
-    alpha = 7  # Flip angle
-    slice_thickness = 3e-3  # Slice thickness
-    n_slices = 1
-    TR = 20e-3  # Repetition time
-    max_TE = 8e-3
+    if Ny is None:
+        Ny = Nx
     rf_spoiling_inc = 117  # RF spoiling increment
-    ro_duration = 3.2e-3  # ADC duration
 
     # Set system limits
     system = pp.Opts(
@@ -76,6 +83,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_l
         system=system,
         return_gz=True,
         delay=system.rf_dead_time,
+        use='excitation',
     )
 
     # Define other gradients and ADC events

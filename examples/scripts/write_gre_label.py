@@ -5,18 +5,25 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_label_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_label_pypulseq.seq',
+    *,
+    fov: float = 224e-3,
+    Nx: int = 64,
+    Ny: int | None = None,
+    alpha: float = 7,
+    slice_thickness: float = 3e-3,
+    n_slices: int = 1,
+    TE: float = 4.3e-3,
+    TR: float = 10e-3,
+):
     # ======
     # SETUP
     # ======
-    fov = 224e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = Nx
-    alpha = 7  # Flip angle
-    slice_thickness = 3e-3  # Slice thickness
-    n_slices = 1
-    TE = 4.3e-3  # Echo time
-    TR = 10e-3  # Repetition time
+    if Ny is None:
+        Ny = Nx
 
     rf_spoiling_inc = 117  # RF spoiling increment
     ro_duration = 3.2e-3  # ADC duration

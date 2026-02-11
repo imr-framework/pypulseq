@@ -6,7 +6,21 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'tse_pypulseq.seq',
+    *,
+    fov: float = 256e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    n_echo: int = 16,
+    n_slices: int = 1,
+    rf_flip: int = 180,
+    slice_thickness: float = 5e-3,
+    TE: float = 12e-3,
+    TR: float = 2000e-3,
+):
     # ======
     # SETUP
     # ======
@@ -24,16 +38,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_p
     )
 
     seq = pp.Sequence(system)  # Create a new sequence object
-    fov = 256e-3  # Define FOV and resolution
-    Nx, Ny = 64, 64
-    n_echo = 16  # Number of echoes
-    n_slices = 1
-    rf_flip = 180  # Flip angle
+    # Define FOV and resolution
     if isinstance(rf_flip, int):
         rf_flip = np.zeros(n_echo) + rf_flip
-    slice_thickness = 5e-3
-    TE = 12e-3  # Echo time
-    TR = 2000e-3  # Repetition time
 
     sampling_time = 6.4e-3
     readout_time = sampling_time + 2 * system.adc_dead_time
@@ -292,6 +299,8 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'tse_p
     # =========
     # WRITE .SEQ
     # =========
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='tse')
     if write_seq:
         seq.write(seq_filename)
 

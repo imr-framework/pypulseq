@@ -10,16 +10,22 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_se_rs_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'epi_se_rs_pypulseq.seq',
+    *,
+    fov: float = 250e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    slice_thickness: float = 3e-3,
+    n_slices: int = 3,
+    TE: float = 40e-3,
+):
     # ======
     # SETUP
     # ======
-    fov = 250e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = 64
-    slice_thickness = 3e-3  # Slice thickness
-    n_slices = 3
-    TE = 40e-3
+    # Define FOV and resolution
 
     pe_enable = 1  # Flag to quickly disable phase encoding (1/0) as needed for the delay calibration
     ro_os = 1  # Oversampling factor
@@ -257,11 +263,11 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
     # =========
     # WRITE .SEQ
     # =========
-    if write_seq:
-        # Prepare the sequence output for the scanner
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
-        seq.set_definition(key='Name', value='epi')
+    # Prepare the sequence output for the scanner
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='epi')
 
+    if write_seq:
         seq.write(seq_filename)
 
     return seq

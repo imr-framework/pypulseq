@@ -7,16 +7,21 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'epi_pypulseq.seq',
+    *,
+    fov: float = 220e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    slice_thickness: float = 3e-3,
+    n_slices: int = 3,
+):
     # ======
     # SETUP
     # ======
     # Define FOV and resolution
-    fov = 220e-3
-    Nx = 64
-    Ny = 64
-    slice_thickness = 3e-3  # Slice thickness
-    n_slices = 3
 
     # Set system limits
     system = pp.Opts(
@@ -103,6 +108,8 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_p
     # =========
     # WRITE .SEQ
     # =========
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='Name', value='epi')
     if write_seq:
         seq.write(seq_filename)
 

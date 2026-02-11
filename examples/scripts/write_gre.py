@@ -5,18 +5,24 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq', paper_plot: bool = False):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_pypulseq.seq',
+    paper_plot: bool = False,
+    *,
+    fov: float = 256e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    alpha: float = 10,
+    slice_thickness: float = 3e-3,
+    TR: float = 12e-3,
+    TE: float = 5e-3,
+):
     # ======
     # SETUP
     # ======
     # Create a new sequence object
-    fov = 256e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = 64
-    alpha = 10  # flip angle
-    slice_thickness = 3e-3  # slice
-    TR = 12e-3  # Repetition time
-    TE = 5e-3  # Echo time
 
     rf_spoiling_inc = 117  # RF spoiling increment
 
@@ -136,11 +142,11 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
     # =========
     # WRITE .SEQ
     # =========
-    if write_seq:
-        # Prepare the sequence output for the scanner
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
-        seq.set_definition(key='Name', value='gre')
+    # Prepare the sequence output for the scanner
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='gre')
 
+    if write_seq:
         seq.write(seq_filename)
 
     return seq

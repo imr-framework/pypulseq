@@ -5,13 +5,20 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_se_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'epi_se_pypulseq.seq',
+    *,
+    fov: float = 256e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    slice_thickness: float = 3e-3,
+    TE: float = 60e-3,
+):
     # ======
     # SETUP
     # ======
-    fov = 256e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = 64
 
     # Set system limits
     system = pp.Opts(
@@ -34,7 +41,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
         flip_angle=np.pi / 2,
         system=system,
         duration=3e-3,
-        slice_thickness=3e-3,
+        slice_thickness=slice_thickness,
         apodization=0.5,
         time_bw_product=4,
         return_gz=True,
@@ -71,7 +78,6 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
     gz_spoil = pp.make_trapezoid(channel='z', system=system, area=gz.area * 2, duration=3 * pre_time)
 
     # Calculate delay time
-    TE = 60e-3
     duration_to_center = (Nx / 2 + 0.5) * pp.calc_duration(gx) + Ny / 2 * pp.calc_duration(gy)
     rf_center_incl_delay = rf.delay + pp.calc_rf_center(rf)[0]
     rf180_center_incl_delay = rf180.delay + pp.calc_rf_center(rf180)[0]
@@ -120,6 +126,8 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_s
     # =========
     # WRITE .SEQ
     # =========
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='epi_se')
     if write_seq:
         seq.write(seq_filename)
 

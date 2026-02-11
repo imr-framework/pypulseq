@@ -5,7 +5,20 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprage_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'mprage_pypulseq.seq',
+    *,
+    alpha: float = 7,
+    ro_dur: float = 5017.6e-6,
+    ro_os: int = 1,
+    ro_spoil: float = 3,
+    TI: float = 1.1,
+    TR_out: float = 2.5,
+    fov: np.ndarray | None = None,
+    N: list[int] | None = None,
+):
     # ======
     # SETUP
     # ======
@@ -23,19 +36,14 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprag
 
     seq = pp.Sequence(system)  # Create a new sequence object
 
-    alpha = 7  # Flip angle
-    ro_dur = 5017.6e-6
-    ro_os = 1  # Readout oversampling
-    ro_spoil = 3  # Additional k-max excursion for RO spoiling
-    TI = 1.1
-    TR_out = 2.5
-
     rf_spoiling_inc = 117
     rf_len = 100e-6
     ax = SimpleNamespace()  # Encoding axes
 
-    fov = np.array([192, 240, 256]) * 1e-3  # Define FOV and resolution
-    N = [48, 60, 64]
+    if fov is None:
+        fov = np.array([192, 240, 256]) * 1e-3  # Define FOV and resolution
+    if N is None:
+        N = [48, 60, 64]
     ax.d1 = 'z'  # Fastest dimension (readout)
     ax.d2 = 'x'  # Second-fastest dimension (inner phase-encoding loop)
     xyz = ['x', 'y', 'z']
@@ -183,6 +191,8 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'mprag
     # =========
     # WRITE .SEQ
     # =========
+    seq.set_definition(key='FOV', value=list(fov))
+    seq.set_definition(key='Name', value='mprage')
     if write_seq:
         seq.write(seq_filename)
 

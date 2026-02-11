@@ -10,17 +10,23 @@ import pypulseq as pp
 from pypulseq import calc_rf_center
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_lable_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'epi_label_pypulseq.seq',
+    *,
+    fov: float = 220e-3,
+    Nx: int = 64,
+    Ny: int = 64,
+    slice_thickness: float = 3e-3,
+    n_slices: int = 7,
+    n_reps: int = 4,
+    navigator: int = 3,
+):
     # ======
     # SETUP
     # ======
-    fov = 220e-3  # Define FOV and resolution
-    Nx = 64
-    Ny = 64
-    slice_thickness = 3e-3  # Slice thickness
-    n_slices = 7
-    n_reps = 4
-    navigator = 3
+    fov = fov  # Define FOV and resolution
 
     # Set system limits
     system = pp.Opts(
@@ -158,10 +164,10 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'epi_l
     # =========
     # WRITE .SEQ
     # =========
+    # Prepare sequence report
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='Name', value='epi_lbl')
     if write_seq:
-        # Prepare sequence report
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
-        seq.set_definition(key='Name', value='epi_lbl')
         seq.write(seq_filename)
 
     return seq

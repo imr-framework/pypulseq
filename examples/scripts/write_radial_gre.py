@@ -3,18 +3,24 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_radial_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'gre_radial_pypulseq.seq',
+    *,
+    fov: float = 260e-3,
+    Nx: int = 64,
+    alpha: float = 10,
+    slice_thickness: float = 3e-3,
+    TE: float = 8e-3,
+    TR: float = 20e-3,
+    Nr: int = 60,
+    N_dummy: int = 20,
+):
     # ======
     # SETUP
     # ======
-    fov = 260e-3
-    Nx = 64  # Define FOV and resolution
-    alpha = 10  # Flip angle
-    slice_thickness = 3e-3  # Slice thickness
-    TE = 8e-3  # Echo time
-    TR = 20e-3  # Repetition time
-    Nr = 60  # Number of radial spokes
-    N_dummy = 20  # Number of dummy scans
+    # Define FOV and resolution
     delta = np.pi / Nr  # Angular increment
 
     rf_spoiling_inc = 117  # RF spoiling increment
@@ -113,9 +119,9 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_r
     # =========
     # WRITE .SEQ
     # =========
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='gre_rad')
     if write_seq:
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
-        seq.set_definition(key='Name', value='gre_rad')
         seq.write(seq_filename)
 
     return seq

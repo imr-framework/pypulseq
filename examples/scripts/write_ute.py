@@ -10,20 +10,26 @@ from matplotlib import pyplot as plt
 import pypulseq as pp
 
 
-def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'ute_pypulseq.seq'):
+def main(
+    plot: bool = False,
+    write_seq: bool = False,
+    seq_filename: str = 'ute_pypulseq.seq',
+    *,
+    fov: float = 250e-3,
+    Nx: int = 64,
+    alpha: float = 10,
+    slice_thickness: float = 3e-3,
+    TR: float = 10e-3,
+    Nr: int = 32,
+    ro_duration: float = 2.56e-3,
+    ro_os: int = 2,
+    ro_asymmetry: float = 1.0,
+):
     # ======
     # SETUP
     # ======
-    fov = 250e-3  # Define FOV and resolution
-    Nx = 64
-    alpha = 10  # Flip angle
-    slice_thickness = 3e-3  # Slice thickness
-    TR = 10e-3  # Repetition tme
-    Nr = 32  # Number of radial spokes
+    # Define FOV and resolution
     delta = 2 * np.pi / Nr  # Angular increment
-    ro_duration = 2.56e-3  # Read-out time: controls RO bandwidth and T2-blurring
-    ro_os = 2  # Oversampling
-    ro_asymmetry = 1  # 0: Fully symmetric; 1: half-echo
 
     rf_spoiling_inc = 117  # RF spoiling increment
 
@@ -156,11 +162,11 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'ute_p
     # =========
     # WRITE .SEQ
     # =========
-    if write_seq:
-        # Prepare the sequence output for the scanner
-        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
-        seq.set_definition(key='Name', value='UTE')
+    # Prepare the sequence output for the scanner
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='Name', value='UTE')
 
+    if write_seq:
         seq.write(seq_filename)
 
     return seq
