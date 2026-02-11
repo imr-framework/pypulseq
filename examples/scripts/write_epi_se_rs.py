@@ -264,7 +264,7 @@ def main(
     # WRITE .SEQ
     # =========
     # Prepare the sequence output for the scanner
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='epi')
 
     if write_seq:

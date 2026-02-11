@@ -299,7 +299,7 @@ def main(
     # =========
     # WRITE .SEQ
     # =========
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='tse')
     if write_seq:
         seq.write(seq_filename)
