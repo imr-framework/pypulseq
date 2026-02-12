@@ -10,19 +10,19 @@ For a simpler introduction to soft delays, see: soft_delay_simple_example.py
 Soft Delay Strategy in this example:
 -----------------------------------
 1. TE Delays: Two soft delays with the same 'TE' hint but different factors:
-   - First TE delay: Simple positive relationship (factor=1.0, offset=-min_te)
-   - Second TE delay: Inverse relationship (factor=-1.0, offset=max_te)
+   - First TE delay: Simple positive relationship (factor=1.0, offset=-te_min)
+   - Second TE delay: Inverse relationship (factor=-1.0, offset=te_max)
    - This allows TE adjustment while maintaining constant TR
 
 2. TR Delay: Compensates for TE changes to maintain overall TR
-   - Uses offset=-min_tr to ensure minimum TR constraints
+   - Uses offset=-tr_min to ensure minimum TR constraints
 
 Mathematical Relationships:
 --------------------------
 The delays are designed so that:
 - Increasing TE extends the first delay and shortens the second delay
 - TR delay compensates to maintain constant total TR
-- All timing constraints (min_te, max_te, min_tr) are respected
+- All timing constraints (te_min, te_max, tr_min) are respected
 
 This demonstrates advanced soft delay usage for complex timing optimization
 where multiple delays interact to maintain sequence constraints.
@@ -176,11 +176,11 @@ def main(
             seq.add_block(gx_pre, gy_pre, gz_reph)
 
             # FIRST TE SOFT DELAY: Extends with increasing TE
-            # Formula: duration = (TE_input / factor) + offset = (TE_input / 1.0) + (-min_te)
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / 1.0) + (-te_min)
             # This creates a delay that increases linearly with TE input
             # Default duration: 10 μs (minimum block duration)
-            # When TE=min_te: duration = min_te + (-min_te) = 0 (but clamped to 10 μs minimum)
-            # When TE>min_te: duration increases proportionally
+            # When TE=te_min: duration = te_min + (-te_min) = 0 (but clamped to 10 μs minimum)
+            # When TE>te_min: duration increases proportionally
             seq.add_block(pp.make_soft_delay(hint='TE', offset=-te_min, factor=1.0))
             seq.add_block(gx, adc)
             gy_pre.amplitude = -gy_pre.amplitude
@@ -197,20 +197,20 @@ def main(
             seq.add_block(gx_spoil, gy_pre, gz_spoil, *labels)
 
             # SECOND TE SOFT DELAY: Shrinks with increasing TE (maintains constant total TE)
-            # Formula: duration = (TE_input / factor) + offset = (TE_input / -1.0) + max_te
+            # Formula: duration = (TE_input / factor) + offset = (TE_input / -1.0) + te_max
             # This creates an inverse relationship: as TE increases, this delay decreases
-            # Default duration: max_te - min_te - 10μs
-            # When TE=min_te: duration = (-min_te) + max_te = max_te - min_te
-            # When TE=max_te: duration = (-max_te) + max_te = 0 (clamped to 10μs minimum)
+            # Default duration: te_max - te_min - 10μs
+            # When TE=te_min: duration = (-te_min) + te_max = te_max - te_min
+            # When TE=te_max: duration = (-te_max) + te_max = 0 (clamped to 10μs minimum)
             # Combined with first TE delay: total TE delay remains constant, only distribution changes
             seq.add_block(
                 pp.make_soft_delay(hint='TE', offset=te_max, factor=-1.0, default_duration=te_max - te_min - 10e-6)
             )
 
             # TR SOFT DELAY: Maintains constant TR regardless of TE changes
-            # Formula: duration = (TR_input / factor) + offset = (TR_input / 1.0) + (-min_tr)
+            # Formula: duration = (TR_input / factor) + offset = (TR_input / 1.0) + (-tr_min)
             # Since TE delays have constant total duration, TR delay only needs to handle TR changes
-            # Default duration: tr - min_tr - (max_te - min_te)
+            # Default duration: tr - tr_min - (te_max - te_min)
             # This ensures total sequence duration = tr regardless of TE/TR settings
             seq.add_block(
                 pp.make_soft_delay(
