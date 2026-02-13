@@ -9,7 +9,9 @@ revision 0
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
+FOV 0.22 0.22 0.021 
 GradientRasterTime 1e-05 
+Name epi_lbl 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 4.32868 
 
@@ -8763,4 +8765,4 @@ num_samples 3000
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash b2950251a04185feafc64b2bb9101dca
+Hash e541f4fd902ffefd4b5c356ae648eaf3
