@@ -28,8 +28,6 @@ This demonstrates advanced soft delay usage for complex timing optimization
 where multiple delays interact to maintain sequence constraints.
 """
 
-import math
-
 import numpy as np
 
 import pypulseq as pp
@@ -136,10 +134,10 @@ def main(
 
     # Calculate timing
     te_min = pp.calc_duration(gx_pre) + gz.fall_time + gz.flat_time / 2 + pp.calc_duration(gx) / 2
-    te_min = math.ceil(te_min / seq.grad_raster_time) * seq.grad_raster_time
+    te_min = np.ceil(te_min / seq.grad_raster_time) * seq.grad_raster_time
 
     tr_min = gz.fall_time + gz.flat_time / 2 + te_max + pp.calc_duration(gx) / 2 + pp.calc_duration(gx_spoil, gz_spoil)
-    tr_min = math.ceil(tr_min / seq.grad_raster_time) * seq.grad_raster_time
+    tr_min = np.ceil(tr_min / seq.grad_raster_time) * seq.grad_raster_time
 
     rf_phase = 0
     rf_inc = 0

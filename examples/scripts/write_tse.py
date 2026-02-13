@@ -1,4 +1,3 @@
-import math
 import warnings
 
 import numpy as np
@@ -167,7 +166,7 @@ def main(
     gr_preph = pp.make_trapezoid(channel='x', system=system, area=agr_preph, duration=t_spex, rise_time=dG)
 
     # Phase-encoding
-    n_ex = math.floor(n_y / n_echo)
+    n_ex = int(np.floor(n_y / n_echo))
     pe_steps = np.arange(1, n_echo * n_ex + 1) - 0.5 * n_echo * n_ex - 1
     if divmod(n_echo, 2)[1] == 0:
         pe_steps = np.roll(pe_steps, [0, int(-np.round(n_ex / 2))])
@@ -255,15 +254,14 @@ def main(
     t_end = pp.calc_duration(gs4) + pp.calc_duration(gs5)
 
     te_train = t_ex + n_echo * t_ref + t_end
-    tr_fill = (tr - n_slices * te_train) / n_slices
+    tr_delay = (tr - n_slices * te_train) / n_slices
     # Round to gradient raster
-    tr_fill = system.grad_raster_time * np.round(tr_fill / system.grad_raster_time)
-    if tr_fill < 0:
-        tr_fill = 1e-3
-        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (te_train + tr_fill)} ms')
+    tr_delay = system.grad_raster_time * np.round(tr_delay / system.grad_raster_time)
+    if tr_delay < 0:
+        tr_delay = 1e-3
+        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (te_train + tr_delay)} ms')
     else:
-        print(f'TR fill: {1000 * tr_fill} ms')
-    tr_delay = pp.make_delay(tr_fill)
+        print(f'TR delay: {1000 * tr_delay} ms')
 
     for i_excitation in range(n_ex + 1):
         for i_slice in range(n_slices):
@@ -307,7 +305,7 @@ def main(
 
             seq.add_block(gs4)
             seq.add_block(gs5)
-            seq.add_block(tr_delay)
+            seq.add_block(pp.make_delay(tr_delay))
 
     ok, error_report = seq.check_timing()
     if ok:

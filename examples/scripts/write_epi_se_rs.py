@@ -3,8 +3,6 @@ This is an experimental high-performance EPI sequence which uses split gradients
 gradients combined with ramp-sampling.
 """
 
-import math
-
 import numpy as np
 
 import pypulseq as pp
@@ -176,9 +174,9 @@ def main(
     # different from Nx and readout_time/Nx, respectively.
     adc_dwell_nyquist = delta_k / gx.amplitude / readout_oversampling
     # Round-down dwell time to 100 ns
-    adc_dwell = math.floor(adc_dwell_nyquist * 1e7) * 1e-7
+    adc_dwell = np.floor(adc_dwell_nyquist * 1e7) * 1e-7
     # Number of samples on Siemens needs to be divisible by 4
-    adc_samples = math.floor(readout_time / adc_dwell / 4) * 4
+    adc_samples = int(np.floor(readout_time / adc_dwell / 4)) * 4
     adc = pp.make_adc(num_samples=adc_samples, dwell=adc_dwell, delay=blip_duration / 2)
     # Realign the ADC with respect to the gradient
     # Supposedly Siemens samples at center of dwell period
@@ -220,10 +218,10 @@ def main(
     rf_center_incl_delay = rf.delay + pp.calc_rf_center(rf)[0]
     rf180_center_incl_delay = rf180.delay + pp.calc_rf_center(rf180)[0]
     te_delay_1 = te / 2 - pp.calc_duration(rf, gz) + rf_center_incl_delay - rf180_center_incl_delay
-    te_delay_1 = math.ceil(te_delay_1 / system.grad_raster_time) * system.grad_raster_time
+    te_delay_1 = np.ceil(te_delay_1 / system.grad_raster_time) * system.grad_raster_time
 
     te_delay_2 = te / 2 - pp.calc_duration(rf180, gz180n) + rf180_center_incl_delay - duration_to_center
-    te_delay_2 = math.ceil(te_delay_2 / system.grad_raster_time) * system.grad_raster_time
+    te_delay_2 = np.ceil(te_delay_2 / system.grad_raster_time) * system.grad_raster_time
     assert te_delay_1 >= 0
     # Now we merge slice refocusing, TE delay and pre-phasers into a single block
     te_delay_2 = te_delay_2 + pp.calc_duration(rf180, gz180n)

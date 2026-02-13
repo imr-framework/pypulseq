@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 
 import pypulseq as pp
@@ -86,8 +84,8 @@ def main(
     gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y / 2 * delta_k, duration=pre_time)
 
     # Phase blip in shortest possible time
-    gy_blip_duration = 2 * math.sqrt(delta_k / system.max_slew)
-    gy_blip_duration = math.ceil(gy_blip_duration / 10e-6) * 10e-6
+    gy_blip_duration = 2 * np.sqrt(delta_k / system.max_slew)
+    gy_blip_duration = np.ceil(gy_blip_duration / 10e-6) * 10e-6
     gy = pp.make_trapezoid(channel='y', system=system, area=delta_k, duration=gy_blip_duration)
 
     # Refocusing pulse with spoiling gradients

@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 
 import pypulseq as pp
@@ -101,10 +99,10 @@ def main(
 
     # Calculate timing
     te_delay = te - pp.calc_duration(gx_pre) - gz.fall_time - gz.flat_time / 2 - pp.calc_duration(gx) / 2
-    te_delay = math.ceil(te_delay / seq.grad_raster_time) * seq.grad_raster_time
+    te_delay = np.ceil(te_delay / seq.grad_raster_time) * seq.grad_raster_time
 
     tr_delay = tr - pp.calc_duration(gz) - pp.calc_duration(gx_pre) - pp.calc_duration(gx) - te_delay
-    tr_delay = math.ceil(tr_delay / seq.grad_raster_time) * seq.grad_raster_time
+    tr_delay = np.ceil(tr_delay / seq.grad_raster_time) * seq.grad_raster_time
     assert np.all(te_delay >= 0)
     assert np.all(tr_delay >= pp.calc_duration(gx_spoil, gz_spoil))
 

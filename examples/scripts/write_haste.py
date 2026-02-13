@@ -1,4 +1,3 @@
-import math
 import warnings
 
 import numpy as np
@@ -92,7 +91,7 @@ def main(
     fsp_r = 1.0
     fsp_s = 0.5
 
-    rf_ex_phase = math.pi / 2
+    rf_ex_phase = np.pi / 2
     rf_ref_phase = 0
 
     # Create excitation pulse and gradient
@@ -249,15 +248,14 @@ def main(
     tref = gs4.shape_dur + gs5.shape_dur + gs7.shape_dur + readout_time
     tend = gs4.shape_dur + gs5.shape_dur
     te_train = tex + n_echo * tref + tend
-    tr_fill = (tr - n_slices * te_train) / n_slices
+    tr_delay = (tr - n_slices * te_train) / n_slices
 
-    tr_fill = system.grad_raster_time * round(tr_fill / system.grad_raster_time)
-    if tr_fill < 0:
-        tr_fill = 1e-3
-        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (te_train + tr_fill)} ms')
+    tr_delay = system.grad_raster_time * round(tr_delay / system.grad_raster_time)
+    if tr_delay < 0:
+        tr_delay = 1e-3
+        warnings.warn(f'TR too short, adapted to include all slices to: {1000 * n_slices * (te_train + tr_delay)} ms')
     else:
-        print(f'TR fill: {1000 * tr_fill} ms')
-    tr_delay = pp.make_delay(tr_fill)
+        print(f'TR delay: {1000 * tr_delay} ms')
     delay_end = pp.make_delay(5)
 
     for i_excitation in range(n_ex):
@@ -265,8 +263,8 @@ def main(
             rf_ex.freq_offset = gs_ex.amplitude * slice_thickness * (i_slice - (n_slices - 1) / 2)
             rf_ref.freq_offset = gs_ref.amplitude * slice_thickness * (i_slice - (n_slices - 1) / 2)
             # Align the phase for off-center slices
-            rf_ex.phase_offset = rf_ex_phase - 2 * math.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
-            rf_ref.phase_offset = rf_ref_phase - 2 * math.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
+            rf_ex.phase_offset = rf_ex_phase - 2 * np.pi * rf_ex.freq_offset * pp.calc_rf_center(rf_ex)[0]
+            rf_ref.phase_offset = rf_ref_phase - 2 * np.pi * rf_ref.freq_offset * pp.calc_rf_center(rf_ref)[0]
 
             seq.add_block(gs1)
             seq.add_block(rf_ex, gs2)
@@ -305,7 +303,7 @@ def main(
 
             seq.add_block(gs4)
             seq.add_block(gs5)
-            seq.add_block(tr_delay)
+            seq.add_block(pp.make_delay(tr_delay))
 
     seq.add_block(delay_end)
 
