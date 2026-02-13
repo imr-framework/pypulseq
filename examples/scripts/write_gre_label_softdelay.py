@@ -91,10 +91,6 @@ def main(
     seq : pypulseq.Sequence
         The GRE sequence object.
     """
-    # ======
-    # SETUP
-    # ======
-
     if n_y is None:
         n_y = n_x
     rf_spoiling_inc = 117
@@ -113,13 +109,9 @@ def main(
     # Create a new sequence object
     seq = pp.Sequence(system)
 
-    # ======
-    # CREATE EVENTS
-    # ======
-
     # Create slice selection pulse and gradient
     rf, gz, _ = pp.make_sinc_pulse(
-        flip_angle=flip_angle_deg * np.pi / 180,
+        flip_angle=np.deg2rad(flip_angle_deg),
         duration=3e-3,
         slice_thickness=slice_thickness,
         apodization=0.5,
@@ -146,15 +138,13 @@ def main(
     te_min = pp.calc_duration(gx_pre) + gz.fall_time + gz.flat_time / 2 + pp.calc_duration(gx) / 2
     te_min = math.ceil(te_min / seq.grad_raster_time) * seq.grad_raster_time
 
-    tr_min = gz.fall_time + gz.flat_time / 2 + te_min + pp.calc_duration(gx) / 2 + pp.calc_duration(gx_spoil, gz_spoil)
+    tr_min = gz.fall_time + gz.flat_time / 2 + te_max + pp.calc_duration(gx) / 2 + pp.calc_duration(gx_spoil, gz_spoil)
     tr_min = math.ceil(tr_min / seq.grad_raster_time) * seq.grad_raster_time
-
-    # ======
-    # CONSTRUCT SEQUENCE
-    # ======
 
     rf_phase = 0
     rf_inc = 0
+
+    seq.add_block(pp.make_label(label='REV', type='SET', value=1))
 
     # Loop over slices
     for i_slice in range(n_slices):
@@ -218,10 +208,6 @@ def main(
                 )
             )
 
-    # ======
-    # CHECK TIMING & TEST REPORT
-    # ======
-
     ok, error_report = seq.check_timing()
 
     if ok:
@@ -233,16 +219,8 @@ def main(
     if test_report:
         print(seq.test_report())
 
-    # ======
-    # VISUALIZATION
-    # ======
-
     if plot:
         seq.plot(label='lin', time_range=np.array([0, 32]) * tr, time_disp='ms')
-
-    # =========
-    # WRITE .SEQ
-    # =========
 
     seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='gre_label_softdelay')

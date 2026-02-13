@@ -7,27 +7,54 @@ combination with integrated image reconstruction or to guide the off-line recons
 import numpy as np
 
 import pypulseq as pp
-from pypulseq import calc_rf_center
 
 
 def main(
     plot: bool = False,
+    test_report: bool = False,
     write_seq: bool = False,
     seq_filename: str = 'epi_label_pypulseq.seq',
     *,
     fov: float = 220e-3,
-    Nx: int = 64,
-    Ny: int = 64,
+    n_x: int = 64,
+    n_y: int = 64,
     slice_thickness: float = 3e-3,
     n_slices: int = 7,
     n_reps: int = 4,
-    navigator: int = 3,
+    n_navigator: int = 3,
 ):
-    # ======
-    # SETUP
-    # ======
-    fov = fov  # Define FOV and resolution
+    """Create an EPI sequence with labels for data header control.
 
+    Parameters
+    ----------
+    plot : bool, optional
+        Plot the sequence diagram. Default is False.
+    test_report : bool, optional
+        Print a test report. Default is False.
+    write_seq : bool, optional
+        Write the sequence to a .seq file. Default is False.
+    seq_filename : str, optional
+        Output filename for the .seq file. Default is 'epi_label_pypulseq.seq'.
+    fov : float, optional
+        Field of view in meters. Default is 220e-3.
+    n_x : int, optional
+        Number of readout samples. Default is 64.
+    n_y : int, optional
+        Number of phase encoding steps. Default is 64.
+    slice_thickness : float, optional
+        Slice thickness in meters. Default is 3e-3.
+    n_slices : int, optional
+        Number of slices. Default is 7.
+    n_reps : int, optional
+        Number of repetitions. Default is 4.
+    n_navigator : int, optional
+        Number of navigator lines. Default is 3.
+
+    Returns
+    -------
+    seq : pypulseq.Sequence
+        The EPI sequence object.
+    """
     # Set system limits
     system = pp.Opts(
         max_grad=32,
@@ -38,11 +65,8 @@ def main(
         rf_dead_time=100e-6,
     )
 
-    seq = pp.Sequence(system)  # Create a new sequence object
+    seq = pp.Sequence(system)
 
-    # ======
-    # CREATE EVENTS
-    # ======
     # Create 90 degree slice selection pulse and gradient
     rf, gz, _ = pp.make_sinc_pulse(
         flip_angle=np.pi / 2,
@@ -61,60 +85,59 @@ def main(
 
     # Define other gradients and ADC events
     delta_k = 1 / fov
-    k_width = Nx * delta_k
-    dwell_time = 4e-6
-    readout_time = Nx * dwell_time
-    flat_time = np.ceil(readout_time * 1e5) * 1e-5  # Round-up to the gradient raster
+    k_width = n_x * delta_k
+    adc_dwell = 4e-6
+    adc_duration = n_x * adc_dwell
+    gx_flat_time = adc_duration
+    gx_flat_time = np.ceil(gx_flat_time * 1e5) * 1e-5  # Round-up to the gradient raster
     gx = pp.make_trapezoid(
         channel='x',
         system=system,
-        amplitude=k_width / readout_time,
-        flat_time=flat_time,
+        amplitude=k_width / adc_duration,
+        flat_time=gx_flat_time,
     )
     adc = pp.make_adc(
-        num_samples=Nx,
-        duration=readout_time,
-        delay=gx.rise_time + flat_time / 2 - (readout_time - dwell_time) / 2,
+        num_samples=n_x,
+        duration=adc_duration,
+        delay=gx.rise_time + gx_flat_time / 2 - (adc_duration - adc_dwell) / 2,
     )
 
     # Pre-phasing gradients
     pre_time = 8e-4
     gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2, duration=pre_time)
     gz_reph = pp.make_trapezoid(channel='z', system=system, area=-gz.area / 2, duration=pre_time)
-    gy_pre = pp.make_trapezoid(channel='y', system=system, area=Ny / 2 * delta_k, duration=pre_time)
+    gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y / 2 * delta_k, duration=pre_time)
 
     # Phase blip in the shortest possible time
-    dur = np.ceil(2 * np.sqrt(delta_k / system.max_slew) / 10e-6) * 10e-6
-    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_k, duration=dur)
+    gy_blip_duration = 2 * np.sqrt(delta_k / system.max_slew)
+    gy_blip_duration = np.ceil(gy_blip_duration / 10e-6) * 10e-6
+    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_k, duration=gy_blip_duration)
 
-    gz_spoil = pp.make_trapezoid(channel='z', system=system, area=delta_k * Nx * 4)
+    gz_spoil = pp.make_trapezoid(channel='z', system=system, area=delta_k * n_x * 4)
 
-    # ======
-    # CONSTRUCT SEQUENCE
-    # ======
-    # Define sequence blocks
-    for _r in range(n_reps):
+    # Loop over repetitions and slices
+    for _i_rep in range(n_reps):
         seq.add_block(trig, pp.make_label(type='SET', label='SLC', value=0))
-        for s in range(n_slices):
-            rf.freq_offset = gz.amplitude * slice_thickness * (s - (n_slices - 1) / 2)
-            # Compensate for the slide-offset induced phase
-            rf.phase_offset = -rf.freq_offset * calc_rf_center(rf)[0]
+        for i_slice in range(n_slices):
+            rf.freq_offset = gz.amplitude * slice_thickness * (i_slice - (n_slices - 1) / 2)
+            # Compensate for the slice-offset induced phase
+            rf.phase_offset = -rf.freq_offset * pp.calc_rf_center(rf)[0]
             seq.add_block(rf, gz)
             seq.add_block(
                 gx_pre,
                 gz_reph,
                 pp.make_label(type='SET', label='NAV', value=1),
-                pp.make_label(type='SET', label='LIN', value=np.round(Ny / 2)),
+                pp.make_label(type='SET', label='LIN', value=np.round(n_y / 2)),
             )
-            for n in range(navigator):
+            for i_nav in range(n_navigator):
                 seq.add_block(
                     gx,
                     adc,
                     pp.make_label(type='SET', label='REV', value=gx.amplitude < 0),
                     pp.make_label(type='SET', label='SEG', value=gx.amplitude < 0),
-                    pp.make_label(type='SET', label='AVG', value=n + 1 == 3),
+                    pp.make_label(type='SET', label='AVG', value=i_nav + 1 == 3),
                 )
-                if n + 1 != navigator:
+                if i_nav + 1 != n_navigator:
                     # Dummy blip pulse to maintain identical RO gradient timing and the corresponding eddy currents
                     seq.add_block(pp.make_delay(pp.calc_duration(gy)))
 
@@ -128,7 +151,7 @@ def main(
                 pp.make_label(type='SET', label='AVG', value=0),
             )
 
-            for _ in range(Ny):
+            for _ in range(n_y):
                 seq.add_block(
                     pp.make_label(type='SET', label='REV', value=gx.amplitude < 0),
                     pp.make_label(type='SET', label='SEG', value=gx.amplitude < 0),
@@ -143,7 +166,7 @@ def main(
                 pp.make_delay(0.1),
                 pp.make_label(type='INC', label='SLC', value=1),
             )
-            if np.remainder(navigator + Ny, 2) != 0:
+            if np.remainder(n_navigator + n_y, 2) != 0:
                 gx.amplitude = -gx.amplitude
 
         seq.add_block(pp.make_label(type='INC', label='REP', value=1))
@@ -152,21 +175,18 @@ def main(
     if ok:
         print('Timing check passed successfully')
     else:
-        print('Timing check failed! Error listing follows:')
-        print(error_report)
+        print('Timing check failed. Error listing follows:')
+        [print(e) for e in error_report]
 
-    # ======
-    # VISUALIZATION
-    # ======
+    if test_report:
+        print(seq.test_report())
+
     if plot:
-        seq.plot(time_range=(0, 0.1), time_disp='ms', label='SEG, LIN, SLC')  # Plot sequence waveforms
+        seq.plot(time_range=(0, 0.1), time_disp='ms', label='SEG, LIN, SLC')
 
-    # =========
-    # WRITE .SEQ
-    # =========
-    # Prepare sequence report
     seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='epi_lbl')
+
     if write_seq:
         seq.write(seq_filename)
 
