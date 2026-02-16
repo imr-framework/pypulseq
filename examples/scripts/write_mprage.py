@@ -17,7 +17,7 @@ def main(
     readout_spoil_factor: float = 3,
     ti: float = 1.1,
     tr_out: float = 2.5,
-    fov: np.ndarray | None = None,
+    fov: float | tuple[float, float, float] = (192e-3, 240e-3, 256e-3),
     n_matrix: list[int] | None = None,
 ):
     """Create an MPRAGE sequence.
@@ -44,8 +44,9 @@ def main(
         Inversion time in seconds. Default is 1.1.
     tr_out : float, optional
         Outer repetition time in seconds. Default is 2.5.
-    fov : np.ndarray or None, optional
-        Field of view in meters [x, y, z]. Default is None ([192, 240, 256] mm).
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for all three dimensions.
+        If a tuple, it is (fov_x, fov_y, fov_z). Default is (192e-3, 240e-3, 256e-3).
     n_matrix : list[int] or None, optional
         Matrix size [x, y, z]. Default is None ([48, 60, 64]).
 
@@ -71,8 +72,7 @@ def main(
     rf_len = 100e-6
     ax = SimpleNamespace()  # Encoding axes
 
-    if fov is None:
-        fov = np.array([192, 240, 256]) * 1e-3
+    fov_x, fov_y, fov_z = (fov, fov, fov) if isinstance(fov, (int, float)) else fov
     if n_matrix is None:
         n_matrix = [48, 60, 64]
     ax.d1 = 'z'  # Fastest dimension (readout)
@@ -101,7 +101,10 @@ def main(
     )
 
     # Define other gradients and ADC events
-    delta_k = 1 / fov
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    delta_kz = 1 / fov_z
+    delta_k = np.array([delta_kx, delta_ky, delta_kz])
     gro_flat_time = readout_duration + system.adc_dead_time
     gro_flat_time = np.ceil(gro_flat_time / system.grad_raster_time) * system.grad_raster_time
     gro = pp.make_trapezoid(
@@ -219,7 +222,7 @@ def main(
     if plot:
         seq.plot(time_range=[0, tr_out * 2], label='PAR')
 
-    seq.set_definition(key='FOV', value=list(fov))
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, fov_z])
     seq.set_definition(key='Name', value='mprage')
 
     if write_seq:

@@ -16,7 +16,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'ute_pypulseq.seq',
     *,
-    fov: float = 250e-3,
+    fov: float | tuple[float, float] = 250e-3,
     n_x: int = 64,
     flip_angle_deg: float = 10,
     slice_thickness: float = 3e-3,
@@ -41,8 +41,9 @@ def main(
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'ute_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 250e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 250e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     flip_angle_deg : float, optional
@@ -65,6 +66,7 @@ def main(
     seq : pypulseq.Sequence
         The UTE sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
     spoke_angle_increment = 2 * np.pi / n_spokes
     rf_spoiling_inc = 117
 
@@ -100,8 +102,8 @@ def main(
     readout_asymmetry = pp.round_half_up(readout_asymmetry * n_x_oversampled / 2) / n_x_oversampled * 2
 
     # Define other gradients and ADC events
-    delta_k = 1 / fov / (1 + readout_asymmetry)
-    ro_area = n_x * delta_k
+    delta_kx = 1 / fov_x / (1 + readout_asymmetry)
+    ro_area = n_x * delta_kx
     gx = pp.make_trapezoid(channel='x', flat_area=ro_area, flat_time=readout_duration, system=system)
     adc = pp.make_adc(num_samples=n_x_oversampled, duration=gx.flat_time, delay=gx.rise_time, system=system)
     gx_pre = pp.make_trapezoid(
@@ -111,7 +113,7 @@ def main(
     )
 
     # Gradient spoiling
-    gx_spoil = pp.make_trapezoid(channel='x', area=0.2 * n_x * delta_k, system=system)
+    gx_spoil = pp.make_trapezoid(channel='x', area=0.2 * n_x * delta_kx, system=system)
 
     # Calculate timing
     te = (
@@ -186,7 +188,7 @@ def main(
         plt.plot(gw[0][0], gw[0][1], gw[1][0], gw[1][1], gw[2][0], gw[2][1])
         plt.show()
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness])
     seq.set_definition(key='Name', value='ute')
 
     if write_seq:

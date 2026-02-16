@@ -52,7 +52,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'gre_pypulseq.seq',
     *,
-    fov: float = 256e-3,
+    fov: float | tuple[float, float] = 256e-3,
     n_x: int = 64,
     n_y: int = 64,
     flip_angle_deg: float = 10,
@@ -80,8 +80,9 @@ the return value:
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'gre_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 256e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 256e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     ...
@@ -145,7 +146,9 @@ if __name__ == '__main__':
 | `gx_spoil` | Readout spoiler gradient |
 | `gz_spoil` | Slice spoiler gradient |
 | `adc` | ADC readout event |
-| `delta_k` | k-space step size (`1 / fov`) |
+| `delta_kx` | k-space step size in readout direction (`1 / fov_x`) |
+| `delta_ky` | k-space step size in phase encoding direction (`1 / fov_y`) |
+| `delta_kz` | k-space step size in partition/slice direction (`1 / fov_z`, 3D only) |
 | `phase_areas` | Array of phase encoding areas |
 
 ### Derived / Timing Variables
@@ -171,6 +174,51 @@ Variables related to a timing parameter should start with that parameter's name:
 | `i_echo` | Echo loop index |
 | `i_excitation` | Excitation loop index |
 | `i_partition` | Partition (3D) loop index |
+
+---
+
+## Field of View and k-Space Steps
+
+The `fov` parameter uses:
+
+- **2D sequences**: `float | tuple[float, float]` — a single float for isotropic
+  in-plane FOV, or a 2-tuple `(fov_x, fov_y)`. Slice thickness remains a separate
+  parameter.
+- **3D sequences**: `float | tuple[float, float, float]` — a single float for
+  isotropic FOV, or a 3-tuple `(fov_x, fov_y, fov_z)`. No separate `fov_z`
+  parameter.
+
+At the start of the function body, unpack into explicit variables:
+
+```python
+# 2D sequences:
+fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
+
+# 3D sequences:
+fov_x, fov_y, fov_z = (fov, fov, fov) if isinstance(fov, (int, float)) else fov
+```
+
+Always use **dimension-specific k-space step variables**:
+
+```python
+delta_kx = 1 / fov_x
+delta_ky = 1 / fov_y
+# For 3D sequences:
+delta_kz = 1 / fov_z
+```
+
+Use `delta_kx` for readout-related areas (e.g., `n_x * delta_kx`, spoiler areas)
+and `delta_ky` for phase encoding areas (e.g., `phase_areas`, blip areas).
+Never use a single `delta_k` for both dimensions.
+
+The FOV definition should use the unpacked values:
+
+```python
+# 2D sequences:
+seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness])
+# 3D sequences:
+seq.set_definition(key='FOV', value=[fov_x, fov_y, fov_z])
+```
 
 ---
 

@@ -14,7 +14,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'epi_se_rs_pypulseq.seq',
     *,
-    fov: float = 250e-3,
+    fov: float | tuple[float, float] = 250e-3,
     n_x: int = 64,
     n_y: int = 64,
     slice_thickness: float = 3e-3,
@@ -33,8 +33,9 @@ def main(
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'epi_se_rs_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 250e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 250e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     n_y : int, optional
@@ -51,6 +52,7 @@ def main(
     seq : pypulseq.Sequence
         The EPI sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
     pe_enable = 1  # Flag to quickly disable phase encoding (1/0) as needed for the delay calibration
     readout_oversampling = 1
     readout_time = 4.2e-4
@@ -143,15 +145,16 @@ def main(
     trig = pp.make_digital_output_pulse(channel='osc0', duration=100e-6)
 
     # Define other gradients and ADC events
-    delta_k = 1 / fov
-    k_width = n_x * delta_k
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    k_width = n_x * delta_kx
 
     # Phase blip in shortest possible time
     # Round up the duration to 2x gradient raster time
-    blip_duration = 2 * np.sqrt(delta_k / system.max_slew)
+    blip_duration = 2 * np.sqrt(delta_ky / system.max_slew)
     blip_duration = np.ceil(blip_duration / 10e-6 / 2) * 10e-6 * 2
     # Use negative blips to save one k-space line on our way to center of k-space
-    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_k, duration=blip_duration)
+    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_ky, duration=blip_duration)
 
     # Readout gradient is a truncated trapezoid with dead times at the beginning and at the end each equal to a half of
     # blip duration. The area between the blips should be defined by k_width. We do a two-step calculation: we first
@@ -172,7 +175,7 @@ def main(
     # Calculate ADC
     # We use ramp sampling, so we have to calculate the dwell time and the number of samples, which will be quite
     # different from Nx and readout_time/Nx, respectively.
-    adc_dwell_nyquist = delta_k / gx.amplitude / readout_oversampling
+    adc_dwell_nyquist = delta_kx / gx.amplitude / readout_oversampling
     # Round-down dwell time to 100 ns
     adc_dwell = np.floor(adc_dwell_nyquist * 1e7) * 1e-7
     # Number of samples on Siemens needs to be divisible by 4
@@ -206,7 +209,7 @@ def main(
 
     # Pre-phasing gradients
     gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2)
-    gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y_pre * delta_k)
+    gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y_pre * delta_ky)
 
     gx_pre, gy_pre = pp.align(right=gx_pre, left=gy_pre)
     # Relax the PE prephaser to reduce stimulation
@@ -265,7 +268,7 @@ def main(
     if plot:
         seq.plot()
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='epi_se_rs')
 
     if write_seq:

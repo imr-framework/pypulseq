@@ -9,7 +9,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'gre_radial_pypulseq.seq',
     *,
-    fov: float = 260e-3,
+    fov: float | tuple[float, float] = 260e-3,
     n_x: int = 64,
     flip_angle_deg: float = 10,
     slice_thickness: float = 3e-3,
@@ -30,8 +30,9 @@ def main(
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'gre_radial_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 260e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 260e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     flip_angle_deg : float, optional
@@ -52,6 +53,7 @@ def main(
     seq : pypulseq.Sequence
         The radial GRE sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
     spoke_angle_increment = np.pi / n_spokes
     rf_spoiling_inc = 117
 
@@ -82,14 +84,14 @@ def main(
     )
 
     # Define other gradients and ADC events
-    delta_k = 1 / fov
-    gx = pp.make_trapezoid(channel='x', flat_area=n_x * delta_k, flat_time=6.4e-3 / 5, system=system)
+    delta_kx = 1 / fov_x
+    gx = pp.make_trapezoid(channel='x', flat_area=n_x * delta_kx, flat_time=6.4e-3 / 5, system=system)
     adc = pp.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time, system=system)
-    gx_pre = pp.make_trapezoid(channel='x', area=-gx.area / 2 - delta_k / 2, duration=2e-3, system=system)
+    gx_pre = pp.make_trapezoid(channel='x', area=-gx.area / 2 - delta_kx / 2, duration=2e-3, system=system)
     gz_reph = pp.make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=system)
 
     # Gradient spoiling
-    gx_spoil = pp.make_trapezoid(channel='x', area=0.5 * n_x * delta_k, system=system)
+    gx_spoil = pp.make_trapezoid(channel='x', area=0.5 * n_x * delta_kx, system=system)
     gz_spoil = pp.make_trapezoid(channel='z', area=4 / slice_thickness, system=system)
 
     # Calculate timing
@@ -133,7 +135,7 @@ def main(
     if plot:
         seq.plot()
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness])
     seq.set_definition(key='Name', value='gre_rad')
 
     if write_seq:

@@ -12,7 +12,7 @@ def main(
     n_x: int = 128,
     n_y: int = 128,
     n_slices: int = 3,
-    fov: float = 220e-3,
+    fov: float | tuple[float, float] = 220e-3,
     slice_thickness: float = 5e-3,
     slice_gap: float = 15e-3,
     te: float = 13e-3,
@@ -37,8 +37,9 @@ def main(
         Number of phase encoding steps. Default is 128.
     n_slices : int, optional
         Number of slices. Default is 3.
-    fov : float, optional
-        Field of view in meters. Default is 220e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 220e-3.
     slice_thickness : float, optional
         Slice thickness in meters. Default is 5e-3.
     slice_gap : float, optional
@@ -55,6 +56,8 @@ def main(
     seq : pypulseq.Sequence
         The 2D MPRAGE sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
+
     # Set system limits
     system = pp.Opts(
         max_grad=32,
@@ -92,14 +95,15 @@ def main(
     )
 
     # Readout
-    delta_k = 1 / fov
-    k_width = n_x * delta_k
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    k_width = n_x * delta_kx
     readout_time = 6.4e-3
     gx = pp.make_trapezoid(channel='x', system=system, flat_area=k_width, flat_time=readout_time)
     adc = pp.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time)
 
     # Prephase and rephase
-    phase_areas = (np.arange(n_y) - (n_y / 2)) * delta_k
+    phase_areas = (np.arange(n_y) - (n_y / 2)) * delta_ky
     gy_pre = pp.make_trapezoid(channel='y', system=system, area=phase_areas[-1], duration=2e-3)
     gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2, duration=2e-3)
     gz_reph = pp.make_trapezoid(channel='z', system=system, area=-gz.area / 2, duration=2e-3)
@@ -149,7 +153,7 @@ def main(
     if plot:
         seq.plot()
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='2D T1 MPRAGE')
 
     if write_seq:

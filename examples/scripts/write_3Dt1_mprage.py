@@ -12,8 +12,7 @@ def main(
     n_x: int = 256,
     n_y: int = 256,
     n_z: int = 32,
-    fov: float = 256e-3,
-    fov_z: float = 256e-3,
+    fov: float | tuple[float, float, float] = 256e-3,
     te: float = 4e-3,
     ti: float = 140e-3,
     tr: float = 10e-3,
@@ -37,10 +36,9 @@ def main(
         Number of phase encoding steps. Default is 256.
     n_z : int, optional
         Number of partition encoding steps. Default is 32.
-    fov : float, optional
-        Field of view in meters. Default is 256e-3.
-    fov_z : float, optional
-        Field of view in the partition direction in meters. Default is 256e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for all three dimensions.
+        If a tuple, it is (fov_x, fov_y, fov_z). Default is 256e-3.
     te : float, optional
         Echo time in seconds. Default is 4e-3.
     ti : float, optional
@@ -55,6 +53,8 @@ def main(
     seq : pypulseq.Sequence
         The 3D MPRAGE sequence object.
     """
+    fov_x, fov_y, fov_z = (fov, fov, fov) if isinstance(fov, (int, float)) else fov
+
     # Set system limits
     system = pp.Opts(
         max_grad=32,
@@ -85,15 +85,16 @@ def main(
     )
 
     # Readout
-    delta_k = 1 / fov
-    k_width = n_x * delta_k
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    delta_kz = 1 / fov_z
+    k_width = n_x * delta_kx
     readout_time = 3.5e-3
     gx = pp.make_trapezoid(channel='x', system=system, flat_area=k_width, flat_time=readout_time)
     adc = pp.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time)
 
     # Prephase and rephase
-    delta_kz = 1 / fov_z
-    phase_areas = (np.arange(n_y) - (n_y / 2)) * delta_k
+    phase_areas = (np.arange(n_y) - (n_y / 2)) * delta_ky
     slice_areas = (np.arange(n_z) - (n_z / 2)) * delta_kz
 
     gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2, duration=2e-3)
@@ -104,13 +105,13 @@ def main(
     gx_spoil = pp.make_trapezoid(
         channel='x',
         system=system,
-        area=(4 * np.pi) / (42.576e6 * delta_k * 1e-3) * 42.576e6,
+        area=(4 * np.pi) / (42.576e6 * delta_kx * 1e-3) * 42.576e6,
         duration=pre_time * 6,
     )
     gy_spoil = pp.make_trapezoid(
         channel='y',
         system=system,
-        area=(4 * np.pi) / (42.576e6 * delta_k * 1e-3) * 42.576e6,
+        area=(4 * np.pi) / (42.576e6 * delta_ky * 1e-3) * 42.576e6,
         duration=pre_time * 6,
     )
     gz_spoil = pp.make_trapezoid(
@@ -177,7 +178,7 @@ def main(
     if plot:
         seq.plot(time_range=(0, ti + tr + 2e-3))
 
-    seq.set_definition(key='FOV', value=[fov, fov, fov_z])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, fov_z])
     seq.set_definition(key='Name', value='3D T1 MPRAGE')
 
     if write_seq:

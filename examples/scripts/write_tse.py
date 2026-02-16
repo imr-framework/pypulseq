@@ -11,7 +11,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'tse_pypulseq.seq',
     *,
-    fov: float = 256e-3,
+    fov: float | tuple[float, float] = 256e-3,
     n_x: int = 64,
     n_y: int = 64,
     n_echo: int = 16,
@@ -33,8 +33,9 @@ def main(
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'tse_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 256e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 256e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     n_y : int, optional
@@ -57,6 +58,7 @@ def main(
     seq : pypulseq.Sequence
         The TSE sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
     dG = 250e-6
 
     # Set system limits
@@ -142,8 +144,9 @@ def main(
     )
     gs_spex = pp.make_trapezoid(channel='z', system=system, area=ags_ex * fsp_s, duration=t_spex, rise_time=dG)
 
-    delta_k = 1 / fov
-    k_width = n_x * delta_k
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    k_width = n_x * delta_kx
 
     gr_acq = pp.make_trapezoid(
         channel='x',
@@ -171,7 +174,7 @@ def main(
     if divmod(n_echo, 2)[1] == 0:
         pe_steps = np.roll(pe_steps, [0, int(-np.round(n_ex / 2))])
     pe_order = pe_steps.reshape((n_ex, n_echo), order='F').T
-    phase_areas = pe_order * delta_k
+    phase_areas = pe_order * delta_ky
 
     # Split gradients and recombine into blocks
     gs1_times = np.array([0, gs_ex.rise_time])
@@ -320,7 +323,7 @@ def main(
     if plot:
         seq.plot()
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='tse')
 
     if write_seq:

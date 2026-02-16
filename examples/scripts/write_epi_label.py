@@ -15,7 +15,7 @@ def main(
     write_seq: bool = False,
     seq_filename: str = 'epi_label_pypulseq.seq',
     *,
-    fov: float = 220e-3,
+    fov: float | tuple[float, float] = 220e-3,
     n_x: int = 64,
     n_y: int = 64,
     slice_thickness: float = 3e-3,
@@ -35,8 +35,9 @@ def main(
         Write the sequence to a .seq file. Default is False.
     seq_filename : str, optional
         Output filename for the .seq file. Default is 'epi_label_pypulseq.seq'.
-    fov : float, optional
-        Field of view in meters. Default is 220e-3.
+    fov : float or tuple of float, optional
+        Field of view in meters. If a single value, it is used for both x and y.
+        If a tuple, it is (fov_x, fov_y). Default is 220e-3.
     n_x : int, optional
         Number of readout samples. Default is 64.
     n_y : int, optional
@@ -55,6 +56,8 @@ def main(
     seq : pypulseq.Sequence
         The EPI sequence object.
     """
+    fov_x, fov_y = (fov, fov) if isinstance(fov, (int, float)) else fov
+
     # Set system limits
     system = pp.Opts(
         max_grad=32,
@@ -84,8 +87,9 @@ def main(
     trig = pp.make_trigger(channel='physio1', duration=2000e-6)
 
     # Define other gradients and ADC events
-    delta_k = 1 / fov
-    k_width = n_x * delta_k
+    delta_kx = 1 / fov_x
+    delta_ky = 1 / fov_y
+    k_width = n_x * delta_kx
     adc_dwell = 4e-6
     adc_duration = n_x * adc_dwell
     gx_flat_time = adc_duration
@@ -106,14 +110,14 @@ def main(
     pre_time = 8e-4
     gx_pre = pp.make_trapezoid(channel='x', system=system, area=-gx.area / 2, duration=pre_time)
     gz_reph = pp.make_trapezoid(channel='z', system=system, area=-gz.area / 2, duration=pre_time)
-    gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y / 2 * delta_k, duration=pre_time)
+    gy_pre = pp.make_trapezoid(channel='y', system=system, area=n_y / 2 * delta_ky, duration=pre_time)
 
     # Phase blip in the shortest possible time
-    gy_blip_duration = 2 * np.sqrt(delta_k / system.max_slew)
+    gy_blip_duration = 2 * np.sqrt(delta_ky / system.max_slew)
     gy_blip_duration = np.ceil(gy_blip_duration / 10e-6) * 10e-6
-    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_k, duration=gy_blip_duration)
+    gy = pp.make_trapezoid(channel='y', system=system, area=-delta_ky, duration=gy_blip_duration)
 
-    gz_spoil = pp.make_trapezoid(channel='z', system=system, area=delta_k * n_x * 4)
+    gz_spoil = pp.make_trapezoid(channel='z', system=system, area=delta_kx * n_x * 4)
 
     # Loop over repetitions and slices
     for _i_rep in range(n_reps):
@@ -184,7 +188,7 @@ def main(
     if plot:
         seq.plot(time_range=(0, 0.1), time_disp='ms', label='SEG, LIN, SLC')
 
-    seq.set_definition(key='FOV', value=[fov, fov, slice_thickness * n_slices])
+    seq.set_definition(key='FOV', value=[fov_x, fov_y, slice_thickness * n_slices])
     seq.set_definition(key='Name', value='epi_lbl')
 
     if write_seq:
