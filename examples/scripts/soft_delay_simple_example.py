@@ -6,7 +6,7 @@ without recompiling the sequence. Soft delays are useful for optimizing timing
 parameters like TE, TR, or other delays at the scanner.
 """
 
-import math
+import numpy as np
 
 import pypulseq as pp
 
@@ -103,7 +103,7 @@ def main():
     seq_realistic = pp.Sequence()
 
     # RF pulse
-    rf_pulse = pp.make_block_pulse(flip_angle=30 * math.pi / 180, duration=1e-3)
+    rf_pulse = pp.make_block_pulse(flip_angle=np.deg2rad(30), duration=1e-3)
 
     # Gradients
     gx_readout = pp.make_trapezoid('x', area=1000, duration=5e-3)
