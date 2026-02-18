@@ -25,7 +25,7 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence import block
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 from pypulseq.Sequence.calc_pns import calc_pns
-from pypulseq.Sequence.ext_test_report import ext_test_report, ext_test_report_data, ext_test_report_old
+from pypulseq.Sequence.ext_test_report import ext_test_report, ext_test_report_data
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
@@ -1535,17 +1535,10 @@ class Sequence:
                     f'Available soft delays: {available_hints if available_hints else "none"}'
                 )
 
-    def test_report(self, old: bool = False) -> str:
+    def test_report(self) -> str:
         """
         Analyze the sequence and return a text report.
-
-        Parameters
-        ----------
-        old : bool, optional
-            If True, use the old implementation. Default is False.
         """
-        if old:
-            return ext_test_report_old(self)
         return ext_test_report(self)
 
     def test_report_dict(self) -> dict:
