@@ -15,6 +15,16 @@ repos:
         exclude: ^.vscode/
       - id: mixed-line-ending
 
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.9.0
+    hooks:
+    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    # also clean any kernel information left after execution
+    - id: nbstripout
+      name: clean .ipynb output
+      args: [--extra-keys, "metadata.language_info"]
+      files: examples/.*\.ipynb$
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.14
     hooks:
