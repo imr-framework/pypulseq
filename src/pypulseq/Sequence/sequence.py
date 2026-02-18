@@ -89,6 +89,8 @@ class Sequence:
         self.set_definition('BlockDurationRaster', self.block_duration_raster)
         self.set_definition('GradientRasterTime', self.grad_raster_time)
         self.set_definition('RadiofrequencyRasterTime', self.rf_raster_time)
+        self.grad_check_data_prev = SimpleNamespace(valid_for_block_num=0, last_grad_vals=[0, 0, 0])
+        self.grad_check_data_next = SimpleNamespace(valid_for_block_num=0, first_grad_vals=[0, 0, 0])
         self.signature_type = ''
         self.signature_file = ''
         self.signature_value = ''
@@ -736,7 +738,7 @@ class Sequence:
         else:
             return ''
 
-    def get_extension_type_ID(self, extension_string: str) -> int:
+    def get_extension_type_ID(self, extension_string: str, update: bool = True) -> int:
         """
         Get numeric extension ID for `extension_string`. Will automatically create a new ID if unknown.
 
@@ -744,6 +746,8 @@ class Sequence:
         ----------
         extension_string : str
             Given string extension ID.
+        update : bool, default=True
+            If string is not found and update is true, update extension map.
 
         Returns
         -------
@@ -757,9 +761,11 @@ class Sequence:
             else:
                 extension_id = 1 + max(self.extension_numeric_idx)
 
-            self.extension_numeric_idx.append(extension_id)
-            self.extension_string_idx.append(extension_string)
-            assert len(self.extension_numeric_idx) == len(self.extension_string_idx)
+            if update:
+                self.extension_numeric_idx.append(extension_id)
+                self.extension_string_idx.append(extension_string)
+                if len(self.extension_numeric_idx) != len(self.extension_string_idx):
+                    raise ValueError('Length of extension numeric ID and extension string do not match')
         else:
             num = self.extension_string_idx.index(extension_string)
             extension_id = self.extension_numeric_idx[num]
