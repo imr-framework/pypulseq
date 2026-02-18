@@ -9,7 +9,9 @@ revision 0
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
+FOV 0.25 0.25 0.009 
 GradientRasterTime 1e-05 
+Name epi_se_rs 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 0.21735 
 
@@ -10336,4 +10338,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 7754f3ee61085517dc7839965fb2b3fd
+Hash c313148f55ea9f3c049716cc3f36f857

@@ -253,8 +253,45 @@ def seq6():
     return seq
 
 
+# Dummy seq ending with [TRAP] section
+def seq_trap_only():
+    seq = Sequence()
+    seq.add_block(pp.make_trapezoid('x', area=1000))
+
+    return seq
+
+
+# Dummy seq ending with [ADC] section
+def seq_adc_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=100, duration=10e-3))
+
+    return seq
+
+
+# Dummy seq ending with [EXTENSION] section
+def seq_ext_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=1000, duration=1e-3), pp.make_label(label='NOISE', type='SET', value=True))
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
+sequence_zoo = [
+    seq_make_gauss_pulses,
+    seq_make_sinc_pulses,
+    seq_make_block_pulses,
+    seq1,
+    seq2,
+    seq3,
+    seq4,
+    seq5,
+    seq6,
+    seq_trap_only,
+    seq_adc_only,
+    seq_ext_only,
+]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
@@ -408,6 +445,24 @@ class TestSequence:
 
         for label in labels_seq:
             assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+
+    def test_writeread_no_signature(self, seq_func, tmp_path):
+        seq_name = str(seq_func.__name__)
+        output_filename = tmp_path / (seq_name + '.seq')
+
+        seq = TestSequence.seq
+
+        # Write sequence to file
+        seq.write(output_filename, create_signature=False)
+
+        # Read written sequence file back in
+        seq2 = pp.Sequence(system=seq.system)
+        seq2.read(output_filename)
+
+        # Clean up written sequence file
+        output_filename.unlink()
+
+        assert len(seq2.block_events) == len(seq.block_events)
 
     def test_writeread_v141(self, seq_func, tmp_path):
         if seq_func.__name__ not in ['seq6', 'write_gre_label_softdelay']:  # soft delay not supported in v141

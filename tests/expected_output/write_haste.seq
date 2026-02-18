@@ -9,7 +9,9 @@ revision 0
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
+FOV 0.256 0.256 0.005 
 GradientRasterTime 1e-05 
+Name haste 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 7 
 
@@ -4906,4 +4908,4 @@ num_samples 4
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash af032808145852407caf689951a9cd32
+Hash af1aa71a230df0962aea471834c855ed
