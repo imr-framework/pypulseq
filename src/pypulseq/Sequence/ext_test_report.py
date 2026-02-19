@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 import numpy as np
 
@@ -271,17 +271,17 @@ def ext_test_report_str(data: Dict[str, Any]) -> str:
     gs_converted = data['max_slew_rate']['per_channel_T_m_s']
 
     report = (
-        f"Number of blocks: {data['num_blocks']}\n"
+        f'Number of blocks: {data["num_blocks"]}\n'
         f'Number of events:\n'
-        f"RF: {event_count['rf']:6.0f}\n"
-        f"Gx: {event_count['gx']:6.0f}\n"
-        f"Gy: {event_count['gy']:6.0f}\n"
-        f"Gz: {event_count['gz']:6.0f}\n"
-        f"ADC: {event_count['adc']:6.0f}\n"
-        f"Delay: {event_count['delay']:6.0f}\n"
-        f"Sequence duration: {data['duration']:.6f} s\n"
-        f"TE: {data['TE']:.6f} s\n"
-        f"TR: {data['TR']:.6f} s\n"
+        f'RF: {event_count["rf"]:6.0f}\n'
+        f'Gx: {event_count["gx"]:6.0f}\n'
+        f'Gy: {event_count["gy"]:6.0f}\n'
+        f'Gz: {event_count["gz"]:6.0f}\n'
+        f'ADC: {event_count["adc"]:6.0f}\n'
+        f'Delay: {event_count["delay"]:6.0f}\n'
+        f'Sequence duration: {data["duration"]:.6f} s\n'
+        f'TE: {data["TE"]:.6f} s\n'
+        f'TR: {data["TR"]:.6f} s\n'
     )
     report += 'Flip angle: ' + ('{:.02f} ' * len(flip_angles_deg)).format(*flip_angles_deg) + 'deg\n'
     report += (
@@ -293,11 +293,11 @@ def ext_test_report_str(data: Dict[str, Any]) -> str:
     if 'dimensions' in data:
         k_extent = data['spatial_resolution_mm']
         repetitions = data['repetitions']
-        report += f"Dimensions: {data['dimensions']}\n"
+        report += f'Dimensions: {data["dimensions"]}\n'
         report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*k_extent)
         report += (
-            f"Repetitions/slices/contrasts: {repetitions['median']}; "
-            f"range: [{repetitions['min']}, {repetitions['max']}]\n"
+            f'Repetitions/slices/contrasts: {repetitions["median"]}; '
+            f'range: [{repetitions["min"]}, {repetitions["max"]}]\n'
         )
 
         if data['is_cartesian']:
@@ -321,12 +321,12 @@ def ext_test_report_str(data: Dict[str, Any]) -> str:
     )
 
     report += (
-        f"Max absolute gradient: {data['max_gradient']['absolute_Hz_m']:.0f} Hz/m == "
-        f"{data['max_gradient']['absolute_mT_m']:.2f} mT/m\n"
+        f'Max absolute gradient: {data["max_gradient"]["absolute_Hz_m"]:.0f} Hz/m == '
+        f'{data["max_gradient"]["absolute_mT_m"]:.2f} mT/m\n'
     )
     report += (
-        f"Max absolute slew rate: {data['max_slew_rate']['absolute_Hz_m_s']:g} Hz/m/s == "
-        f"{data['max_slew_rate']['absolute_T_m_s']:.2f} T/m/s"
+        f'Max absolute slew rate: {data["max_slew_rate"]["absolute_Hz_m_s"]:g} Hz/m/s == '
+        f'{data["max_slew_rate"]["absolute_T_m_s"]:.2f} T/m/s'
     )
 
     timing_error_report = data['timing_error_report']
@@ -355,4 +355,3 @@ def ext_test_report(self) -> str:
     """
     data = ext_test_report_data(self)
     return ext_test_report_str(data)
-
