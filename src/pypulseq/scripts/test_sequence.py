@@ -1,7 +1,9 @@
 import argparse
+
 import matplotlib.pyplot as plt
 
 from pypulseq import Sequence
+
 
 def main():
     """
@@ -28,7 +30,7 @@ def main():
     args = argparser.parse_args()
 
     if not (args.k_space or args.plot or args.report):
-        print("No action specified. Use --k-space, --plot, or --report.")
+        print('No action specified. Use --k-space, --plot, or --report.')
         return
 
     seq = Sequence()
@@ -51,5 +53,6 @@ def main():
     if args.k_space or args.plot:
         plt.show()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
