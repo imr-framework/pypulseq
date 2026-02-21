@@ -41,7 +41,7 @@ def main():
         seq.plot(plot_now=False)
 
     if args.k_space:
-        k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc = seq.calculate_kspace()
+        k_traj_adc, k_traj, *_ = seq.calculate_kspace()
         plt.figure()
         plt.plot(k_traj[1], k_traj[2])
         plt.plot(k_traj_adc[1], k_traj_adc[2], '.', alpha=0.5)
