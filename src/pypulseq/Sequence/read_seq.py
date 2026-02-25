@@ -681,14 +681,19 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
         tok = line.split(' ')
         shape_id = int(tok[1])
         line = __skip_comments(input_file)
+        if line == -1:
+            break
         tok = line.split(' ')
         num_samples = int(tok[1])
         data = []
         line = __skip_comments(input_file)
-        while line != '' and line != '#':
+        while line != -1 and line != '' and line != '#':
             data.append(float(line))
             line = __strip_line(input_file)
-        line = __skip_comments(input_file, stop_before_section=True)
+
+        eof_reached = line == -1
+        if not eof_reached:
+            line = __skip_comments(input_file, stop_before_section=True)
 
         # Check if conversion is needed: in v1.4.x we use length(data)==num_samples
         # As a marker for the uncompressed (stored) data. In older versions this condition could occur by chance
@@ -702,6 +707,9 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
             data.insert(0, num_samples)
             data = np.asarray(data)
         shape_library.insert(key_id=shape_id, new_data=data)
+
+        if eof_reached:
+            break
     return shape_library
 
 
