@@ -1146,7 +1146,7 @@ class Sequence:
 
     def register_soft_delay_event(self, event: SimpleNamespace) -> int:
         return block.register_soft_delay_event(self, event)
-    
+
     def register_rf_shim_event(self, event: SimpleNamespace) -> int:
         return block.register_rf_shim_event(self, event)
 
