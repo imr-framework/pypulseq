@@ -1,5 +1,6 @@
-import pypulseq as pp
 import pulserver.core.Sequence as pseq
+
+import pypulseq as pp
 
 do_plot = True
 
@@ -18,33 +19,32 @@ system = pp.Opts(
     block_duration_raster=4e-6,
 )
 
-#%% bSSFP (TR: 7ms)
+# %% bSSFP (TR: 7ms)
 seq0 = pp.Sequence(system)
 seq0.read('./bssfp.seq')
 seq = pseq.PulserverSequence(seq0)
 pns = pseq.get_pns(seq, chronaxie_us=360.0, rheobase=20.0, alpha=0.333, do_plot=True)
 
-#%% GRE (TR: 12ms)
+# %% GRE (TR: 12ms)
 seq0 = pp.Sequence(system)
 seq0.read('./gre.seq')
 seq = pseq.PulserverSequence(seq0)
 pns = pseq.get_pns(seq, chronaxie_us=360.0, rheobase=20.0, alpha=0.333, do_plot=True)
 
-#%% HASTE (16ms esp)
+# %% HASTE (16ms esp)
 seq0 = pp.Sequence(system)
 seq0.read('./haste.seq')
 seq = pseq.PulserverSequence(seq0)
 pns = pseq.get_pns(seq, chronaxie_us=360.0, rheobase=20.0, alpha=0.333, do_plot=True)
 
-#%% EPI (640us esp)
+# %% EPI (640us esp)
 seq0 = pp.Sequence(system)
 seq0.read('./epi.seq')
 seq = pseq.PulserverSequence(seq0)
 pns = pseq.get_pns(seq, chronaxie_us=360.0, rheobase=20.0, alpha=0.333, do_plot=True)
 
-#%% MPRAGE (10s TR)
+# %% MPRAGE (10s TR)
 seq0 = pp.Sequence(system)
 seq0.read('./mprage.seq')
 seq = pseq.PulserverSequence(seq0)
 pns = pseq.get_pns(seq, chronaxie_us=360.0, rheobase=20.0, alpha=0.333, do_plot=True)
-

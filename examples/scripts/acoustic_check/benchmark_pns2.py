@@ -1,13 +1,12 @@
-
 import os
-import psutil
 import threading
 import time
-
 from pathlib import Path
 
-import pypulseq as pp
+import psutil
 import pulserver.core.Sequence as pseq
+
+import pypulseq as pp
 
 # Set system limits
 SYSTEM = pp.Opts(
@@ -45,10 +44,11 @@ class MemorySampler(threading.Thread):
     def stop(self):
         self._running = False
 
+
 def profile_pns(
     name,
     seqfile,
-    report_file="pns_profile_report.txt",
+    report_file='pns_profile_report.txt',
     sample_interval=0.01,
 ):
     process = psutil.Process(os.getpid())
@@ -80,14 +80,14 @@ def profile_pns(
     # Convert to MB
     mb = 1024**2
     report = (
-        f"Sequence: {name}\n"
-        f"File: {seqfile}\n"
-        f"Runtime: {runtime:.3f} s\n"
-        f"RSS before: {mem_before/mb:.2f} MB\n"
-        f"RSS peak:   {mem_peak/mb:.2f} MB\n"
-        f"RSS after:  {mem_after/mb:.2f} MB\n"
-        f"Peak delta: {(mem_peak - mem_before)/mb:+.2f} MB\n"
-        f"{'-'*40}\n"
+        f'Sequence: {name}\n'
+        f'File: {seqfile}\n'
+        f'Runtime: {runtime:.3f} s\n'
+        f'RSS before: {mem_before / mb:.2f} MB\n'
+        f'RSS peak:   {mem_peak / mb:.2f} MB\n'
+        f'RSS after:  {mem_after / mb:.2f} MB\n'
+        f'Peak delta: {(mem_peak - mem_before) / mb:+.2f} MB\n'
+        f'{"-" * 40}\n'
     )
 
     # Print
@@ -102,9 +102,10 @@ def profile_pns(
 
     return pns
 
+
 if __name__ == '__main__':
-    profile_pns("bSSFP (TR 7 ms)", "./bssfp.seq")
-    profile_pns("GRE (TR 12 ms)", "./gre.seq")
-    profile_pns("HASTE (ESP 16 ms)", "./haste.seq")
-    profile_pns("EPI (ESP 640 µs)", "./epi.seq")
-    profile_pns("MPRAGE (TR 10 s)", "./mprage.seq")
+    profile_pns('bSSFP (TR 7 ms)', './bssfp.seq')
+    profile_pns('GRE (TR 12 ms)', './gre.seq')
+    profile_pns('HASTE (ESP 16 ms)', './haste.seq')
+    profile_pns('EPI (ESP 640 µs)', './epi.seq')
+    profile_pns('MPRAGE (TR 10 s)', './mprage.seq')

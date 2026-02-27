@@ -1,13 +1,12 @@
-
 import os
-import psutil
 import threading
 import time
-
 from pathlib import Path
 
-import pypulseq as pp
+import psutil
 import pulserver.core.Sequence as pseq
+
+import pypulseq as pp
 
 # Set system limits
 SYSTEM = pp.Opts(
@@ -45,10 +44,11 @@ class MemorySampler(threading.Thread):
     def stop(self):
         self._running = False
 
+
 def profile_spectrum(
     name,
     seqfile,
-    report_file="acoustic_profile_report.txt",
+    report_file='acoustic_profile_report.txt',
     sample_interval=0.01,
 ):
     process = psutil.Process(os.getpid())
@@ -80,14 +80,14 @@ def profile_spectrum(
     # Convert to MB
     mb = 1024**2
     report = (
-        f"Sequence: {name}\n"
-        f"File: {seqfile}\n"
-        f"Runtime: {runtime:.3f} s\n"
-        f"RSS before: {mem_before/mb:.2f} MB\n"
-        f"RSS peak:   {mem_peak/mb:.2f} MB\n"
-        f"RSS after:  {mem_after/mb:.2f} MB\n"
-        f"Peak delta: {(mem_peak - mem_before)/mb:+.2f} MB\n"
-        f"{'-'*40}\n"
+        f'Sequence: {name}\n'
+        f'File: {seqfile}\n'
+        f'Runtime: {runtime:.3f} s\n'
+        f'RSS before: {mem_before / mb:.2f} MB\n'
+        f'RSS peak:   {mem_peak / mb:.2f} MB\n'
+        f'RSS after:  {mem_after / mb:.2f} MB\n'
+        f'Peak delta: {(mem_peak - mem_before) / mb:+.2f} MB\n'
+        f'{"-" * 40}\n'
     )
 
     # Print
@@ -102,9 +102,10 @@ def profile_spectrum(
 
     return spec
 
+
 if __name__ == '__main__':
-    profile_spectrum("bSSFP (TR 7 ms)", "./bssfp.seq")
-    profile_spectrum("GRE (TR 12 ms)", "./gre.seq")
-    profile_spectrum("HASTE (ESP 16 ms)", "./haste.seq")
-    profile_spectrum("EPI (ESP 640 µs)", "./epi.seq")
-    profile_spectrum("MPRAGE (TR 10 s)", "./mprage.seq")
+    profile_spectrum('bSSFP (TR 7 ms)', './bssfp.seq')
+    profile_spectrum('GRE (TR 12 ms)', './gre.seq')
+    profile_spectrum('HASTE (ESP 16 ms)', './haste.seq')
+    profile_spectrum('EPI (ESP 640 µs)', './epi.seq')
+    profile_spectrum('MPRAGE (TR 10 s)', './mprage.seq')

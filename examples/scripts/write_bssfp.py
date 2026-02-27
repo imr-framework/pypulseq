@@ -66,7 +66,7 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
     # Calculate timing
     delay_TE = 0.0
     delay_TR = 0.0
-    
+
     _gy_pre = pp.make_trapezoid(
         channel='y',
         area=phase_areas[0],
@@ -79,10 +79,10 @@ def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_p
     # CONSTRUCT SEQUENCE
     # ======
     # Loop over phase encodes and define sequence blocks
-    for i in range(Ny):        
-        # Create phase 
+    for i in range(Ny):
+        # Create phase
         gy_pre = pp.scale_grad(_gy_pre, yscale[i])
-        
+
         seq.add_block(rf, gz)
         seq.add_block(gx_pre, gy_pre, gz_reph)
         seq.add_block(gx, adc)
