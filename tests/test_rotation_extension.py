@@ -129,7 +129,7 @@ def test_sequence():
         5,
         0,
         1,
-    )  # last event re-use ROTATION[1] = 90deg rotation about z
+    )  # last event reuse ROTATION[1] = 90deg rotation about z
     npt.assert_allclose(blocks[6], ext)
 
     # verify that the only extension is ROTATIONS (id=1, string=[ROTATIONS])
