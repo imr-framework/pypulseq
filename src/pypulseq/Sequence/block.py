@@ -163,14 +163,6 @@ def set_block(self, block_index: int, *args: Union[SimpleNamespace, float]) -> N
                 duration = max(duration, event.default_duration)
                 ext = {'type': self.get_extension_type_ID('DELAYS'), 'ref': event_id}
                 extensions.append(ext)
-            elif event.type == 'rf_shim':
-                if hasattr(event, 'id'):
-                    event_id = event.id
-                else:
-                    event_id = register_rf_shim_event(self, event)
-
-                ext = {'type': self.get_extension_type_ID('RF_SHIMS'), 'ref': event_id}
-                extensions.append(ext)
             else:
                 raise ValueError(f'Unknown event type {event.type} passed to set_block().')
         else:
