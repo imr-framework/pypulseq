@@ -514,7 +514,7 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
 
         if len(self.rf_shim_library.data) != 0:
             raise RuntimeError(
-                'WARNING! The sequence in memory uses the "rotations" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is likely to be invalid and would probably fail to operate'
+                'WARNING! The sequence in memory uses the "rf shimming" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is likely to be invalid and would probably fail to operate'
             )
 
         if len(self.shape_library.data) != 0:
