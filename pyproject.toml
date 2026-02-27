@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypulseq"
-version = "1.5.0"
+version = "1.5.0.post1"
 authors = [{ name = "Keerthi Sravan Ravi", email = "ks3621@columbia.edu" }]
 maintainers = [
   { name = "Bilal Tasdelen" },
@@ -19,6 +19,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.8"
 classifiers = [
   "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -49,9 +50,6 @@ Documentation = "https://pypulseq.readthedocs.io/en/latest/"
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.package-data]
-"pypulseq.SAR" = ["QGlobal.mat"]
 
 [tool.setuptools.dynamic]
 version = { attr = "version.__version__" }

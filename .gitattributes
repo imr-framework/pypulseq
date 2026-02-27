@@ -1,0 +1,12 @@
+# Auto-detect text files and normalize line endings to LF
+* text=auto
+
+# Force LF for python files
+*.py text eol=lf diff=python
+*.pyi text eol=lf diff=python
+
+# Force LF for Jupyter Notebooks
+*.ipynb text eol=lf
+
+# Force LF for markdown files
+*.md text eol=lf diff=markdown

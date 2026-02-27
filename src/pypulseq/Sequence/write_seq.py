@@ -334,10 +334,12 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
         output_file.write('# Created by PyPulseq\n\n')
 
         output_file.write('[VERSION]\n')
-        output_file.write(f'major {self.version_major}\n')
-        output_file.write(f'minor {self.version_minor}\n')
-        output_file.write(f'revision {self.version_revision}\n')
+        output_file.write('major 1\n')
+        output_file.write('minor 4\n')
+        output_file.write('revision 1\n')
         output_file.write('\n')
+
+        ppm_to_hz = 1e-6 * self.system.gamma * self.system.B0
 
         if len(self.definitions) != 0:
             output_file.write('[DEFINITIONS]\n')
@@ -388,10 +390,11 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             output_file.write('[RF]\n')
             id_format_str = '{:.0f} {:12g} {:.0f} {:.0f} {:.0f} {:g} {:g} {:g}\n'  # Refer lines 20-21
             for k in self.rf_library.data:
-                lib_data1 = self.rf_library.data[k][0:4]
-                lib_data2 = self.rf_library.data[k][5:7]
-                delay = round(self.rf_library.data[k][4] / self.rf_raster_time) * self.rf_raster_time * 1e6
-                s = id_format_str.format(k, *lib_data1, delay, *lib_data2)
+                lib = self.rf_library.data[k]
+                data1 = lib[0:4]
+                data2 = tuple(a + b * ppm_to_hz for a, b in zip(lib[8:10], lib[6:8]))
+                delay = round(lib[5] / self.rf_raster_time) * self.rf_raster_time * 1e6
+                s = id_format_str.format(k, *data1, delay, *data2)
                 output_file.write(s)
             output_file.write('\n')
 
@@ -412,8 +415,9 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             for k in keys[arb_grad_mask]:
                 s = id_format_str.format(
                     k,
-                    *self.grad_library.data[k][:3],
-                    round(self.grad_library.data[k][3] * 1e6),
+                    self.grad_library.data[k][0],
+                    *self.grad_library.data[k][3:5],
+                    round(self.grad_library.data[k][5] * 1e6),
                 )
                 output_file.write(s)
             output_file.write('\n')
@@ -444,8 +448,10 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
             output_file.write('[ADC]\n')
             id_format_str = '{:.0f} {:.0f} {:.0f} {:.0f} {:g} {:g}\n'  # Refer lines 20-21
             for k in self.adc_library.data:
-                data = np.multiply(self.adc_library.data[k][0:5], [1, 1e9, 1e6, 1, 1])
-                s = id_format_str.format(k, *data)
+                lib = self.adc_library.data[k]
+                data1 = (lib[0], lib[1] * 1e9, lib[2] * 1e6)
+                data2 = tuple(a + b * ppm_to_hz for a, b in zip(lib[5:7], lib[3:5]))
+                s = id_format_str.format(k, *data1, *data2)
                 output_file.write(s)
             output_file.write('\n')
 
