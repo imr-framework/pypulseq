@@ -1147,7 +1147,7 @@ class Sequence:
 
     def register_rotation_event(self, event: SimpleNamespace) -> int:
         return block.register_rotation_event(self, event)
-    
+
     def register_soft_delay_event(self, event: SimpleNamespace) -> int:
         return block.register_soft_delay_event(self, event)
 
@@ -1593,7 +1593,7 @@ class Sequence:
 
         for block_counter in blocks:
             block = self.get_block(block_counter)
-            
+
             if hasattr(block, 'rotation'):
                 block = deepcopy(block)
 

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from scipy.spatial.transform import Rotation as R
+
 
 # this is currently not used, but might be useful in the future
 @pytest.fixture
