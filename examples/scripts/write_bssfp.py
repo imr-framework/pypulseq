@@ -1,0 +1,130 @@
+import math
+
+import numpy as np
+
+import pypulseq as pp
+
+
+def main(plot: bool = False, write_seq: bool = False, seq_filename: str = 'gre_pypulseq.seq', paper_plot: bool = False):
+    # ======
+    # SETUP
+    # ======
+    # Create a new sequence object
+    fov = 256e-3  # Define FOV and resolution
+    Nx = 64
+    Ny = 64
+    alpha = 10  # flip angle
+    slice_thickness = 3e-3  # slice
+    TR = 12e-3  # Repetition time
+    TE = 5e-3  # Echo time
+
+    rf_spoiling_inc = 117  # RF spoiling increment
+
+    # Set system limits
+    system = pp.Opts(
+        max_grad=32,
+        grad_unit='mT/m',
+        max_slew=130,
+        slew_unit='T/m/s',
+        rf_ringdown_time=0.0,
+        rf_dead_time=0.0,
+        adc_dead_time=0.0,
+        grad_raster_time=4e-6,
+        rf_raster_time=2e-6,
+        adc_raster_time=2e-6,
+        block_duration_raster=2e-6,
+    )
+
+    seq = pp.Sequence(system)
+
+    # ======
+    # CREATE EVENTS
+    # ======
+    rf, gz, _ = pp.make_sinc_pulse(
+        flip_angle=alpha * math.pi / 180,
+        duration=1e-3,
+        slice_thickness=slice_thickness,
+        apodization=0.42,
+        time_bw_product=4,
+        system=system,
+        return_gz=True,
+        delay=system.rf_dead_time,
+        use='excitation',
+    )
+    # Define other gradients and ADC events
+    delta_k = 1 / fov
+    gx = pp.make_trapezoid(channel='x', flat_area=Nx * delta_k, flat_time=3.2e-3, system=system)
+    adc = pp.make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
+    gx_pre = pp.make_trapezoid(channel='x', area=-gx.area / 2, duration=1e-3, system=system)
+    gz_reph = pp.make_trapezoid(channel='z', area=-gz.area / 2, duration=1e-3, system=system)
+    phase_areas = (np.arange(Ny) - Ny / 2) * delta_k
+
+    # gradient spoiling
+    gx_spoil = pp.make_trapezoid(channel='x', area=2 * Nx * delta_k, system=system)
+    gz_spoil = pp.make_trapezoid(channel='z', area=4 / slice_thickness, system=system)
+
+    # Calculate timing
+    delay_TE = 0.0
+    delay_TR = 0.0
+    
+    _gy_pre = pp.make_trapezoid(
+        channel='y',
+        area=phase_areas[0],
+        duration=pp.calc_duration(gx_pre),
+        system=system,
+    )
+    yscale = phase_areas / phase_areas[0]
+
+    # ======
+    # CONSTRUCT SEQUENCE
+    # ======
+    # Loop over phase encodes and define sequence blocks
+    for i in range(Ny):        
+        # Create phase 
+        gy_pre = pp.scale_grad(_gy_pre, yscale[i])
+        
+        seq.add_block(rf, gz)
+        seq.add_block(gx_pre, gy_pre, gz_reph)
+        seq.add_block(gx, adc)
+        gy_pre.amplitude = -gy_pre.amplitude
+        seq.add_block(gx_pre, gy_pre)
+
+    # Check whether the timing of the sequence is correct
+    ok, error_report = seq.check_timing()
+    if ok:
+        print('Timing check passed successfully')
+    else:
+        print('Timing check failed. Error listing follows:')
+        [print(e) for e in error_report]
+
+    # ======
+    # VISUALIZATION
+    # ======
+    if plot:
+        if paper_plot:
+            seq.paper_plot()
+        else:
+            seq.plot()
+
+    seq.calculate_kspace()
+
+    # Very optional slow step, but useful for testing during development e.g. for the real TE, TR or for staying within
+    # slew-rate limits
+    rep = seq.test_report()
+    print(rep)
+
+    # =========
+    # WRITE .SEQ
+    # =========
+    if write_seq:
+        # Prepare the sequence output for the scanner
+        seq.set_definition(key='FOV', value=[fov, fov, slice_thickness])
+        seq.set_definition(key='Name', value='gre')
+
+        seq.write(seq_filename)
+
+    return seq
+
+
+if __name__ == '__main__':
+    seq = main(plot=False, paper_plot=False, write_seq=False)

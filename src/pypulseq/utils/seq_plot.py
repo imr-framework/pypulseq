@@ -4,12 +4,14 @@ import contextlib
 import itertools
 import math
 import typing
+from copy import deepcopy
 
 import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 
 from pypulseq.calc_rf_center import calc_rf_center
+from pypulseq.rotate3D import rotate3D
 from pypulseq.Sequence import parula
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.utils.cumsum import cumsum
@@ -598,6 +600,18 @@ def _seq_plot(
                     )
 
             grad_channels = ['gx', 'gy', 'gz']
+            if hasattr(block, 'rotation'):
+                block = deepcopy(block)
+
+                # Apply the rotation to the current block and restore the block structure
+                gradients = [getattr(block, ax) for ax in grad_channels if getattr(block, ax) is not None]
+                rotated_gradients = rotate3D(
+                    *gradients, rotation_matrix=block.rotation.rot_quaternion.as_matrix(), system=seq.system
+                )
+                for i in range(3):
+                    setattr(block, grad_channels[i], None)
+                for i in range(len(rotated_gradients)):
+                    setattr(block, f'g{rotated_gradients[i].channel}', rotated_gradients[i])
             for x in range(len(grad_channels)):  # Gradients
                 if getattr(block, grad_channels[x], None) is not None:
                     grad = getattr(block, grad_channels[x])

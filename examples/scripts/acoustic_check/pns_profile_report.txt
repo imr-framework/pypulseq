@@ -1,0 +1,40 @@
+Sequence: bSSFP (TR 7 ms)
+File: ./bssfp.seq
+Runtime: 0.008 s
+RSS before: 275.86 MB
+RSS peak:   275.86 MB
+RSS after:  278.68 MB
+Peak delta: +0.00 MB
+----------------------------------------
+Sequence: GRE (TR 12 ms)
+File: ./gre.seq
+Runtime: 0.008 s
+RSS before: 278.83 MB
+RSS peak:   278.83 MB
+RSS after:  279.14 MB
+Peak delta: +0.00 MB
+----------------------------------------
+Sequence: HASTE (ESP 16 ms)
+File: ./haste.seq
+Runtime: 0.697 s
+RSS before: 279.14 MB
+RSS peak:   448.71 MB
+RSS after:  326.65 MB
+Peak delta: +169.57 MB
+----------------------------------------
+Sequence: EPI (ESP 640 µs)
+File: ./epi.seq
+Runtime: 0.021 s
+RSS before: 279.90 MB
+RSS peak:   284.27 MB
+RSS after:  284.27 MB
+Peak delta: +4.38 MB
+----------------------------------------
+Sequence: MPRAGE (TR 10 s)
+File: ./mprage.seq
+Runtime: 6.324 s
+RSS before: 433.34 MB
+RSS peak:   1294.66 MB
+RSS after:  510.67 MB
+Peak delta: +861.33 MB
+----------------------------------------

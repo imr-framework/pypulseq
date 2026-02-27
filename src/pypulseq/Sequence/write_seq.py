@@ -239,6 +239,16 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
                 s = id_format_str.format(k, data[0], np.round(data[1] * 1e6), data[2], data[3])
                 output_file.write(s)
             output_file.write('\n')
+            
+        if len(self.rotation_library.data) != 0:
+            output_file.write('# Extension specification for rotation events:\n')
+            output_file.write('# id RotQuat0 RotQuatX RotQuatY RotQuatZ\n')
+            output_file.write(f'extension ROTATIONS {self.get_extension_type_ID("ROTATIONS")}\n')
+            id_format_str = '{:.0f} {:12g} {:12g} {:12g} {:12g}\n'  # Refer lines 20-21
+            for k in self.rotation_library.data:
+                s = id_format_str.format(k, *self.rotation_library.data[k])
+                output_file.write(s)
+            output_file.write('\n')
 
         if len(self.shape_library.data) != 0:
             output_file.write('# Sequence Shapes\n')

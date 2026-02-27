@@ -772,6 +772,29 @@ def register_label_event(self, event: SimpleNamespace) -> int:
     return label_id
 
 
+def register_rotation_event(self, event: EventLibrary) -> int:
+    """
+    Parameters
+    ----------
+    event : SimpleNamespace
+        Rotation event to be registered.
+
+    Returns
+    -------
+    int
+        ID of registered rotation event.
+    """
+    data = tuple(event.rot_quaternion.as_quat(canonical=True, scalar_first=True).tolist())
+    rotation_id, found = self.rotation_library.find_or_insert(new_data=data)
+
+    # Clear block cache because Rotation event was overwritten
+    # TODO: Could find only the blocks that are affected by the changes
+    if self.use_block_cache and found:
+        self.block_cache.clear()
+
+    return rotation_id
+
+
 def register_soft_delay_event(self, event: SimpleNamespace) -> int:
     """
     Parameters

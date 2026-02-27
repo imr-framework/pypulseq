@@ -52,6 +52,7 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
     self.rf_library = EventLibrary()
     self.shape_library = EventLibrary()
     self.trigger_library = EventLibrary()
+    self.rotation_library = EventLibrary()
 
     # Raster times
     self.grad_raster_time = self.system.grad_raster_time
@@ -224,6 +225,15 @@ def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplic
                 for d in self.soft_delay_library.data.values():
                     if d[3] not in self.soft_delay_hints:
                         self.soft_delay_hints[d[3]] = d[0]
+            elif section[:19] == 'extension ROTATIONS':
+                extension_id = int(section[19:])
+                self.set_extension_string_ID('ROTATIONS', extension_id)
+                self.rotation_library = __read_events(input_file, (1, 1, 1, 1), event_library=self.rotation_library)
+                for k, v in self.rotation_library.data.items():
+                    v = np.asarray(v)
+                    norm = np.linalg.norm(v)
+                    v = np.divide(v, norm, where=norm > 0)
+                    self.rotation_library.data[k] = tuple(v)
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
