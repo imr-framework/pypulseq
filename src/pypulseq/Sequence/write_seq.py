@@ -510,6 +510,11 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
                 'WARNING! The sequence in memory uses "soft delay" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is only partially valid and may fail to load or operate in some cases.'
             )
 
+        if len(self.rotation_library.data) != 0:
+            raise RuntimeError(
+                'WARNING! The sequence in memory uses the "rotation" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is likely to be invalid and would probably fail to operate'
+            )
+
         if len(self.shape_library.data) != 0:
             output_file.write('# Sequence Shapes\n')
             output_file.write('[SHAPES]\n\n')
