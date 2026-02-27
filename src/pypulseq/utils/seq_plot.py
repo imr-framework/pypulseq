@@ -472,7 +472,7 @@ def _seq_plot(
                         label_store[block.label[i].label] = block.label[i].value
                 label_defined = True
 
-            if getattr(block, 'trigger', None) is not None: # Trigger
+            if getattr(block, 'trigger', None) is not None:  # Trigger
                 for trigger in block.trigger.values():
                     if trigger.type == 'output':
                         t = trigger.delay
