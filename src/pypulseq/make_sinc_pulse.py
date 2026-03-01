@@ -132,13 +132,6 @@ def make_sinc_pulse(
     rf.center = duration * center_pos
     rf.use = use
 
-    if rf.dead_time > rf.delay:
-        warn(
-            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
-            stacklevel=2,
-        )
-        rf.delay = rf.dead_time
-
     if return_gz:
         if slice_thickness == 0:
             raise ValueError('Slice thickness must be provided')
@@ -165,6 +158,15 @@ def make_sinc_pulse(
 
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
+
+    if rf.dead_time > rf.delay:
+        warn(
+            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
+            stacklevel=2,
+        )
+        additional_delay = rf.dead_time - rf.delay
+        gz.delay = gz.delay + additional_delay
+        rf.delay = rf.delay + aditional_delay
 
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
