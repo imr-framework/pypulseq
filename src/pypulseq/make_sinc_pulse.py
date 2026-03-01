@@ -166,7 +166,7 @@ def make_sinc_pulse(
         )
         additional_delay = rf.dead_time - rf.delay
         gz.delay = gz.delay + additional_delay
-        rf.delay = rf.delay + aditional_delay
+        rf.delay = rf.delay + additional_delay
 
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
