@@ -29,6 +29,9 @@ dependencies = [
   "scipy>=1.8.1",
 ]
 
+[project.scripts]
+ppseqtest = "pypulseq.scripts.test_sequence:main"
+
 [project.optional-dependencies]
 sigpy = ["sigpy>=0.1.26"]
 mplcursors = ["mplcursors"]
