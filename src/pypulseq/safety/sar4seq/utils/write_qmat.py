@@ -12,15 +12,15 @@ def _write_uppertri(Qin: np.ndarray, f) -> None:
 
 
 def write_qmat_global(Q: dict, out_path: str) -> None:
-    with open(out_path, "wb") as f:
-        n_coils = int(Q["Qtmf"].shape[0])
+    with open(out_path, 'wb') as f:
+        n_coils = int(Q['Qtmf'].shape[0])
         n_cells = 3
         np.array([n_coils], dtype=np.uint32).tofile(f)
         np.array([n_coils], dtype=np.uint32).tofile(f)
         np.array([n_cells], dtype=np.uint32).tofile(f)
 
-        _write_uppertri(Q["Qtmf"], f)
-        _write_uppertri(Q["Qhmf"], f)
+        _write_uppertri(Q['Qtmf'], f)
+        _write_uppertri(Q['Qhmf'], f)
         # Optional: Qemf
 
 
@@ -29,9 +29,9 @@ def write_qmat_local(Qavg: np.ndarray, Tissue_types: np.ndarray, tri_path: str, 
     flat = Qavg.reshape(M * N * P, n_coils, n_coils)
     S = flat > 0
     ind = np.where(S[:, 3, 3])[0]
-    n_cells = int(len(ind))
+    n_cells = len(ind)
 
-    with open(tri_path, "wb") as tri_f, open(index_path, "wb") as idx_f:
+    with open(tri_path, 'wb') as tri_f, open(index_path, 'wb') as idx_f:
         np.array([n_coils], dtype=np.uint32).tofile(tri_f)
         np.array([n_coils], dtype=np.uint32).tofile(tri_f)
         np.array([n_cells], dtype=np.uint32).tofile(tri_f)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -54,7 +53,7 @@ def parse_legacy_seq(path: str, rf_raster_s: float = 1e-6) -> List[LegacyBlock]:
             # columns: # D RF GX GY GZ ADC
             parts = line.split()
             if len(parts) >= 7:
-                _, D, RF, GX, GY, GZ, ADC = parts[:7]
+                _, D, RF, _GX, _GY, _GZ, _ADC = parts[:7]
                 blocks.append({'D': int(D), 'RF': int(RF)})
         elif sec == 'RF':
             parts = line.split()
@@ -93,11 +92,11 @@ def parse_legacy_seq(path: str, rf_raster_s: float = 1e-6) -> List[LegacyBlock]:
     for b in blocks:
         delay_id = b['D']
         rf_id = b['RF']
-        
+
         # Calculate block duration
         block_duration = 0.0
         rf_block = None
-        
+
         if rf_id != 0 and rf_id in rf_events:
             # RF block
             evt = rf_events[rf_id]
@@ -105,15 +104,15 @@ def parse_legacy_seq(path: str, rf_raster_s: float = 1e-6) -> List[LegacyBlock]:
             rf_duration = ns * rf_raster_s + evt['delay_s']
             rf_block = LegacyRF(signal=complex(evt['amp'], 0.0), num_samples=ns, duration_s=rf_duration)
             block_duration = rf_duration
-        
+
         # Add delay if present (delays can be combined with RF)
         if delay_id != 0 and delay_id in delays:
             block_duration += delays[delay_id]
-        
+
         # If no RF and no delay, estimate minimal block duration
         if block_duration == 0.0:
             block_duration = 10e-6  # 10 microseconds minimal block duration
-        
+
         legacy_blocks.append(LegacyBlock(rf=rf_block, block_duration=block_duration))
 
     return legacy_blocks

@@ -27,12 +27,12 @@ def gen_qpwr(
     Mass_corr = 0.0
     Mass_air = 1.625e-7 + 1e-9
 
-    if sar_type == "global":
-        if anatomy == "wholebody":
+    if sar_type == 'global':
+        if anatomy == 'wholebody':
             R = np.argwhere(Tissue_types > 0)
-        elif anatomy == "head":
+        elif anatomy == 'head':
             R = np.argwhere(Tissue_types == 1)
-        elif anatomy == "torso":
+        elif anatomy == 'torso':
             R = np.argwhere(Tissue_types == 2)
         else:
             R = np.empty((0, 3), dtype=int)
@@ -46,7 +46,7 @@ def gen_qpwr(
             xm, ym, zm = x + 1, y + 1, z + 1
             M = float(Mass_cell[x, y, z])
             chk = chkcubair_global(dim, Mass_cell, Mass_air, xm, ym, zm)
-            if (M > Mass_air) and (chk == 1):
+            if (Mass_air < M) and (chk == 1):
                 Qloc = gen_e12ptq(Ex, Ey, Ez, np.array([xm, ym, zm]), SigmabyRhox)
                 if Qpwr is None:
                     Qpwr = M * Qloc
@@ -56,7 +56,7 @@ def gen_qpwr(
         Qpwr_df = Qpwr if Qpwr is not None else np.zeros((Ex.shape[3], Ex.shape[3]), dtype=np.complex128)
         return Qpwr_df, Tissue_types, SigmabyRhox, Mass_cell, Mass_corr, None
 
-    elif sar_type == "local":
+    elif sar_type == 'local':
         M, N, P = D
         ind = Mass_cell > Mass_air
         ms = np.argwhere(ind)

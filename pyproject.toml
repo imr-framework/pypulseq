@@ -26,6 +26,7 @@ dependencies = [
   "coverage>=6.2",
   "matplotlib>=3.5.2",
   "numpy>=1.19.5",
+  "ruff>=0.15.4",
   "scipy>=1.8.1",
 ]
 

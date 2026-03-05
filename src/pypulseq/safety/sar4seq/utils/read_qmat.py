@@ -4,11 +4,11 @@ import numpy as np
 
 
 def read_qmat(fname: str):
-    fname1 = f"{fname}.qmat"
-    with open(fname1, "rb") as f:
+    fname1 = f'{fname}.qmat'
+    with open(fname1, 'rb') as f:
         header = np.fromfile(f, dtype=np.uint32, count=3)
 
-    with open(fname1, "rb") as f:
+    with open(fname1, 'rb') as f:
         data = np.fromfile(f, dtype=np.float32)
     data = data[4:]
 
@@ -32,14 +32,14 @@ def read_qmat(fname: str):
         Qtmf = upper_to_full(Qtm)
         Qhmf = upper_to_full(Qhm)
         Qemf = upper_to_full(Qem)
-        return {"Qtmf": Qtmf, "Qhmf": Qhmf, "Qemf": Qemf}
+        return {'Qtmf': Qtmf, 'Qhmf': Qhmf, 'Qemf': Qemf}
 
     # Local matrices case
-    index_name = f"{fname}.index"
-    with open(index_name, "rb") as f:
+    index_name = f'{fname}.index'
+    with open(index_name, 'rb') as f:
         data_ind = np.fromfile(f, dtype=np.uint32, count=4)
     dimx, dimy, dimz, n_sar_cells = map(int, data_ind)
-    with open(index_name, "rb") as f:
+    with open(index_name, 'rb') as f:
         data_ind16 = np.fromfile(f, dtype=np.uint16)
 
     index = np.zeros((4, n_sar_cells), dtype=np.uint16)
@@ -60,12 +60,12 @@ def read_qmat(fname: str):
         Qavg[k] = np.triu(mat, 1).T + mat
 
     return {
-        "avg": Qavg,
-        "index": index,
-        "dimx": dimx,
-        "dimy": dimy,
-        "dimz": dimz,
-        "NrOfSarCells": n_sar_cells,
+        'avg': Qavg,
+        'index': index,
+        'dimx': dimx,
+        'dimy': dimy,
+        'dimz': dimz,
+        'NrOfSarCells': n_sar_cells,
     }
 
 
