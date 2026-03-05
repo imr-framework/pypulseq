@@ -240,6 +240,16 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
                 output_file.write(s)
             output_file.write('\n')
 
+        if len(self.rotation_library.data) != 0:
+            output_file.write('# Extension specification for rotation events:\n')
+            output_file.write('# id RotQuat0 RotQuatX RotQuatY RotQuatZ\n')
+            output_file.write(f'extension ROTATIONS {self.get_extension_type_ID("ROTATIONS")}\n')
+            id_format_str = '{:.0f} {:12g} {:12g} {:12g} {:12g}\n'  # Refer lines 20-21
+            for k in self.rotation_library.data:
+                s = id_format_str.format(k, *self.rotation_library.data[k])
+                output_file.write(s)
+            output_file.write('\n')
+
         if len(self.shape_library.data) != 0:
             output_file.write('# Sequence Shapes\n')
             output_file.write('[SHAPES]\n\n')
@@ -498,6 +508,11 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
         if len(self.soft_delay_library.data) != 0:
             warn(
                 'WARNING! The sequence in memory uses "soft delay" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is only partially valid and may fail to load or operate in some cases.'
+            )
+
+        if len(self.rotation_library.data) != 0:
+            raise RuntimeError(
+                'WARNING! The sequence in memory uses the "rotation" extension, which is incompatible with the file format v1.4.1. The produced Pulseq file is likely to be invalid and would probably fail to operate'
             )
 
         if len(self.shape_library.data) != 0:

@@ -52,6 +52,7 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_extended_trapezoid_area import make_extended_trapezoid_area
 from pypulseq.make_gauss_pulse import make_gauss_pulse
 from pypulseq.make_label import make_label
+from pypulseq.make_rotation import make_rotation
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.sigpy_pulse_opts import SigpyPulseOpts

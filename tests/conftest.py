@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation as R
 
 
 # this is currently not used, but might be useful in the future
@@ -38,3 +39,8 @@ def compare_seq_file():
             assert line1 == line2
 
     return compare
+
+
+# Rotation Matrix creation routine
+def get_rotation_matrix(channel, angle):
+    return R.from_euler(channel, angle, degrees=False).as_matrix()
