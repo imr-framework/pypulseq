@@ -129,7 +129,7 @@ def main(
     gs_ref = pp.make_trapezoid(
         channel='z',
         system=system,
-        amplitude=gs_ex.amplitude,
+        amplitude=gz.amplitude,
         flat_time=t_refwd,
         rise_time=dG,
     )
