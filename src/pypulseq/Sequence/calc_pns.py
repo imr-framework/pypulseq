@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pypulseq import Sequence
-from pypulseq.utils.safe_pns_prediction import safe_gwf_to_pns, safe_plot
+from pypulseq.safety.pns.safe_pns import safe_gwf_to_pns, safe_plot
 from pypulseq.utils.siemens.asc_to_hw import asc_to_hw
 from pypulseq.utils.siemens.readasc import readasc
 

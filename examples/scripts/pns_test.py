@@ -3,7 +3,7 @@ from copy import copy
 import numpy as np
 
 import pypulseq as pp
-from pypulseq.utils.safe_pns_prediction import safe_example_hw
+from pypulseq.safety.pns.safe_pns import safe_example_hw
 
 # Set system limits
 sys = pp.Opts(

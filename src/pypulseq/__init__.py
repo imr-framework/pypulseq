@@ -32,7 +32,8 @@ eps = 10 ** np.floor(np.log10(np.spacing(1e6) * 10))  # this is 1e-9 for np.floa
 # =========
 # PACKAGE-LEVEL IMPORTS
 # =========
-from pypulseq.SAR.SAR_calc import calc_SAR
+from pypulseq.safety.sar.SAR_calc import calc_SAR
+from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.sequence import Sequence
 from pypulseq.add_gradients import add_gradients
 from pypulseq.align import align
