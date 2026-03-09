@@ -1,6 +1,6 @@
-from types import SimpleNamespace
-from typing import List, Union, Optional, Sequence, Any
 import copy
+from types import SimpleNamespace
+from typing import Any, List, Optional, Union
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from pypulseq.scale_grad import scale_grad
 
 def __get_grad_abs_mag(grad: SimpleNamespace) -> float:
     """Magnitude used for thresholding output components (MATLAB getGradAbsMag)."""
-    if grad.type == "trap":
+    if grad.type == 'trap':
         return float(abs(grad.amplitude))
     return float(np.max(np.abs(grad.waveform)))
 
@@ -23,21 +23,19 @@ def align_gradient_to_raster(g: SimpleNamespace, raster: float) -> SimpleNamespa
     """
     tol = 1e-9  # seconds
 
-    if getattr(g, "type", None) == "grad":
+    if getattr(g, 'type', None) == 'grad':
         original_tt = np.array(g.tt, dtype=np.float64)
         rounded_tt = np.round(original_tt / raster) * raster
         if np.any(np.abs(original_tt - rounded_tt) > tol):
-            raise ValueError(
-                f"'grad' tt values not aligned to raster (>{tol}s): {original_tt} -> {rounded_tt}"
-            )
+            raise ValueError(f"'grad' tt values not aligned to raster (>{tol}s): {original_tt} -> {rounded_tt}")
         g.tt = rounded_tt
         g.waveform = np.array(g.waveform, dtype=np.float64)
 
-    elif getattr(g, "type", None) == "trap":
-        original_delay = float(getattr(g, "delay", 0.0))
-        original_rise = float(getattr(g, "rise_time", 0.0))
-        original_flat = float(getattr(g, "flat_time", 0.0))
-        original_fall = float(getattr(g, "fall_time", 0.0))
+    elif getattr(g, 'type', None) == 'trap':
+        original_delay = float(getattr(g, 'delay', 0.0))
+        original_rise = float(getattr(g, 'rise_time', 0.0))
+        original_flat = float(getattr(g, 'flat_time', 0.0))
+        original_fall = float(getattr(g, 'fall_time', 0.0))
 
         rounded_delay = float(np.round(original_delay / raster) * raster)
         rounded_rise = float(np.round(original_rise / raster) * raster)
@@ -55,10 +53,10 @@ def align_gradient_to_raster(g: SimpleNamespace, raster: float) -> SimpleNamespa
         ):
             raise ValueError(
                 f"'trap' timing values not aligned to raster (>{tol}s): "
-                f"delay={original_delay}→{rounded_delay}, "
-                f"rise={original_rise}→{rounded_rise}, "
-                f"flat={original_flat}→{rounded_flat}, "
-                f"fall={original_fall}→{rounded_fall}"
+                f'delay={original_delay}→{rounded_delay}, '
+                f'rise={original_rise}→{rounded_rise}, '
+                f'flat={original_flat}→{rounded_flat}, '
+                f'fall={original_fall}→{rounded_fall}'
             )
 
         g.delay = rounded_delay
@@ -67,12 +65,10 @@ def align_gradient_to_raster(g: SimpleNamespace, raster: float) -> SimpleNamespa
         g.fall_time = rounded_fall
 
     # always align delay if present
-    original_delay = float(getattr(g, "delay", 0.0))
+    original_delay = float(getattr(g, 'delay', 0.0))
     rounded_delay = float(np.round(original_delay / raster) * raster)
     if abs(original_delay - rounded_delay) > tol:
-        raise ValueError(
-            f"'delay' value not aligned to raster (>{tol}s): {original_delay} → {rounded_delay}"
-        )
+        raise ValueError(f"'delay' value not aligned to raster (>{tol}s): {original_delay} → {rounded_delay}")
     g.delay = rounded_delay
 
     return g
@@ -85,12 +81,12 @@ def _quat_wxyz_to_rotmat(q_wxyz: np.ndarray) -> np.ndarray:
     """
     q = np.asarray(q_wxyz, dtype=float).reshape(-1)
     if q.size != 4:
-        raise ValueError("Quaternion must have length 4 [w, x, y, z].")
+        raise ValueError('Quaternion must have length 4 [w, x, y, z].')
 
     w, x, y, z = q
     n = np.sqrt(w * w + x * x + y * y + z * z)
     if n == 0:
-        raise ValueError("Quaternion norm must be non-zero.")
+        raise ValueError('Quaternion norm must be non-zero.')
     # normalize (MATLAB expects unit quaternion; we tolerate small numeric drift)
     w, x, y, z = w / n, x / n, y / n, z / n
 
@@ -130,7 +126,7 @@ def _parse_rotation_to_matrix(
     if rot.size == 4:
         return _quat_wxyz_to_rotmat(rot)
 
-    raise ValueError("rotation must be either a 3x3 matrix or a quaternion [w, x, y, z] (scalar first).")
+    raise ValueError('rotation must be either a 3x3 matrix or a quaternion [w, x, y, z] (scalar first).')
 
 
 def rotate3D(
@@ -169,21 +165,21 @@ def rotate3D(
 
     rotMat = _parse_rotation_to_matrix(rotation=rotation, rotation_matrix=rotation_matrix)
 
-    axes = ["x", "y", "z"]
+    axes = ['x', 'y', 'z']
     events_to_rotate: dict[str, SimpleNamespace] = {}
     bypass: List[SimpleNamespace] = []
 
     # ---- split into gradients vs bypass ----
     for event in args:
-        if not hasattr(event, "type") or event.type not in ("grad", "trap"):
+        if not hasattr(event, 'type') or event.type not in ('grad', 'trap'):
             bypass.append(event)
             continue
 
-        if not hasattr(event, "channel") or event.channel not in axes:
-            raise ValueError(f"Invalid or missing gradient channel: {getattr(event, 'channel', None)}")
+        if not hasattr(event, 'channel') or event.channel not in axes:
+            raise ValueError(f'Invalid or missing gradient channel: {getattr(event, "channel", None)}')
 
         if event.channel in events_to_rotate:
-            raise ValueError(f"More than one gradient for channel: {event.channel}")
+            raise ValueError(f'More than one gradient for channel: {event.channel}')
 
         # deepcopy to avoid mutating caller objects (matching your current code)
         events_to_rotate[event.channel] = copy.deepcopy(event)
