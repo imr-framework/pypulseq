@@ -499,9 +499,21 @@ class Sequence:
         """
         return calc_pns(self, hardware, time_range=time_range, do_plots=do_plots)
 
-    def check_timing(self, print_errors=False) -> Tuple[bool, List[SimpleNamespace]]:
+    def check_timing(
+        self,
+        print_errors: bool = False,
+        max_errors: Union[int, None] = None,
+    ) -> Tuple[bool, List[SimpleNamespace]]:
         """
         Checks timing of all blocks and objects in the sequence optionally returns the detailed error log.
+
+        Parameters
+        ----------
+        print_errors : bool, optional
+            If True, print the error report to stdout. Default is False.
+        max_errors : int or None, optional
+            Maximum number of errors to report when print_errors is True.
+            If None, all errors are reported. Default is None.
 
         Returns
         -------
@@ -513,7 +525,10 @@ class Sequence:
         is_ok, error_report = ext_check_timing(self)
 
         if not is_ok and print_errors:
-            print_error_report(self, error_report)
+            if max_errors is None:
+                print_error_report(self, error_report, full_report=True)
+            else:
+                print_error_report(self, error_report, max_errors=max_errors)
 
         return is_ok, error_report
 
