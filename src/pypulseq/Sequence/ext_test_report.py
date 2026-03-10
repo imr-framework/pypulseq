@@ -1,17 +1,34 @@
+from typing import Any, Dict
+
 import numpy as np
 
 from pypulseq import eps
 from pypulseq.convert import convert
 
 
-def ext_test_report(self) -> str:
+def ext_test_report_data(self) -> Dict[str, Any]:
     """
-    Analyze the sequence and return a text report.
+    Analyze the sequence and return statistics as a dictionary.
 
     Returns
     -------
-    report : str
-
+    data : dict
+        Dictionary containing sequence statistics with the following keys:
+        - num_blocks: int
+        - event_count: dict with keys 'rf', 'gx', 'gy', 'gz', 'adc', 'delay'
+        - duration: float (seconds)
+        - TE: float (seconds)
+        - TR: float (seconds)
+        - flip_angles_deg: list of float
+        - unique_k_positions: np.ndarray
+        - dimensions: int (if applicable)
+        - spatial_resolution_mm: list of float (if applicable)
+        - repetitions: dict with 'median', 'min', 'max' (if applicable)
+        - is_cartesian: bool (if applicable)
+        - max_gradient: dict with 'per_channel_Hz_m', 'per_channel_mT_m', 'absolute_Hz_m', 'absolute_mT_m'
+        - max_slew_rate: dict with 'per_channel_Hz_m_s', 'per_channel_T_m_s', 'absolute_Hz_m_s', 'absolute_T_m_s'
+        - timing_ok: bool
+        - timing_error_report: list
     """
     # Find RF pulses and list flip angles
     flip_angles_deg = []
@@ -179,18 +196,92 @@ def ext_test_report(self) -> str:
 
     timing_ok, timing_error_report = self.check_timing()
 
+    # Convert gradient/slew values
+    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
+    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
+    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
+    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
+
+    # Build the result dictionary
+    data: Dict[str, Any] = {
+        'num_blocks': num_blocks,
+        'event_count': {
+            'rf': int(event_count[1]),
+            'gx': int(event_count[2]),
+            'gy': int(event_count[3]),
+            'gz': int(event_count[4]),
+            'adc': int(event_count[5]),
+            'delay': int(event_count[0]),
+        },
+        'duration': duration,
+        'TE': TE,
+        'TR': TR,
+        'flip_angles_deg': list(flip_angles_deg),
+        'unique_k_positions': unique_k_positions,
+        'max_gradient': {
+            'per_channel_Hz_m': list(ga),
+            'per_channel_mT_m': list(ga_converted),
+            'absolute_Hz_m': ga_abs,
+            'absolute_mT_m': ga_abs_converted,
+        },
+        'max_slew_rate': {
+            'per_channel_Hz_m_s': list(gs),
+            'per_channel_T_m_s': list(gs_converted),
+            'absolute_Hz_m_s': gs_abs,
+            'absolute_T_m_s': gs_abs_converted,
+        },
+        'timing_ok': timing_ok,
+        'timing_error_report': timing_error_report,
+    }
+
+    # Add optional fields if there are multiple k-space positions
+    if np.any(unique_k_positions > 1):
+        data['dimensions'] = len(k_extent)
+        data['spatial_resolution_mm'] = list(0.5 / k_extent * 1e3)
+        data['repetitions'] = {
+            'median': repeats_median,
+            'min': repeats_min,
+            'max': repeats_max,
+        }
+        data['is_cartesian'] = is_cartesian
+
+    return data
+
+
+def ext_test_report_str(data: Dict[str, Any]) -> str:
+    """
+    Format test report data dictionary into a human-readable string.
+
+    Parameters
+    ----------
+    data : dict
+        Dictionary returned by ext_test_report_data().
+
+    Returns
+    -------
+    report : str
+        Formatted text report.
+    """
+    event_count = data['event_count']
+    flip_angles_deg = data['flip_angles_deg']
+    unique_k_positions = data['unique_k_positions']
+    ga = data['max_gradient']['per_channel_Hz_m']
+    ga_converted = data['max_gradient']['per_channel_mT_m']
+    gs = data['max_slew_rate']['per_channel_Hz_m_s']
+    gs_converted = data['max_slew_rate']['per_channel_T_m_s']
+
     report = (
-        f'Number of blocks: {num_blocks}\n'
+        f'Number of blocks: {data["num_blocks"]}\n'
         f'Number of events:\n'
-        f'RF: {event_count[1]:6.0f}\n'
-        f'Gx: {event_count[2]:6.0f}\n'
-        f'Gy: {event_count[3]:6.0f}\n'
-        f'Gz: {event_count[4]:6.0f}\n'
-        f'ADC: {event_count[5]:6.0f}\n'
-        f'Delay: {event_count[0]:6.0f}\n'
-        f'Sequence duration: {duration:.6f} s\n'
-        f'TE: {TE:.6f} s\n'
-        f'TR: {TR:.6f} s\n'
+        f'RF: {event_count["rf"]:6.0f}\n'
+        f'Gx: {event_count["gx"]:6.0f}\n'
+        f'Gy: {event_count["gy"]:6.0f}\n'
+        f'Gz: {event_count["gz"]:6.0f}\n'
+        f'ADC: {event_count["adc"]:6.0f}\n'
+        f'Delay: {event_count["delay"]:6.0f}\n'
+        f'Sequence duration: {data["duration"]:.6f} s\n'
+        f'TE: {data["TE"]:.6f} s\n'
+        f'TR: {data["TR"]:.6f} s\n'
     )
     report += 'Flip angle: ' + ('{:.02f} ' * len(flip_angles_deg)).format(*flip_angles_deg) + 'deg\n'
     report += (
@@ -199,18 +290,21 @@ def ext_test_report(self) -> str:
         + '\n'
     )
 
-    if np.any(unique_k_positions > 1):
-        report += f'Dimensions: {len(k_extent)}\n'
-        report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*(0.5 / k_extent * 1e3))
-        report += f'Repetitions/slices/contrasts: {repeats_median}; range: [{repeats_min, repeats_max}]\n'
+    if 'dimensions' in data:
+        k_extent = data['spatial_resolution_mm']
+        repetitions = data['repetitions']
+        report += f'Dimensions: {data["dimensions"]}\n'
+        report += ('Spatial resolution: {:.02f} mm\n' * len(k_extent)).format(*k_extent)
+        report += (
+            f'Repetitions/slices/contrasts: {repetitions["median"]}; '
+            f'range: [{repetitions["min"]}, {repetitions["max"]}]\n'
+        )
 
-        if is_cartesian:
+        if data['is_cartesian']:
             report += 'Cartesian encoding trajectory detected\n'
         else:
             report += 'Non-cartesian/irregular encoding trajectory detected (eg: EPI, spiral, radial, etc.)\n'
 
-    ga_converted = convert(from_value=ga, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
-    gs_converted = convert(from_value=gs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
     report += (
         'Max gradient: '
         + ('{:.0f} ' * len(ga)).format(*ga)
@@ -222,16 +316,21 @@ def ext_test_report(self) -> str:
         'Max slew rate: '
         + ('{:.0f} ' * len(gs)).format(*gs)
         + 'Hz/m/s == '
-        + ('{:.02f} ' * len(ga_converted)).format(*gs_converted)
+        + ('{:.02f} ' * len(gs_converted)).format(*gs_converted)
         + 'T/m/s\n'
     )
 
-    ga_abs_converted = convert(from_value=ga_abs, from_unit='Hz/m', to_unit='mT/m', gamma=self.system.gamma)
-    gs_abs_converted = convert(from_value=gs_abs, from_unit='Hz/m/s', to_unit='T/m/s', gamma=self.system.gamma)
-    report += f'Max absolute gradient: {ga_abs:.0f} Hz/m == {ga_abs_converted:.2f} mT/m\n'
-    report += f'Max absolute slew rate: {gs_abs:g} Hz/m/s == {gs_abs_converted:.2f} T/m/s'
+    report += (
+        f'Max absolute gradient: {data["max_gradient"]["absolute_Hz_m"]:.0f} Hz/m == '
+        f'{data["max_gradient"]["absolute_mT_m"]:.2f} mT/m\n'
+    )
+    report += (
+        f'Max absolute slew rate: {data["max_slew_rate"]["absolute_Hz_m_s"]:g} Hz/m/s == '
+        f'{data["max_slew_rate"]["absolute_T_m_s"]:.2f} T/m/s'
+    )
 
-    if timing_ok:
+    timing_error_report = data['timing_error_report']
+    if data['timing_ok']:
         report += '\nEvent timing check passed successfully\n'
     else:
         report += f'\nEvent timing check failed with {len(timing_error_report)} errors in total. \n'
@@ -243,3 +342,16 @@ def ext_test_report(self) -> str:
             report += '\n...'
 
     return report
+
+
+def ext_test_report(self) -> str:
+    """
+    Analyze the sequence and return a text report.
+
+    Returns
+    -------
+    report : str
+        Formatted text report.
+    """
+    data = ext_test_report_data(self)
+    return ext_test_report_str(data)
