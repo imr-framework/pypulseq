@@ -25,7 +25,7 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence import block
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 from pypulseq.Sequence.calc_pns import calc_pns
-from pypulseq.Sequence.ext_test_report import ext_test_report
+from pypulseq.Sequence.ext_test_report import ext_test_report, ext_test_report_data
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
 from pypulseq.Sequence.write_seq import write as write_seq
@@ -1540,6 +1540,37 @@ class Sequence:
         Analyze the sequence and return a text report.
         """
         return ext_test_report(self)
+
+    def test_report_dict(self) -> dict:
+        """
+        Analyze the sequence and return statistics as a dictionary.
+
+        This method provides programmatic access to sequence statistics without
+        needing to parse the formatted string output of test_report().
+
+        Returns
+        -------
+        data : dict
+            Dictionary containing sequence statistics with the following keys:
+            - num_blocks: int
+            - event_count: dict with keys 'rf', 'gx', 'gy', 'gz', 'adc', 'delay'
+            - duration: float (seconds)
+            - TE: float (seconds)
+            - TR: float (seconds)
+            - flip_angles_deg: list of float
+            - unique_k_positions: np.ndarray
+            - dimensions: int (if applicable)
+            - spatial_resolution_mm: list of float (if applicable)
+            - repetitions: dict with 'median', 'min', 'max' (if applicable)
+            - is_cartesian: bool (if applicable)
+            - max_gradient: dict with 'per_channel_Hz_m', 'per_channel_mT_m',
+              'absolute_Hz_m', 'absolute_mT_m'
+            - max_slew_rate: dict with 'per_channel_Hz_m_s', 'per_channel_T_m_s',
+              'absolute_Hz_m_s', 'absolute_T_m_s'
+            - timing_ok: bool
+            - timing_error_report: list
+        """
+        return ext_test_report_data(self)
 
     def waveforms(self, append_RF: bool = False, time_range: Union[List[float], None] = None) -> Tuple[np.ndarray]:
         """
