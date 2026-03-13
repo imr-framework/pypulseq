@@ -165,7 +165,7 @@ def read_sequence_rf_events(seq_path):
     """Read RF events from sequence file using legacy reader"""
 
     try:
-        from legacy_seq_reader import parse_legacy_seq
+        from .utils.legacy_seq_reader import parse_legacy_seq
 
         print(f'Reading sequence file: {seq_path}')
         legacy_blocks = parse_legacy_seq(seq_path)
@@ -195,7 +195,7 @@ def read_sequence_rf_events(seq_path):
             import sys
             legacy_reader_path = os.path.join(os.path.dirname(__file__), '..', 'sar4seq_python', 'utils')
             sys.path.insert(0, legacy_reader_path)
-            from legacy_seq_reader import parse_legacy_seq
+            from .utils.legacy_seq_reader import parse_legacy_seq
 
             print(f'Reading sequence file: {seq_path}')
             legacy_blocks = parse_legacy_seq(seq_path)
