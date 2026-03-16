@@ -472,6 +472,18 @@ def _seq_plot(
                         label_store[block.label[i].label] = block.label[i].value
                 label_defined = True
 
+            if getattr(block, 'trigger', None) is not None:  # Trigger
+                for trigger in block.trigger.values():
+                    if trigger.type == 'output':
+                        t = trigger.delay
+                        sp12.plot(t_factor * (t0 + t), 0, marker='D', color=(0, 0.5, 0), linestyle='None')
+                        t += np.asarray([0, trigger.duration])
+                        sp12.plot(t_factor * (t0 + t), [0, 0], linestyle='-', marker='.', color=(0, 0.5, 0))
+                    if trigger.type == 'trigger':
+                        t = trigger.delay
+                        sp12.plot(t_factor * (t0 + t), 0, marker='>', color='b', linestyle='None')
+                        sp12.plot(t_factor * (t0 + t), 0, marker='.', color='b', linestyle='None')
+
             if getattr(block, 'adc', None) is not None:  # ADC
                 adc = block.adc
                 # From Pulseq: According to the information from Klaus Scheffler and indirectly from Siemens this
