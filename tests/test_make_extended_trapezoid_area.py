@@ -73,7 +73,9 @@ def test_make_extended_trapezoid_area_convert_to_arb(grad_start, grad_end, area)
     assert all(abs(np.diff(g.waveform) / np.diff(g.tt)) <= system.max_slew), 'Extended trapezoid violates max slew rate'
 
     assert all(abs(g_arb.waveform) <= system.max_grad), 'Arbitrary gradient violates max gradient'
-    assert all(abs(np.diff(g_arb.waveform) / np.diff(g_arb.tt)) <= system.max_slew), 'Arbitrary gradient violates max slew rate'
+    assert all(abs(np.diff(g_arb.waveform) / np.diff(g_arb.tt)) <= system.max_slew), (
+        'Arbitrary gradient violates max slew rate'
+    )
 
     assert pytest.approx(g.area) == g_arb.area, 'Area of extended trapz and arb gradient do not match'
     assert pytest.approx(g.shape_dur) == g_arb.shape_dur, 'Duration of extended trapz and arb gradient do not match'
