@@ -70,10 +70,10 @@ def make_extended_trapezoid_area(
         raise ValueError(f'Invalid channel. Must be one of `x`, `y` or `z`. Passed: {channel}')
 
     if max_grad is None:
-        max_grad = system.max_grad * 0.99
+        max_grad = system.max_grad
 
     if max_slew is None:
-        max_slew = system.max_slew * 0.99
+        max_slew = system.max_slew
 
     if duration is not None and duration <= 0:
         raise ValueError('Duration must be a positive number.')

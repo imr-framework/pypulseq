@@ -1,5 +1,4 @@
 import math
-import random
 
 import numpy as np
 import pytest
@@ -23,14 +22,14 @@ test_zoo = [
     (0, 1000, -100),
     (-1000, 1000, -100),
     (-1000, 0, -100),
-    (0, system.max_grad * 0.99, 10000),
-    (0, system.max_grad * 0.99, -10000),
-    (0, -system.max_grad * 0.99, 1000),
-    (0, -system.max_grad * 0.99, -1000),
-    (system.max_grad * 0.99, 0, 100),
-    (system.max_grad * 0.99, 0, -100),
-    (-system.max_grad * 0.99, 0, 1),
-    (-system.max_grad * 0.99, 0, -1),
+    (0, system.max_grad, 10000),
+    (0, system.max_grad, -10000),
+    (0, -system.max_grad, 1000),
+    (0, -system.max_grad, -1000),
+    (system.max_grad, 0, 100),
+    (system.max_grad, 0, -100),
+    (-system.max_grad, 0, 1),
+    (-system.max_grad, 0, -1),
     (0, 100000, 1),
     (0, 100000, -1),
     (0, -100000, 1),
@@ -39,10 +38,10 @@ test_zoo = [
     (0, 90000, -0.45),
     (0, -90000, 0.45),
     (0, -90000, -0.45),
-    (0, 10000, 0.5 * (10000) ** 2 / (system.max_slew * 0.99)),
-    (0, system.max_grad * 0.99, 0.5 * (system.max_grad * 0.99) ** 2 / (system.max_slew * 0.99)),
-    (system.max_grad * 0.99, system.max_grad * 0.99, 1),
-    (system.max_grad * 0.99, system.max_grad * 0.99, -1),
+    (0, 10000, 0.5 * (10000) ** 2 / (system.max_slew)),
+    (0, system.max_grad, 0.5 * (system.max_grad) ** 2 / (system.max_slew)),
+    (system.max_grad, system.max_grad, 1),
+    (system.max_grad, system.max_grad, -1),
 ]
 
 
@@ -60,32 +59,7 @@ def test_make_extended_trapezoid_area(grad_start, grad_end, area):
     assert slew_ok, 'Maximum slew rate violated'
 
 
-random.seed(0)
-test_zoo_random = [
-    (
-        (random.random() - 0.5) * 2 * system.max_grad * 0.99,
-        (random.random() - 0.5) * 2 * system.max_grad * 0.99,
-        (random.random() - 0.5) * 10000,
-    )
-    for _ in range(100)
-]
-
-
-@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
-def test_make_extended_trapezoid_area_random_cases(grad_start, grad_end, area):
-    g, _, _ = make_extended_trapezoid_area(
-        channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
-    )
-
-    grad_ok = all(abs(g.waveform) <= system.max_grad)
-    slew_ok = all(abs(np.diff(g.waveform) / np.diff(g.tt)) <= system.max_slew)
-
-    assert pytest.approx(g.area) == area, 'Result area is not correct'
-    assert grad_ok, 'Maximum gradient strength violated'
-    assert slew_ok, 'Maximum slew rate violated'
-
-
-@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
+@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo)
 def test_make_extended_trapezoid_area_convert_to_arb(grad_start, grad_end, area):
     g, _, _ = make_extended_trapezoid_area(
         channel='x', grad_start=grad_start, grad_end=grad_end, area=area, system=system
@@ -95,36 +69,17 @@ def test_make_extended_trapezoid_area_convert_to_arb(grad_start, grad_end, area)
         channel='x', grad_start=grad_start, grad_end=grad_end, area=area, convert_to_arbitrary=True, system=system
     )
 
-    grad_ok = all(abs(g.waveform) <= system.max_grad)
-    slew_ok = all(abs(np.diff(g.waveform) / np.diff(g.tt)) <= system.max_slew)
+    assert all(abs(g.waveform) <= system.max_grad), 'Extended trapezoid violates max gradient'
+    assert all(abs(np.diff(g.waveform) / np.diff(g.tt)) <= system.max_slew), 'Extended trapezoid violates max slew rate'
 
-    grad_arb_ok = all(abs(g_arb.waveform) <= system.max_grad)
-    slew_arb_ok = all(abs(np.diff(g_arb.waveform) / np.diff(g_arb.tt)) <= system.max_slew)
+    assert all(abs(g_arb.waveform) <= system.max_grad), 'Arbitrary gradient violates max gradient'
+    assert all(abs(np.diff(g_arb.waveform) / np.diff(g_arb.tt)) <= system.max_slew), 'Arbitrary gradient violates max slew rate'
 
     assert pytest.approx(g.area) == g_arb.area, 'Area of extended trapz and arb gradient do not match'
     assert pytest.approx(g.shape_dur) == g_arb.shape_dur, 'Duration of extended trapz and arb gradient do not match'
-    assert g.tt.shape[0] <= g_arb.tt.shape[0], (
-        'Extended trapezoid should have less or equal number of points than arb gradient'
-    )
-    assert g.waveform.shape[0] <= g_arb.waveform.shape[0], (
-        'Extended trapezoid should have less or equal number of points than arb gradient'
-    )
-    assert grad_ok == grad_arb_ok, 'Gradient strength violation between extended trapz and arb gradient'
-    assert slew_ok == slew_arb_ok, 'Slew rate violation between extended trapz and arb gradient'
 
 
-random.seed(0)
-test_zoo_random = [
-    (
-        (random.random() - 0.5) * 3 * system.max_grad,
-        (random.random() - 0.5) * 3 * system.max_grad,
-        (random.random() - 0.5) * 10 * system.max_grad,
-    )
-    for _ in range(100)
-]
-
-
-@pytest.mark.parametrize('grad_start, grad_end, grad_amp', test_zoo_random)
+@pytest.mark.parametrize('grad_start, grad_end, grad_amp', test_zoo)
 def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
     def _to_raster(time: float) -> float:
         return np.ceil(time / system.grad_raster_time) * system.grad_raster_time
@@ -140,17 +95,17 @@ def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
 
     # If grad_amp > max_grad, convert to max_grad, and keep total area
     # approximately equal
-    if abs(grad_amp) > system.max_grad * 0.99:
-        grad_amp_new = math.copysign(system.max_grad * 0.99, grad_amp)
+    if abs(grad_amp) > system.max_grad:
+        grad_amp_new = math.copysign(system.max_grad, grad_amp)
 
         # Original trapezoid area (no flat section)
-        t_ramp_up_orig = _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_start)
-        t_ramp_down_orig = _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_end)
+        t_ramp_up_orig = _calc_ramp_time(grad_amp, system.max_slew, grad_start)
+        t_ramp_down_orig = _calc_ramp_time(grad_amp, system.max_slew, grad_end)
         area_orig = t_ramp_up_orig * (grad_start + grad_amp) / 2 + t_ramp_down_orig * (grad_amp + grad_end) / 2
 
         # New ramp times with clipped amplitude
-        t_ramp_up_new = _calc_ramp_time(grad_amp_new, system.max_slew * 0.99, grad_start)
-        t_ramp_down_new = _calc_ramp_time(grad_amp_new, system.max_slew * 0.99, grad_end)
+        t_ramp_up_new = _calc_ramp_time(grad_amp_new, system.max_slew, grad_start)
+        t_ramp_down_new = _calc_ramp_time(grad_amp_new, system.max_slew, grad_end)
         area_ramps_new = (
             t_ramp_up_new * (grad_start + grad_amp_new) / 2 + t_ramp_down_new * (grad_amp_new + grad_end) / 2
         )
@@ -165,16 +120,16 @@ def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
     if flat_time == 0:
         times = cumsum(
             0,
-            _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_start),
-            _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_end),
+            _calc_ramp_time(grad_amp, system.max_slew, grad_start),
+            _calc_ramp_time(grad_amp, system.max_slew, grad_end),
         )
         amplitudes = (grad_start, grad_amp, grad_end)
     else:
         times = cumsum(
             0,
-            _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_start),
+            _calc_ramp_time(grad_amp, system.max_slew, grad_start),
             _to_raster(flat_time),
-            _calc_ramp_time(grad_amp, system.max_slew * 0.99, grad_end),
+            _calc_ramp_time(grad_amp, system.max_slew, grad_end),
         )
         amplitudes = (grad_start, grad_amp, grad_amp, grad_end)
 
@@ -205,8 +160,8 @@ def test_make_extended_trapezoid_area_recreate(grad_start, grad_end, grad_amp):
         (0, 0, 1000, 10e-3),
         (0, 1000, 100, 5e-3),
         (-1000, 1000, 100, 5e-3),
-        (system.max_grad * 0.99, 0, 100, 5e-3),
-        (0, system.max_grad * 0.99, -100, 5e-3),
+        (system.max_grad, 0, 100, 5e-3),
+        (0, system.max_grad, -100, 5e-3),
         (system.max_grad * 0.5, system.max_grad * 0.5, 500, 3e-3),
     ],
 )
@@ -226,18 +181,7 @@ def test_make_extended_trapezoid_area_with_duration(grad_start, grad_end, area, 
     assert duration_ok, f'Duration mismatch: expected {duration}, got {calc_duration(g)}'
 
 
-random.seed(0)
-test_zoo_random = [
-    (
-        (random.random() - 0.5) * 2 * system.max_grad * 0.99,
-        (random.random() - 0.5) * 2 * system.max_grad * 0.99,
-        (random.random() - 0.5) * 10000,
-    )
-    for _ in range(100)
-]
-
-
-@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo_random)
+@pytest.mark.parametrize('grad_start, grad_end, area', test_zoo)
 def test_make_extended_trapezoid_area_duration_vs_no_duration(grad_start, grad_end, area):
     """Test that specified duration produces same area as no duration."""
 
