@@ -628,9 +628,7 @@ def _seq_plot(
 
                     # Plot angle of complex signal
                     phase_corrected = (
-                        signal
-                        * np.exp(1j * full_phase_offset)
-                        * np.exp(1j * 2 * math.pi * time * full_freq_offset)
+                        signal * np.exp(1j * full_phase_offset) * np.exp(1j * 2 * math.pi * time * full_freq_offset)
                     )
                     sc_corrected = (
                         signal[index_center]
