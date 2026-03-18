@@ -1057,6 +1057,7 @@ class Sequence:
         overlay: SeqPlot = None,
         stacked: bool = False,
         show_guides: bool = False,
+        rf_plot: str = 'auto',
     ) -> SeqPlot:
         """
         Plot `Sequence`.
@@ -1090,6 +1091,11 @@ class Sequence:
             If False, use separate figures for RF/ADC and gradients.
         show_guides : bool, default=False
             If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
+        rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+            Determines how to plot RF waveforms in the RF magnitude plot.
+            If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
+            If 'abs', plots magnitude for all RF events.
+            If 'real' or 'imag', plots the respective component for all RF events.
 
         Returns
         -------
@@ -1109,6 +1115,7 @@ class Sequence:
             overlay,
             stacked,
             show_guides,
+            rf_plot=rf_plot,
         )
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
