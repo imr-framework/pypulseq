@@ -1,17 +1,18 @@
-from types import SimpleNamespace
-from typing import List, Union, Any
 import copy
+from types import SimpleNamespace
+from typing import Any, List, Union
+
 import numpy as np
+from scipy.spatial.transform import Rotation
+
 from pypulseq.add_gradients import add_gradients
 from pypulseq.opts import Opts
 from pypulseq.scale_grad import scale_grad
-from scipy.spatial.transform import Rotation
-
 
 
 def _get_grad_abs_mag(grad: SimpleNamespace) -> float:
     """Magnitude used for thresholding output components."""
-    if grad.type == "trap":
+    if grad.type == 'trap':
         return float(abs(grad.amplitude))
     return float(np.max(np.abs(grad.waveform)))
 
@@ -74,7 +75,6 @@ def align_gradient_to_raster(g: SimpleNamespace, raster: float) -> SimpleNamespa
     return g
 
 
-
 def _quat_wxyz_to_rotmat(q_wxyz: np.ndarray) -> np.ndarray:
     """
     Convert quaternion [w,x,y,z] (scalar first) to a 3x3 rotation matrix.
@@ -84,10 +84,9 @@ def _quat_wxyz_to_rotmat(q_wxyz: np.ndarray) -> np.ndarray:
         raise ValueError('Quaternion must have length 4 [w, x, y, z].')
 
     if np.linalg.norm(q) == 0:
-        raise ValueError("Quaternion norm must be non-zero.")
+        raise ValueError('Quaternion norm must be non-zero.')
 
     return Rotation.from_quat(q, scalar_first=True).as_matrix()
-    
 
 
 def _parse_rotation_to_matrix(
@@ -173,8 +172,8 @@ def rotate3D(
     ... ])
     >>>
     >>> q = np.array([np.cos(angle / 2), 0.0, 0.0, np.sin(angle / 2)], dtype=float)
-    >>> 
-    >>> out1 = rotate3D(gx, gy, gz, rf, adc, rotation_matrix=Rz, system=system) 
+    >>>
+    >>> out1 = rotate3D(gx, gy, gz, rf, adc, rotation_matrix=Rz, system=system)
     >>> out2 = rotate3D(gx, gy, gz, rf, adc, rotation=Rz, system=system)
     >>> out3 = rotate3D(gx, gy, gz, rf, adc, rotation=q, system=system)
     """
@@ -244,8 +243,8 @@ def rotate3D(
             if grad_out_curr is None:
                 grad_out_curr = scaled
             else:
-                #grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
-                #scaled = align_gradient_to_raster(scaled, system.grad_raster_time)
+                # grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
+                # scaled = align_gradient_to_raster(scaled, system.grad_raster_time)
                 grad_out_curr = add_gradients([grad_out_curr, scaled], system=system)
                 grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
 
