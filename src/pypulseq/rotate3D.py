@@ -1,17 +1,17 @@
-import copy
 from types import SimpleNamespace
-from typing import Any, List, Optional, Union
-
+from typing import List, Union, Any
+import copy
 import numpy as np
-
 from pypulseq.add_gradients import add_gradients
 from pypulseq.opts import Opts
 from pypulseq.scale_grad import scale_grad
+from scipy.spatial.transform import Rotation
 
 
-def __get_grad_abs_mag(grad: SimpleNamespace) -> float:
-    """Magnitude used for thresholding output components (MATLAB getGradAbsMag)."""
-    if grad.type == 'trap':
+
+def _get_grad_abs_mag(grad: SimpleNamespace) -> float:
+    """Magnitude used for thresholding output components."""
+    if grad.type == "trap":
         return float(abs(grad.amplitude))
     return float(np.max(np.abs(grad.waveform)))
 
@@ -74,42 +74,29 @@ def align_gradient_to_raster(g: SimpleNamespace, raster: float) -> SimpleNamespa
     return g
 
 
+
 def _quat_wxyz_to_rotmat(q_wxyz: np.ndarray) -> np.ndarray:
     """
     Convert quaternion [w,x,y,z] (scalar first) to a 3x3 rotation matrix.
-    MATLAB: mr.aux.quat.toRotMat(rotation)
     """
     q = np.asarray(q_wxyz, dtype=float).reshape(-1)
     if q.size != 4:
         raise ValueError('Quaternion must have length 4 [w, x, y, z].')
 
-    w, x, y, z = q
-    n = np.sqrt(w * w + x * x + y * y + z * z)
-    if n == 0:
-        raise ValueError('Quaternion norm must be non-zero.')
-    # normalize (MATLAB expects unit quaternion; we tolerate small numeric drift)
-    w, x, y, z = w / n, x / n, y / n, z / n
+    if np.linalg.norm(q) == 0:
+        raise ValueError("Quaternion norm must be non-zero.")
 
-    return np.array(
-        [
-            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-        ],
-        dtype=float,
-    )
+    return Rotation.from_quat(q, scalar_first=True).as_matrix()
+    
 
 
 def _parse_rotation_to_matrix(
     *,
-    rotation: Optional[Any] = None,
-    rotation_matrix: Optional[np.ndarray] = None,
+    rotation: Union[Any, None] = None,
+    rotation_matrix: Union[np.ndarray, None] = None,
 ) -> np.ndarray:
     """
-    MATLAB parity:
-      - rotation can be 3x3 matrix OR quaternion length-4 [w,x,y,z]
-    Backward compatibility:
-      - rotation_matrix keyword (your current API) still works.
+    rotation can be 3x3 matrix OR quaternion length-4 [w,x,y,z]
     """
     if rotation is None and rotation_matrix is None:
         raise ValueError("You must provide either 'rotation' (matrix or quaternion) or 'rotation_matrix' (3x3).")
@@ -131,23 +118,68 @@ def _parse_rotation_to_matrix(
 
 def rotate3D(
     *args: SimpleNamespace,
-    rotation: Optional[Any] = None,
-    rotation_matrix: Optional[np.ndarray] = None,
+    rotation: Union[Any, None] = None,
+    rotation_matrix: Union[np.ndarray, None] = None,
     system: Union[Opts, None] = None,
 ) -> List[SimpleNamespace]:
     """
-    Rotate gradient events (trap/grad) by a 3x3 rotation matrix (or quaternion like MATLAB).
-    Non-gradient events (rf/adc/delay/etc) are passed through unchanged.
+    Rotate gradient events by a 3*3 rotation matrix or quaternion.
 
-    Accepts mixed inputs like:
-        ms_rotate3D(gx, gy, rf, adc, rotation_matrix=R, system=sys)
-        ms_rotate3D(gx, gy, rf, adc, rotation=R, system=sys)
-        ms_rotate3D(gx, gy, rf, adc, rotation=[w,x,y,z], system=sys)  # quaternion
+    Non-gradient events (e.g. RF, ADC, delay) are passed through unchanged.
 
-    Also accepts list inputs:
-        ms_rotate3D([gx, gy, gz], rf, adc, rotation_matrix=R, system=sys)
+    Parameters
+    args : SimpleNamespace or list of SimpleNamespace
+        Input events. Can include gradient events ('grad', 'trap') and
+        non-gradient events (rf, adc, delay, etc.). Lists or tuples of events
+        are also accepted and will be flattened.
+
+    rotation : array_like or None, Union
+        Rotation specified either as a 3*3 matrix or a quaternion
+        [w, x, y, z] (scalar-first convention). Default is None.
+
+    rotation_matrix : np.ndarray or None, Union
+        Explicit 3*3 rotation matrix. Provided for backward compatibility.
+        If both 'rotation' and 'rotation_matrix' are given, 'rotation_matrix'
+        takes precedence. Default is None.
+
+    system : Opts or None, Union
+        PyPulseq system limits. If None, 'Opts.default' is used.
+
+    Returns
+    out : list of SimpleNamespace
+        List of events including rotated gradient components and unchanged
+        non-gradient events.
+
+    Notes
+    Only one gradient per axis (x, y, z) is allowed in the input.
+
+    Examples
+    >>> import numpy as np
+    >>> import pypulseq as pp
+    >>> from rotate3D import rotate3D
+    >>>
+    >>> system = pp.Opts()
+    >>> gx = pp.make_trapezoid(channel='x', system=system, amplitude=100, duration=2e-3)
+    >>> gy = pp.make_trapezoid(channel='y', system=system, amplitude=50, duration=2e-3)
+    >>> gz = pp.make_trapezoid(channel="z", system=system, amplitude=20, duration=2e-3)
+    >>> rf = pp.make_block_pulse(flip_angle=np.pi/2, duration=1e-3, system=system)
+    >>> adc = pp.make_adc(num_samples=64, dwell=10e-6, delay=0, system=system)
+    >>>
+    >>> angle = np.pi / 4
+    >>> Rz = np.array([
+    ...     [np.cos(angle), -np.sin(angle), 0],
+    ...     [np.sin(angle),  np.cos(angle), 0],
+    ...     [0,              0,             1],
+    ... ])
+    >>>
+    >>> q = np.array([np.cos(angle / 2), 0.0, 0.0, np.sin(angle / 2)], dtype=float)
+    >>> 
+    >>> out1 = rotate3D(gx, gy, gz, rf, adc, rotation_matrix=Rz, system=system) 
+    >>> out2 = rotate3D(gx, gy, gz, rf, adc, rotation=Rz, system=system)
+    >>> out3 = rotate3D(gx, gy, gz, rf, adc, rotation=q, system=system)
     """
-    # ---- flatten list/tuple inputs inside args ----
+
+    # flatten list/tuple inputs inside args
     flat_args: List[SimpleNamespace] = []
     for a in args:
         if a is None:
@@ -169,7 +201,7 @@ def rotate3D(
     events_to_rotate: dict[str, SimpleNamespace] = {}
     bypass: List[SimpleNamespace] = []
 
-    # ---- split into gradients vs bypass ----
+    # split into gradients vs bypass
     for event in args:
         if not hasattr(event, 'type') or event.type not in ('grad', 'trap'):
             bypass.append(event)
@@ -181,18 +213,16 @@ def rotate3D(
         if event.channel in events_to_rotate:
             raise ValueError(f'More than one gradient for channel: {event.channel}')
 
-        # deepcopy to avoid mutating caller objects (matching your current code)
         events_to_rotate[event.channel] = copy.deepcopy(event)
 
-    # nothing to rotate -> just return bypass
     if len(events_to_rotate) == 0:
         return list(bypass)
 
-    # ---- thresholding like MATLAB ----
+    # thresholding
     max_mag = 0.0
     for ax in axes:
         if ax in events_to_rotate:
-            max_mag = max(max_mag, __get_grad_abs_mag(events_to_rotate[ax]))
+            max_mag = max(max_mag, _get_grad_abs_mag(events_to_rotate[ax]))
     fthresh = 1e-6
     thresh = fthresh * max_mag
 
@@ -214,15 +244,12 @@ def rotate3D(
             if grad_out_curr is None:
                 grad_out_curr = scaled
             else:
-                # raster-align before summing (your current approach)
-                grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
-                scaled = align_gradient_to_raster(scaled, system.grad_raster_time)
-
-                # add_gradients expects a list
+                #grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
+                #scaled = align_gradient_to_raster(scaled, system.grad_raster_time)
                 grad_out_curr = add_gradients([grad_out_curr, scaled], system=system)
+                grad_out_curr = align_gradient_to_raster(grad_out_curr, system.grad_raster_time)
 
-        # only output non-zero amplitude gradients
-        if grad_out_curr is not None and __get_grad_abs_mag(grad_out_curr) >= thresh:
+        if grad_out_curr is not None and _get_grad_abs_mag(grad_out_curr) >= thresh:
             rotated_grads.append(grad_out_curr)
 
     return [*bypass, *rotated_grads]
