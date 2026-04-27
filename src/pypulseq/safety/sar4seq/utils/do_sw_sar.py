@@ -14,6 +14,3 @@ def do_sw_sar(SARwbg_lim_s: np.ndarray, tsec: np.ndarray, t: int) -> np.ndarray:
     for instant in range(int(tsec[-1] - t)):
         SAR_timeavg[instant] = float(np.sum(SARwbg_lim_s[instant : instant + t]) / t)
     return SAR_timeavg
-
-
-

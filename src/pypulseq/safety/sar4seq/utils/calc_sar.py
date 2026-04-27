@@ -47,6 +47,3 @@ def calc_sar(Q: np.ndarray, I: np.ndarray, weight: float) -> float:
         sar = sar / float(weight)
 
     return float(np.real(sar))
-
-
-

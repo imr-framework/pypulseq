@@ -44,6 +44,3 @@ def get_coremat(Qinds: np.ndarray, ind: np.ndarray, myu_per: float = 0.01):
     ind_sort = ind[sort_idx]
 
     return Bstar, ind_sort, vop_ind, myu_def
-
-
-

@@ -46,10 +46,10 @@ def SAR4seq(seq_path=None, seq=None, sample_weight=None):
 
     # Constants from MATLAB
     siemens_b1_fact = 1.32  # B1+ factor
-    ge_b1_fact = 1.1725     # B1+ factor
+    ge_b1_fact = 1.1725  # B1+ factor
 
-    wbody_weight = 103.45   # kg - from Visible Human Male
-    head_weight = 6.024     # kg - from Visible Human Male
+    wbody_weight = 103.45  # kg - from Visible Human Male
+    head_weight = 6.024  # kg - from Visible Human Male
 
     # SAR limits - temporarily increased for replication study
     ten_sec_thresh_wbg = 12.0  # Increased from 8.0 to allow 180° measurements
@@ -121,15 +121,9 @@ def load_qmatrices():
     # Handle MATLAB struct array indexing
     if hasattr(Q, 'dtype') and Q.dtype == 'O':
         Q_struct = Q[0, 0]
-        return {
-            'Qtmf': Q_struct['Qtmf'][0, 0],
-            'Qhmf': Q_struct['Qhmf'][0, 0]
-        }
+        return {'Qtmf': Q_struct['Qtmf'][0, 0], 'Qhmf': Q_struct['Qhmf'][0, 0]}
     else:
-        return {
-            'Qtmf': Q['Qtmf'][0, 0],
-            'Qhmf': Q['Qhmf'][0, 0]
-        }
+        return {'Qtmf': Q['Qtmf'][0, 0], 'Qhmf': Q['Qhmf'][0, 0]}
 
 
 def calc_SAR(Q, I, weight):
@@ -149,14 +143,14 @@ def calc_SAR(Q, I, weight):
     I = np.array(I)
 
     # Step 1-3: Calculate intensity factor (assuming single channel)
-    Iexp = np.conj(I) * I                    # Step 1: conj(I).*I
-    Iexp = np.sum(Iexp) / len(Iexp)          # Step 2: sum(Iexp(:))./length(Iexp)
-    Ifact = Iexp                             # Step 3: Ifact = Iexp
+    Iexp = np.conj(I) * I  # Step 1: conj(I).*I
+    Iexp = np.sum(Iexp) / len(Iexp)  # Step 2: sum(Iexp(:))./length(Iexp)
+    Ifact = Iexp  # Step 3: Ifact = Iexp
 
     # Step 4-6: Calculate SAR
-    SAR_temp = Q * Ifact                     # Step 4: Q.*Ifact
-    SAR = np.abs(np.sum(SAR_temp))           # Step 5: abs(sum(SAR_temp(:)))
-    SAR = SAR / weight                       # Step 6: SAR./weight
+    SAR_temp = Q * Ifact  # Step 4: Q.*Ifact
+    SAR = np.abs(np.sum(SAR_temp))  # Step 5: abs(sum(SAR_temp(:)))
+    SAR = SAR / weight  # Step 6: SAR./weight
 
     return SAR
 
@@ -193,6 +187,7 @@ def read_sequence_rf_events(seq_path):
         try:
             import os
             import sys
+
             legacy_reader_path = os.path.join(os.path.dirname(__file__), '..', 'sar4seq_python', 'utils')
             sys.path.insert(0, legacy_reader_path)
             from .utils.legacy_seq_reader import parse_legacy_seq
@@ -225,10 +220,7 @@ def read_sequence_rf_events(seq_path):
 if __name__ == '__main__':
     # Test the implementation
     try:
-        RFwbg_tavg, RFhg_tavg, SARwbg_pred = SAR4seq(
-            seq_path='seqs/120_tse.seq',
-            sample_weight=103.45
-        )
+        RFwbg_tavg, RFhg_tavg, SARwbg_pred = SAR4seq(seq_path='seqs/120_tse.seq', sample_weight=103.45)
         print('\nResults:')
         print(f'RFwbg_tavg: {RFwbg_tavg:.4f} W')
         print(f'RFhg_tavg: {RFhg_tavg:.4f} W')
@@ -237,6 +229,5 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'Error: {e}')
         import traceback
+
         traceback.print_exc()
-
-

@@ -105,6 +105,3 @@ def vop_qmatrices(Qavg_imp: np.ndarray):
         VOP_imp[x, y, z] = VOPm[k]
 
     return VOP_imp, normplot, vop_ind
-
-
-

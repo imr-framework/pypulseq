@@ -116,5 +116,3 @@ def parse_legacy_seq(path: str, rf_raster_s: float = 1e-6) -> List[LegacyBlock]:
         legacy_blocks.append(LegacyBlock(rf=rf_block, block_duration=block_duration))
 
     return legacy_blocks
-
-

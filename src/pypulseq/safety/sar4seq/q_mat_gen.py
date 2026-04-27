@@ -17,9 +17,7 @@ def q_mat_gen(SAR_type: str, model: dict, qmat_write: int = 0):
         )
         Qavg_tm = Qavg_df / float(Mass_body)
 
-        Qavg_df_h, _, _, _, Mass_head, _ = gen_qpwr(
-            Ex, Ey, Ez, Tissue_types, SigmabyRhox, Mass_cell, 'global', 'head'
-        )
+        Qavg_df_h, _, _, _, Mass_head, _ = gen_qpwr(Ex, Ey, Ez, Tissue_types, SigmabyRhox, Mass_cell, 'global', 'head')
         Qavg_hm = Qavg_df_h / float(Mass_head)
 
         Q = {'Qtmf': Qavg_tm, 'Qhmf': Qavg_hm}
@@ -34,6 +32,3 @@ def q_mat_gen(SAR_type: str, model: dict, qmat_write: int = 0):
 
     else:
         raise ValueError("SAR_type must be 'Global' or 'Local'")
-
-
-

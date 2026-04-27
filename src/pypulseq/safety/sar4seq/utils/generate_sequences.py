@@ -79,9 +79,7 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
 
     # Gradients
     # Slice refocusing gradient
-    gz_reph = make_trapezoid(
-        channel='z', system=system, area=-gz_exc.area / 2, duration=1e-3
-    )
+    gz_reph = make_trapezoid(channel='z', system=system, area=-gz_exc.area / 2, duration=1e-3)
 
     # Readout gradient
     readout_time = 5.12e-3
@@ -92,9 +90,7 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
         flat_time=readout_time,
     )
     # Readout prephaser
-    gx_pre = make_trapezoid(
-        channel='x', system=system, area=-gx_read.area / 2, duration=1e-3
-    )
+    gx_pre = make_trapezoid(channel='x', system=system, area=-gx_read.area / 2, duration=1e-3)
 
     # Phase encoding gradients
     # For TSE, we need to order phase encoding steps for TEeff = 60ms
@@ -123,15 +119,11 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
             idx += 1
 
     gy_pre_list = [
-        make_trapezoid(
-            channel='y', system=system, area=pe_step * delta_k, duration=1e-3
-        ) for pe_step in pe_order
+        make_trapezoid(channel='y', system=system, area=pe_step * delta_k, duration=1e-3) for pe_step in pe_order
     ]
 
     # ADC event
-    adc = make_adc(
-        num_samples=matrix_size, system=system, duration=readout_time, delay=gx_read.fall_time
-    )
+    adc = make_adc(num_samples=matrix_size, system=system, duration=readout_time, delay=gx_read.fall_time)
 
     # --- Build the sequence ---
     # Loop over slices (only one in this case)
@@ -187,7 +179,6 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
                 print(f'Warning: Echo spacing (TE) of {te * 1e3:.1f} ms is too short.')
                 print(f'         Events require {total_echo_duration * 1e3:.1f} ms.')
 
-
     # Add final delay to meet the TR requirement
     total_time = seq.duration()
     if isinstance(total_time, (list, tuple)):
@@ -212,8 +203,8 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
     # Print sequence summary
     print(f'Successfully wrote sequence to: {file_path}')
     print(f'  Flip angle: {refocus_flip_angle_deg}°')
-    print(f'  TR/TE: {tr*1e3:.0f}/{te*1e3:.0f} ms')
-    print(f'  TEeff: {te_eff*1e3:.0f} ms')
+    print(f'  TR/TE: {tr * 1e3:.0f}/{te * 1e3:.0f} ms')
+    print(f'  TEeff: {te_eff * 1e3:.0f} ms')
     print(f'  Duration: {seq.duration()[0]:.3f} s')
     print(f'  ETL: {etl}')
     print('')
@@ -235,7 +226,7 @@ def validate_sequence_parameters():
         'FOV': '256×256 mm²',
         'ETL': '16',
         'Matrix': '256',
-        'Flip angles': '120°, 130°, 140°, 150°, 160°, 170°, 180° (steps of 10°)'
+        'Flip angles': '120°, 130°, 140°, 150°, 160°, 170°, 180° (steps of 10°)',
     }
 
     print('Required parameters from paper:')

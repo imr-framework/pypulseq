@@ -37,6 +37,3 @@ def chkcubair_global(dim: int, Mass_cell: np.ndarray, Mass_air: float, x: int, y
         chk = 0
 
     return chk
-
-
-

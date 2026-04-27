@@ -49,6 +49,3 @@ def write_qmat_local(Qavg: np.ndarray, Tissue_types: np.ndarray, tri_path: str, 
             np.array([y], dtype=np.uint16).tofile(idx_f)
             np.array([z], dtype=np.uint16).tofile(idx_f)
             np.array([label], dtype=np.uint16).tofile(idx_f)
-
-
-

@@ -3,7 +3,9 @@ from __future__ import annotations
 import numpy as np
 
 
-def gen_e12ptq(Ex: np.ndarray, Ey: np.ndarray, Ez: np.ndarray, X: np.ndarray | int, SigmabyRhox: np.ndarray) -> np.ndarray:
+def gen_e12ptq(
+    Ex: np.ndarray, Ey: np.ndarray, Ez: np.ndarray, X: np.ndarray | int, SigmabyRhox: np.ndarray
+) -> np.ndarray:
     """Generate E^H Sigma/Rho E via 12-point cube formulation.
 
     Ex, Ey, Ez: 4D arrays (MxNxPxNc).
@@ -18,7 +20,9 @@ def gen_e12ptq(Ex: np.ndarray, Ey: np.ndarray, Ez: np.ndarray, X: np.ndarray | i
     if np.isscalar(X):
         M, N, P, _ = Ex.shape
         x, y, z = np.unravel_index(int(X) - 1, (M, N, P))  # MATLAB 1-based
-        x += 1; y += 1; z += 1
+        x += 1
+        y += 1
+        z += 1
     else:
         x, y, z = [int(X[0]), int(X[1]), int(X[2])]
 
@@ -52,11 +56,23 @@ def gen_e12ptq(Ex: np.ndarray, Ey: np.ndarray, Ez: np.ndarray, X: np.ndarray | i
     Ey1 = get_E(at(Ey, center), at3(SigmabyRhoy, center))
     Ez1 = get_E(at(Ez, center), at3(SigmabyRhoz, center))
 
-    Expwr = Ex1 + get_E(at(Ex, X1), at3(SigmabyRhox, X1)) + get_E(at(Ex, X2), at3(SigmabyRhox, X2)) + get_E(at(Ex, X3), at3(SigmabyRhox, X3))
-    Eypwr = Ey1 + get_E(at(Ey, Y1), at3(SigmabyRhoy, Y1)) + get_E(at(Ey, Y2), at3(SigmabyRhoy, Y2)) + get_E(at(Ey, Y3), at3(SigmabyRhoy, Y3))
-    Ezpwr = Ez1 + get_E(at(Ez, Z1), at3(SigmabyRhoz, Z1)) + get_E(at(Ez, Z2), at3(SigmabyRhoz, Z2)) + get_E(at(Ez, Z3), at3(SigmabyRhoz, Z3))
+    Expwr = (
+        Ex1
+        + get_E(at(Ex, X1), at3(SigmabyRhox, X1))
+        + get_E(at(Ex, X2), at3(SigmabyRhox, X2))
+        + get_E(at(Ex, X3), at3(SigmabyRhox, X3))
+    )
+    Eypwr = (
+        Ey1
+        + get_E(at(Ey, Y1), at3(SigmabyRhoy, Y1))
+        + get_E(at(Ey, Y2), at3(SigmabyRhoy, Y2))
+        + get_E(at(Ey, Y3), at3(SigmabyRhoy, Y3))
+    )
+    Ezpwr = (
+        Ez1
+        + get_E(at(Ez, Z1), at3(SigmabyRhoz, Z1))
+        + get_E(at(Ez, Z2), at3(SigmabyRhoz, Z2))
+        + get_E(at(Ez, Z3), at3(SigmabyRhoz, Z3))
+    )
     Epwr = 0.125 * (Expwr + Eypwr + Ezpwr)
     return Epwr
-
-
-

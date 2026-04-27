@@ -67,6 +67,3 @@ def read_qmat(fname: str):
         'dimz': dimz,
         'NrOfSarCells': n_sar_cells,
     }
-
-
-

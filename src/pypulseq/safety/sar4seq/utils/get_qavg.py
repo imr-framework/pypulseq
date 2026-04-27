@@ -89,6 +89,3 @@ def get_qavg(Mass_cell: np.ndarray, Mdef: float, Qpwr2: np.ndarray, ms: np.ndarr
                 Qavg_df[x, y, z, i, j] = s / mass_sum
 
     return Qavg_df
-
-
-

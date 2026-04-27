@@ -78,5 +78,3 @@ def gen_qpwr(
 
     else:
         raise ValueError("sar_type must be 'global' or 'local'")
-
-
