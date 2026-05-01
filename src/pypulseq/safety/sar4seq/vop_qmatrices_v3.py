@@ -43,7 +43,7 @@ def vop_qmatrices(Qavg_imp: np.ndarray):
     while obs_pts != 0:
         lenindr = len(indr)
         if lenindr == len(ind):
-            Bstar, ind_sorta, vopin, myu_def = get_coremat(Qind, indr - 1)
+            Bstar, ind_sorta, vopin, mu_def = get_coremat(Qind, indr - 1)
         elif lenindr == 1:
             break
         else:
@@ -62,9 +62,9 @@ def vop_qmatrices(Qavg_imp: np.ndarray):
             Em = Ep - np.diag(vals)
             Z_new = V @ Em @ V.conj().T
             Z = Z + Z_new
-            myu_calc = float(np.linalg.norm(Z, 2))
+            mu_calc = float(np.linalg.norm(Z, 2))
 
-            if myu_calc >= myu_def:
+            if mu_calc >= mu_def:
                 cluster_done = True
                 VOP += 1
                 VOPm[VOP - 1] = A

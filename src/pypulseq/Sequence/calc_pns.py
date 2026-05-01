@@ -126,8 +126,8 @@ def calc_pns(
             )
         gw_tm = np.zeros((n_in, 3), dtype=float)
         gw_tm[:, :n_ch] = gw[:, :n_ch] / gamma
-        # pns_cr mis-detects (points, reps, dims) when n_time < 3 because it
-        # assumes dims <= 3 and time is the longest axis; pad time to >= 3.
+        # pns_cr can misread the layout as (points, reps, dims) when n_time < 3
+        # because it assumes dims <= 3 and time is the longest axis; pad time to >= 3.
         n_time_cr = max(n_in, 3)
         if n_time_cr > n_in:
             gw_tm = np.pad(gw_tm, ((0, n_time_cr - n_in), (0, 0)))
