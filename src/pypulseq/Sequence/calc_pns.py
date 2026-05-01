@@ -25,7 +25,7 @@ def calc_pns(
     """
     Calculate PNS using the SAFE model (Szczepankiewicz and Witzel,
     http://github.com/filip-szczepankiewicz/safe_pns_prediction) or the
-    chronaxie–rheobase model (Nielsen / toppe ``pns.m``).
+    chronaxie-rheobase model (Nielsen / toppe ``pns.m``).
 
     Returns pns levels due to respective axes (normalized to 1 and not to 100#)
 
@@ -46,7 +46,7 @@ def calc_pns(
         Gradient-coil preset for ``model='chronaxie_rheobase'``: one of
         ``xrm``, ``xrmw``, ``whole``, ``zoom``, ``hrmb``, ``hrmw``, ``magnus``.
     chronaxie_conv_model : int, optional
-        For chronaxie–rheobase only: ``1`` time-domain convolution, ``2``
+        For chronaxie-rheobase only: ``1`` time-domain convolution, ``2``
         frequency-domain (see :func:`~pypulseq.safety.pns.chronaxie_rheobase.pns_cr`).
 
     Returns

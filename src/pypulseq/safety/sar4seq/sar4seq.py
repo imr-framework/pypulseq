@@ -15,7 +15,7 @@ import numpy as np
 import scipy.io as sio
 
 
-def SAR4seq(seq_path=None, seq=None, sample_weight=None):
+def SAR4seq(seq_path=None, _seq=None, sample_weight=None):
     """
     Computes RF safety metrics for Pulseq sequences
 
@@ -23,8 +23,8 @@ def SAR4seq(seq_path=None, seq=None, sample_weight=None):
     ----------
     seq_path : str
         Path to Pulseq sequence file
-    seq : object
-        Pulseq sequence object determining system parameters (not used in this implementation)
+    _seq : object, optional
+        Reserved for API compatibility (unused; pass ``seq_path`` only).
     sample_weight : float
         Weight of the sample being imaged in kg
 
@@ -185,10 +185,9 @@ def read_sequence_rf_events(seq_path):
     except ImportError:
         # Use the existing legacy reader from sar4seq_python utils
         try:
-            import os
             import sys
 
-            legacy_reader_path = os.path.join(os.path.dirname(__file__), '..', 'sar4seq_python', 'utils')
+            legacy_reader_path = str((Path(__file__).resolve().parent / '..' / 'sar4seq_python' / 'utils').resolve())
             sys.path.insert(0, legacy_reader_path)
             from .utils.legacy_seq_reader import parse_legacy_seq
 
@@ -213,8 +212,8 @@ def read_sequence_rf_events(seq_path):
 
             return rf_events, total_duration
 
-        except ImportError:
-            raise ImportError('legacy_seq_reader module is required for sequence reading')
+        except ImportError as err:
+            raise ImportError('legacy_seq_reader module is required for sequence reading') from err
 
 
 if __name__ == '__main__':

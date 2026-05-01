@@ -473,7 +473,7 @@ class Sequence:
         chronaxie_conv_model: int = 1,
     ) -> Tuple[bool, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Calculate PNS using the SAFE model or the chronaxie–rheobase (toppe-style) model.
+        Calculate PNS using the SAFE model or the chronaxie-rheobase (toppe-style) model.
 
         Returns pns levels due to respective axes (normalized to 1 and not to 100#)
 

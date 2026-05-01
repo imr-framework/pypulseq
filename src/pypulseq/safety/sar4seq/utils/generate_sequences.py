@@ -6,7 +6,7 @@
 # specifically section 1.4.2, page 17.
 
 import math
-import os
+from pathlib import Path
 
 import numpy as np
 
@@ -195,10 +195,10 @@ def generate_tse_sequence(refocus_flip_angle_deg, output_dir='sequences'):
         print(error_report)
 
     # Write the .seq file
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    file_path = os.path.join(output_dir, f'{refocus_flip_angle_deg}_tse.seq')
-    seq.write(file_path)
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    file_path = out_dir / f'{refocus_flip_angle_deg}_tse.seq'
+    seq.write(str(file_path))
 
     # Print sequence summary
     print(f'Successfully wrote sequence to: {file_path}')
@@ -223,7 +223,7 @@ def validate_sequence_parameters():
         'TE': '12 ms',
         'TEeff': '60 ms',
         'Slice thickness': '5 mm',
-        'FOV': '256×256 mm²',
+        'FOV': '256x256 mm^2',
         'ETL': '16',
         'Matrix': '256',
         'Flip angles': '120°, 130°, 140°, 150°, 160°, 170°, 180° (steps of 10°)',
@@ -253,21 +253,21 @@ if __name__ == '__main__':
 
     # Generate a .seq file for each flip angle
     # Create sequences directory in the main sar4seq workspace
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    workspace_root = os.path.join(current_dir, '..', '..')  # Go up to sar4seq/ directory
-    sequences_dir = os.path.join(workspace_root, 'sequences')
+    workspace_root = (Path(__file__).resolve().parent / '..' / '..').resolve()
+    sequences_dir = workspace_root / 'sequences'
+    sequences_resolved = sequences_dir.resolve()
 
-    print(f'Target directory: {os.path.abspath(sequences_dir)}')
+    print(f'Target directory: {sequences_resolved}')
 
     for angle in refocus_angles:
-        generate_tse_sequence(angle, output_dir=sequences_dir)
+        generate_tse_sequence(angle, output_dir=str(sequences_dir))
 
     print('All TSE sequences have been generated successfully!')
-    print(f'\nSequences saved to: {os.path.abspath(sequences_dir)}')
+    print(f'\nSequences saved to: {sequences_resolved}')
     print('Directory contents:')
-    if os.path.exists(sequences_dir):
-        for file in sorted(os.listdir(sequences_dir)):
-            if file.endswith('.seq'):
-                file_size = os.path.getsize(os.path.join(sequences_dir, file))
-                print(f'   {file} ({file_size:,} bytes)')
+    if sequences_dir.exists():
+        for path in sorted(sequences_dir.iterdir()):
+            if path.suffix == '.seq':
+                file_size = path.stat().st_size
+                print(f'   {path.name} ({file_size:,} bytes)')
     print('\nSequences are ready for SAR4seq analysis and scanner validation.')
