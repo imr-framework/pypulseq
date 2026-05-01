@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pypulseq import Sequence
-from pypulseq.safety.pns.safe_pns import safe_gwf_to_pns, safe_plot
 from pypulseq.safety.pns.chronaxie_rheobase import pns_cr
+from pypulseq.safety.pns.safe_pns import safe_gwf_to_pns, safe_plot
 from pypulseq.utils.siemens.asc_to_hw import asc_to_hw
 from pypulseq.utils.siemens.readasc import readasc
 
@@ -146,10 +146,9 @@ def calc_pns(
         pns_norm = pthresh[0, :, 0] / 100.0
         n_out = int(pns_norm.shape[0])
         # Trim samples we only added so pns_cr sees time as the long axis (n_time >= 3).
-        if chronaxie_conv_model == 1 and n_out > n_in:
-            pns_comp = pns_comp[:n_in]
-            pns_norm = pns_norm[:n_in]
-        elif chronaxie_conv_model == 2 and n_out > n_in and n_out == n_time_cr:
+        if (chronaxie_conv_model == 1 and n_out > n_in) or (
+            chronaxie_conv_model == 2 and n_out > n_in and n_out == n_time_cr
+        ):
             pns_comp = pns_comp[:n_in]
             pns_norm = pns_norm[:n_in]
         # Model 2 FFT padding beyond the input grid — align returned time axis.
@@ -161,4 +160,3 @@ def calc_pns(
         return ok, pns_norm, pns_comp, t
 
     raise ValueError(f"model must be 'safe' or 'chronaxie_rheobase', got {model!r}")
-
