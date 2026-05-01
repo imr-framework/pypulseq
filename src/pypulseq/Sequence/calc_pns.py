@@ -1,3 +1,4 @@
+import warnings
 from types import SimpleNamespace
 from typing import List, Tuple, Union
 
@@ -115,8 +116,21 @@ def calc_pns(
 
     if model == 'chronaxie_rheobase':
         gamma = float(obj.system.gamma)
-        gw_tm = np.zeros((gw.shape[0], 3), dtype=float)
-        gw_tm[:, :ng] = gw / gamma
+        n_in = int(gw.shape[0])
+        n_ch = min(ng, 3)
+        if ng > 3:
+            warnings.warn(
+                'calc_pns chronaxie_rheobase uses only the first three gradient channels.',
+                UserWarning,
+                stacklevel=2,
+            )
+        gw_tm = np.zeros((n_in, 3), dtype=float)
+        gw_tm[:, :n_ch] = gw[:, :n_ch] / gamma
+        # pns_cr mis-detects (points, reps, dims) when n_time < 3 because it
+        # assumes dims <= 3 and time is the longest axis; pad time to >= 3.
+        n_time_cr = max(n_in, 3)
+        if n_time_cr > n_in:
+            gw_tm = np.pad(gw_tm, ((0, n_time_cr - n_in), (0, 0)))
         grad_cr = gw_tm.T[:, :, np.newaxis]
 
         pthresh, pt, _ptmax, _gmax, _smax, _t_ms, _f_khz = pns_cr(
@@ -130,6 +144,19 @@ def calc_pns(
 
         pns_comp = 0.01 * pt[:, :, 0].T
         pns_norm = pthresh[0, :, 0] / 100.0
+        n_out = int(pns_norm.shape[0])
+        # Trim samples we only added so pns_cr sees time as the long axis (n_time >= 3).
+        if chronaxie_conv_model == 1 and n_out > n_in:
+            pns_comp = pns_comp[:n_in]
+            pns_norm = pns_norm[:n_in]
+        elif chronaxie_conv_model == 2 and n_out > n_in and n_out == n_time_cr:
+            pns_comp = pns_comp[:n_in]
+            pns_norm = pns_norm[:n_in]
+        # Model 2 FFT padding beyond the input grid — align returned time axis.
+        elif chronaxie_conv_model == 2 and n_out != n_in:
+            t0 = float(t[0] - 0.5 * dt) if t.size else 0.0
+            t = t0 + (np.arange(n_out) + 0.5) * dt
+
         ok = bool(np.all(pns_norm < 1))
         return ok, pns_norm, pns_comp, t
 
