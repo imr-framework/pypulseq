@@ -467,10 +467,13 @@ class Sequence:
         hardware: SimpleNamespace,
         time_range: Union[List[float], None] = None,
         do_plots: bool = True,
+        model: str = 'safe',
+        *,
+        chronaxie_coil: str = 'xrm',
+        chronaxie_conv_model: int = 1,
     ) -> Tuple[bool, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
-        See http://github.com/filip-szczepankiewicz/safe_pns_prediction
+        Calculate PNS using the SAFE model or the chronaxie–rheobase (toppe-style) model.
 
         Returns pns levels due to respective axes (normalized to 1 and not to 100#)
 
@@ -485,6 +488,13 @@ class Sequence:
             can be acquired from)
         do_plots : bool, optional
             Plot the results from the PNS calculations. The default is True.
+        model : str, optional
+            ``'safe'`` (default) or ``'chronaxie_rheobase'``.
+        chronaxie_coil : str, optional
+            Coil preset when ``model='chronaxie_rheobase'`` (see
+            :func:`~pypulseq.safety.pns.chronaxie_rheobase.pns_cr`).
+        chronaxie_conv_model : int, optional
+            Chronaxie convolution mode: ``1`` or ``2`` (time vs frequency domain).
 
         Returns
         -------
@@ -497,7 +507,15 @@ class Sequence:
         t_pns : np.array [N]
             Time axis for the pns_norm and pns_components arrays
         """
-        return calc_pns(self, hardware, time_range=time_range, do_plots=do_plots)
+        return calc_pns(
+            self,
+            hardware,
+            time_range=time_range,
+            do_plots=do_plots,
+            model=model,
+            chronaxie_coil=chronaxie_coil,
+            chronaxie_conv_model=chronaxie_conv_model,
+        )
 
     def check_timing(
         self,

@@ -14,7 +14,7 @@ def _isodd(n: int) -> bool:
     return n % 2 > 0
 
 
-def pns(
+def pns_cr(
     grad: np.ndarray,
     coil: str,
     *,
@@ -250,7 +250,7 @@ def run_demo() -> None:
     grad = _build_demo_gradient(points=2500, gdt=gdt)
     coil = 'xrm'
 
-    pthresh, pt, ptmax, gmax, smax, t_ms, f_khz = pns(
+    pthresh, pt, ptmax, gmax, smax, t_ms, f_khz = pns_cr(
         grad,
         coil,
         gdt=gdt,
