@@ -15,11 +15,11 @@ def make_extended_trapezoid_area(
     channel: str,
     grad_start: float,
     grad_end: float,
-    duration: Union[float, None] = None,
     convert_to_arbitrary: bool = False,
+    system: Union[Opts, None] = None,
+    duration: Union[float, None] = None,
     max_grad: Union[float, None] = None,
     max_slew: Union[float, None] = None,
-    system: Union[Opts, None] = None,
 ) -> Tuple[SimpleNamespace, np.ndarray, np.ndarray]:
     """
     Make an extended trapezoid for given area and gradient start and end point.
@@ -36,18 +36,18 @@ def make_extended_trapezoid_area(
         Starting non-zero gradient value in Hz/m.
     grad_end : float
         Ending non-zero gradient value in Hz/m.
-    duration : float, default=None
-        Desired duration of the extended trapezoid in s.
     convert_to_arbitrary : bool, default=False
         Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
+    system: Opts, default=None
+        System limits.
+    duration : float, default=None
+        Desired duration of the extended trapezoid in s.
     max_grad : float, default=None
         Maximum gradient strength in Hz/m.
         If None, the maximum gradient strength is set to 99% of the system limit.
     max_slew : float, default=None
         Maximum slew rate in Hz/m/s.
         If None, the maximum slew rate is set to 99% of the system limit.
-    system: Opts, default=None
-        System limits.
 
     Returns
     -------
