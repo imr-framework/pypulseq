@@ -40,7 +40,7 @@ def readasc(filename: str) -> Tuple[dict, dict]:
             # regex wizardry: Matches lines like 'a[0].b[2][3].c = "string" # comment'
             # Note this assumes correct formatting, e.g. does not check whether
             # brackets match.
-            # modified regex to include hexidecimal shapes 
+            # modified regex to include hexidecimal shapes
             match = re.match(
                 r'^\s*([a-zA-Z0-9\[\]\._]+)\s*\=\s*(("[^"]*"|\'[^\']\')|(0x[0-9A-Fa-f]+)|(\d+)|([0-9\.e\-]+))\s*((#|\/\/)(.*))?$',
                 next_line,
@@ -89,11 +89,11 @@ def readasc(filename: str) -> Tuple[dict, dict]:
                 # Depending on which regex section matched we can infer the value type
                 if match[3]:
                     base[assign_to] = match[3][1:-1]
-                elif match[4]: #hex
+                elif match[4]:  # hex
                     base[assign_to] = int(match[4], 16)
-                elif match[5]: #int
+                elif match[5]:  # int
                     base[assign_to] = int(match[5])
-                elif match[6]: #float
+                elif match[6]:  # float
                     base[assign_to] = float(match[6])
                 else:
                     raise RuntimeError('This should not be reached')
