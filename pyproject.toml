@@ -126,6 +126,9 @@ skip-magic-trailing-comma = false
 [tool.typos.default]
 locale = "en-us"
 
+[tool.typos.default.extend-words]
+writeable = "writeable" # this is a valid numpy array attribute
+
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
