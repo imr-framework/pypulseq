@@ -40,7 +40,7 @@ def readasc(filename: str) -> Tuple[dict, dict]:
             # regex wizardry: Matches lines like 'a[0].b[2][3].c = "string" # comment'
             # Note this assumes correct formatting, e.g. does not check whether
             # brackets match.
-            # modified regex to include hexidecimal shapes
+            # modified regex to include hexadecimal shapes
             match = re.match(
                 r'^\s*([a-zA-Z0-9\[\]\._]+)\s*\=\s*(("[^"]*"|\'[^\']\')|(0x[0-9A-Fa-f]+)|(\d+)|([0-9\.e\-]+))\s*((#|\/\/)(.*))?$',
                 next_line,
