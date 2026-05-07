@@ -4,11 +4,12 @@ from typing import Tuple
 
 def readasc(filename: str) -> Tuple[dict, dict]:
     """
-    Reads Siemens ASC ascii-formatted textfile and returns a dictionary
-    structure.
-    E.g. a[0].b[2][3].c = "string"
-    parses into:
-      asc['a'][0]['b'][2][3]['c'] = "string"
+    Read a Siemens ASC ASCII-formatted text file.
+
+    The file is parsed into nested dictionaries/lists according to the field name.
+    For example, a line like ``a[0].b[2][3].c = "string"`` is parsed into::
+
+        asc['a'][0]['b'][2][3]['c'] = "string"
 
     Parameters
     ----------
@@ -21,11 +22,18 @@ def readasc(filename: str) -> Tuple[dict, dict]:
         Dictionary of ASC part of file.
     extra : dict
         Dictionary of other fields after "ASCCONV END"
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    RuntimeError
+        If a line contains an assignment but cannot be parsed.
     """
     asc, extra = {}, {}
 
     # Read asc file and convert it into a dictionary structure
-    with open(filename, 'r') as fp:
+    with open(filename, 'r', encoding='utf-8') as fp:
         end_of_asc = False
 
         for next_line in fp:
@@ -90,11 +98,26 @@ def readasc(filename: str) -> Tuple[dict, dict]:
                 if match[3]:
                     base[assign_to] = match[3][1:-1]
                 elif match[4]:  # hex
-                    base[assign_to] = int(match[4], 16)
+                    try:
+                        base[assign_to] = int(match[4], 16)
+                    except ValueError as e:
+                        raise RuntimeError(
+                            f'Bug: ASC line with an assignment was not parsed correctly: {next_line}'
+                        ) from e
                 elif match[5]:  # int
-                    base[assign_to] = int(match[5])
+                    try:
+                        base[assign_to] = int(match[5])
+                    except ValueError as e:
+                        raise RuntimeError(
+                            f'Bug: ASC line with an assignment was not parsed correctly: {next_line}'
+                        ) from e
                 elif match[6]:  # float
-                    base[assign_to] = float(match[6])
+                    try:
+                        base[assign_to] = float(match[6])
+                    except ValueError as e:
+                        raise RuntimeError(
+                            f'Bug: ASC line with an assignment was not parsed correctly: {next_line}'
+                        ) from e
                 else:
                     raise RuntimeError('This should not be reached')
             elif next_line.find('=') != -1:
