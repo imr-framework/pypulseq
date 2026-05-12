@@ -49,6 +49,7 @@ def ext_test_report_data(self) -> Dict[str, Any]:
     t_excitation = np.asarray(t_excitation)
 
     # remove all ADC events that come before the first RF event (noise scans or alike)
+    k_traj_adc = k_traj_adc[:, t_adc > t_excitation[0]]
     t_adc = t_adc[t_adc > t_excitation[0]]
 
     k_abs_adc = np.sqrt(np.sum(np.square(k_traj_adc), axis=0))
