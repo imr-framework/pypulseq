@@ -167,7 +167,7 @@ class Sequence:
 
         return t_adc, fp_adc
 
-    def add_block(self, *args: SimpleNamespace) -> None:
+    def add_block(self, *args: SimpleNamespace | None) -> None:
         """
         Add a new block/multiple events to the sequence.
 
@@ -185,6 +185,13 @@ class Sequence:
         pypulseq.make_sinc_pulse : Create sinc RF pulse events
         pypulseq.make_soft_delay : Create soft delay events
         """
+        # Remove None values from args
+        args = tuple(a for a in args if a is not None)
+
+        # If no args remain, return without doing anything
+        if not args:
+            return
+
         # Validate that no raw floats are passed directly by users
         for arg in args:
             if isinstance(arg, float):
