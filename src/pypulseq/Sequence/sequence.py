@@ -264,7 +264,11 @@ class Sequence:
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
         gradient_offset: Union[float, List[float], np.ndarray] = 0,
-    ) -> Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray]:
+        output_as_dict: bool = False,
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray],
+        dict,
+    ]:
         """
         Calculates the k-space trajectory of the entire pulse sequence.
 
@@ -280,6 +284,9 @@ class Sequence:
             If gradient_offset is a single value, this value will be used for all gradient channels.
             If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
             channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        output_as_dict : bool, default=False
+            If True, return a dict containing all available outputs (including `t_ktraj`).
+            If False, return the legacy 5-tuple output for backwards compatibility.
 
         Returns
         -------
@@ -287,14 +294,14 @@ class Sequence:
             K-space trajectory sampled at `t_adc` timepoints.
         k_traj : numpy.array
             K-space trajectory of the entire pulse sequence.
-        t_ktraj : numpy.array
-            K-space trajectory timepoints.
         t_excitation : List[float]
             Excitation timepoints.
         t_refocusing : List[float]
             Refocusing timepoints.
         t_adc : numpy.array
             Sampling timepoints.
+
+        When `output_as_dict=True`, the returned dictionary contains the additional key `t_ktraj`.
         """
         if np.any(np.abs(trajectory_delay) > 100e-6):
             raise Warning(f'Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high')
@@ -437,19 +444,33 @@ class Sequence:
         k_traj[:, i_period_end] = k_traj[:, i_period_end] + dk
         k_traj_adc = k_traj[:, i_adc]
 
-        return k_traj_adc, k_traj, t_ktraj, t_excitation, t_refocusing, t_adc
+        if output_as_dict:
+            return {
+                'k_traj_adc': k_traj_adc,
+                'k_traj': k_traj,
+                't_ktraj': t_ktraj,
+                't_excitation': t_excitation,
+                't_refocusing': t_refocusing,
+                't_adc': t_adc,
+            }
+
+        return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
 
     def calculate_kspacePP(
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
         gradient_offset: Union[float, List[float], np.ndarray] = 0,
-    ) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
+        output_as_dict: bool = False,
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray],
+        dict,
+    ]:
         warn(
             'Sequence.calculate_kspacePP has been deprecated, use calculate_kspace instead',
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.calculate_kspace(trajectory_delay, gradient_offset)
+        return self.calculate_kspace(trajectory_delay, gradient_offset, output_as_dict=output_as_dict)
 
     def calculate_pns(
         self,
