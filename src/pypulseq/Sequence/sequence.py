@@ -2,7 +2,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Tuple, Union, Literal
 from warnings import warn
 
 try:
@@ -1016,7 +1016,7 @@ class Sequence:
         gx_color: str = 'blue',
         gy_color: str = 'red',
         gz_color: Tuple[float] = (0, 0.5, 0.3),
-        rf_plot: str = 'abs',
+        rf_plot: Literal['abs', 'real', 'imag'] = 'abs',
     ):
         """
         Plot sequence using paper-style formatting (minimalist, high-contrast layout).
@@ -1038,8 +1038,11 @@ class Sequence:
             Color for gradient Y waveform.
         gz_color : color, default=(0, 0.5, 0.3)
             Color for gradient Z waveform.
-        rf_plot : {'abs', 'real', 'imag'}, default='abs'
-            Determines how to plot RF waveforms (magnitude, real or imaginary part).
+        rf_plot : str, default='abs'
+            Determines how to plot RF waveforms in the RF magnitude plot.
+            Must be one of 'auto', 'abs', 'real' or 'imag'.
+            If 'abs', plots magnitude for all RF events.
+            If 'real' or 'imag', plots the respective component for all RF events.
 
         """
         ext_paper_plot(self, time_range, line_width, axes_color, rf_color, gx_color, gy_color, gz_color, rf_plot)
@@ -1057,7 +1060,7 @@ class Sequence:
         overlay: SeqPlot = None,
         stacked: bool = False,
         show_guides: bool = False,
-        rf_plot: str = 'auto',
+        rf_plot: Literal['auto', 'abs', 'real', 'imag'] = 'auto',
     ) -> SeqPlot:
         """
         Plot `Sequence`.
@@ -1091,8 +1094,9 @@ class Sequence:
             If False, use separate figures for RF/ADC and gradients.
         show_guides : bool, default=False
             If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
-        rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+        rf_plot : str, default='auto'
             Determines how to plot RF waveforms in the RF magnitude plot.
+            Must be one of 'auto', 'abs', 'real' or 'imag'.
             If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
             If 'abs', plots magnitude for all RF events.
             If 'real' or 'imag', plots the respective component for all RF events.

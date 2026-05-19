@@ -4,6 +4,7 @@ import contextlib
 import itertools
 import math
 import typing
+from typing import Literal
 
 import matplotlib as mpl
 import numpy as np
@@ -60,11 +61,12 @@ class SeqPlot:
         If False, use separate figures for RF/ADC and gradients.
     show_guides : bool, default=False
         If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
-    rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
-            Determines how to plot RF waveforms in the RF magnitude plot.
-            If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
-            If 'abs', plots magnitude for all RF events.
-            If 'real' or 'imag', plots the respective component for all RF events.
+    rf_plot : str, default='auto'
+        Determines how to plot RF waveforms in the RF magnitude plot.
+        Must be one of 'auto', 'abs', 'real' or 'imag'.
+        If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
+        If 'abs', plots magnitude for all RF events.
+        If 'real' or 'imag', plots the respective component for all RF events.
 
     Attributes
     ----------
@@ -93,7 +95,7 @@ class SeqPlot:
         overlay: 'SeqPlot' = None,
         stacked: bool = False,
         show_guides: bool = False,
-        rf_plot: str = 'auto',
+        rf_plot: Literal['auto', 'abs', 'real', 'imag'] = 'auto',
     ):
         # Handle optional dependencies
         if _MPLCURSORS_AVAILABLE is False:
@@ -699,7 +701,14 @@ def _seq_plot(
 
     # Set axis labels
     sp11.set_ylabel('ADC')
-    sp12.set_ylabel('RF mag (Hz)')
+    if rf_plot == 'auto':
+        sp12.set_ylabel('RF auto: mag/real/imag (Hz)')
+    elif rf_plot == 'abs':
+        sp12.set_ylabel('RF mag (Hz)')
+    elif rf_plot == 'real':
+        sp12.set_ylabel('RF real (Hz)')
+    elif rf_plot == 'imag':
+        sp12.set_ylabel('RF imag (Hz)')
     sp13.set_ylabel('RF/ADC phase (rad)')
     sp13.set_xlabel(f't ({time_disp})')
     sp21.set_ylabel(f'Gx ({grad_disp})')
