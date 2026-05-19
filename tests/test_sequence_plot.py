@@ -1,8 +1,8 @@
 """Simple unit tests for Sequence.plot() method."""
-
 import math
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pypulseq as pp
 
 
@@ -109,9 +109,10 @@ def test_plot_rf_plot_auto_default():
     result_default = seq1.plot(plot_now=False)
     result_auto = seq2.plot(plot_now=False, rf_plot='auto')
 
-    # Both should succeed and produce figures
-    assert result_default.fig1 is not None
-    assert result_auto.fig1 is not None
+    # Compare y-data of all lines in fig1 (RF/ADC) - should be identical
+    for ax1, ax2 in zip(result_default.fig1.get_axes(), result_auto.fig1.get_axes()):
+        for line1, line2 in zip(ax1.get_lines(), ax2.get_lines()):
+            np.testing.assert_array_equal(line1.get_ydata(), line2.get_ydata())
 
     plt.close('all')
 
