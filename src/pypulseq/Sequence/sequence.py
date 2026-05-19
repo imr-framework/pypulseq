@@ -2,7 +2,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, List, Tuple, Union, Literal
+from typing import Any, List, Literal, Tuple, Union
 from warnings import warn
 
 try:

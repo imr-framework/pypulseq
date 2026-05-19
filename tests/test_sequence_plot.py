@@ -1,4 +1,5 @@
 """Simple unit tests for Sequence.plot() method."""
+
 import math
 
 import matplotlib.pyplot as plt
