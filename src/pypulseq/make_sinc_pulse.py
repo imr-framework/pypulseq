@@ -134,7 +134,7 @@ def make_sinc_pulse(
 
     if return_gz:
         if slice_thickness == 0:
-            raise ValueError('Slice thickness must be provided')
+            raise ValueError('Slice thickness must be provided if return_gz is True')
 
         if max_grad > 0:
             system = copy(system)
@@ -146,27 +146,41 @@ def make_sinc_pulse(
 
         amplitude = bandwidth / slice_thickness
         area = amplitude * duration
-        gz = make_trapezoid(channel='z', system=system, flat_time=duration, flat_area=area)
+        # create slice selection gradient
+        gz = make_trapezoid(
+            channel='z',
+            system=system,
+            flat_time=duration,
+            flat_area=area,
+        )
+        # create slice selection rephasing gradient
         gzr = make_trapezoid(
             channel='z',
             system=system,
             area=-area * (1 - center_pos) - 0.5 * (gz.area - area),
         )
 
+        # if RF delay > gradient risetime, delay the gradient
         if rf.delay > gz.rise_time:
             gz.delay = math.ceil((rf.delay - gz.rise_time) / system.grad_raster_time) * system.grad_raster_time
 
+        # if RF delay < gradient risetime + gradient delay, adjust RF delay
         if rf.delay < (gz.rise_time + gz.delay):
             rf.delay = gz.rise_time + gz.delay
 
-    if rf.dead_time > rf.delay:
-        warn(
-            f'Specified RF delay {rf.delay * 1e6:.2f} us is less than the dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
-            stacklevel=2,
-        )
-        additional_delay = rf.dead_time - rf.delay
-        gz.delay = gz.delay + additional_delay
-        rf.delay = rf.delay + additional_delay
+        # ensure RF delay is at least RF dead time and adjust gradient delay accordingly
+        if rf.delay < rf.dead_time:
+            additional_delay = rf.dead_time - rf.delay
+            rf.delay = rf.dead_time
+            gz.delay = gz.delay + additional_delay
+
+    else:
+        if rf.delay < rf.dead_time:
+            warn(
+                f'Specified RF delay {rf.delay * 1e6:.2f} us is less than RF dead time {rf.dead_time * 1e6:.0f} us. Delay was increased to the dead time.',
+                stacklevel=2,
+            )
+            rf.delay = rf.dead_time
 
     # Following 2 lines of code are workarounds for numpy returning 3.14... for np.angle(-0.00...)
     negative_zero_indices = np.where(rf.signal == -0.0)
