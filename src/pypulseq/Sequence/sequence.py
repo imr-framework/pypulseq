@@ -167,13 +167,13 @@ class Sequence:
 
         return t_adc, fp_adc
 
-    def add_block(self, *args: SimpleNamespace | None) -> None:
+    def add_block(self, *args: Union[SimpleNamespace, None]) -> None:
         """
         Add a new block/multiple events to the sequence.
 
         Parameters
         ----------
-        *args : SimpleNamespace
+        *args : Union[SimpleNamespace, None]
             Event objects to be added as a block to the sequence. For delays,
             use `pypulseq.make_delay()` instead of raw float values.
 
