@@ -38,16 +38,16 @@ def make_extended_trapezoid_area(
         Ending non-zero gradient value in Hz/m.
     convert_to_arbitrary : bool, default=False
         Boolean flag to enable converting the extended trapezoid gradient into an arbitrary gradient.
-    system: Opts, default=None
+    system : Opts, default=None
         System limits.
     duration : float, default=None
         Desired duration of the extended trapezoid in s.
     max_grad : float, default=None
         Maximum gradient strength in Hz/m.
-        If None, the maximum gradient strength is set to 99% of the system limit.
+        If None, the maximum gradient strength is set to the system limit.
     max_slew : float, default=None
         Maximum slew rate in Hz/m/s.
-        If None, the maximum slew rate is set to 99% of the system limit.
+        If None, the maximum slew rate is set to the system limit.
 
     Returns
     -------
@@ -62,6 +62,7 @@ def make_extended_trapezoid_area(
     ------
     ValueError
         If no solution was found that satisfies the constraints and the desired area (and duration, if given).
+        If `duration` is not None and is not a positive number.
     """
     if system is None:
         system = Opts.default
