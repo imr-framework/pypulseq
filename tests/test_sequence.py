@@ -253,8 +253,45 @@ def seq6():
     return seq
 
 
+# Dummy seq ending with [TRAP] section
+def seq_trap_only():
+    seq = Sequence()
+    seq.add_block(pp.make_trapezoid('x', area=1000))
+
+    return seq
+
+
+# Dummy seq ending with [ADC] section
+def seq_adc_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=100, duration=10e-3))
+
+    return seq
+
+
+# Dummy seq ending with [EXTENSION] section
+def seq_ext_only():
+    seq = Sequence()
+    seq.add_block(pp.make_adc(num_samples=1000, duration=1e-3), pp.make_label(label='NOISE', type='SET', value=True))
+
+    return seq
+
+
 # List of all sequence functions that will be tested with the test functions below.
-sequence_zoo = [seq_make_gauss_pulses, seq_make_sinc_pulses, seq_make_block_pulses, seq1, seq2, seq3, seq4, seq5, seq6]
+sequence_zoo = [
+    seq_make_gauss_pulses,
+    seq_make_sinc_pulses,
+    seq_make_block_pulses,
+    seq1,
+    seq2,
+    seq3,
+    seq4,
+    seq5,
+    seq6,
+    seq_trap_only,
+    seq_adc_only,
+    seq_ext_only,
+]
 
 
 # List of example sequences in pypulseq/seq_examples/scripts/ to add as
@@ -338,6 +375,52 @@ class TestSequence:
             assert isinstance(report, str), 'test_report() did not return a string'
             assert len(report) > 0, 'test_report() returned an empty string'
 
+    # Test sequence.test_report_dict() method
+    def test_test_report_dict(self, seq_func):
+        if seq_func.__name__ in seq_examples or seq_func.__name__ in ['seq2', 'seq3', 'seq4', 'seq5', 'seq6']:
+            data = TestSequence.seq.test_report_dict()
+
+            # Check return type
+            assert isinstance(data, dict), 'test_report_dict() did not return a dict'
+
+            # Check required keys exist
+            required_keys = [
+                'num_blocks',
+                'event_count',
+                'duration',
+                'TE',
+                'TR',
+                'flip_angles_deg',
+                'unique_k_positions',
+                'max_gradient',
+                'max_slew_rate',
+                'timing_ok',
+                'timing_error_report',
+            ]
+            for key in required_keys:
+                assert key in data, f'test_report_dict() missing required key: {key}'
+
+            # Check event_count structure
+            assert isinstance(data['event_count'], dict), 'event_count should be a dict'
+            for event_key in ['rf', 'gx', 'gy', 'gz', 'adc', 'delay']:
+                assert event_key in data['event_count'], f'event_count missing key: {event_key}'
+
+            # Check max_gradient structure
+            assert isinstance(data['max_gradient'], dict), 'max_gradient should be a dict'
+            for grad_key in ['per_channel_Hz_m', 'per_channel_mT_m', 'absolute_Hz_m', 'absolute_mT_m']:
+                assert grad_key in data['max_gradient'], f'max_gradient missing key: {grad_key}'
+
+            # Check max_slew_rate structure
+            assert isinstance(data['max_slew_rate'], dict), 'max_slew_rate should be a dict'
+            for slew_key in ['per_channel_Hz_m_s', 'per_channel_T_m_s', 'absolute_Hz_m_s', 'absolute_T_m_s']:
+                assert slew_key in data['max_slew_rate'], f'max_slew_rate missing key: {slew_key}'
+
+            # Check types of key values
+            assert isinstance(data['num_blocks'], int), 'num_blocks should be an int'
+            assert isinstance(data['duration'], (int, float)), 'duration should be numeric'
+            assert isinstance(data['timing_ok'], bool), 'timing_ok should be a bool'
+            assert isinstance(data['timing_error_report'], list), 'timing_error_report should be a list'
+
     # Test whether the sequence is the approximately the same after writing a .seq
     # file and reading it back in.
     def test_writeread(self, seq_func, tmp_path, compare_seq_file):
@@ -408,6 +491,24 @@ class TestSequence:
 
         for label in labels_seq:
             assert (labels_seq[label] == labels_seq2[label]).all(), f'Label {label} does not match'
+
+    def test_writeread_no_signature(self, seq_func, tmp_path):
+        seq_name = str(seq_func.__name__)
+        output_filename = tmp_path / (seq_name + '.seq')
+
+        seq = TestSequence.seq
+
+        # Write sequence to file
+        seq.write(output_filename, create_signature=False)
+
+        # Read written sequence file back in
+        seq2 = pp.Sequence(system=seq.system)
+        seq2.read(output_filename)
+
+        # Clean up written sequence file
+        output_filename.unlink()
+
+        assert len(seq2.block_events) == len(seq.block_events)
 
     def test_writeread_v141(self, seq_func, tmp_path):
         if seq_func.__name__ not in ['seq6', 'write_gre_label_softdelay']:  # soft delay not supported in v141
