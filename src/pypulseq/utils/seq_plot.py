@@ -61,9 +61,8 @@ class SeqPlot:
         If False, use separate figures for RF/ADC and gradients.
     show_guides : bool, default=False
         If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
-    rf_plot : str, default='auto'
-        Determines how to plot RF waveforms in the RF magnitude plot.
-        Must be one of 'auto', 'abs', 'real' or 'imag'.
+    rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+        Determines how to plot the RF waveforms.
         If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
         If 'abs', plots magnitude for all RF events.
         If 'real' or 'imag', plots the respective component for all RF events.

@@ -39,9 +39,8 @@ def paper_plot(
         Color for gradient Y waveform.
     gz_color : color, default=(0, 0.5, 0.3)
         Color for gradient Z waveform.
-    rf_plot : str, default='abs'
-        Determines how to plot RF waveforms in the RF magnitude plot.
-        Must be one of 'abs', 'real' or 'imag'.
+    rf_plot : {'abs', 'real', 'imag'}, default='abs'
+        Determines how to plot the RF waveforms.
         If 'abs', plots magnitude for all RF events.
         If 'real' or 'imag', plots the respective component for all RF events.
 

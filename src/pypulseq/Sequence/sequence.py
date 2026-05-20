@@ -1038,9 +1038,8 @@ class Sequence:
             Color for gradient Y waveform.
         gz_color : color, default=(0, 0.5, 0.3)
             Color for gradient Z waveform.
-        rf_plot : str, default='abs'
-            Determines how to plot RF waveforms in the RF magnitude plot.
-            Must be one of 'auto', 'abs', 'real' or 'imag'.
+        rf_plot : {'abs', 'real', 'imag'}, default='abs'
+            Determines how to plot the RF waveforms.
             If 'abs', plots magnitude for all RF events.
             If 'real' or 'imag', plots the respective component for all RF events.
 
@@ -1094,9 +1093,8 @@ class Sequence:
             If False, use separate figures for RF/ADC and gradients.
         show_guides : bool, default=False
             If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
-        rf_plot : str, default='auto'
-            Determines how to plot RF waveforms in the RF magnitude plot.
-            Must be one of 'auto', 'abs', 'real' or 'imag'.
+        rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+            Determines how to plot the RF waveforms.
             If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
             If 'abs', plots magnitude for all RF events.
             If 'real' or 'imag', plots the respective component for all RF events.
@@ -1128,9 +1126,10 @@ class Sequence:
 
         Parameters
         ----------
-        detect_rf_use
         file_path : str
             Path to `.seq` file to be read.
+        detect_rf_use : bool, default=False
+            If True, try to infer intended use of the RF pulses if `use` attributes are not set.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence after reading.
         """
