@@ -11,7 +11,21 @@ gx_startshigh2 = pp.make_extended_trapezoid('x', amplitudes=[200000, 100000, 0],
 gx_allhigh = pp.make_extended_trapezoid('x', amplitudes=[100000, 100000, 100000], times=[0, 1e-4, 2e-4])
 delay = pp.make_delay(1e-3)
 
-## Test gradient continuity checks in add_block
+
+def test_add_block_none_only_noop():
+    seq = pp.Sequence()
+    seq.add_block(None)
+    assert len(seq.block_events) == 0
+
+
+def test_add_block_ignores_none():
+    seq1 = pp.Sequence()
+    seq1.add_block(pp.make_delay(1))
+
+    seq2 = pp.Sequence()
+    seq2.add_block(None, pp.make_delay(1), None)
+
+    assert list(seq1.block_durations.values()) == list(seq2.block_durations.values())
 
 
 def test_gradient_continuity1():
