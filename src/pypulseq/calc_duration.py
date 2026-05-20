@@ -1,9 +1,10 @@
 from types import SimpleNamespace
+from typing import Union
 
 from pypulseq.block_to_events import block_to_events
 
 
-def calc_duration(*args: SimpleNamespace | dict | float | int | None) -> float:
+def calc_duration(*args: Union[SimpleNamespace, dict, float, int, None]) -> float:
     """
     Calculate the duration of one or more events (or an event block).
 
@@ -16,7 +17,7 @@ def calc_duration(*args: SimpleNamespace | dict | float | int | None) -> float:
 
     Parameters
     ----------
-    args : SimpleNamespace | dict | float | int | None
+    args : Union[SimpleNamespace, dict, float, int, None]
         One or more events, a block (i.e. an object with event attributes such as `rf`), label
         events represented as a `dict`, an explicit block duration (`float`/`int`), or `None`.
 
