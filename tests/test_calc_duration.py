@@ -7,12 +7,11 @@ import pytest
 
 
 def test_calc_duration_no_event():
-    assert pp.calc_duration() == 0
+    assert pp.calc_duration() == 0.0
 
 
-def test_calc_duration_none_only_raises():
-    with pytest.raises(ValueError, match='At least one non-None input must be provided'):
-        pp.calc_duration(None)
+def test_calc_duration_none_only():
+    assert pp.calc_duration(None) == 0.0
 
 
 known_duration_event_zoo = [

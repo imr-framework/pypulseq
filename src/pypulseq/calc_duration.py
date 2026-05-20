@@ -13,7 +13,9 @@ def calc_duration(*args: Union[SimpleNamespace, dict, float, int, None]) -> floa
     durations (i.e. the duration of a block comprised of those events).
 
     `None` inputs are ignored, which allows optional events to be passed without an explicit
-    conditional. If `None` is the only provided input, a `ValueError` is raised.
+    conditional.
+
+    If no non-None inputs are provided, returns 0.0.
 
     Parameters
     ----------
@@ -26,20 +28,16 @@ def calc_duration(*args: Union[SimpleNamespace, dict, float, int, None]) -> floa
     duration : float
         Maximum duration of `args`.
 
-    Raises
-    ------
-    ValueError
-        If no non-None inputs are provided.
     """
     if args:
         args_filtered = tuple(a for a in args if a is not None)
         if not args_filtered:
-            raise ValueError('At least one non-None input must be provided')
+            return 0.0
         args = args_filtered
 
     events = block_to_events(*args)
 
-    duration = 0
+    duration = 0.0
     for event in events:
         if event is None:
             continue
