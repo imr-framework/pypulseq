@@ -2,7 +2,7 @@ import math
 from collections import OrderedDict
 from copy import deepcopy
 from types import SimpleNamespace
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Literal, Tuple, Union
 from warnings import warn
 
 try:
@@ -1023,7 +1023,7 @@ class Sequence:
         gx_color: str = 'blue',
         gy_color: str = 'red',
         gz_color: Tuple[float] = (0, 0.5, 0.3),
-        rf_plot: str = 'abs',
+        rf_plot: Literal['abs', 'real', 'imag'] = 'abs',
     ):
         """
         Plot sequence using paper-style formatting (minimalist, high-contrast layout).
@@ -1046,7 +1046,9 @@ class Sequence:
         gz_color : color, default=(0, 0.5, 0.3)
             Color for gradient Z waveform.
         rf_plot : {'abs', 'real', 'imag'}, default='abs'
-            Determines how to plot RF waveforms (magnitude, real or imaginary part).
+            Determines how to plot the RF waveforms.
+            If 'abs', plots magnitude for all RF events.
+            If 'real' or 'imag', plots the respective component for all RF events.
 
         """
         ext_paper_plot(self, time_range, line_width, axes_color, rf_color, gx_color, gy_color, gz_color, rf_plot)
@@ -1064,6 +1066,7 @@ class Sequence:
         overlay: SeqPlot = None,
         stacked: bool = False,
         show_guides: bool = False,
+        rf_plot: Literal['auto', 'abs', 'real', 'imag'] = 'auto',
     ) -> SeqPlot:
         """
         Plot `Sequence`.
@@ -1097,6 +1100,11 @@ class Sequence:
             If False, use separate figures for RF/ADC and gradients.
         show_guides : bool, default=False
             If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
+        rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+            Determines how to plot the RF waveforms.
+            If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
+            If 'abs', plots magnitude for all RF events.
+            If 'real' or 'imag', plots the respective component for all RF events.
 
         Returns
         -------
@@ -1116,6 +1124,7 @@ class Sequence:
             overlay,
             stacked,
             show_guides,
+            rf_plot=rf_plot,
         )
 
     def read(self, file_path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
@@ -1124,9 +1133,10 @@ class Sequence:
 
         Parameters
         ----------
-        detect_rf_use
         file_path : str
             Path to `.seq` file to be read.
+        detect_rf_use : bool, default=False
+            If True, try to infer intended use of the RF pulses if `use` attributes are not set.
         remove_duplicates : bool, default=True
             Remove duplicate events from the sequence after reading.
         """
