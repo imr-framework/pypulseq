@@ -14,7 +14,7 @@ def test_sigpy_import():
         # Attempt to import and ensure no issues
         pass
     else:
-        with pytest.raises(ModuleNotFoundError, match='SigPy is not installed.'):
+        with pytest.raises(ModuleNotFoundError, match='SigPy is not installed'):
             raise ModuleNotFoundError('SigPy is not installed.')
 
 

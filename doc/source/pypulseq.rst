@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   pypulseq.SAR
    pypulseq.Sequence
    pypulseq.tests
 

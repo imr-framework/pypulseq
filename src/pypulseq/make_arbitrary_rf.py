@@ -6,6 +6,7 @@ from warnings import warn
 
 import numpy as np
 
+from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 from pypulseq.supported_labels_rf_use import get_supported_rf_uses
@@ -15,19 +16,22 @@ from pypulseq.utils.tracing import trace, trace_enabled
 def make_arbitrary_rf(
     signal: np.ndarray,
     flip_angle: float,
-    bandwidth: float = 0,
-    delay: float = 0,
-    dwell: float = 0,
-    freq_offset: float = 0,
+    bandwidth: float = 0.0,
+    delay: float = 0.0,
+    dwell: float = 0.0,
+    freq_offset: float = 0.0,
     no_signal_scaling: bool = False,
-    max_grad: float = 0,
-    max_slew: float = 0,
-    phase_offset: float = 0,
+    max_grad: float = 0.0,
+    max_slew: float = 0.0,
+    phase_offset: float = 0.0,
     return_gz: bool = False,
-    slice_thickness: float = 0,
+    slice_thickness: float = 0.0,
     system: Union[Opts, None] = None,
-    time_bw_product: float = 0,
-    use: str = str(),
+    time_bw_product: float = 0.0,
+    use: str = 'undefined',
+    freq_ppm: float = 0.0,
+    phase_ppm: float = 0.0,
+    center: Union[float, None] = None,
 ) -> Union[SimpleNamespace, Tuple[SimpleNamespace, SimpleNamespace]]:
     """
     Create an RF pulse with the given pulse shape.
@@ -61,10 +65,18 @@ def make_arbitrary_rf(
         slice select event.
     system : Opts, default=Opts()
         System limits.
-    time_bw_product : float, default=4
+    time_bw_product : float, default=0
         Time-bandwidth product.
-    use : str, default=str()
-        Use of arbitrary radio-frequency pulse event. Must be one of 'excitation', 'refocusing' or 'inversion'.
+    use : str, default='undefined'
+        Use of arbitrary radio-frequency pulse event.
+        Must be one of 'excitation', 'refocusing', 'inversion',
+        'saturation', 'preparation', 'other', 'undefined'.
+    freq_ppm : float, default=0
+        PPM frequency offset.
+    phase_ppm : float, default=0
+        PPM phase offset.
+    center : float, default=None
+        RF center (s).
 
     Returns
     -------
@@ -76,18 +88,16 @@ def make_arbitrary_rf(
     Raises
     ------
     ValueError
-        If invalid `use` parameter is passed. Must be one of 'excitation', 'refocusing' or 'inversion'.
+        If invalid `use` parameter is passed.
         If `signal` with ndim > 1 is passed.
         If `return_gz=True`, and `slice_thickness` and `bandwidth` are not passed.
     """
     if system is None:
         system = Opts.default
 
-    valid_use_pulses = get_supported_rf_uses()
-    if use != '' and use not in valid_use_pulses:
-        raise ValueError(
-            f"Invalid use parameter. Must be one of 'excitation', 'refocusing' or 'inversion'. Passed: {use}"
-        )
+    valid_pulse_uses = get_supported_rf_uses()
+    if use != '' and use not in valid_pulse_uses:
+        raise ValueError(f'Invalid use parameter. Must be one of {valid_pulse_uses}. Passed: {use}')
 
     if dwell == 0:
         dwell = system.rf_raster_time
@@ -110,12 +120,12 @@ def make_arbitrary_rf(
     rf.shape_dur = duration
     rf.freq_offset = freq_offset
     rf.phase_offset = phase_offset
+    rf.freq_ppm = freq_ppm
+    rf.phase_ppm = phase_ppm
     rf.dead_time = system.rf_dead_time
     rf.ringdown_time = system.rf_ringdown_time
     rf.delay = delay
-
-    if use != '':
-        rf.use = use
+    rf.use = use
 
     if rf.dead_time > rf.delay:
         warn(
@@ -123,6 +133,15 @@ def make_arbitrary_rf(
             stacklevel=2,
         )
         rf.delay = rf.dead_time
+
+    if center is not None:
+        rf.center = center
+        if rf.center < 0:
+            rf.center = 0
+        if rf.center > rf.shape_dur:
+            rf.center = rf.shape_dur
+    else:
+        rf.center, _ = calc_rf_center(rf)
 
     if return_gz:
         if slice_thickness <= 0:

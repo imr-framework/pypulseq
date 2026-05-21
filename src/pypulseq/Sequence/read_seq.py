@@ -1,18 +1,19 @@
 import re
 import warnings
 from types import SimpleNamespace
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 
 from pypulseq.calc_duration import calc_duration
+from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.compress_shape import compress_shape
 from pypulseq.decompress_shape import decompress_shape
 from pypulseq.event_lib import EventLibrary
 from pypulseq.supported_labels_rf_use import get_supported_labels
 
 
-def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool = True) -> None:
+def read(self, path: str, detect_rf_use: Union[bool, None] = None, remove_duplicates: bool = True) -> None:
     """
     Load sequence from file - read the given filename and load sequence data into sequence object.
 
@@ -22,11 +23,12 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     ----------
     path : Path
         Path of sequence file to be read.
-    detect_rf_use : bool, default=False
+    detect_rf_use : bool, default=None
         Boolean flag to let the function infer the currently missing flags concerning the intended use of the RF pulses
         (excitation, refocusing, etc). These are important for the k-space trajectory calculation.
+        Default is True for versions prior 1.5.0.
     remove_duplicates: bool, default=True
-        Remove duplicate events from the sequence after reading
+        Remove duplicate events from the sequence after reading.
 
     Raises
     ------
@@ -54,14 +56,14 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
     # Raster times
     self.grad_raster_time = self.system.grad_raster_time
     self.rf_raster_time = self.system.rf_raster_time
-
+    self.adc_raster_time = self.system.adc_raster_time
+    self.block_duration_raster = self.system.block_duration_raster
     self.block_events = {}
     self.definitions = {}
     self.extension_string_idx = []
     self.extension_numeric_idx = []
 
-    jemris_generated = False
-    version_combined = 0
+    file_version_combined = 0
 
     # Load data from file
     while True:
@@ -73,7 +75,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
 
             # Gradient raster time
             if 'GradientRasterTime' in self.definitions:
-                self.gradient_raster_time = self.definitions['GradientRasterTime']
+                self.grad_raster_time = self.definitions['GradientRasterTime']
 
             # Radio frequency raster time
             if 'RadiofrequencyRasterTime' in self.definitions:
@@ -89,8 +91,6 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             else:
                 warnings.warn(f'No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.')
 
-        elif section == '[JEMRIS]':
-            jemris_generated = True
         elif section == '[SIGNATURE]':
             temp_sign_defs = __read_definitions(input_file)
             if 'Type' in temp_sign_defs:
@@ -99,66 +99,92 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                 self.signature_value = temp_sign_defs['Hash']
                 self.signature_file = 'Text'
         elif section == '[VERSION]':
-            version_major, version_minor, version_revision = __read_version(input_file)
+            file_version_major, file_version_minor, file_version_revision = __read_version(input_file)
+            file_version_combined = 1000000 * file_version_major + 1000 * file_version_minor + file_version_revision
 
-            if version_major != self.version_major:
-                raise RuntimeError(f'Unsupported version_major: {version_major}. Expected: {self.version_major}')
+            # Check if file version is higher than version of the installed PyPulseq package
+            package_version_combined = (
+                1000000 * self.version_major + 1000 * self.version_minor + int(self.version_revision)
+            )
+            if file_version_combined > package_version_combined:
+                warnings.warn(
+                    f'File version {file_version_major}.{file_version_minor}.{file_version_revision} is higher than '
+                    f'installed package version {self.version_major}.{self.version_minor}.{self.version_revision}. '
+                    f'This may cause parsing errors.'
+                )
 
-            version_combined = 1000000 * version_major + 1000 * version_minor + version_revision
-
-            if version_combined < 1002000:
+            if file_version_combined < 1002000:
                 raise RuntimeError(
-                    f'Unsupported version {version_major}.{version_minor}.{version_revision}, only file '
+                    f'Unsupported version {file_version_major}.{file_version_minor}.{file_version_revision}, only file '
                     f'format revision 1.2.0 and above are supported.'
                 )
 
-            if version_combined < 1003001:
-                raise RuntimeError(
+            if file_version_combined < 1004001:
+                warnings.warn(
                     f'Loading older Pulseq format file (version '
-                    f'{version_major}.{version_minor}.{version_revision}) some code may function not as '
+                    f'{file_version_major}.{file_version_minor}.{file_version_revision}) some code may function not as '
                     f'expected'
                 )
+
+            if detect_rf_use is None:
+                detect_rf_use = file_version_combined < 1005000
+
+            if file_version_combined >= 1005000 and detect_rf_use:
+                warnings.warn('Option detectRFuse is not supported for file format version 1.5.0 and above')
+                detect_rf_use = False
+
         elif section == '[BLOCKS]':
-            if version_major == 0:
+            if file_version_major == 0:
                 raise RuntimeError('Pulseq file MUST include [VERSION] section prior to [BLOCKS] section')
             result = __read_blocks(
                 input_file,
                 block_duration_raster=self.block_duration_raster,
-                version_combined=version_combined,
+                version_combined=file_version_combined,
             )
             self.block_events, self.block_durations, delay_ind_temp = result
         elif section == '[RF]':
-            if jemris_generated:
-                self.rf_library = __read_events(input_file, (1, 1, 1, 1, 1), event_library=self.rf_library)
-            else:
-                if version_combined >= 1004000:  # 1.4.x format
-                    self.rf_library = __read_events(
-                        input_file,
-                        (1, 1, 1, 1, 1e-6, 1, 1),
-                        event_library=self.rf_library,
-                    )
-                else:  # 1.3.x and below
-                    self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
+            if file_version_combined >= 1005000:  # 1.5.x format
+                self.rf_library = __read_events(
+                    input_file,
+                    (1, 1, 1, 1, 1e-6, 1e-6, 1, 1, 1, 1, np.nan),
+                    event_library=self.rf_library,
+                )
+            elif file_version_combined >= 1004000:  # 1.4.x format
+                self.rf_library = __read_events(
+                    input_file,
+                    (1, 1, 1, 1, 1e-6, 1, 1),
+                    event_library=self.rf_library,
+                )
+            else:  # 1.3.x and below
+                self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
+
         elif section == '[GRADIENTS]':
-            if version_combined >= 1004000:  # 1.4.x format
+            if file_version_combined >= 1005000:  # 1.5.x format
+                self.grad_library = __read_events(input_file, (1, 1, 1, 1, 1, 1e-6), 'g', self.grad_library)
+            elif file_version_combined >= 1004000:  # 1.4.x format
                 self.grad_library = __read_events(input_file, (1, 1, 1, 1e-6), 'g', self.grad_library)
             else:  # 1.3.x and below
                 self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
         elif section == '[TRAP]':
-            if jemris_generated:
-                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
-            else:
-                self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
+            self.grad_library = __read_events(input_file, (1, 1e-6, 1e-6, 1e-6, 1e-6), 't', self.grad_library)
         elif section == '[ADC]':
-            self.adc_library = __read_events(
-                input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
-            )
+            if file_version_combined >= 1005000:  # 1.5.x format
+                self.adc_library = __read_events(
+                    input_file,
+                    (1, 1e-9, 1e-6, 1, 1, 1, 1, 1),
+                    event_library=self.adc_library,
+                    append=self.system.adc_dead_time,
+                )
+            else:  # 1.4.x format and below
+                self.adc_library = __read_events(
+                    input_file, (1, 1e-9, 1e-6, 1, 1), event_library=self.adc_library, append=self.system.adc_dead_time
+                )
         elif section == '[DELAYS]':
-            if version_combined >= 1004000:
+            if file_version_combined >= 1004000:
                 raise RuntimeError('Pulseq file revision 1.4.0 and above MUST NOT contain [DELAYS] section')
             temp_delay_library = __read_events(input_file, (1e-6,))
         elif section == '[SHAPES]':
-            self.shape_library = __read_shapes(input_file, version_major == 1 and version_minor < 4)
+            self.shape_library = __read_shapes(input_file, file_version_major == 1 and file_version_minor < 4)
         elif section == '[EXTENSIONS]':
             self.extensions_library = __read_events(input_file)
         else:
@@ -188,22 +214,64 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                     return get_supported_labels().index(s) + 1
 
                 self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
+            elif section[:16] == 'extension DELAYS':
+                extension_id = int(section[16:])
+                self.set_extension_string_ID('DELAYS', extension_id)
+                self.soft_delay_library = __read_and_parse_events(
+                    input_file, int, lambda ofs: 1e-6 * int(ofs), int, str
+                )
+                # Map numIDs to soft delay hints
+                for d in self.soft_delay_library.data.values():
+                    if d[3] not in self.soft_delay_hints:
+                        self.soft_delay_hints[d[3]] = d[0]
             else:
                 raise ValueError(f'Unknown section code: {section}')
 
     input_file.close()  # Close file
 
-    if version_combined < 1002000:
-        raise ValueError(
-            f'Unsupported version {version_combined}, only file format revision 1.2.0 (1002000) and above '
-            f'are supported.'
-        )
+    # Fix sequence data imported from older versions
+    # a special case for ADCs as the format for them has only been updated once (in v1.5.0)
+    # we have to do it first because seq.getBlock is used in the next version porting code section (version_combined < 1004000)
+    if file_version_combined < 1005000:
+        # scan though the ADCs and add empty phase shape IDs
+        for i in self.adc_library.data:
+            d = self.adc_library.data[i]
+            self.adc_library.update(
+                i,
+                None,
+                (*d[:3], np.float64(0), np.float64(0), *d[3:5], np.float64(0)),
+            )  # add empty freqPPM, phasePPM and phase_id fields
 
-    # Fix blocks, gradients and RF objects imported from older versions
-    if version_combined < 1004000:
+    # Fix blocks, gradients and RF objects imported from older versions (< v1.4.0)
+    if file_version_combined < 1004000:
+        # Fix definitions which are be missing in older files
+        if 'GradientRasterTime' not in self.definitions:
+            warnings.warn(f'No GradientRasterTime found in file. Using default of {self.grad_raster_time}.')
+            self.set_definition('GradientRasterTime', self.grad_raster_time)
+        if 'RadiofrequencyRasterTime' not in self.definitions:
+            warnings.warn(f'No RadiofrequencyRasterTime found in file. Using default of {self.rf_raster_time}.')
+            self.set_definition('RadiofrequencyRasterTime', self.rf_raster_time)
+        if 'AdcRasterTime' not in self.definitions:
+            warnings.warn(f'No AdcRasterTime found in file. Using default of {self.adc_raster_time}.')
+            self.set_definition('AdcRasterTime', self.adc_raster_time)
+        if 'BlockDurationRaster' not in self.definitions:
+            warnings.warn(f'No BlockDurationRaster found in file. Using default of {self.block_duration_raster}.')
+            self.set_definition('BlockDurationRaster', self.block_duration_raster)
+
         # Scan through RF objects
+        self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
         for i in self.rf_library.data:
-            self.rf_library.update(i, None, (*self.rf_library.data[i][:3], 0, *self.rf_library.data[i][3:]))
+            d = self.rf_library.data[i]
+            rf = self.rf_from_lib_data(
+                (*d[:3], np.float64(0), np.float64(0), d[3], np.float64(0), np.float64(0), *d[4:6], 'u')
+            )
+            rf.__delattr__('center')
+            center, _ = calc_rf_center(rf)
+            self.rf_library.update(
+                i,
+                None,
+                (*d[:3], np.float64(0), center, d[3], np.float64(0), np.float64(0), *d[4:6], 'u'),
+            )  # 0 between [3] and [4:6] are the freq_ppm and phase_ppm
 
         # Scan through the gradient objects and update 't'-s (trapezoids) und 'g'-s (free-shape gradients)
         for i in self.grad_library.data:
@@ -214,7 +282,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time) + d[3:],
+                            (d[0], self.grad_raster_time, d[2] - self.grad_raster_time, *d[3:5]),
                             self.grad_library.type[i],
                         )
 
@@ -224,19 +292,16 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
                         self.grad_library.update(
                             i,
                             None,
-                            d[:2] + (d[2] - self.grad_raster_time, self.grad_raster_time) + d[4:],
+                            (*d[:2], d[2] - self.grad_raster_time, self.grad_raster_time, d[4]),
                             self.grad_library.type[i],
                         )
 
             if self.grad_library.type[i] == 'g':
+                d = self.grad_library.data[i]
                 self.grad_library.update(
                     i,
                     None,
-                    (
-                        self.grad_library.data[i][:2],
-                        0,
-                        self.grad_library.data[i][2:],
-                    ),
+                    (d[0], None, None, d[1], np.float64(0), d[2]),
                     self.grad_library.type[i],
                 )
 
@@ -245,7 +310,7 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
         # Scan through blocks and calculate durations
         for block_counter in self.block_events:
             # Insert delay as temporary block_duration
-            self.block_durations[block_counter] = 0
+            self.block_durations[block_counter] = 0.0
             if delay_ind_temp[block_counter] > 0:
                 self.block_durations[block_counter] = temp_delay_library.data[delay_ind_temp[block_counter]][0]
 
@@ -253,78 +318,103 @@ def read(self, path: str, detect_rf_use: bool = False, remove_duplicates: bool =
             # Calculate actual block duration
             self.block_durations[block_counter] = calc_duration(block)
 
-    # TODO: Is it possible to avoid expensive get_block calls here?
-    grad_channels = ['gx', 'gy', 'gz']
-    grad_prev_last = np.zeros(len(grad_channels))
-    for block_counter in self.block_events:
-        block = self.get_block(block_counter)
-        block_duration = block.block_duration
-        # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
-        # repeated entries so searching by content will fail
-        event_idx = self.block_events[block_counter]
-        # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
-        for j in range(len(grad_channels)):
-            grad = getattr(block, grad_channels[j])
-            if grad is None:
-                grad_prev_last[j] = 0
-                continue
+    elif file_version_combined < 1005000:
+        # Port from v1.4.x : RF, ADC and GRAD objects need to be updated
+        # this needs to be done on the level of the libraries, because get_block will fail
 
-            if grad.type == 'grad':
-                if grad.delay > 0:
-                    grad_prev_last[j] = 0
+        # Scan though the RFs and add center, freq_ppm, phase_ppm and use fields
+        self.rf_library.type = dict.fromkeys(self.rf_library.type.keys(), 'u')
+        for i in self.rf_library.data:
+            # Use goes into the type field, and this is done separately
+            d = self.rf_library.data[i]
+            rf = self.rf_from_lib_data((*d[:4], np.float64(0), d[4], np.float64(0), np.float64(0), *d[5:7]), 'u')
+            rf.__delattr__('center')
+            center, _ = calc_rf_center(rf)
+            self.rf_library.update(
+                i,
+                None,
+                (*d[:4], center, d[4], np.float64(0), np.float64(0), *d[5:7], 'u'),
+            )  # 0 between [4] and [5:7] are the freqPPM and phasePPM
 
-                # go to next channel, if grad.first and grad.last are already set
-                if hasattr(grad, 'first') and hasattr(grad, 'last'):
-                    grad_prev_last[j] = grad.last
+        # Scan through the gradient objects and update 'g'-s (free-shape gradients)
+        for i in self.grad_library.data:
+            if self.grad_library.type[i] == 'g':
+                d = self.grad_library.data[i]
+                self.grad_library.update(
+                    i,
+                    None,
+                    (d[0], None, None, *d[1:4]),
+                    self.grad_library.type[i],
+                )  # We use None to label the non-initialized first/last fields. These will be restored in the code below
+
+    # Another run through for all older versions
+    if file_version_combined < 1005000:
+        # TODO: Is it possible to avoid expensive get_block calls here?
+        grad_channels = ['gx', 'gy', 'gz']
+        grad_prev_last = np.zeros(len(grad_channels))
+        for block_counter in self.block_events:
+            block = self.get_block(block_counter)
+            block_duration = block.block_duration
+            # We also need to keep track of the event IDs because some PyPulseq files written by external software may contain
+            # repeated entries so searching by content will fail
+            event_idx = self.block_events[block_counter]
+            processed_grad_ids = np.zeros(len(grad_channels))
+            # Update the objects by filling in the 'first' and 'last' attributes not yet contained in the Pulseq file
+            for j in range(len(grad_channels)):
+                grad = getattr(block, grad_channels[j])
+                if grad is None:
+                    grad_prev_last[j] = 0.0
                     continue
 
-                # get grad.first and grad.last attributes from the grad_library if they have been set for the current amplitude_ID before
-                amplitude_ID = event_idx[j + 2]
-                if amplitude_ID in event_idx[2 : (j + 2)]:
-                    if self.use_block_cache:
-                        grad.first = self.grad_library.data[amplitude_ID][4]
-                        grad.last = self.grad_library.data[amplitude_ID][5]
-                    continue
+                if grad.type == 'grad':
+                    if grad.delay > 0:
+                        grad_prev_last[j] = 0.0
 
-                # get time_id from grad_library
-                time_id = self.grad_library.data[amplitude_ID][2]
+                    # go to next channel, if grad.first is already set
+                    if hasattr(grad, 'first') and grad.first is not None:
+                        continue
 
-                # if grad.first is not set, set it to the last value of the previous gradient
-                grad.first = grad_prev_last[j]
+                    # if grad.first is not set, set it to the last value of the previous gradient
+                    grad.first = grad_prev_last[j]
 
-                # extended trapezoid: use last value of the gradient waveform as grad.last
-                if time_id != 0:
-                    grad.last = grad.waveform[-1]
-                    grad_duration = grad.delay + grad.tt[-1]
-                # arbitrary gradients: interpolate grad.last from the gradient waveform
+                    # extended trapezoid: use last value of the gradient waveform as grad.last
+                    if grad.time_id != 0:
+                        grad.last = grad.waveform[-1]
+                        grad_duration = grad.delay + grad.tt[-1]
+                    # arbitrary gradients: interpolate grad.last from the gradient waveform
+                    else:
+                        # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
+                        grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
+                        grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
+
+                    # Set grad_prev_last to 0 if gradient does not end at block boundary
+                    eps = np.finfo(np.float64).eps
+                    if grad_duration + eps < block_duration:
+                        grad_prev_last[j] = 0.0
+                    # Update grad_prev_last for the next iteration if gradient ends at block boundary
+                    else:
+                        grad_prev_last[j] = grad.last
+
+                    # Recover amplitude from library data
+                    amplitude_ID = event_idx[j + 2]
+                    if j > 0 and any(processed_grad_ids[: j + 1] == amplitude_ID):
+                        continue  # avoid repeated updates if the same gradient is applied on different gradient axes
+                    processed_grad_ids[j] = amplitude_ID
+                    amplitude = self.grad_library.data[amplitude_ID][0]
+
+                    # Update the grad_library with the new grad.first and grad.last values
+                    new_data = (
+                        amplitude,
+                        grad.first,
+                        grad.last,
+                        grad.shape_id,
+                        grad.time_id,
+                        grad.delay,
+                    )
+                    self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
+
                 else:
-                    # use a linear extrapolation identical to the one used in the make_arbitrary_grad.py file
-                    grad.last = (3 * grad.waveform[-1] - grad.waveform[-2]) * 0.5
-                    grad_duration = grad.delay + len(grad.waveform) * self.grad_raster_time
-
-                # Set grad_prev_last to 0 if gradient does not end at block boundary
-                eps = np.finfo(np.float64).eps
-                if grad_duration + eps < block_duration:
-                    grad_prev_last[j] = 0
-                # Update grad_prev_last for the next iteration if gradient ends at block boundary
-                else:
-                    grad_prev_last[j] = grad.last
-
-                # Update the grad_library with the new grad.first and grad.last values
-                amplitude = self.grad_library.data[amplitude_ID][0]
-                shape_id = self.grad_library.data[amplitude_ID][1]
-                new_data = (
-                    amplitude,
-                    shape_id,
-                    time_id,
-                    grad.delay,
-                    grad.first,
-                    grad.last,
-                )
-                self.grad_library.update_data(amplitude_ID, None, new_data, 'g')
-
-            else:
-                grad_prev_last[j] = 0
+                    grad_prev_last[j] = 0.0
 
     if detect_rf_use:
         # Find the RF pulses, list flip angles, and work around the current (rev 1.2.0) Pulseq file format limitation
@@ -463,7 +553,11 @@ def __read_blocks(
 
 
 def __read_events(
-    input_file, scale: tuple = (1,), event_type: str = str(), event_library: EventLibrary = None, append=None
+    input_file,
+    scale: Union[Tuple, None] = None,
+    event_type: str = str(),
+    event_library: EventLibrary = None,
+    append=None,
 ) -> EventLibrary:
     """
     Read an event section of a sequence file and return a library of events.
@@ -486,32 +580,60 @@ def __read_events(
     """
     if event_library is None:
         event_library = EventLibrary()
-    line = __strip_line(input_file)
+
+    # New in v1.5.0 : generate format string; NaN labels character param(s) for 'use' attribute
+    line, scale, format_spec = __read_format(input_file, scale)
+    data_mask = np.isfinite(scale)
+    type_idx = np.where(np.logical_not(data_mask))[0]
+
+    if len(type_idx) > 1:
+        raise ValueError('Only one type field (marked as NaN) can be provided in scale.')
+    if len(type_idx) == 0:
+        type_idx = None
+        data_mask = None
+    else:
+        type_idx = type_idx.item()
 
     while line != '' and line != '#':
-        data = np.fromstring(line, dtype=float, sep=' ')
+        data = __fromstring(line, format_spec)
         event_id = data[0]
-        data = tuple(data[1:] * scale)
+
+        if type_idx is not None:
+            event_type = data[type_idx + 1]  # Need +1 because of the event_id in the first position
+
+        data = data[1:]
+        data = tuple(data[n] * scale[n] if isinstance(data[n], str) is False else data[n] for n in range(len(data)))
+
         if append is not None:
             data = (*data, append)
-        if event_type == '':
-            event_library.insert(key_id=event_id, new_data=data)
+
+        if event_type == '' and type_idx is None:
+            if data_mask is None:
+                event_library.insert(key_id=event_id, new_data=data)
+            else:
+                event_library.insert(key_id=event_id, new_data=data[data_mask])
         else:
-            event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+            if data_mask is None:
+                event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+            else:
+                data = tuple(np.asarray(data, dtype=object)[data_mask])
+                event_library.insert(key_id=event_id, new_data=data, data_type=event_type)
+
         line = __strip_line(input_file)
 
     return event_library
 
 
-def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
+def __read_and_parse_events(input_file, *args: Callable) -> EventLibrary:
     """
-    Read an event section of a sequence file and return a library of events. Event data elements are converted using
-    the provided parser(s). Default parser is `int()`.
+    Read an event section of a sequence file and return a library of events.
+
+    Event data elements are converted using the provided parser(s). Default parser is `int()`.
 
     Parameters
     ----------
     input_file : file
-    args : callable
+    args : Callable
         Event parsers.
 
     Returns
@@ -525,13 +647,13 @@ def __read_and_parse_events(input_file, *args: callable) -> EventLibrary:
     while line != '' and line != '#':
         list_of_data_str = re.split(r'(\s+)', line)
         list_of_data_str = [d for d in list_of_data_str if d != ' ']
-        data = np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
+        data = []  # np.zeros(len(list_of_data_str) - 1, dtype=np.int32)
         event_id = int(list_of_data_str[0])
         for i in range(1, len(list_of_data_str)):
             if i > len(args):
-                data[i - 1] = int(list_of_data_str[i])
+                data.append(int(list_of_data_str[i]))
             else:
-                data[i - 1] = args[i - 1](list_of_data_str[i])
+                data.append(args[i - 1](list_of_data_str[i]))
         event_library.insert(key_id=event_id, new_data=data)
         line = __strip_line(input_file)
 
@@ -559,14 +681,19 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
         tok = line.split(' ')
         shape_id = int(tok[1])
         line = __skip_comments(input_file)
+        if line == -1:
+            break
         tok = line.split(' ')
         num_samples = int(tok[1])
         data = []
         line = __skip_comments(input_file)
-        while line != '' and line != '#':
+        while line != -1 and line != '' and line != '#':
             data.append(float(line))
             line = __strip_line(input_file)
-        line = __skip_comments(input_file, stop_before_section=True)
+
+        eof_reached = line == -1
+        if not eof_reached:
+            line = __skip_comments(input_file, stop_before_section=True)
 
         # Check if conversion is needed: in v1.4.x we use length(data)==num_samples
         # As a marker for the uncompressed (stored) data. In older versions this condition could occur by chance
@@ -580,6 +707,9 @@ def __read_shapes(input_file, force_convert_uncompressed: bool) -> EventLibrary:
             data.insert(0, num_samples)
             data = np.asarray(data)
         shape_library.insert(key_id=shape_id, new_data=data)
+
+        if eof_reached:
+            break
     return shape_library
 
 
@@ -631,3 +761,76 @@ def __strip_line(input_file) -> str:
     """
     line = input_file.readline()  # If line is an empty string, end of the file has been reached
     return line.strip() if line != '' else -1
+
+
+def __read_format(input_file, scale: Tuple) -> Tuple[List, Tuple, List]:
+    """
+    Generate a format specifier list based on the scale vector.
+
+    '%f' for numeric values, '%s' for string (NaN in scale).
+
+    Parameters
+    ----------
+    input_file: file
+        Input text
+    scale : list, default=(1,)
+        Scale elements according to column vector scale.
+
+    Returns
+    -------
+    line : str
+        First line in input_file after spaces and newline whitespaces have been removed. Note: File pointer is
+        remembered, and hence successive calls work as expected. Returns -1 for eof.
+    scale : tuple[float]
+        Scaling factor for each element in input line.
+        Defaults to one for each numeric element.
+    format : list[str]
+        List of format tokens for each field (excluding the event ID).
+
+    """
+    line = __strip_line(input_file)
+
+    if scale is None:
+        tok = line.strip().split()
+        scale = (len(tok) - 1) * (1,)
+
+    scale = np.array(scale, dtype=float)
+    is_num = np.isfinite(scale)
+    format_spec = ['%f' if value else '%s' for value in is_num]
+
+    return line, scale, format_spec
+
+
+def __fromstring(line, format_spec: List) -> List:
+    """
+    Parse a line of text using a dynamic format specification.
+
+    Parameters
+    ----------
+    line : str
+        Input line (e.g., ['23', '1.0', '2.0', '3.0', 'u'])
+    format_spec : list[str]
+        Format list like ['%f', '%f', '%f', '%f', '%s']
+
+    Returns
+    -------
+    data : list
+        Parsed data.
+
+    """
+    tok = line.strip().split()
+    if len(tok) != len(format_spec) + 1:
+        raise ValueError('Mismatch between number of tokens and format spec')
+
+    format_spec = ['%f', *format_spec]
+    data = []
+
+    for i, fmt in enumerate(format_spec):
+        if fmt == '%f':
+            data.append(float(tok[i]))
+        elif fmt == '%s':
+            data.append(tok[i])
+        else:
+            raise ValueError(f'Unsupported format: {fmt}')
+
+    return data

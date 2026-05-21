@@ -392,7 +392,7 @@ def safe_plot(pns, dt=None, envelope=True, envelope_points=500):
 
 
 def safe_example():
-    # Load an exampe gradient waveform
+    # Load an example gradient waveform
     [gwf, rf, dt] = safe_example_gwf()
 
     # Load response parameters for example hardware
@@ -405,7 +405,7 @@ def safe_example():
     # safe_hw_verify(hw)
 
     # Predict PNS levels
-    pns, res = safe_gwf_to_pns(gwf, rf, dt, hw, 1)
+    pns, _ = safe_gwf_to_pns(gwf, rf, dt, hw, 1)
 
     # Plot some results
     safe_plot(pns, dt)

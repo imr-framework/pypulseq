@@ -34,7 +34,7 @@ def compare_seq_file():
         contents1 = Path(file1).read_text().splitlines()[7:-2]
         contents2 = Path(file2).read_text().splitlines()[7:-2]
 
-        for line1, line2 in zip(contents1, contents2):
+        for line1, line2 in zip(contents1, contents2, strict=False):
             assert line1 == line2
 
     return compare

@@ -54,7 +54,7 @@ def test_check_timing():
     seq.add_block(adc)  # Block 4: RASTER
 
     adc = pp.make_adc(num_samples=100, duration=1e-3, system=system_broken)
-    seq.add_block(adc)  # Block 5: ADC_DEAD_TIME, POST_ADC_DEAD_TIME
+    seq.add_block(adc)  # Block 5: ADC_DEAD_TIME, POST_ADC_DEAD_TIME, BLOCK_DURATION_MISMATCH
 
     gx = pp.make_trapezoid(channel='x', area=1, duration=1, system=system)
     seq.add_block(gx)  # Block 6: No error
@@ -69,7 +69,7 @@ def test_check_timing():
     seq.add_block(gx)  # Block 9: NEGATIVE_DELAY
 
     # Check timing errors
-    ok, error_report = seq.check_timing()
+    _, error_report = seq.check_timing()
 
     # Check whether the timing error report is as expected
     assert blocks_not_in_error_report(error_report, [1, 3, 6]), 'No timing errors expected on blocks 1, 3, and 6'
@@ -84,6 +84,9 @@ def test_check_timing():
 
     assert exists_in_error_report(error_report, 5, event='adc', field='delay', error_type='ADC_DEAD_TIME')
     assert exists_in_error_report(error_report, 5, event='adc', field='duration', error_type='POST_ADC_DEAD_TIME')
+    assert exists_in_error_report(
+        error_report, 5, event='block', field='duration', error_type='BLOCK_DURATION_MISMATCH'
+    )
 
     assert exists_in_error_report(error_report, 7, event='block', field='duration', error_type='RASTER')
     assert exists_in_error_report(error_report, 7, event='gx', field='flat_time', error_type='RASTER')
@@ -94,4 +97,4 @@ def test_check_timing():
 
     assert exists_in_error_report(error_report, 9, event='gx', field='delay', error_type='NEGATIVE_DELAY')
 
-    assert len(error_report) == 12, 'Total number of timing errors was expected to be 12'
+    assert len(error_report) == 13, 'Total number of timing errors was expected to be 12'

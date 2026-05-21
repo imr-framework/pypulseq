@@ -86,24 +86,29 @@ def add_gradients(
         return grad
 
     # Find out the general delay of all gradients and other statistics
-    delays, firsts, lasts, durs, is_trap, is_arb = [], [], [], [], [], []
+    delays, firsts, lasts, durs, is_trap, is_arb, is_osa = [], [], [], [], [], [], []
     for ii in range(len(grads)):
         if grads[ii].channel != channel:
             raise ValueError('Cannot add gradients on different channels.')
 
         delays.append(grads[ii].delay)
-        firsts.append(grads[ii].first)
-        lasts.append(grads[ii].last)
         durs.append(calc_duration(grads[ii]))
         is_trap.append(grads[ii].type == 'trap')
         if is_trap[-1]:
             is_arb.append(False)
+            is_osa.append(False)
+            firsts.append(0.0)
+            lasts.append(0.0)
         else:
-            tt_rast = grads[ii].tt / system.grad_raster_time - 0.5
-            is_arb.append(np.all(np.abs(tt_rast - np.arange(len(tt_rast)))) < eps)
+            tt_rast = grads[ii].tt / system.grad_raster_time
+            is_arb.append(np.all(np.abs(tt_rast + 0.5 - np.arange(1, len(tt_rast) + 1))) < eps)
+            is_osa.append(np.all(np.abs(tt_rast - 0.5 * np.arange(1, len(tt_rast) + 1)) < eps))
+            firsts.append(grads[ii].first)
+            lasts.append(grads[ii].last)
 
     # Check if we only have arbitrary grads on irregular time samplings, optionally mixed with trapezoids
-    if np.all(np.logical_or(is_trap, np.logical_not(is_arb))):
+    is_etrap = np.logical_and.reduce((np.logical_not(is_trap), np.logical_not(is_arb), np.logical_not(is_osa)))
+    if np.all(np.logical_or(is_trap, is_etrap)):
         # Keep shapes still rather simple
         times = []
         for ii in range(len(grads)):
@@ -161,21 +166,35 @@ def add_gradients(
     # Convert to numpy.ndarray for fancy-indexing later on
     firsts, lasts = np.array(firsts), np.array(lasts)
     common_delay = np.min(delays)
+    total_duration = np.max(durs)
     durs = np.array(durs)
 
     # Convert everything to a regularly-sampled waveform
     waveforms = {}
     max_length = 0
+
+    if np.any(is_osa):
+        target_raster = 0.5 * system.grad_raster_time
+    else:
+        target_raster = system.grad_raster_time
+
     for ii in range(len(grads)):
         g = grads[ii]
         if g.type == 'grad':
-            if is_arb[ii]:
-                waveforms[ii] = g.waveform
+            if is_arb[ii] or is_osa[ii]:
+                if np.any(is_osa) and is_arb[ii]:  # Porting MATLAB here, maybe a bit ugly
+                    # Interpolate missing samples
+                    idx = np.arange(0, len(g.waveform) - 0.5 + eps, 0.5)
+                    wf = g.waveform
+                    interp_waveform = 0.5 * (wf[np.floor(idx).astype(int)] + wf[np.ceil(idx).astype(int)])
+                    waveforms[ii] = interp_waveform
+                else:
+                    waveforms[ii] = g.waveform
             else:
                 waveforms[ii] = points_to_waveform(
                     amplitudes=g.waveform,
                     times=g.tt,
-                    grad_raster_time=system.grad_raster_time,
+                    grad_raster_time=target_raster,
                 )
         elif g.type == 'trap':
             if g.flat_time > 0:  # Triangle or trapezoid
@@ -200,7 +219,7 @@ def add_gradients(
             waveforms[ii] = points_to_waveform(
                 amplitudes=amplitudes,
                 times=times,
-                grad_raster_time=system.grad_raster_time,
+                grad_raster_time=target_raster,
             )
         else:
             raise ValueError('Unknown gradient type')
@@ -228,6 +247,9 @@ def add_gradients(
         max_slew=max_slew,
         max_grad=max_grad,
         delay=common_delay,
+        oversampling=np.any(is_osa),
+        first=np.sum(firsts[delays == common_delay]),
+        last=np.sum(lasts[durs == total_duration]),
     )
     # Fix the first and the last values
     # First is defined by the sum of firsts with the minimal delay (common_delay)

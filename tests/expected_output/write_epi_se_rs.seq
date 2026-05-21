@@ -3,13 +3,15 @@
 
 [VERSION]
 major 1
-minor 4
-revision 2
+minor 5
+revision 0
 
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
+FOV 0.25 0.25 0.009 
 GradientRasterTime 1e-05 
+Name epi_se_rs 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 0.21735 
 
@@ -18,8 +20,8 @@ TotalDuration 0.21735
 [BLOCKS]
   1 1572   1   0   0   1  0  0
   2 226   2   0   0   2  0  1
-  3 1613   0   0   0   0  0  0
-  4 1146   3   4   5   3  0  0
+  3 1614   0   0   0   0  0  0
+  4 1145   3   4   5   3  0  0
   5  48   0   6   7   0  1  0
   6  48   0   8   9   0  1  0
   7  48   0   6   9   0  1  0
@@ -78,8 +80,8 @@ TotalDuration 0.21735
  60  48   0   8  10   0  1  0
  61 1572   1   0   0   1  0  0
  62 226   4   0   0   2  0  1
- 63 1613   0   0   0   0  0  0
- 64 1146   5   4   5   3  0  0
+ 63 1614   0   0   0   0  0  0
+ 64 1145   5   4   5   3  0  0
  65  48   0   6   7   0  1  0
  66  48   0   8   9   0  1  0
  67  48   0   6   9   0  1  0
@@ -138,8 +140,8 @@ TotalDuration 0.21735
 120  48   0   8  10   0  1  0
 121 1572   1   0   0   1  0  0
 122 226   6   0   0   2  0  1
-123 1613   0   0   0   0  0  0
-124 1146   7   4   5   3  0  0
+123 1614   0   0   0   0  0  0
+124 1145   7   4   5   3  0  0
 125  48   0   6   7   0  1  0
 126  48   0   8   9   0  1  0
 127  48   0   6   9   0  1  0
@@ -198,26 +200,27 @@ TotalDuration 0.21735
 180  48   0   8  10   0  1  0
 
 # Format of RF events:
-# id amplitude mag_id phase_id time_shape_id delay freq phase
-# ..        Hz   ....     ....          ....    us   Hz   rad
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
 [RF]
-1      129.712 1 2 0 100 -424.504 0
-2      493.727 3 4 0 130 -2000 0
-3      987.454 3 4 0 1740 -2000 1.5708
-4      493.727 3 4 0 130 0 0
-5      987.454 3 4 0 1740 0 1.5708
-6      493.727 3 4 0 130 2000 0
-7      987.454 3 4 0 1740 2000 1.5708
+1      129.712 1 2 0 4000 100 0 0 -424.504 0 s
+2      493.727 3 4 0 1000 130 0 0 -2000 0 e
+3      987.454 3 4 0 1000 1730 0 0 -2000 1.5708 r
+4      493.727 3 4 0 1000 130 0 0 0 0 e
+5      987.454 3 4 0 1000 1730 0 0 0 1.5708 r
+6      493.727 3 4 0 1000 130 0 0 2000 0 e
+7      987.454 3 4 0 1000 1730 0 0 2000 1.5708 r
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
-# id amplitude amp_shape_id time_shape_id delay
-# ..      Hz/m       ..         ..          us
+# id amplitude first last amp_shape_id time_shape_id delay
+# ..      Hz/m  Hz/m Hz/m        ..         ..          us
 [GRADIENTS]
-3  1.34624e+06 5 6 0
-7      -133333 7 8 450
-9      -133333 9 10 0
-10      -133333 11 8 0
+3  1.35761e+06            0            0 5 6 0
+7      -133333            0      -133333 7 8 450
+9      -133333      -133333      -133333 9 10 0
+10      -133333      -133333            0 11 8 0
 
 # Format of trapezoid gradients:
 # id amplitude rise flat fall delay
@@ -225,16 +228,16 @@ TotalDuration 0.21735
 [TRAP]
  1   1.3624e+06 250 7090 250 8130
  2       666667 130 2000 130   0
- 4      -812789 160    0 160 11140
- 5       484211 130   60 130 3770
+ 4      -812789 160    0 160 11130
+ 5       484211 130   60 130 3760
  6  1.00036e+06 220   40 220   0
  8 -1.00036e+06 220   40 220   0
 
 # Format of ADC events:
-# id num dwell delay freq phase
-# ..  ..    ns    us   Hz   rad
+# id num dwell delay freqPPM phasePPM freq phase phase_id
+# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
 [ADC]
-1 104 3900 37 0 0
+1 104 3900 37 0 0 0 0 0
 
 # Format of extension lists:
 # id type ref next_id
@@ -10281,24 +10284,24 @@ num_samples 2000
 shape_id 5
 num_samples 8
 0
+0.998065105
+0.998065105
+0.491060787
+0.491060787
 1
 1
-0.495207668
-0.495207668
-0.998748157
-0.998748157
 0
 
 shape_id 6
 num_samples 8
 0
 25
-161
-174
-374
-387
-576
-601
+160
+173
+373
+386
+573
+598
 
 shape_id 7
 num_samples 2
@@ -10335,4 +10338,4 @@ num_samples 2
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash a34c8de5a75831a58c38f69e0b1815fc
+Hash 8c5f08ea9a8bd3f1e01635118f8d8486

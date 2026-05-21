@@ -1,0 +1,147 @@
+# Pulseq sequence file
+# Created by PyPulseq
+
+[VERSION]
+major 1
+minor 5
+revision 0
+
+[DEFINITIONS]
+AdcRasterTime 1e-07 
+BlockDurationRaster 1e-05 
+GradientRasterTime 1e-05 
+RadiofrequencyRasterTime 1e-06 
+TotalDuration 0.12732 
+
+# Format of blocks:
+# NUM DUR RF  GX  GY  GZ  ADC  EXT
+[BLOCKS]
+ 1 100   1   0   0   0  0  0
+ 2  83   0   1   0   0  0  0
+ 3  54   0   0   2   0  0  0
+ 4  54   0   2   0   0  0  0
+ 5   1   0   0   0   0  0  1
+ 6 1000   0   3   0   0  1  0
+ 7 100   1   0   0   0  0  0
+ 8  83   0   1   0   0  0  0
+ 9  48   0   0   4   0  0  0
+10  54   0   2   0   0  0  0
+11   1   0   0   0   0  0  1
+12 1000   0   3   0   0  1  0
+13 100   1   0   0   0  0  0
+14  83   0   1   0   0  0  0
+15  42   0   0   5   0  0  0
+16  54   0   2   0   0  0  0
+17   1   0   0   0   0  0  1
+18 1000   0   3   0   0  1  0
+19 100   1   0   0   0  0  0
+20  83   0   1   0   0  0  0
+21  34   0   0   6   0  0  0
+22  54   0   2   0   0  0  0
+23   1   0   0   0   0  0  1
+24 1000   0   3   0   0  1  0
+25 100   1   0   0   0  0  0
+26  83   0   1   0   0  0  0
+27  24   0   0   7   0  0  0
+28  54   0   2   0   0  0  0
+29   1   0   0   0   0  0  1
+30 1000   0   3   0   0  1  0
+31 100   1   0   0   0  0  0
+32  83   0   1   0   0  0  0
+33   2   0   0   8   0  0  0
+34  54   0   2   0   0  0  0
+35   1   0   0   0   0  0  1
+36 1000   0   3   0   0  1  0
+37 100   1   0   0   0  0  0
+38  83   0   1   0   0  0  0
+39  24   0   0   9   0  0  0
+40  54   0   2   0   0  0  0
+41   1   0   0   0   0  0  1
+42 1000   0   3   0   0  1  0
+43 100   1   0   0   0  0  0
+44  83   0   1   0   0  0  0
+45  34   0   0  10   0  0  0
+46  54   0   2   0   0  0  0
+47   1   0   0   0   0  0  1
+48 1000   0   3   0   0  1  0
+49 100   1   0   0   0  0  0
+50  83   0   1   0   0  0  0
+51  42   0   0  11   0  0  0
+52  54   0   2   0   0  0  0
+53   1   0   0   0   0  0  1
+54 1000   0   3   0   0  1  0
+55 100   1   0   0   0  0  0
+56  83   0   1   0   0  0  0
+57  48   0   0  12   0  0  0
+58  54   0   2   0   0  0  0
+59   1   0   0   0   0  0  1
+60 1000   0   3   0   0  1  0
+
+# Format of RF events:
+# id ampl. mag_id phase_id time_shape_id center delay freqPPm phasePPM freq phase use
+# ..   Hz      ..       ..            ..     us    us     ppm  rad/MHz   Hz   rad  ..
+# Field "use" is the initial of: excitation refocusing inversion saturation preparation other undefined
+[RF]
+1         62.5 1 2 3 500 0 0 0 0 0 u
+
+# Format of trapezoid gradients:
+# id amplitude rise flat fall delay
+# ..      Hz/m   us   us   us    us
+[TRAP]
+ 1  1.69492e+06 240  350 240   0
+ 2 -1.66667e+06 240   60 240   0
+ 3       102459 240 9520 240   0
+ 4 -1.66667e+06 240    0 240   0
+ 5 -1.42857e+06 210    0 210   0
+ 6 -1.17647e+06 170    0 170   0
+ 7      -833333 120    0 120   0
+ 8            0  10    0  10   0
+ 9       833333 120    0 120   0
+10  1.17647e+06 170    0 170   0
+11  1.42857e+06 210    0 210   0
+12  1.66667e+06 240    0 240   0
+
+# Format of ADC events:
+# id num dwell delay freqPPM phasePPM freq phase phase_id
+# ..  ..    ns    us     ppm  rad/MHz   Hz   rad       ..
+[ADC]
+1 100 100000 0 0 0 0 0 0
+
+# Format of extension lists:
+# id type ref next_id
+# next_id of 0 terminates the list
+# Extension list is followed by extension specifications
+[EXTENSIONS]
+1 1 1 0
+
+# Extension specification for soft delays:
+# id num offset factor hint
+# ..  ..     us     ..   ..
+extension DELAYS 1
+1 0 1000000 1 TE
+
+# Sequence Shapes
+[SHAPES]
+
+shape_id 1
+num_samples 2
+1
+1
+
+shape_id 2
+num_samples 2
+0
+0
+
+shape_id 3
+num_samples 2
+0
+1000
+
+
+[SIGNATURE]
+# This is the hash of the Pulseq file, calculated right before the [SIGNATURE] section was added
+# It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
+# The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
+Type md5
+Hash c5eab8e9276052478277ad0d871e2774
