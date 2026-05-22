@@ -37,17 +37,17 @@ def make_extended_trapezoid(
     convert_to_arbitrary : bool, default=False
         Boolean flag to indicate if the extended trapezoid gradient has to be converted into an arbitrary gradient.
     amplitudes : numpy.ndarray, default=09
-        Values defined at `times` time indices.
+        Gradient values (Hz/m) defined at `times` time indices.
     max_grad : float, default=0
-        Maximum gradient strength.
+        Maximum gradient strength (Hz/m).
     max_slew : float, default=0
-        Maximum slew rate.
+        Maximum slew rate (Hz/m/s).
     system : Opts, default=Opts()
         System limits.
     skip_check : bool, default=False
         Boolean flag to indicate if amplitude check is to be skipped.
     times : numpy.ndarray, default=np.zeros(1)
-        Time points at which `amplitudes` defines amplitude values.
+        Time points (s) at which `amplitudes` defines amplitude values.
 
     Returns
     -------

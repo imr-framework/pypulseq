@@ -45,10 +45,10 @@ def make_arbitrary_grad(
         System limits.
         Will default to `pypulseq.opts.default` if not provided.
     max_grad : float
-        Maximum gradient strength.
+        Maximum gradient strength (Hz/m).
         Will default to `system.max_grad` if not provided.
     max_slew : float
-        Maximum slew rate.
+        Maximum slew rate (Hz/m/s).
         Will default to `system.max_slew` if not provided.
     delay : float, default=0
         Delay in seconds (s).
