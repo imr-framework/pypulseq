@@ -507,7 +507,9 @@ def _seq_plot(
                 else:
                     phase_modulation = adc.phase_modulation
 
-                full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma)
+                full_freq_offset = np.atleast_1d(
+                    adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
+                )
                 full_phase_offset = np.atleast_1d(
                     adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 * seq.system.gamma + phase_modulation
                 )
