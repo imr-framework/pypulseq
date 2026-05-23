@@ -38,13 +38,13 @@ def make_adc(
     delay : float, default=0
         Delay in seconds (s) of ADC readout event.
     freq_offset : float, default=0
-        Frequency offset of ADC readout event.
+        Frequency offset in hertz (Hz) of ADC readout event.
     phase_offset : float, default=0
-        Phase offset of ADC readout event.
+        Phase offset in radians (rad) of ADC readout event.
     freq_ppm : float, default=0
-        PPM frequency offset of ADC readout event.
+        PPM frequency offset in parts per million (ppm) of ADC readout event.
     phase_ppm : float, default=0
-        PPM phase offset of ADC readout event.
+        PPM phase offset in radians per megahertz (rad/MHz) of ADC readout event.
     phase_modulation : Union[np.ndarray, None], default=None
         Phase modulation array for FOV shifting.
         If provided, it must have `num_samples` number of samples.
