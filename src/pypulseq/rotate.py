@@ -27,7 +27,7 @@ def rotate(*args: SimpleNamespace, angle: float, axis: str, system: Union[Opts, 
     axis : str
         Axis about which the gradient(s) will be rotated.
     angle : float
-        Angle by which the gradient(s) will be rotated.
+        Angle in radians (rad) by which the gradient(s) will be rotated.
     args : SimpleNamespace
         Gradient(s).
 

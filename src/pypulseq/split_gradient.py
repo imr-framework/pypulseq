@@ -28,13 +28,13 @@ def split_gradient(
     Parameters
     ----------
     grad : SimpleNamespace
-        Gradient event to be split into two gradient waveforms.
+        Gradient event to be split into three gradient waveforms.
     system : Opts, default=Opts()
         System limits.
 
     Returns
     -------
-    grad1, grad2 : SimpleNamespace
+    grad1, grad2, grad3 : SimpleNamespace
         Split gradient waveforms.
 
     Raises
