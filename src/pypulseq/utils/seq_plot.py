@@ -507,9 +507,11 @@ def _seq_plot(
                 else:
                     phase_modulation = adc.phase_modulation
 
-                full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0)
+                full_freq_offset = np.atleast_1d(
+                    adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
+                )
                 full_phase_offset = np.atleast_1d(
-                    adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 + phase_modulation
+                    adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 * seq.system.gamma + phase_modulation
                 )
 
                 sp13.plot(
@@ -555,8 +557,8 @@ def _seq_plot(
                 signal_is_real = max(np.abs(np.imag(signal))) / (max(np.abs(np.real(signal))) + eps) < 1e-6
                 signal_is_imag = max(np.abs(np.real(signal))) / (max(np.abs(np.imag(signal))) + eps) < 1e-6
 
-                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * seq.system.B0
-                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * seq.system.B0
+                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
+                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
 
                 # If off-resonant and rectangular (2 samples), interpolate the pulse
                 if len(signal) == 2 and full_freq_offset != 0:

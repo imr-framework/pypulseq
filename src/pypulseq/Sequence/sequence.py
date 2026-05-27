@@ -1227,7 +1227,7 @@ class Sequence:
 
                 full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * self.system.gamma * self.system.B0
                 full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * self.system.gamma * self.system.B0
-                full_phase_offset = full_phase_offset + 2 * math.pi * full_freq_offset * tc
+                full_phase_offset += 2 * math.pi * full_freq_offset * tc
 
                 if not hasattr(rf, 'use') or block.rf.use in [
                     'excitation',

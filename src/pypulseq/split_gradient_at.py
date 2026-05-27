@@ -31,7 +31,7 @@ def split_gradient_at(
     grad : SimpleNamespace
         Gradient event to be split into two gradient events.
     time_point : float
-        Time point at which `grad` will be split into two gradient waveforms.
+        Time point in seconds (s) at which `grad` will be split into two gradient waveforms.
     system : Opts, default=Opts()
         System limits.
 
