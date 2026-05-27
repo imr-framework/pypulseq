@@ -16,11 +16,11 @@ jobs:
       actions: read # Required for downloading artifacts
       pull-requests: write # Required for posting PR comments
     steps:
-      # use the results of python 3.12, consider this as target platform
-      - name: Download PyTest report artifact for Python 3.12
+      # use the results of python 3.14, consider this as target platform
+      - name: Download PyTest report artifact for Python 3.14
         uses: actions/download-artifact@v8
         with:
-          name: pytest-report-3.12-true
+          name: pytest-report-3.14-true
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -79,7 +79,7 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: pytest-report-3.12-true
+          name: pytest-report-3.14-true
 
       - name: Post PyTest Coverage Comment on push
         id: coverage_comment
