@@ -41,28 +41,28 @@ def make_arbitrary_rf(
     signal : numpy.ndarray
         Arbitrary waveform.
     flip_angle : float
-        Flip angle in radians.
+        Flip angle in radians (rad).
     bandwidth : float, default=0
-        Bandwidth in Hertz (Hz).
+        Bandwidth in hertz (Hz).
     delay : float, default=0
         Delay in seconds (s) of accompanying slice select trapezoidal event.
     dwell : float, default=0
-        Temporal sampling step of waveform. If set to 0, will use `system.rf_raster_time`.
+        Temporal sampling step of waveform in seconds (s). If set to 0, will use `system.rf_raster_time`.
     freq_offset : float, default=0
-        Frequency offset in Hertz (Hz).
+        Frequency offset in hertz (Hz).
     no_signal_scaling : bool, default=False
         If set to True no rescaling of the RF amplitude will happen. E.g. for adiabatic pulses.
     max_grad : float, default=system.max_grad
-        Maximum gradient strength of accompanying slice select trapezoidal event.
+        Maximum gradient strength (Hz/m) of accompanying slice select trapezoidal event .
     max_slew : float, default=system.max_slew
-        Maximum slew rate of accompanying slice select trapezoidal event.
+        Maximum slew rate (Hz/m/s) of accompanying slice select trapezoidal event.
     phase_offset : float, default=0
-        Phase offset in Hertz (Hz).a
+        Phase offset in radians (rad).
     return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, default=0
-        Slice thickness (m) of accompanying slice select trapezoidal event. The slice thickness determines the area of the
-        slice select event.
+        Slice thickness (m) of accompanying slice select trapezoidal event.
+        The slice thickness determines the area of the slice select event.
     system : Opts, default=Opts()
         System limits.
     time_bw_product : float, default=0
@@ -72,11 +72,11 @@ def make_arbitrary_rf(
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
-        PPM frequency offset.
+        PPM frequency offset in parts per million (ppm).
     phase_ppm : float, default=0
-        PPM phase offset.
+        PPM phase offset in radians per megahertz (rad/MHz).
     center : float, default=None
-        RF center (s).
+        RF center in seconds (s).
 
     Returns
     -------

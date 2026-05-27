@@ -30,9 +30,9 @@ def add_ramps(
     rf : SimpleNamespace, default=None
         Add a segment of zeros over the ramp times to an RF shape.
     max_grad : int, default=0
-        Maximum gradient amplitude.
+        Maximum gradient amplitude (Hz/m).
     max_slew : int, default=0
-        Maximum slew rate.
+        Maximum slew rate (Hz/m/s).
     oversampling : bool, default=False
         Boolean flag to indicate if gradient is oversampled by a factor of 2.
 

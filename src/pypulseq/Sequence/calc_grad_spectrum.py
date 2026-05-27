@@ -29,15 +29,15 @@ def calculate_gradient_spectrum(
     Parameters
     ----------
     max_frequency : float, optional
-        Maximum frequency to include in spectrograms. The default is 2000.
+        Maximum frequency in hertz (Hz) to include in spectrograms. The default is 2000.
     window_width : float, optional
-        Window width (in seconds). The default is 0.05.
+        Window width in seconds (s). The default is 0.05.
     frequency_oversampling : float, optional
         Oversampling in the frequency dimension, higher values make
         smoother spectrograms. The default is 3.
     time_range : List[float], optional
-        Time range over which to calculate the spectrograms as a list of
-        two timepoints (in seconds) (e.g. [1, 1.5])
+        Time range in seconds (s) over which to calculate the spectrograms as a list of
+        two timepoints (e.g. [1, 1.5])
         The default is None.
     plot : bool, optional
         Whether to plot the spectograms. The default is True.

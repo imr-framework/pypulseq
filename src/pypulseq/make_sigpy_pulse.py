@@ -47,26 +47,27 @@ def sigpy_n_seq(
     Parameters
     ----------
     flip_angle : float
-        Flip angle in radians.
+        Flip angle in radians (rad).
     delay : float, optional, default=0
         Delay in seconds (s).
     duration : float, optional, default=4e-3
         Duration in seconds (s).
     freq_offset : float, optional, default=0
-        Frequency offset in Hertz (Hz).
+        Frequency offset in hertz (Hz).
     center_pos : float, optional, default=0.5
-        Position of peak.5 (midway).
+        Position of RF peak between 0 and 1, where 0 means the
+        beginning of the pulse and 1 means the end of the pulse.
     max_grad : float, optional, default=0
-        Maximum gradient strength of accompanying slice select trapezoidal event.
+        Maximum gradient strength (Hz/m) of accompanying slice select trapezoidal event.
     max_slew : float, optional, default=0
-        Maximum slew rate of accompanying slice select trapezoidal event.
+        Maximum slew rate (Hz/m/s) of accompanying slice select trapezoidal event.
     phase_offset : float, optional, default=0
-        Phase offset in Hertz (Hz).
-    return_gz:bool, default=False
+        Phase offset in radians (rad).
+    return_gz : bool, default=False
         Boolean flag to indicate if slice-selective gradient has to be returned.
     slice_thickness : float, optional, default=0
-        Slice thickness of accompanying slice select trapezoidal event. The slice thickness determines the area of the
-        slice select event.
+        Slice thickness in meters (m) of accompanying slice select trapezoidal event.
+        The slice thickness determines the area of the slice select event.
     system : Opts, optional
         System limits. Default is a system limits object initialized to default values.
     time_bw_product : float, optional, default=4
@@ -98,9 +99,9 @@ def sigpy_n_seq(
     plot: bool, optional, default=True
         Show sigpy plot outputs
     freq_ppm : float, default=0
-        PPM frequency offset.
+        PPM frequency offset in parts per million (ppm).
     phase_ppm : float, default=0
-        PPM phase offset.
+        PPM phase offset in radians per megahertz (rad/MHz).
 
     Returns
     -------
