@@ -1,5 +1,6 @@
 import math
 import tempfile
+
 import pypulseq as pp
 
 
@@ -49,6 +50,6 @@ def make_test_sequences():
     return [seq1, seq2]
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     with tempfile.TemporaryDirectory() as tmp_dir:
         test_binary_signature_roundtrip_multiple_sequences(Path(tmp_dir))

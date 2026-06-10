@@ -283,4 +283,3 @@ def _read_soft_delays(fid, seq):
             seq.soft_delay_hints2.append(hint)
         seq.soft_delay_hints[hint] = int(num)
         seq.soft_delay_library.insert(event_id, np.array([num, offset, factor, hint_id], dtype=float))
-
