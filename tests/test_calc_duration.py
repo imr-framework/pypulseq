@@ -52,11 +52,11 @@ def test_calc_duration_ignores_none():
     assert pp.calc_duration(None, trap) == 1
 
 
-@pytest.mark.parametrize('name,events,expected_total_dur', known_duration_event_zoo_combos(2))
+@pytest.mark.parametrize('name,events,expected_total_dur', list(known_duration_event_zoo_combos(2)))
 def test_calc_duration_event_combinations2(name, events, expected_total_dur):
     assert pp.calc_duration(*events) == expected_total_dur
 
 
-@pytest.mark.parametrize('name,events,expected_total_dur', known_duration_event_zoo_combos(3))
+@pytest.mark.parametrize('name,events,expected_total_dur', list(known_duration_event_zoo_combos(3)))
 def test_calc_duration_event_combinations3(name, events, expected_total_dur):
     assert pp.calc_duration(*events) == expected_total_dur
