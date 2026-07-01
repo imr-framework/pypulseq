@@ -4,11 +4,13 @@ import contextlib
 import itertools
 import math
 import typing
+from typing import Literal
 
 import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 
+from pypulseq import eps
 from pypulseq.calc_rf_center import calc_rf_center
 from pypulseq.Sequence import parula
 from pypulseq.supported_labels_rf_use import get_supported_labels
@@ -59,6 +61,11 @@ class SeqPlot:
         If False, use separate figures for RF/ADC and gradients.
     show_guides : bool, default=False
         If True, enable dynamic vertical hairline guides that follow the cursor. Requires `mplcursors`.
+    rf_plot : {'auto', 'abs', 'real', 'imag'}, default='auto'
+        Determines how to plot the RF waveforms.
+        If 'auto', plots magnitude for all RF events except those that are purely real or imaginary, which are plotted as such.
+        If 'abs', plots magnitude for all RF events.
+        If 'real' or 'imag', plots the respective component for all RF events.
 
     Attributes
     ----------
@@ -87,6 +94,7 @@ class SeqPlot:
         overlay: 'SeqPlot' = None,
         stacked: bool = False,
         show_guides: bool = False,
+        rf_plot: Literal['auto', 'abs', 'real', 'imag'] = 'auto',
     ):
         # Handle optional dependencies
         if _MPLCURSORS_AVAILABLE is False:
@@ -143,6 +151,7 @@ class SeqPlot:
                 fig1=fig1,
                 fig2=fig2,
                 stacked=stacked,
+                rf_plot=rf_plot,
             )
         finally:
             # restore interactive state if we changed it
@@ -339,6 +348,7 @@ def _seq_plot(
     fig1,
     fig2,
     stacked,
+    rf_plot,
 ):
     mpl.rcParams['lines.linewidth'] = 0.75  # Set default Matplotlib linewidth
 
@@ -349,9 +359,10 @@ def _seq_plot(
         raise ValueError('Invalid time range')
     if time_disp not in valid_time_units:
         raise ValueError('Unsupported time unit')
-
     if grad_disp not in valid_grad_units:
         raise ValueError('Unsupported gradient unit. Supported gradient units are: ' + str(valid_grad_units))
+    if rf_plot not in ['auto', 'abs', 'real', 'imag']:
+        raise ValueError('Unsupported RF plot type. Supported types are: ' + str(['auto', 'abs', 'real', 'imag']))
 
     # If figs were provided but closed (None), create new ones
     if stacked:
@@ -496,9 +507,11 @@ def _seq_plot(
                 else:
                     phase_modulation = adc.phase_modulation
 
-                full_freq_offset = np.atleast_1d(adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0)
+                full_freq_offset = np.atleast_1d(
+                    adc.freq_offset + adc.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
+                )
                 full_phase_offset = np.atleast_1d(
-                    adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 + phase_modulation
+                    adc.phase_offset + adc.phase_ppm * 1e-6 * seq.system.B0 * seq.system.gamma + phase_modulation
                 )
 
                 sp13.plot(
@@ -541,10 +554,11 @@ def _seq_plot(
                     signal = np.concatenate((signal, [0]))
                     time = np.concatenate((time, [time[-1]]))
 
-                signal_is_real = max(np.abs(np.imag(signal))) / max(np.abs(np.real(signal))) < 1e-6
+                signal_is_real = max(np.abs(np.imag(signal))) / (max(np.abs(np.real(signal))) + eps) < 1e-6
+                signal_is_imag = max(np.abs(np.real(signal))) / (max(np.abs(np.imag(signal))) + eps) < 1e-6
 
-                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * seq.system.B0
-                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * seq.system.B0
+                full_freq_offset = rf.freq_offset + rf.freq_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
+                full_phase_offset = rf.phase_offset + rf.phase_ppm * 1e-6 * seq.system.B0 * seq.system.gamma
 
                 # If off-resonant and rectangular (2 samples), interpolate the pulse
                 if len(signal) == 2 and full_freq_offset != 0:
@@ -563,7 +577,7 @@ def _seq_plot(
                 time_center_with_delay = t_factor * (t0 + time_center + rf.delay)
 
                 # Choose plot behavior based on realness of signal
-                if signal_is_real:
+                if rf_plot == 'real' or (rf_plot == 'auto' and signal_is_real):
                     # Plot real part of signal
                     sp12.plot(time_with_delay, np.real(signal))
 
@@ -587,7 +601,31 @@ def _seq_plot(
                         np.angle(sc_corrected),
                         'xb',
                     )
-                else:
+                elif rf_plot == 'imag' or (rf_plot == 'auto' and signal_is_imag):
+                    # Plot imaginary part of signal
+                    sp12.plot(time_with_delay, np.imag(signal))
+
+                    # Include sign(imag(signal)) factor like MATLAB
+                    phase_corrected = (
+                        signal
+                        * np.sign(np.imag(signal))
+                        * np.exp(1j * full_phase_offset)
+                        * np.exp(1j * 2 * math.pi * time * full_freq_offset)
+                    )
+                    sc_corrected = (
+                        signal[index_center]
+                        * np.exp(1j * full_phase_offset)
+                        * np.exp(1j * 2 * math.pi * time[index_center] * full_freq_offset)
+                    )
+
+                    sp13.plot(
+                        time_with_delay,
+                        np.angle(phase_corrected),
+                        time_center_with_delay,
+                        np.angle(sc_corrected),
+                        'xb',
+                    )
+                elif rf_plot == 'abs' or (rf_plot == 'auto' and not signal_is_real and not signal_is_imag):
                     # Plot magnitude of complex signal
                     sp12.plot(time_with_delay, np.abs(signal))
 
@@ -664,7 +702,14 @@ def _seq_plot(
 
     # Set axis labels
     sp11.set_ylabel('ADC')
-    sp12.set_ylabel('RF mag (Hz)')
+    if rf_plot == 'auto':
+        sp12.set_ylabel('RF auto: mag/real/imag (Hz)')
+    elif rf_plot == 'abs':
+        sp12.set_ylabel('RF mag (Hz)')
+    elif rf_plot == 'real':
+        sp12.set_ylabel('RF real (Hz)')
+    elif rf_plot == 'imag':
+        sp12.set_ylabel('RF imag (Hz)')
     sp13.set_ylabel('RF/ADC phase (rad)')
     sp13.set_xlabel(f't ({time_disp})')
     sp21.set_ylabel(f'Gx ({grad_disp})')

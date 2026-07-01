@@ -31,9 +31,9 @@ def add_gradients(
     system : Opts, default=Opts()
         System limits.
     max_grad : float, default=0
-        Maximum gradient amplitude.
+        Maximum gradient amplitude (Hz/m).
     max_slew : float, default=0
-        Maximum slew rate.
+        Maximum slew rate (Hz/m/s).
 
     Returns
     -------

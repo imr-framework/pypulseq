@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +15,7 @@ def paper_plot(
     gx_color: str = 'blue',
     gy_color: str = 'red',
     gz_color: Tuple[float] = (0, 0.5, 0.3),
-    rf_plot: str = 'abs',
+    rf_plot: Literal['abs', 'real', 'imag'] = 'abs',
 ):
     """
     Plot sequence using paper-style formatting (minimalist, high-contrast layout).
@@ -40,7 +40,9 @@ def paper_plot(
     gz_color : color, default=(0, 0.5, 0.3)
         Color for gradient Z waveform.
     rf_plot : {'abs', 'real', 'imag'}, default='abs'
-        Determines how to plot RF waveforms (magnitude, real or imaginary part).
+        Determines how to plot the RF waveforms.
+        If 'abs', plots magnitude for all RF events.
+        If 'real' or 'imag', plots the respective component for all RF events.
 
     """
     # Get waveform data

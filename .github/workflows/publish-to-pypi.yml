@@ -3,9 +3,8 @@ name: Publish to PyPI
 on: 
   push:
     tags:
-      tags:
-        - 'v*'
-        - '[0-9]*'
+      - 'v*'
+      - '[0-9]*'
   workflow_dispatch:
 
 jobs:
@@ -28,7 +27,7 @@ jobs:
           python -m build
 
       - name: Upload Distribution Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
@@ -49,7 +48,7 @@ jobs:
 
     steps:
       - name: Download PyPI Distribution Artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: python-package-distributions
           path: dist/
