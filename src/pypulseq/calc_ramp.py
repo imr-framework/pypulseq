@@ -28,11 +28,11 @@ def calc_ramp(
     k_end : numpy.ndarray
         Two following points in k-space. Shape is `[3, 2]`. From these points, the target gradient will be calculated.
     max_grad : float or array_like, default=0
-        Maximum total gradient strength. Either a single value or one value for each coordinate, of shape `[3, 1]`.
+        Maximum total gradient strength (Hz/m). Either a single value or one value for each coordinate, of shape `[3, 1]`.
     max_points : int, default=500
         Maximum number of k-space points to be used in connecting `k0` and `k_end`.
     max_slew : float or array_like, default=0
-        Maximum total slew rate. Either a single value or one value for each coordinate, of shape `[3, 1]`.
+        Maximum total slew rate (Hz/m/s). Either a single value or one value for each coordinate, of shape `[3, 1]`.
     system : Opts, default=Opts()
         System limits.
     oversampling : bool, default=False

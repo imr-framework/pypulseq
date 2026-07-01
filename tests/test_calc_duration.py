@@ -1,16 +1,17 @@
+"""Tests for calc_duration function for various events and their combinations."""
+
 from itertools import combinations_with_replacement
 
 import pypulseq as pp
 import pytest
 
-"""
-Tests calc_duration by feeding it some sample events with known durations.
-Additionally, tests the combination of any 2 and 3 of those events.
-"""
+
+def test_calc_duration_no_event():
+    assert pp.calc_duration() == 0.0
 
 
-def test_no_event():
-    assert pp.calc_duration() == 0
+def test_calc_duration_none_only():
+    assert pp.calc_duration(None) == 0.0
 
 
 known_duration_event_zoo = [
@@ -32,11 +33,6 @@ known_duration_event_zoo = [
 ]
 
 
-@pytest.mark.parametrize('name,event,expected_dur', known_duration_event_zoo)
-def test_single_events(name, event, expected_dur):
-    assert pp.calc_duration(event) == expected_dur
-
-
 def known_duration_event_zoo_combos(num_to_combine):
     for combo in combinations_with_replacement(known_duration_event_zoo, num_to_combine):
         name = ','.join(event[0] for event in combo)
@@ -45,11 +41,22 @@ def known_duration_event_zoo_combos(num_to_combine):
         yield name, tuple(events), expected_dur
 
 
+@pytest.mark.parametrize('name, event, expected_dur', known_duration_event_zoo)
+def test_calc_duration_single_events(name, event, expected_dur):
+    assert pp.calc_duration(event) == expected_dur
+
+
+def test_calc_duration_ignores_none():
+    trap = pp.make_trapezoid('x', amplitude=1, duration=1)
+    assert pp.calc_duration(trap, None) == 1
+    assert pp.calc_duration(None, trap) == 1
+
+
 @pytest.mark.parametrize('name,events,expected_total_dur', known_duration_event_zoo_combos(2))
-def test_event_combinations2(name, events, expected_total_dur):
+def test_calc_duration_event_combinations2(name, events, expected_total_dur):
     assert pp.calc_duration(*events) == expected_total_dur
 
 
 @pytest.mark.parametrize('name,events,expected_total_dur', known_duration_event_zoo_combos(3))
-def test_event_combinations3(name, events, expected_total_dur):
+def test_calc_duration_event_combinations3(name, events, expected_total_dur):
     assert pp.calc_duration(*events) == expected_total_dur

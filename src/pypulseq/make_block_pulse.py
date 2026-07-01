@@ -31,21 +31,21 @@ def make_block_pulse(
     Parameters
     ----------
     flip_angle : float
-        Flip angle in radians.
+        Flip angle in radians (rad).
     delay : float, default=0
         Delay in seconds (s).
     duration : float, default=None
         Duration in seconds (s).
     bandwidth : float, default=None
-        Bandwidth in Hertz (Hz).
+        Bandwidth in hertz (Hz).
         If supplied without time_bw_product duration = 1 / (4 * bandwidth)
     time_bw_product : float, default=None
         Time-bandwidth product.
         If supplied with bandwidth, duration = time_bw_product / bandwidth
     freq_offset : float, default=0
-        Frequency offset in Hertz (Hz).
+        Frequency offset in hertz (Hz).
     phase_offset : float, default=0
-        Phase offset Hertz (Hz).
+        Phase offset in radians (rad).
     system : Opts, default=Opts()
         System limits.
     use : str, default='undefined'
@@ -53,9 +53,9 @@ def make_block_pulse(
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
-        PPM frequency offset.
+        PPM frequency offset in parts per million (ppm).
     phase_ppm : float, default=0
-        PPM phase offset.
+        PPM phase offset in radians per megahertz (rad/MHz).
 
     Returns
     -------

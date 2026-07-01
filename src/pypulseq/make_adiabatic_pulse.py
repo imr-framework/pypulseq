@@ -91,28 +91,32 @@ def make_adiabatic_pulse(
         One of 'hypsec' or 'wurst' pulse types.
     adiabaticity : int, default=4
     bandwidth : int, default=40000
-        Pulse bandwidth.
+        Pulse bandwidth in hertz (Hz).
     beta : float, default=800.0
-        AM waveform parameter.
+        AM waveform parameter in radians per second (rad/s).
     delay : float, default=0
         Delay in seconds (s).
     duration : float, default=10e-3
-        Pulse time (s).
+        Pulse duration in seconds (s).
     dwell : float, default=None
+        Temporal sampling step of waveform in seconds (s). If set to None, will use `system.rf_raster_time`.
     freq_offset : float, default=0
+        Frequency offset in hertz (Hz).
     max_grad : float, default=None
-        Maximum gradient strength.
+        Maximum gradient strength (Hz/m).
     max_slew : float, default=None
-        Maximum slew rate.
+        Maximum slew rate (Hz/m/s).
     mu : float, default=4.9
         Constant determining amplitude of frequency sweep.
     n_fac : int, default=40
         Power to exponentiate to within AM term. ~20 or greater is typical.
     phase_offset : float, default=0
-        Phase offset.
+        Phase offset in radians (rad).
     return_gz : bool, default=False
         Boolean flag to indicate if the slice-selective gradient has to be returned.
     slice_thickness : float, default=0
+        Slice thickness in meters (m) of accompanying slice select trapezoidal event.
+        The slice thickness determines the area of the slice select event.
     system : Opts, default=Opts()
         System limits.
     use : str, default='inversion'
@@ -120,9 +124,9 @@ def make_adiabatic_pulse(
         Must be one of 'excitation', 'refocusing', 'inversion',
         'saturation', 'preparation', 'other', 'undefined'.
     freq_ppm : float, default=0
-        PPM frequency offset.
+        PPM frequency offset in parts per million (ppm).
     phase_ppm : float, default=0
-        PPM phase offset.
+        PPM phase offset in radians per megahertz (rad/MHz).
 
     Returns
     -------
