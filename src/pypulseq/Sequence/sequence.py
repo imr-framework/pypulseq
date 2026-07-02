@@ -27,7 +27,9 @@ from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 from pypulseq.Sequence.calc_pns import calc_pns
 from pypulseq.Sequence.ext_test_report import ext_test_report, ext_test_report_data
 from pypulseq.Sequence.install import detect_scanner
+from pypulseq.Sequence.read_binary import read_binary as read_binary_seq
 from pypulseq.Sequence.read_seq import read
+from pypulseq.Sequence.write_binary import write_binary as write_binary_seq
 from pypulseq.Sequence.write_seq import write as write_seq
 from pypulseq.Sequence.write_seq import write_v141 as write_seq_v141
 from pypulseq.utils.cumsum import cumsum
@@ -100,6 +102,8 @@ class Sequence:
         self.extension_numeric_idx = []
         self.extension_string_idx = []
         self.soft_delay_hints = {}
+        self.soft_delay_hint_ids = {}
+        self.soft_delay_hints2 = []
 
     def __str__(self) -> str:
         s = 'Sequence:'
@@ -1148,6 +1152,23 @@ class Sequence:
         # Initialize next free block ID
         self.next_free_block_ID = (max(self.block_events) + 1) if self.block_events else 1
 
+    def read_binary(self, file_path: str) -> None:
+        """
+        Read binary `.bseq` file from `file_path`.
+
+        Parameters
+        ----------
+        file_path : str
+            Path to `.bseq` file to be read.
+        """
+        if self.use_block_cache:
+            self.block_cache.clear()
+
+        read_binary_seq(self, filename=file_path)
+
+        # Initialize next free block ID
+        self.next_free_block_ID = (max(self.block_events) + 1) if self.block_events else 1
+
     def register_adc_event(self, event: EventLibrary) -> int:
         return block.register_adc_event(self, event)
 
@@ -1869,3 +1890,50 @@ class Sequence:
             return signature
         else:
             return None
+
+    def write_binary(self, name: str, create_signature: bool = True) -> Union[str, None]:
+        """
+        Write the sequence data to the given filename using the binary Pulseq file format.
+
+        Parameters
+        ----------
+        name : str
+            Filename of `.bseq` file to be written to disk.
+        create_signature : bool, default=True
+            Boolean flag to indicate if the file has to be signed.
+
+        Returns
+        -------
+        signature or None : If create_signature is True, it returns the written `.bseq` file's signature as a string,
+        otherwise it returns None.
+        """
+        return write_binary_seq(self, name, create_signature=create_signature)
+
+    @staticmethod
+    def get_binary_codes():
+        def signed_int64(value):
+            value &= (1 << 64) - 1
+            if value >= (1 << 63):
+                value -= 1 << 64
+            return value
+
+        prefix = 0xFFFFFFFF << 32
+        return {
+            'fileHeader': int.from_bytes(b'\x01pulseq\x02', byteorder='little', signed=True),
+            'section': {
+                'definitions': signed_int64(prefix | 1),
+                'blocks': signed_int64(prefix | 2),
+                'rf': signed_int64(prefix | 3),
+                'gradients': signed_int64(prefix | 4),
+                'trapezoids': signed_int64(prefix | 5),
+                'adc': signed_int64(prefix | 6),
+                'delays': signed_int64(prefix | 7),
+                'shapes': signed_int64(prefix | 8),
+                'extensions': signed_int64(prefix | 9),
+                'triggers': signed_int64(prefix | 10),
+                'labelset': signed_int64(prefix | 11),
+                'labelinc': signed_int64(prefix | 12),
+                'softdelays': signed_int64(prefix | 13),
+                'signature': signed_int64(prefix | 0x00FFFFFF),
+            },
+        }

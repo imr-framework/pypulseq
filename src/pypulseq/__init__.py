@@ -65,3 +65,4 @@ from pypulseq.split_gradient_at import split_gradient_at
 from pypulseq.supported_labels_rf_use import get_supported_labels
 from pypulseq.traj_to_grad import traj_to_grad
 from pypulseq.utils.tracing import enable_trace, disable_trace
+from pypulseq.verify_file_signature import verify_file_signature
