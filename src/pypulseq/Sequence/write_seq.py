@@ -255,10 +255,10 @@ def write(self, file_name: Union[str, Path], create_signature, remove_duplicates
 
     if create_signature:  # Sign the file
         # Calculate digest
-        with open(file_name, 'r') as output_file:
+        with open(file_name, 'rb') as output_file:
             buffer = output_file.read()
 
-            md5 = hashlib.md5(buffer.encode('utf-8')).hexdigest()
+            md5 = hashlib.md5(buffer).hexdigest()
 
         # Write signature
         with open(file_name, 'a') as output_file:
@@ -515,10 +515,10 @@ def write_v141(self, file_name: Union[str, Path], create_signature, remove_dupli
 
     if create_signature:  # Sign the file
         # Calculate digest
-        with open(file_name, 'r') as output_file:
+        with open(file_name, 'rb') as output_file:
             buffer = output_file.read()
 
-            md5 = hashlib.md5(buffer.encode('utf-8')).hexdigest()
+            md5 = hashlib.md5(buffer).hexdigest()
 
         # Write signature
         with open(file_name, 'a') as output_file:
