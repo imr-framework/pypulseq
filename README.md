@@ -7,7 +7,7 @@
 <p align = "left">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/python-3.7--3.13-blue)](https://pypi.org/project/pypulseq/)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://pypi.org/project/pypulseq/)
 [![FAIR checklist badge](https://fairsoftwarechecklist.net/badge.svg)](https://fairsoftwarechecklist.net/v0.2?f=31&a=32113&i=32322&r=133)
 
 </p>
