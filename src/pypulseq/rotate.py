@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from typing import List, Union
+from warnings import warn
 
 import numpy as np
 
@@ -20,7 +21,10 @@ def rotate(*args: SimpleNamespace, angle: float, axis: str, system: Union[Opts, 
     Rotates the corresponding gradient(s) about the given axis by the specified amount. Gradients parallel to the
     rotation axis and non-gradient(s) are not affected. Possible rotation axes are 'x', 'y' or 'z'.
 
-    See also `pypulseq.Sequence.sequence.add_block()`.
+    When using rotate() around the y-axis the rotation direction is reversed compared to previous versions to be consistent with rotate3D().
+    There is no change in behavior of rotate() for rotations around the x- or z-axis.
+
+    See also `pypulseq.rotate3D.rotate3D()` and `pypulseq.Sequence.sequence.add_block()`.
 
     Parameters
     ----------
@@ -53,6 +57,16 @@ def rotate(*args: SimpleNamespace, angle: float, axis: str, system: Union[Opts, 
     axes_to_rotate = axes
     if len(axes_to_rotate) != 2:
         raise ValueError('Incorrect axes specification.')
+
+    if axis == 'y':
+        warning_message = 'When using rotate() around the y-axis the rotation direction is reversed '
+        warning_message += 'compared to previous versions to be consistent with rotate3D().'
+        warning_message += 'There is no change in behavior of rotate() for rotations around the x- or z-axis.'
+        warn(warning_message, stacklevel=2)
+        axes_to_rotate = [
+            axes_to_rotate[1],
+            axes_to_rotate[0],
+        ]  # reverse the list to preserve the correct handiness of the rotation matrix
 
     for i in range(len(args)):
         event = args[i]
