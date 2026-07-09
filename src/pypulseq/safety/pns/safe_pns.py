@@ -409,6 +409,7 @@ def safe_example():
 
     # Plot some results
     safe_plot(pns, dt)
+    plt.show()
 
 
 if __name__ == '__main__':

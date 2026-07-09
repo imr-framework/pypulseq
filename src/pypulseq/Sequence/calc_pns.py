@@ -1,3 +1,4 @@
+import warnings
 from types import SimpleNamespace
 from typing import List, Tuple, Union
 
@@ -5,17 +6,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pypulseq import Sequence
-from pypulseq.utils.safe_pns_prediction import safe_gwf_to_pns, safe_plot
+from pypulseq.safety.pns.chronaxie_rheobase import pns_cr
+from pypulseq.safety.pns.safe_pns import safe_gwf_to_pns, safe_plot
 from pypulseq.utils.siemens.asc_to_hw import asc_to_hw
 from pypulseq.utils.siemens.readasc import readasc
 
 
 def calc_pns(
-    obj: Sequence, hardware: SimpleNamespace, time_range: Union[List[float], None] = None, do_plots: bool = True
+    obj: Sequence,
+    hardware: SimpleNamespace,
+    time_range: Union[List[float], None] = None,
+    do_plots: bool = True,
+    model: str = 'safe',
+    *,
+    chronaxie_coil: str = 'xrm',
+    chronaxie_conv_model: int = 1,
 ) -> Tuple[bool, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Calculate PNS using safe model implementation by Szczepankiewicz and Witzel
-    See http://github.com/filip-szczepankiewicz/safe_pns_prediction
+    Calculate PNS using the SAFE model (Szczepankiewicz and Witzel,
+    http://github.com/filip-szczepankiewicz/safe_pns_prediction) or the
+    chronaxie-rheobase model (Nielsen / toppe ``pns.m``).
 
     Returns pns levels due to respective axes (normalized to 1 and not to 100#)
 
@@ -30,6 +40,14 @@ def calc_pns(
         can be acquired from)
     do_plots : bool, optional
         Plot the results from the PNS calculations. The default is True.
+    model : str, optional
+        ``'safe'`` (default) or ``'chronaxie_rheobase'``.
+    chronaxie_coil : str, optional
+        Gradient-coil preset for ``model='chronaxie_rheobase'``: one of
+        ``xrm``, ``xrmw``, ``whole``, ``zoom``, ``hrmb``, ``hrmw``, ``magnus``.
+    chronaxie_conv_model : int, optional
+        For chronaxie-rheobase only: ``1`` time-domain convolution, ``2``
+        frequency-domain (see :func:`~pypulseq.safety.pns.chronaxie_rheobase.pns_cr`).
 
     Returns
     -------
@@ -75,22 +93,70 @@ def calc_pns(
         asc, _ = readasc(hardware)
         hardware = asc_to_hw(asc)
 
-    # use the Szczepankiewicz' and Witzel's implementation
-    [pns_comp, res] = safe_gwf_to_pns(
-        gw / obj.system.gamma, np.nan * np.ones(t.shape[0]), obj.grad_raster_time, hardware
-    )  # the RF vector is unused in the code inside but it is zeropaded and exported ...
+    if model == 'safe':
+        # use the Szczepankiewicz' and Witzel's implementation
+        [pns_comp, res] = safe_gwf_to_pns(
+            gw / obj.system.gamma, np.nan * np.ones(t.shape[0]), obj.grad_raster_time, hardware
+        )  # the RF vector is unused in the code inside but it is zeropaded and exported ...
 
-    # use the exported RF vector to detect and undo zero-padding
-    pns_comp = 0.01 * pns_comp[~np.isfinite(res.rf[1:]), :]
+        # use the exported RF vector to detect and undo zero-padding
+        pns_comp = 0.01 * pns_comp[~np.isfinite(res.rf[1:]), :]
 
-    # calc pns_norm and the final ok/not_ok
-    pns_norm = np.sqrt((pns_comp**2).sum(axis=1))
-    ok = all(pns_norm < 1)
+        # calc pns_norm and the final ok/not_ok
+        pns_norm = np.sqrt((pns_comp**2).sum(axis=1))
+        ok = bool(np.all(pns_norm < 1))
 
-    # ready
-    if do_plots:
-        # plot results
-        plt.figure()
-        safe_plot(pns_comp * 100, obj.grad_raster_time)
+        # ready
+        if do_plots:
+            # plot results
+            plt.figure()
+            safe_plot(pns_comp * 100, obj.grad_raster_time)
 
-    return ok, pns_norm, pns_comp, t
+        return ok, pns_norm, pns_comp, t
+
+    if model == 'chronaxie_rheobase':
+        gamma = float(obj.system.gamma)
+        n_in = int(gw.shape[0])
+        n_ch = min(ng, 3)
+        if ng > 3:
+            warnings.warn(
+                'calc_pns chronaxie_rheobase uses only the first three gradient channels.',
+                UserWarning,
+                stacklevel=2,
+            )
+        gw_tm = np.zeros((n_in, 3), dtype=float)
+        gw_tm[:, :n_ch] = gw[:, :n_ch] / gamma
+        # pns_cr can misread the layout as (points, reps, dims) when n_time < 3
+        # because it assumes dims <= 3 and time is the longest axis; pad time to >= 3.
+        n_time_cr = max(n_in, 3)
+        if n_time_cr > n_in:
+            gw_tm = np.pad(gw_tm, ((0, n_time_cr - n_in), (0, 0)))
+        grad_cr = gw_tm.T[:, :, np.newaxis]
+
+        pthresh, pt, _ptmax, _gmax, _smax, _t_ms, _f_khz = pns_cr(
+            grad_cr,
+            chronaxie_coil,
+            gdt=dt,
+            print_output=False,
+            plot=do_plots,
+            model=chronaxie_conv_model,
+        )
+
+        pns_comp = 0.01 * pt[:, :, 0].T
+        pns_norm = pthresh[0, :, 0] / 100.0
+        n_out = int(pns_norm.shape[0])
+        # Trim samples we only added so pns_cr sees time as the long axis (n_time >= 3).
+        if (chronaxie_conv_model == 1 and n_out > n_in) or (
+            chronaxie_conv_model == 2 and n_out > n_in and n_out == n_time_cr
+        ):
+            pns_comp = pns_comp[:n_in]
+            pns_norm = pns_norm[:n_in]
+        # Model 2 FFT padding beyond the input grid — align returned time axis.
+        elif chronaxie_conv_model == 2 and n_out != n_in:
+            t0 = float(t[0] - 0.5 * dt) if t.size else 0.0
+            t = t0 + (np.arange(n_out) + 0.5) * dt
+
+        ok = bool(np.all(pns_norm < 1))
+        return ok, pns_norm, pns_comp, t
+
+    raise ValueError(f"model must be 'safe' or 'chronaxie_rheobase', got {model!r}")
