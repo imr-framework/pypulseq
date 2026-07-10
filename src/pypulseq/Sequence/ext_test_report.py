@@ -45,8 +45,10 @@ def ext_test_report_data(self) -> Dict[str, Any]:
     # Calculate TE, TR
     duration, num_blocks, event_count = self.duration()
 
-    k_traj_adc, _, t_excitation, _, t_adc = self.calculate_kspace()
-    t_excitation = np.asarray(t_excitation)
+    kspace = self.calculate_kspace(output_as_dict=True)
+    k_traj_adc = kspace['k_traj_adc']
+    t_excitation = np.asarray(kspace['t_excitation'])
+    t_adc = kspace['t_adc']
 
     # remove all ADC events that come before the first RF event (noise scans or alike)
     k_traj_adc = k_traj_adc[:, t_adc > t_excitation[0]]

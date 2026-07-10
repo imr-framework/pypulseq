@@ -25,6 +25,7 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence import block
 from pypulseq.Sequence.calc_grad_spectrum import calculate_gradient_spectrum
 from pypulseq.Sequence.calc_pns import calc_pns
+from pypulseq.Sequence.calculate_kspace import calculate_kspace as ext_calculate_kspace
 from pypulseq.Sequence.ext_test_report import ext_test_report, ext_test_report_data
 from pypulseq.Sequence.install import detect_scanner
 from pypulseq.Sequence.read_seq import read
@@ -282,9 +283,13 @@ class Sequence:
 
     def calculate_kspace(
         self,
-        trajectory_delay: Union[float, List[float], np.ndarray] = 0.0,
-        gradient_offset: Union[float, List[float], np.ndarray] = 0.0,
-    ) -> Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray]:
+        trajectory_delay: Union[float, List[float], np.ndarray] = 0,
+        gradient_offset: Union[float, List[float], np.ndarray] = 0,
+        output_as_dict: bool = False,
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray],
+        dict,
+    ]:
         """
         Calculates the k-space trajectory of the entire pulse sequence.
 
@@ -300,6 +305,9 @@ class Sequence:
             If gradient_offset is a single value, this value will be used for all gradient channels.
             If gradient_offset is a list or array, it is expected to have the same length as the number of gradient
             channels and the first element is applied to the first gradient channel, the second to the second, and so on.
+        output_as_dict : bool, default=False
+            If True, return a dict containing all available outputs (including `t_ktraj`).
+            If False, return the legacy 5-tuple output for backwards compatibility.
 
         Returns
         -------
@@ -313,161 +321,31 @@ class Sequence:
             Refocusing timepoints.
         t_adc : numpy.array
             Sampling timepoints.
+
+        When `output_as_dict=True`, the returned dictionary contains the additional key `t_ktraj`.
         """
-        if np.any(np.abs(trajectory_delay) > 100e-6):
-            raise Warning(f'Trajectory delay of {trajectory_delay * 1e6} us is suspiciously high')
-
-        total_duration = sum(self.block_durations.values())
-
-        t_excitation, fp_excitation, t_refocusing, _ = self.rf_times()
-        t_adc, _ = self.adc_times()
-
-        # Convert data to piecewise polynomials
-        gw_pp = self.get_gradients(trajectory_delay, gradient_offset)
-        ng = len(gw_pp)
-
-        # Calculate slice positions.
-        # For now we entirely rely on the excitation -- ignoring complicated interleaved refocused sequences
-        if len(t_excitation) > 0:
-            # Position in x, y, z
-            slice_pos = np.zeros((ng, len(t_excitation)))
-            for j in range(ng):
-                if gw_pp[j] is None:
-                    slice_pos[j] = np.nan
-                else:
-                    # Check for divisions by zero to avoid numpy warning
-                    divisor = np.array(gw_pp[j](t_excitation))
-                    slice_pos[j, divisor != 0.0] = fp_excitation[0, divisor != 0.0] / divisor[divisor != 0.0]
-                    slice_pos[j, divisor == 0.0] = np.nan
-
-            slice_pos[~np.isfinite(slice_pos)] = 0  # Reset undefined to 0
-        else:
-            slice_pos = []
-
-        # Integrate waveforms as PPs to produce gradient moments
-        gm_pp = []
-        tc = []
-        for i in range(ng):
-            if gw_pp[i] is None:
-                gm_pp.append(None)
-                continue
-
-            gm_pp.append(gw_pp[i].antiderivative())
-            tc.append(gm_pp[i].x)
-            # "Sample" ramps for display purposes.  Otherwise piecewise-linear display (plot) fails
-            ii = np.flatnonzero(np.abs(gm_pp[i].c[0, :]) > 1e-7 * self.system.max_slew)
-
-            # Do nothing if there are no ramps
-            if ii.shape[0] == 0:
-                continue
-
-            starts = np.int64(np.floor((gm_pp[i].x[ii] + eps) / self.grad_raster_time))
-            ends = np.int64(np.ceil((gm_pp[i].x[ii + 1] - eps) / self.grad_raster_time))
-
-            # Create all ranges starts[0]:ends[0], starts[1]:ends[1], etc.
-            lengths = ends - starts + 1
-            inds = np.ones((lengths).sum())
-            # Calculate output index where each range will start
-            start_inds = np.cumsum(np.concatenate(([0], lengths[:-1])))
-            # Create element-wise differences that will cumsum into
-            # the final indices: [starts[0], 1, 1, starts[1]-starts[0]-lengths[0]+1, 1, etc.]
-            inds[start_inds] = np.concatenate(([starts[0]], np.diff(starts) - lengths[:-1] + 1))
-
-            tc.append(np.cumsum(inds) * self.grad_raster_time)
-        if tc != []:
-            tc = np.concatenate(tc)
-
-        t_acc = 1e-10  # Temporal accuracy
-        t_acc_inv = 1 / t_acc
-        # tc = self.__flatten_jagged_arr(tc)
-        t_ktraj = t_acc * np.unique(
-            np.round(
-                t_acc_inv
-                * np.array(
-                    [
-                        *tc,
-                        0,
-                        *np.asarray(t_excitation) - 2 * self.rf_raster_time,
-                        *np.asarray(t_excitation) - self.rf_raster_time,
-                        *t_excitation,
-                        *np.asarray(t_refocusing) - self.rf_raster_time,
-                        *t_refocusing,
-                        *t_adc,
-                        total_duration,
-                    ]
-                )
-            )
+        return ext_calculate_kspace(
+            self,
+            trajectory_delay=trajectory_delay,
+            gradient_offset=gradient_offset,
+            output_as_dict=output_as_dict,
         )
-
-        i_excitation = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_excitation)))
-        i_refocusing = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_refocusing)))
-        i_adc = np.searchsorted(t_ktraj, t_acc * np.round(t_acc_inv * np.asarray(t_adc)))
-
-        i_periods = np.unique([0, *i_excitation, *i_refocusing, len(t_ktraj) - 1])
-        if len(i_excitation) > 0:
-            ii_next_excitation = 0
-        else:
-            ii_next_excitation = -1
-        if len(i_refocusing) > 0:
-            ii_next_refocusing = 0
-        else:
-            ii_next_refocusing = -1
-
-        k_traj = np.zeros((ng, len(t_ktraj)))
-        for i in range(ng):
-            if gw_pp[i] is None:
-                continue
-
-            it = np.where(
-                np.logical_and(
-                    t_ktraj >= t_acc * round(t_acc_inv * gm_pp[i].x[0]),
-                    t_ktraj <= t_acc * round(t_acc_inv * gm_pp[i].x[-1]),
-                )
-            )[0]
-            k_traj[i, it] = gm_pp[i](t_ktraj[it])
-            if t_ktraj[it[-1]] < t_ktraj[-1]:
-                k_traj[i, it[-1] + 1 :] = k_traj[i, it[-1]]
-
-        # Convert gradient moments to k-space positions
-        dk = -k_traj[:, 0]
-        for i in range(len(i_periods) - 1):
-            i_period = i_periods[i]
-            i_period_end = i_periods[i + 1]
-            if ii_next_excitation >= 0 and i_excitation[ii_next_excitation] == i_period:
-                if abs(t_ktraj[i_period] - t_excitation[ii_next_excitation]) > t_acc:
-                    raise Warning(
-                        f'abs(t_ktraj[i_period]-t_excitation[ii_next_excitation]) < {t_acc} failed for ii_next_excitation={ii_next_excitation} error={t_ktraj(i_period) - t_excitation(ii_next_excitation)}'
-                    )
-                dk = -k_traj[:, i_period]
-                if i_period > 0:
-                    # Use nans to mark the excitation points since they interrupt the plots
-                    k_traj[:, i_period - 1] = np.nan
-                # -1 on len(i_excitation) for 0-based indexing
-                ii_next_excitation = min(len(i_excitation) - 1, ii_next_excitation + 1)
-            elif ii_next_refocusing >= 0 and i_refocusing[ii_next_refocusing] == i_period:
-                # dk = -k_traj[:, i_period]
-                dk = -2 * k_traj[:, i_period] - dk
-                # -1 on len(i_excitation) for 0-based indexing
-                ii_next_refocusing = min(len(i_refocusing) - 1, ii_next_refocusing + 1)
-
-            k_traj[:, i_period:i_period_end] = k_traj[:, i_period:i_period_end] + dk[:, None]
-
-        k_traj[:, i_period_end] = k_traj[:, i_period_end] + dk
-        k_traj_adc = k_traj[:, i_adc]
-
-        return k_traj_adc, k_traj, t_excitation, t_refocusing, t_adc
 
     def calculate_kspacePP(
         self,
         trajectory_delay: Union[float, List[float], np.ndarray] = 0,
         gradient_offset: Union[float, List[float], np.ndarray] = 0,
-    ) -> Tuple[np.array, np.array, np.array, np.array, np.array]:
+        output_as_dict: bool = False,
+    ) -> Union[
+        Tuple[np.ndarray, np.ndarray, List[float], List[float], np.ndarray],
+        dict,
+    ]:
         warn(
             'Sequence.calculate_kspacePP has been deprecated, use calculate_kspace instead',
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.calculate_kspace(trajectory_delay, gradient_offset)
+        return self.calculate_kspace(trajectory_delay, gradient_offset, output_as_dict=output_as_dict)
 
     def calculate_pns(
         self,
