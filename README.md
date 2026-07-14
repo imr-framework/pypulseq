@@ -23,8 +23,9 @@
 3. [⚡ Lightning-start - PyPulseq in your browser!][section-lightning-start]
 4. [🏃‍♂ Quickstart - example scripts][section-quickstart-examples]
 5. [🤿 Deep dive - custom pulse sequences][section-deep-dive]
-6. [👥 Contributing and Community guidelines][section-contributing]
-7. [📖 References][section-references]
+6. [🖵 Command-line utilities][section-cli]
+7. [👥 Contributing and Community guidelines][section-contributing]
+8. [📖 References][section-references]
 
 ---
 
@@ -135,14 +136,22 @@ Getting started with pulse sequence design using `PyPulseq` is simple:
 
 ---
 
-## 6. 👥 Contributing and Community guidelines
+## 6. 🖵 Command-line utilities
+
+* `ppseqtest` - A command-line utility to check a `.seq` file. It can print a test report, plot the sequence diagram, or plot the k-space.
+
+   Usage: `ppseqtest [--report] [--plot] [--k-space] <path_to_seq_file>`
+
+---
+
+## 7. 👥 Contributing and Community guidelines
 
 `PyPulseq` adheres to a code of conduct adapted from the [Contributor Covenant] code of conduct.
 Contributing guidelines can be found [here][contrib-guidelines].
 
 ---
 
-## 7. 📖 References
+## 8. 📖 References
 
 1. Ravi, Keerthi, Sairam Geethanath, and John Vaughan. "PyPulseq: A Python Package for MRI Pulse Sequence Design."
 Journal of Open Source Software 4.42 (2019): 1725.
@@ -159,9 +168,10 @@ resonance in medicine 77.4 (2017): 1544-1552.
 [contrib-guidelines]: https://github.com/imr-framework/pypulseq/blob/master/CONTRIBUTING.md
 [google-colab]: https://colab.research.google.com/
 [section-general-info]: #1-general-information
+[section-installation]: #2--installation
+[section-lightning-start]: #3--lightning-start---pypulseq-in-your-browser
+[section-quickstart-examples]: #4--example-scripts
+[section-deep-dive]: #5--deep-dive---custom-pulse-sequences
+[section-cli]: #6--command-line-utilities
 [section-contributing]: #7--contributing-and-community-guidelines
-[section-deep-dive]: #6--deep-dive---custom-pulse-sequences
-[section-installation]: #3--installation
-[section-lightning-start]: #4--lightning-start---pypulseq-in-your-browser
-[section-quickstart-examples]: #5--quickstart---example-scripts
 [section-references]: #8--references
