@@ -122,7 +122,7 @@ def test_generation_methods():
 
     # area + duration
     trap = make_trapezoid(channel='x', area=1, duration=1)
-    compare_trap_out(trap, 1.00002, 2e-5, 1 - 4e-5, 2e-5)
+    compare_trap_out(trap, 1.000010000100001, 1e-5, 1 - 2e-5, 1e-5)
 
     # area + duration + rise_time
     trap = make_trapezoid(channel='x', area=1, duration=1, rise_time=0.01)
@@ -130,3 +130,19 @@ def test_generation_methods():
     # flat_time + area + rise_time
     trap = make_trapezoid(channel='x', flat_time=0.5, area=1, rise_time=0.1)
     compare_trap_out(trap, 1 / 0.6, 0.1, 0.5, 0.1)
+
+
+def test_area_duration_matches_matlab_make_trapezoid_reference():
+    system = Opts(max_grad=100, grad_unit='mT/m', max_slew=100, slew_unit='T/m/s')
+
+    trap = make_trapezoid(channel='x', area=250, duration=1e-3, system=system)
+
+    compare_trap_out(
+        trap,
+        amplitude=268817.20430107525,
+        rise_time=7.000000000000001e-05,
+        flat_time=0.0008600000000000001,
+        fall_time=7.000000000000001e-05,
+    )
+    assert abs(trap.area - 250.0) < eps
+    assert abs(trap.flat_area - 231.18279569892474) < eps
