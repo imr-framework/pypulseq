@@ -504,6 +504,10 @@ class TestSequence:
         # Clean up written sequence file
         output_filename.unlink()
 
+        # Test that the signature is described in the same way after write and after read
+        assert seq.signature_file == 'text'
+        assert (seq2.signature_type, seq2.signature_file) == (seq.signature_type, seq.signature_file)
+
         # Test for approximate equality of all blocks
         assert list(seq2.block_events.keys()) == list(seq.block_events.keys()), 'Sequence block IDs are not identical'
         for block_counter in seq.block_events:

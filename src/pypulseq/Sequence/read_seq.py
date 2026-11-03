@@ -97,7 +97,7 @@ def read(self, path: str, detect_rf_use: bool | None = None, remove_duplicates: 
                 self.signature_type = temp_sign_defs['Type']
             if 'Hash' in temp_sign_defs:
                 self.signature_value = temp_sign_defs['Hash']
-                self.signature_file = 'Text'
+                self.signature_file = 'text'
         elif section == '[VERSION]':
             file_version_major, file_version_minor, file_version_revision = __read_version(input_file)
             file_version_combined = 1000000 * file_version_major + 1000 * file_version_minor + file_version_revision
